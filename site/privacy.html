@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — Keel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .page-hero { padding: 80px 0 48px; border-bottom: 1px solid var(--border); }
+    .prose { max-width: 720px; margin: 0 auto; padding: 60px 24px 80px; }
+    .prose h2 { font-size: 20px; margin-top: 48px; margin-bottom: 14px; }
+    .prose p { color: var(--text-dim); margin-bottom: 16px; font-size: 15px; line-height: 1.75; }
+    .prose ul { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    .prose ul li { display: flex; gap: 10px; font-size: 15px; color: var(--text-dim); line-height: 1.6; }
+    .prose ul li::before { content: '—'; color: var(--amber); flex-shrink: 0; }
+    .divider { border: none; border-top: 1px solid var(--border); margin: 48px 0; }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="nav-inner">
+      <a href="/" class="logo">
+        <span class="logo-mark">K</span>
+        <span class="logo-text">KEEL</span>
+      </a>
+      <div class="nav-links">
+        <a href="/#features">Features</a>
+        <a href="/#security">Security</a>
+        <a href="/#pricing">Pricing</a>
+      </div>
+      <a href="https://app.getkeel.com" class="btn btn-outline nav-cta">Open web app</a>
+    </div>
+  </nav>
+
+  <section class="page-hero">
+    <div class="container">
+      <h1 style="font-size: clamp(28px, 4vw, 52px);">Privacy policy</h1>
+      <p style="color: var(--text-dim); font-size: 15px; margin-top: 12px;">Last updated: April 2026</p>
+    </div>
+  </section>
+
+  <div class="prose">
+
+    <h2>The short version</h2>
+    <p>
+      Keel is local-first software. In its default configuration, your data
+      never leaves your machine. We collect no analytics, no telemetry, and
+      no usage data. If you enable sync, your data is encrypted before it
+      reaches our servers and we cannot read it.
+    </p>
+
+    <hr class="divider">
+
+    <h2>What we collect</h2>
+
+    <h2 style="font-size: 15px; color: var(--amber); font-family: var(--mono);">Local-only usage</h2>
+    <p>Nothing. No data collection of any kind occurs.</p>
+
+    <h2 style="font-size: 15px; color: var(--amber); font-family: var(--mono);">Sync account</h2>
+    <ul>
+      <li>Your email address (used as your account identifier and Argon2id salt)</li>
+      <li>Your password hash (bcrypt, we never store your plaintext password)</li>
+      <li>Encrypted project data (ciphertext — we cannot read the contents)</li>
+      <li>Timestamps of sync operations (not content)</li>
+      <li>Stripe customer ID if you subscribe (we do not store card details)</li>
+    </ul>
+
+    <h2 style="font-size: 15px; color: var(--amber); font-family: var(--mono);">Web app</h2>
+    <p>
+      The Keel web app uses the same encrypted sync backend. No additional
+      data is collected beyond what is listed above. There are no cookies,
+      tracking pixels, or third-party analytics scripts on any Keel property.
+    </p>
+
+    <hr class="divider">
+
+    <h2>What we do not collect</h2>
+    <ul>
+      <li>Usage analytics or behavioural data</li>
+      <li>Crash reports or error telemetry</li>
+      <li>IP addresses beyond what our hosting provider logs for security</li>
+      <li>Device identifiers</li>
+      <li>The contents of your journal, RAID log, decisions, or any programme data</li>
+    </ul>
+
+    <hr class="divider">
+
+    <h2>Third parties</h2>
+    <ul>
+      <li><strong>Stripe</strong> — payment processing. Governed by Stripe's privacy policy.</li>
+      <li><strong>Fly.io</strong> — hosting infrastructure. They see encrypted ciphertext only.</li>
+      <li><strong>Anthropic</strong> — only if you configure Claude API integration. Your journal and note content is sent to Anthropic for AI processing. Review Anthropic's privacy policy before enabling this feature.</li>
+    </ul>
+    <p>We do not sell data to any third party.</p>
+
+    <hr class="divider">
+
+    <h2>Data retention and deletion</h2>
+    <p>
+      You can delete your sync account at any time from Settings → Account → Delete Account.
+      Server-side ciphertext is deleted within 30 days of account deletion.
+      Local data is yours to delete by removing the Keel application database file.
+    </p>
+
+    <hr class="divider">
+
+    <h2>Contact</h2>
+    <p>
+      Privacy questions: <a href="mailto:privacy@getkeel.com" style="color: var(--amber);">privacy@getkeel.com</a>
+    </p>
+
+  </div>
+
+  <footer>
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <span class="logo-mark small">K</span>
+          <span class="footer-name">KEEL</span>
+          <p class="footer-tagline">TPM Command Centre</p>
+        </div>
+        <div class="footer-links">
+          <div class="footer-col">
+            <div class="footer-col-title">Legal</div>
+            <a href="privacy.html">Privacy policy</a>
+            <a href="terms.html">Terms of service</a>
+            <a href="security.html">Security</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2026 Keel. Built by a TPM, for TPMs.</span>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

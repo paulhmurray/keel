@@ -1,0 +1,33 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: keel_dev
+      POSTGRES_USER: keel
+      POSTGRES_PASSWORD: keel_dev_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keel -d keel_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    environment:
+      DATABASE_URL: postgres://keel:keel_dev_password@db/keel_dev?sslmode=disable
+      JWT_SECRET: dev-secret-change-in-production
+      GIN_MODE: debug
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

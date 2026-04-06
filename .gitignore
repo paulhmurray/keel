@@ -1,0 +1,31 @@
+# Flutter/Dart
+build/
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+*.iml
+*.ipr
+*.iws
+.idea/
+*.lock
+!pubspec.lock
+
+# Desktop binaries
+linux/flutter/ephemeral/
+macos/Flutter/ephemeral/
+windows/flutter/ephemeral/
+
+# Secrets
+server/.env
+server/.env.local
+server/.env.*
+!server/.env.example
+
+# Spec/feedback docs
+feedback/
+*.md
+!README.md
+
+# macOS
+.DS_Store

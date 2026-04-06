@@ -1,0 +1,41 @@
+<svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+
+  <g transform="translate(24, 24)">
+
+    <!-- Outer dashed ring -->
+    <circle cx="0" cy="0" r="20" fill="none" stroke="#253040" stroke-width="0.8" stroke-dasharray="2 4"/>
+    <!-- Inner ring -->
+    <circle cx="0" cy="0" r="13" fill="none" stroke="#1e2830" stroke-width="0.7"/>
+
+    <!-- Cross hairs -->
+    <line x1="0" y1="-22" x2="0" y2="22" fill="none" stroke="#1e2830" stroke-width="0.5"/>
+    <line x1="-22" y1="0" x2="22" y2="0" fill="none" stroke="#1e2830" stroke-width="0.5"/>
+
+    <!-- Inner ring ticks -->
+    <circle cx="0" cy="-13" r="1.2" fill="#253040"/>
+    <circle cx="0" cy="13" r="1.2" fill="#253040"/>
+    <circle cx="-13" cy="0" r="1.2" fill="#253040"/>
+    <circle cx="13" cy="0" r="1.2" fill="#253040"/>
+
+    <!-- North needle (amber) -->
+    <path d="M 0 -11 L 3.5 -2 L 0 0 L -3.5 -2 Z" fill="#e8a430"/>
+    <!-- South needle (dim) -->
+    <path d="M 0 0 L 3.5 2 L 0 11 L -3.5 2 Z" fill="#2a3a48"/>
+
+    <!-- Needle spine -->
+    <line x1="0" y1="-11" x2="0" y2="11" stroke="#e8a430" stroke-width="0.8"/>
+
+    <!-- North cap -->
+    <path d="M -3 -17 L 0 -21 L 3 -17" fill="none" stroke="#e8a430" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Pivot -->
+    <circle cx="0" cy="0" r="2.5" fill="none" stroke="#e8a430" stroke-width="1"/>
+    <circle cx="0" cy="0" r="1" fill="#e8a430"/>
+
+    <!-- Phosphor bearing dot -->
+    <circle cx="11" cy="-7" r="1.5" fill="#2dd4a0" opacity="0.8"/>
+    <path d="M 0 0 L 11 -7" fill="none" stroke="#2dd4a0" stroke-width="0.6" stroke-dasharray="1.5 2" opacity="0.5"/>
+
+  </g>
+
+</svg>

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Security — Keel</title>
+  <meta name="description" content="Keel security model: local-first architecture, end-to-end encrypted sync, no telemetry.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .page-hero { padding: 80px 0 48px; border-bottom: 1px solid var(--border); }
+    .page-hero .badge { margin-bottom: 20px; display: block; }
+    .prose { max-width: 720px; margin: 0 auto; padding: 60px 24px 80px; }
+    .prose h2 { font-size: 22px; margin-top: 48px; margin-bottom: 16px; }
+    .prose h3 { font-size: 16px; font-family: var(--mono); color: var(--amber); margin-top: 32px; margin-bottom: 10px; letter-spacing: 0.05em; }
+    .prose p { color: var(--text-dim); margin-bottom: 16px; font-size: 15px; line-height: 1.75; }
+    .prose ul { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    .prose ul li { display: flex; gap: 10px; font-size: 15px; color: var(--text-dim); line-height: 1.6; }
+    .prose ul li::before { content: '—'; color: var(--amber); flex-shrink: 0; }
+    .spec-table { width: 100%; border-collapse: collapse; margin: 24px 0; font-size: 14px; font-family: var(--mono); }
+    .spec-table th { text-align: left; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); padding: 8px 12px; border-bottom: 1px solid var(--border); }
+    .spec-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text-dim); vertical-align: top; }
+    .spec-table td:first-child { color: var(--text); white-space: nowrap; }
+    .spec-table td .amber { font-weight: 600; }
+    .divider { border: none; border-top: 1px solid var(--border); margin: 48px 0; }
+    .whitepaper-note { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; margin: 32px 0; }
+    .whitepaper-note p { margin: 0; }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="nav-inner">
+      <a href="/" class="logo">
+        <span class="logo-mark">K</span>
+        <span class="logo-text">KEEL</span>
+      </a>
+      <div class="nav-links">
+        <a href="/#features">Features</a>
+        <a href="/#security">Security</a>
+        <a href="/#pricing">Pricing</a>
+        <a href="docs.html">Docs</a>
+      </div>
+      <a href="https://app.getkeel.com" class="btn btn-outline nav-cta">Open web app</a>
+    </div>
+  </nav>
+
+  <section class="page-hero">
+    <div class="container">
+      <span class="badge">Security</span>
+      <h1 style="font-size: clamp(28px, 4vw, 52px);">Security whitepaper</h1>
+      <p style="color: var(--text-dim); font-size: 17px; max-width: 540px; margin-top: 16px;">
+        How Keel stores, transmits, and protects your programme data.
+        Written for IT security teams, procurement, and enterprise risk functions.
+      </p>
+    </div>
+  </section>
+
+  <div class="prose" id="whitepaper">
+
+    <h2>Executive summary</h2>
+    <p>
+      Keel is a TPM command centre that runs natively on the user's machine.
+      In its default configuration, Keel stores all data locally in a SQLite
+      database file and makes no network connections. There is nothing to approve
+      at the firewall for a local-only installation.
+    </p>
+    <p>
+      When the optional sync feature is enabled by the user, all data is encrypted
+      on the client device before transmission using AES-256-GCM with a key derived
+      from the user's password. The Keel sync server receives and stores only
+      ciphertext. Keel staff cannot read user data.
+    </p>
+
+    <hr class="divider">
+
+    <h2>Data storage</h2>
+
+    <h3>Local-only mode (default)</h3>
+    <p>
+      By default, Keel operates without any network connectivity.
+      All programme data — RAID log, decisions, actions, journal entries,
+      people, documents — is stored in a single SQLite database file on the
+      user's local filesystem.
+    </p>
+    <ul>
+      <li>Database location (macOS): <code style="font-family: var(--mono); font-size: 13px; color: var(--amber);">~/Library/Application Support/keel/keel.sqlite</code></li>
+      <li>Database location (Linux): <code style="font-family: var(--mono); font-size: 13px; color: var(--amber);">~/.local/share/keel/keel.sqlite</code></li>
+      <li>Database location (Windows): <code style="font-family: var(--mono); font-size: 13px; color: var(--amber);">%APPDATA%\keel\keel.sqlite</code></li>
+    </ul>
+    <p>
+      The database file is not encrypted at rest in local-only mode. Users who
+      require encryption at rest should use their platform's full-disk encryption
+      (FileVault, BitLocker, LUKS) which is the appropriate layer for this control.
+    </p>
+
+    <h3>Sync mode (optional, user-initiated)</h3>
+    <p>
+      When the user enables sync, Keel performs end-to-end encryption of all
+      project data on the client device before any transmission occurs.
+    </p>
+    <p>The encryption process:</p>
+    <ul>
+      <li>A 256-bit encryption key is derived from the user's password using Argon2id (m=65536, t=3, p=4)</li>
+      <li>The user's email address is used as an additional salt to prevent cross-account attacks</li>
+      <li>Project data is serialised to JSON and encrypted using AES-256-GCM</li>
+      <li>A unique 12-byte random nonce is generated for each encryption operation</li>
+      <li>Only the resulting ciphertext (nonce + tag + encrypted bytes) is transmitted to the server</li>
+    </ul>
+    <p>
+      The Keel sync server stores the ciphertext, timestamps, and user account metadata.
+      It does not store or have access to encryption keys, plaintext data, or programme
+      content of any kind.
+    </p>
+
+    <table class="spec-table">
+      <tr><th>Property</th><th>Value</th></tr>
+      <tr><td>Encryption algorithm</td><td><span class="amber">AES-256-GCM</span></td></tr>
+      <tr><td>Key derivation</td><td><span class="amber">Argon2id</span> (m=65536, t=3, p=4)</td></tr>
+      <tr><td>Nonce</td><td>12 bytes, cryptographically random per operation</td></tr>
+      <tr><td>Authentication tag</td><td>128-bit GCM tag (authenticates both ciphertext and nonce)</td></tr>
+      <tr><td>Key length</td><td>256 bits</td></tr>
+      <tr><td>Transport</td><td>HTTPS / TLS 1.3</td></tr>
+      <tr><td>Server-side storage</td><td>Ciphertext only — no plaintext ever stored server-side</td></tr>
+    </table>
+
+    <hr class="divider">
+
+    <h2>Network communications</h2>
+
+    <h3>Local-only mode</h3>
+    <p>No network connections are made. Keel does not phone home, check for updates
+    automatically, or transmit any data.</p>
+
+    <h3>Sync mode</h3>
+    <p>The following connections are made when sync is enabled:</p>
+    <ul>
+      <li><strong>sync.keelapp.io</strong> — encrypted project data push/pull, authentication tokens</li>
+      <li>All connections use HTTPS with TLS 1.3 minimum</li>
+      <li>JWT bearer tokens used for authentication (24-hour access tokens, 30-day refresh tokens)</li>
+    </ul>
+
+    <h3>AI features (optional)</h3>
+    <p>
+      If the user configures Claude API integration, note content is transmitted to
+      Anthropic's API for processing. This is governed by Anthropic's privacy policy
+      and data processing agreement. Keel recommends reviewing Anthropic's enterprise
+      data handling policies before enabling this feature in regulated environments.
+    </p>
+    <p>
+      Keel also supports fully offline AI via Ollama, which runs a local language model
+      with no network connectivity. This is the recommended configuration for environments
+      where data must not leave the device.
+    </p>
+
+    <hr class="divider">
+
+    <h2>Authentication and access control</h2>
+
+    <h3>Local-only mode</h3>
+    <p>No authentication is required. Access is controlled by the operating system's
+    filesystem permissions on the database file.</p>
+
+    <h3>Sync mode</h3>
+    <ul>
+      <li>Passwords hashed using bcrypt (cost factor 12)</li>
+      <li>JWT access tokens expire after 24 hours</li>
+      <li>JWT refresh tokens expire after 30 days</li>
+      <li>No password reset via email by default — users retain sole control of their encryption key</li>
+      <li>Multi-device access requires the same password on each device (key derivation is deterministic)</li>
+    </ul>
+
+    <hr class="divider">
+
+    <h2>Telemetry and analytics</h2>
+    <p>
+      Keel collects no telemetry, usage analytics, crash reports, or diagnostic data.
+      There is no analytics SDK, no tracking pixel, and no background reporting.
+    </p>
+    <p>
+      The only network traffic from a Keel installation (beyond explicit sync or AI
+      calls initiated by the user) is a version check on application startup, which
+      transmits only the current application version number. This check can be disabled
+      in Settings.
+    </p>
+
+    <hr class="divider">
+
+    <h2>Data portability and deletion</h2>
+
+    <h3>Export</h3>
+    <p>
+      All data can be exported at any time as a complete JSON archive
+      (Settings → Data → Export All Data). Individual entities (RAID, decisions,
+      actions, people) can be exported as CSV files suitable for import into
+      Excel or Google Sheets.
+    </p>
+
+    <h3>Deletion — local</h3>
+    <p>Deleting the application database file removes all local data completely.</p>
+
+    <h3>Deletion — sync server</h3>
+    <p>
+      Sync account deletion removes all server-side ciphertext within 30 days.
+      Because the server stores only encrypted data, there is no plaintext to recover
+      after deletion regardless.
+    </p>
+
+    <hr class="divider">
+
+    <h2>Infrastructure (sync server)</h2>
+
+    <table class="spec-table">
+      <tr><th>Component</th><th>Detail</th></tr>
+      <tr><td>Backend</td><td>Go (Gin framework)</td></tr>
+      <tr><td>Database</td><td>PostgreSQL — stores ciphertext only</td></tr>
+      <tr><td>Hosting</td><td>Fly.io (EU region available on request)</td></tr>
+      <tr><td>TLS</td><td>1.3 minimum, managed by Fly.io edge</td></tr>
+      <tr><td>Backups</td><td>Daily automated PostgreSQL backups, 7-day retention</td></tr>
+      <tr><td>Access logging</td><td>Auth events and API call timestamps only — no content logged</td></tr>
+    </table>
+
+    <hr class="divider">
+
+    <h2>Compliance and certifications</h2>
+    <p>
+      Keel is an independent product currently without formal certifications (ISO 27001,
+      SOC 2, etc.). For enterprise deployments requiring certifications, the recommended
+      configuration is local-only mode, which places the application entirely within your
+      existing security perimeter and compliance controls.
+    </p>
+    <p>
+      The open data format (SQLite + JSON export) means programme data can be migrated
+      to any compliant storage system without vendor lock-in.
+    </p>
+
+    <hr class="divider">
+
+    <h2>Contact</h2>
+    <p>
+      Security questions, vulnerability disclosures, and enterprise security assessments:
+      <a href="mailto:security@getkeel.com" style="color: var(--amber);">security@getkeel.com</a>
+    </p>
+
+    <div class="whitepaper-note">
+      <p style="color: var(--text-muted); font-size: 13px; font-family: var(--mono);">
+        Document version 1.0 · April 2026 · This document describes the security model
+        of Keel v1.0. It is updated with each major release.
+      </p>
+    </div>
+
+  </div>
+
+  <footer>
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <span class="logo-mark small">K</span>
+          <span class="footer-name">KEEL</span>
+          <p class="footer-tagline">TPM Command Centre</p>
+        </div>
+        <div class="footer-links">
+          <div class="footer-col">
+            <div class="footer-col-title">Product</div>
+            <a href="/#features">Features</a>
+            <a href="/#pricing">Pricing</a>
+            <a href="/#download">Download</a>
+          </div>
+          <div class="footer-col">
+            <div class="footer-col-title">Legal</div>
+            <a href="privacy.html">Privacy policy</a>
+            <a href="terms.html">Terms of service</a>
+            <a href="security.html">Security</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2026 Keel. Built by a TPM, for TPMs.</span>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

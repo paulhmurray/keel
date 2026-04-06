@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Keel — TPM Command Centre</title>
+  <meta name="description" content="Keel is a TPM command centre that runs on your machine. Capture everything, stay on top of your programme, take your knowledge between contracts.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav>
+    <div class="nav-inner">
+      <a href="/" class="logo">
+        <span class="logo-mark">K</span>
+        <span class="logo-text">KEEL</span>
+      </a>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#security">Security</a>
+        <a href="#pricing">Pricing</a>
+        <a href="docs.html">Docs</a>
+      </div>
+      <a href="https://app.getkeel.com" class="btn btn-outline nav-cta">Open web app</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-eyebrow">
+        <span class="badge">For senior TPMs</span>
+      </div>
+      <h1>Your programme,<br>your data,<br>your terms.</h1>
+      <p class="hero-sub">
+        Keel is a TPM command centre that runs on your machine.
+        RAID log, decisions, actions, journal, people — all in one place.
+        No subscription required to start. Your data never touches a server
+        unless you choose sync.
+      </p>
+      <div class="hero-actions">
+        <a href="#download" class="btn btn-primary">
+          Download for macOS
+        </a>
+        <a href="#download" class="btn btn-ghost">
+          Linux &amp; Windows
+        </a>
+        <a href="https://app.getkeel.com" class="btn btn-ghost">
+          Use web app &rarr;
+        </a>
+      </div>
+      <p class="hero-note">Free forever for local use. No account needed.</p>
+    </div>
+  </section>
+
+  <!-- Value props -->
+  <section class="props" id="features">
+    <div class="container">
+      <div class="props-grid">
+
+        <div class="prop-card">
+          <div class="prop-icon">&#9632;</div>
+          <h3>Capture everything</h3>
+          <p>
+            Journal, photo, voice note, documents. Everything that happens
+            in a meeting ends up in Keel. The journal parses your prose and
+            surfaces risks, decisions, and actions automatically.
+          </p>
+        </div>
+
+        <div class="prop-card">
+          <div class="prop-icon">&#9650;</div>
+          <h3>Stay on top</h3>
+          <p>
+            RAID log, decisions, actions, dependencies — always current.
+            Every item traces back to the journal entry that created it.
+            One-click export for governance submissions.
+          </p>
+        </div>
+
+        <div class="prop-card">
+          <div class="prop-icon">&#9679;</div>
+          <h3>Take it with you</h3>
+          <p>
+            Your data is in a local SQLite file you own. When you move
+            between contracts, your knowledge travels with you. Export
+            a full JSON backup in seconds.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Feature detail -->
+  <section class="feature-detail">
+    <div class="container">
+
+      <div class="feature-row">
+        <div class="feature-text">
+          <div class="feature-label">RAID &amp; decisions</div>
+          <h2>Every risk logged.<br>Every decision traceable.</h2>
+          <p>
+            Full RAID log with likelihood, impact, mitigation, and owner.
+            Decisions with rationale and decision-maker. Dependencies with
+            due dates. All linked to the journal entry that surfaced them.
+          </p>
+          <ul class="feature-list">
+            <li>Risks, assumptions, issues, dependencies</li>
+            <li>Decisions with outcome and rationale</li>
+            <li>Actions with owner, due date, and priority</li>
+            <li>Export as PDF, HTML, or CSV for governance</li>
+          </ul>
+        </div>
+        <div class="feature-screen">
+          <div class="screen-mock">
+            <div class="screen-bar">
+              <span class="screen-dot"></span>
+              <span class="screen-dot"></span>
+              <span class="screen-dot"></span>
+              <span class="screen-title">RAID LOG</span>
+            </div>
+            <div class="screen-row header">
+              <span>REF</span><span>DESCRIPTION</span><span>LIKELIHOOD</span><span>IMPACT</span><span>STATUS</span>
+            </div>
+            <div class="screen-row">
+              <span class="amber">R1</span>
+              <span>Vendor API delivery risk</span>
+              <span class="red">HIGH</span>
+              <span class="red">HIGH</span>
+              <span class="chip chip-open">open</span>
+            </div>
+            <div class="screen-row">
+              <span class="amber">R2</span>
+              <span>Resource contention — testing</span>
+              <span class="amber">medium</span>
+              <span class="amber">high</span>
+              <span class="chip chip-mitigated">mitigated</span>
+            </div>
+            <div class="screen-row">
+              <span class="amber">A1</span>
+              <span>Legacy auth middleware compliance</span>
+              <span>—</span>
+              <span>—</span>
+              <span class="chip chip-open">open</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="feature-row reverse">
+        <div class="feature-text">
+          <div class="feature-label">Journal</div>
+          <h2>Write prose.<br>Keel does the filing.</h2>
+          <p>
+            Open the journal with <kbd>Cmd+J</kbd>. Write your meeting notes
+            in plain prose. Save with <kbd>Cmd+Enter</kbd>. Keel's parser
+            surfaces the decisions, actions, and risks it found and asks you
+            to confirm them one by one.
+          </p>
+          <ul class="feature-list">
+            <li>Prose-first capture, not form-filling</li>
+            <li>Slash commands: /risk /decision /action</li>
+            <li>Delta review panel — confirm, edit, or ignore</li>
+            <li>Every item links back to its source entry</li>
+          </ul>
+        </div>
+        <div class="feature-screen">
+          <div class="screen-mock">
+            <div class="screen-bar">
+              <span class="screen-dot"></span>
+              <span class="screen-dot"></span>
+              <span class="screen-dot"></span>
+              <span class="screen-title">JOURNAL — 5 Apr 2026</span>
+            </div>
+            <div class="screen-journal">
+              <p class="journal-meta">Steering committee &middot; Sarah, Ricki, John</p>
+              <p>Sarah confirmed Azure selected over AWS. Decision made
+              at director level, not reversible. Ricki to chase the
+              integration team for the API spec by <span class="amber">Friday</span>.</p>
+              <p>Concerned about <span class="amber">vendor delivery</span> — they've
+              slipped twice. John raised this as a programme risk.</p>
+              <p>Go-live pushed to <span class="amber">September 2026</span>
+              from August — confirmed by steering.</p>
+            </div>
+            <div class="delta-pill">3 changes detected &rarr;</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- AI section -->
+  <section class="ai-section">
+    <div class="container">
+      <div class="ai-inner">
+        <div class="feature-label">AI — on your terms</div>
+        <h2>Claude API or fully offline.<br>You choose.</h2>
+        <div class="ai-options">
+          <div class="ai-option">
+            <div class="ai-option-title">Claude API</div>
+            <p>Best quality. Draft status reports, parse complex notes,
+            surface insights. Your content goes to Anthropic — read their
+            privacy policy before using.</p>
+          </div>
+          <div class="ai-option">
+            <div class="ai-option-title">Local / Ollama</div>
+            <p>Fully offline. No data leaves your machine. Keel's Ollama wizard
+            installs and configures a local model in minutes. Runs on the bus,
+            on a client site, on a managed machine with no internet access.</p>
+          </div>
+          <div class="ai-option">
+            <div class="ai-option-title">No AI</div>
+            <p>Keel works without any AI integration. Every feature except
+            AI drafting functions completely offline. No keys, no accounts,
+            no dependencies.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Security section -->
+  <section class="security" id="security">
+    <div class="container">
+      <div class="section-label">For the IT approver</div>
+      <h2>Built for managed environments.</h2>
+      <p class="section-sub">
+        Keel is designed for TPMs who work inside enterprise security perimeters.
+        Here is what your IT team needs to know.
+      </p>
+      <div class="security-grid">
+
+        <div class="security-card">
+          <div class="security-icon">&#9632;</div>
+          <h4>Local-first architecture</h4>
+          <p>By default, Keel stores all data in a SQLite file on the user's
+          own machine. No data is transmitted to any server unless the user
+          explicitly enables sync. There is nothing to block at the firewall
+          for a local-only installation.</p>
+        </div>
+
+        <div class="security-card">
+          <div class="security-icon">&#9632;</div>
+          <h4>End-to-end encrypted sync</h4>
+          <p>When sync is enabled, all data is encrypted on the client before
+          transmission using AES-256-GCM with a key derived from the user's
+          password via Argon2id. The Keel sync server stores only ciphertext.
+          We cannot read your data.</p>
+        </div>
+
+        <div class="security-card">
+          <div class="security-icon">&#9632;</div>
+          <h4>No telemetry</h4>
+          <p>Keel does not collect usage data, crash reports, or any analytics.
+          There is no tracking code, no embedded analytics SDK, and no
+          call-home behaviour. What you type stays on your machine.</p>
+        </div>
+
+        <div class="security-card">
+          <div class="security-icon">&#9632;</div>
+          <h4>Open data format</h4>
+          <p>All data is exportable as standard JSON and CSV at any time.
+          You are not locked in to Keel. If you stop using it, you leave
+          with your complete programme history in formats that open in Excel
+          and any text editor.</p>
+        </div>
+
+        <div class="security-card">
+          <div class="security-icon">&#9632;</div>
+          <h4>Web app — no local install</h4>
+          <p>The Keel web app requires no software installation and runs in
+          any modern browser. All computation happens in the browser tab.
+          Suitable for managed machines where installing software requires
+          IT approval.</p>
+        </div>
+
+        <div class="security-card">
+          <div class="security-icon">&#9632;</div>
+          <h4>Audit trail</h4>
+          <p>Every programme item records its source (journal entry, manual,
+          inbox, or import) and timestamps for creation and modification.
+          The journal creates a durable written record of programme decisions
+          suitable for audit purposes.</p>
+        </div>
+
+      </div>
+      <div class="security-cta">
+        <a href="security.html" class="btn btn-outline">Read security whitepaper</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section class="pricing" id="pricing">
+    <div class="container">
+      <div class="section-label">Pricing</div>
+      <h2>Start free. Upgrade when you need sync.</h2>
+      <div class="pricing-grid">
+
+        <div class="pricing-card">
+          <div class="pricing-tier">Free</div>
+          <div class="pricing-price">$0</div>
+          <div class="pricing-cadence">forever</div>
+          <ul class="pricing-features">
+            <li>Unlimited projects</li>
+            <li>Full programme workspace</li>
+            <li>Journal with AI parsing</li>
+            <li>RAID, decisions, actions</li>
+            <li>PDF, HTML, CSV export</li>
+            <li>JSON import/export</li>
+            <li>Local AI (Ollama)</li>
+            <li class="muted">No sync</li>
+            <li class="muted">No mobile app</li>
+            <li class="muted">No web app</li>
+          </ul>
+          <a href="#download" class="btn btn-outline btn-full">Download</a>
+        </div>
+
+        <div class="pricing-card featured">
+          <div class="pricing-badge">Most popular</div>
+          <div class="pricing-tier">Solo</div>
+          <div class="pricing-price">$8</div>
+          <div class="pricing-cadence">per month</div>
+          <ul class="pricing-features">
+            <li>Everything in Free</li>
+            <li>Sync across devices</li>
+            <li>Mobile app (iOS &amp; Android)</li>
+            <li>Web app access</li>
+            <li>30-day version history</li>
+            <li>Priority support</li>
+          </ul>
+          <a href="https://app.getkeel.com/signup" class="btn btn-primary btn-full">Start free trial</a>
+          <p class="pricing-note">14-day trial, no card required</p>
+        </div>
+
+        <div class="pricing-card">
+          <div class="pricing-tier">Team</div>
+          <div class="pricing-price">$20</div>
+          <div class="pricing-cadence">per user / month</div>
+          <ul class="pricing-features">
+            <li>Everything in Solo</li>
+            <li>Shared projects</li>
+            <li>Role-based access</li>
+            <li>PMO dashboard</li>
+            <li>Team inbox</li>
+            <li>Priority support</li>
+          </ul>
+          <a href="mailto:hello@getkeel.com" class="btn btn-outline btn-full">Contact us</a>
+          <p class="pricing-note">Coming Q3 2026</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Download -->
+  <section class="download" id="download">
+    <div class="container">
+      <h2>Download Keel</h2>
+      <p class="section-sub">Native apps for macOS, Linux, and Windows. All free.</p>
+      <div class="download-grid">
+        <a href="#" class="download-card">
+          <div class="download-icon">&#63743;</div>
+          <div class="download-info">
+            <div class="download-platform">macOS</div>
+            <div class="download-detail">Apple Silicon &amp; Intel · v1.0.0</div>
+          </div>
+          <div class="download-arrow">&darr;</div>
+        </a>
+        <a href="#" class="download-card">
+          <div class="download-icon">&#9651;</div>
+          <div class="download-info">
+            <div class="download-platform">Linux</div>
+            <div class="download-detail">x86_64 · AppImage · v1.0.0</div>
+          </div>
+          <div class="download-arrow">&darr;</div>
+        </a>
+        <a href="#" class="download-card">
+          <div class="download-icon">&#9633;</div>
+          <div class="download-info">
+            <div class="download-platform">Windows</div>
+            <div class="download-detail">x64 · Installer · v1.0.0</div>
+          </div>
+          <div class="download-arrow">&darr;</div>
+        </a>
+      </div>
+      <p class="download-note">
+        Or <a href="https://app.getkeel.com">use the web app</a> — no install required.
+      </p>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <span class="logo-mark small">K</span>
+          <span class="footer-name">KEEL</span>
+          <p class="footer-tagline">TPM Command Centre</p>
+        </div>
+        <div class="footer-links">
+          <div class="footer-col">
+            <div class="footer-col-title">Product</div>
+            <a href="#features">Features</a>
+            <a href="#pricing">Pricing</a>
+            <a href="#download">Download</a>
+            <a href="https://app.getkeel.com">Web app</a>
+          </div>
+          <div class="footer-col">
+            <div class="footer-col-title">Resources</div>
+            <a href="docs.html">Docs</a>
+            <a href="security.html">Security</a>
+            <a href="security.html#whitepaper">Whitepaper</a>
+            <a href="changelog.html">Changelog</a>
+          </div>
+          <div class="footer-col">
+            <div class="footer-col-title">Company</div>
+            <a href="privacy.html">Privacy policy</a>
+            <a href="terms.html">Terms of service</a>
+            <a href="mailto:hello@getkeel.com">Contact</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2026 Keel. Built by a TPM, for TPMs.</span>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

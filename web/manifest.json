@@ -1,0 +1,11 @@
+{
+  "name": "Keel",
+  "short_name": "Keel",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0D0D0D",
+  "theme_color": "#0D0D0D",
+  "description": "TPM Command Centre",
+  "orientation": "landscape",
+  "icons": []
+}
