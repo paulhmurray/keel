@@ -19,6 +19,7 @@ class OllamaClient implements LLMClient {
   }) async {
     final uri = Uri.parse('$baseUrl/api/chat');
     final client = HttpClient();
+    client.connectionTimeout = const Duration(seconds: 10);
     try {
       final request = await client.postUrl(uri);
       request.headers.set('content-type', 'application/json');
@@ -36,8 +37,16 @@ class OllamaClient implements LLMClient {
       request.headers.contentLength = bodyBytes.length;
       request.add(bodyBytes);
 
-      final response = await request.close();
-      final responseBody = await response.transform(utf8.decoder).join();
+      final response = await request.close()
+          .timeout(const Duration(seconds: 10), onTimeout: () {
+        throw Exception('Ollama connection timed out. Is Ollama running?');
+      });
+
+      final responseBody = await response.transform(utf8.decoder).join()
+          .timeout(const Duration(seconds: 180), onTimeout: () {
+        throw Exception(
+            'Ollama took too long to respond. The model may still be loading — try again in a moment.');
+      });
 
       if (response.statusCode != 200) {
         throw Exception(

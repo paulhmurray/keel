@@ -30,14 +30,6 @@ const _kTypeW = 90.0;
 const _kDueW = 90.0;
 const _kPriorityW = 90.0;
 
-// Total scrollable width = padding(16+16) + sum of columns
-const _kRisksRowW =
-    32 + _kRefW + _kDescW + _kLikeW + _kImpW + _kMitigationW + _kOwnerW + _kStatusW + _kSourceW + _kMenuW;
-const _kAssumptionsRowW = 32 + _kRefW + _kDescW + _kOwnerW + _kStatusW + _kSourceW + _kMenuW;
-const _kIssuesRowW =
-    32 + _kRefW + _kDescW + _kOwnerW + _kDueW + _kPriorityW + _kStatusW + _kSourceW + _kMenuW;
-const _kDepsRowW =
-    32 + _kRefW + _kDescW + _kTypeW + _kOwnerW + _kDueW + _kStatusW + _kSourceW + _kMenuW;
 
 // ---------------------------------------------------------------------------
 // Shared style helpers
@@ -133,7 +125,7 @@ class _OwnerChip extends StatelessWidget {
 // Shared table header row — all fixed widths, no Expanded
 // ---------------------------------------------------------------------------
 
-Widget _buildHeaderRow(List<({double width, String label})> cols) {
+Widget _buildHeaderRow(List<({double? width, String label})> cols) {
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
     decoration: const BoxDecoration(
@@ -141,9 +133,12 @@ Widget _buildHeaderRow(List<({double width, String label})> cols) {
       border: Border(bottom: BorderSide(color: KColors.border)),
     ),
     child: Row(
-      children: cols
-          .map((c) => SizedBox(width: c.width, child: Text(c.label, style: _kHeaderCellStyle)))
-          .toList(),
+      children: cols.map((c) {
+        final text = Text(c.label, style: _kHeaderCellStyle);
+        return c.width == null
+            ? Expanded(child: text)
+            : SizedBox(width: c.width, child: text);
+      }).toList(),
     ),
   );
 }
@@ -336,25 +331,21 @@ class _RisksTab extends StatelessWidget {
           ),
         ),
         Expanded(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: SizedBox(
-              width: _kRisksRowW,
-              child: Column(
-                children: [
-                  _buildHeaderRow([
-                    (width: _kRefW, label: 'REF'),
-                    (width: _kDescW, label: 'RISK'),
-                    (width: _kLikeW, label: 'LIKE'),
-                    (width: _kImpW, label: 'IMP'),
-                    (width: _kMitigationW, label: 'MITIGATION'),
-                    (width: _kOwnerW, label: 'OWNER'),
-                    (width: _kStatusW, label: 'STATUS'),
-                    (width: _kSourceW, label: 'SOURCE'),
-                    (width: _kMenuW, label: ''),
-                  ]),
-                  Expanded(
-                    child: StreamBuilder<List<Risk>>(
+          child: Column(
+            children: [
+              _buildHeaderRow([
+                (width: _kRefW, label: 'REF'),
+                (width: null, label: 'RISK'),
+                (width: _kLikeW, label: 'LIKE'),
+                (width: _kImpW, label: 'IMP'),
+                (width: _kMitigationW, label: 'MITIGATION'),
+                (width: _kOwnerW, label: 'OWNER'),
+                (width: _kStatusW, label: 'STATUS'),
+                (width: _kSourceW, label: 'SOURCE'),
+                (width: _kMenuW, label: ''),
+              ]),
+              Expanded(
+                child: StreamBuilder<List<Risk>>(
                       stream: db.raidDao.watchRisksForProject(projectId),
                       builder: (context, snap) {
                         if (!snap.hasData) {
@@ -381,8 +372,6 @@ class _RisksTab extends StatelessWidget {
                   ),
                 ],
               ),
-            ),
-          ),
         ),
       ],
     );
@@ -432,8 +421,7 @@ class _RiskRow extends StatelessWidget {
               ),
             ),
             // Description
-            SizedBox(
-              width: _kDescW,
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -523,22 +511,18 @@ class _AssumptionsTab extends StatelessWidget {
           ),
         ),
         Expanded(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: SizedBox(
-              width: _kAssumptionsRowW,
-              child: Column(
-                children: [
-                  _buildHeaderRow([
-                    (width: _kRefW, label: 'REF'),
-                    (width: _kDescW, label: 'DESCRIPTION'),
-                    (width: _kOwnerW, label: 'OWNER'),
-                    (width: _kStatusW, label: 'STATUS'),
-                    (width: _kSourceW, label: 'SOURCE'),
-                    (width: _kMenuW, label: ''),
-                  ]),
-                  Expanded(
-                    child: StreamBuilder<List<Assumption>>(
+          child: Column(
+            children: [
+              _buildHeaderRow([
+                (width: _kRefW, label: 'REF'),
+                (width: null, label: 'DESCRIPTION'),
+                (width: _kOwnerW, label: 'OWNER'),
+                (width: _kStatusW, label: 'STATUS'),
+                (width: _kSourceW, label: 'SOURCE'),
+                (width: _kMenuW, label: ''),
+              ]),
+              Expanded(
+                child: StreamBuilder<List<Assumption>>(
                       stream: db.raidDao.watchAssumptionsForProject(projectId),
                       builder: (context, snap) {
                         if (!snap.hasData) {
@@ -561,8 +545,6 @@ class _AssumptionsTab extends StatelessWidget {
                   ),
                 ],
               ),
-            ),
-          ),
         ),
       ],
     );
@@ -607,8 +589,7 @@ class _AssumptionRow extends StatelessWidget {
                 ],
               ),
             ),
-            SizedBox(
-              width: _kDescW,
+            Expanded(
               child: Text(assumption.description, style: _kTitleStyle, maxLines: 3,
                   overflow: TextOverflow.ellipsis),
             ),
@@ -674,24 +655,20 @@ class _IssuesTab extends StatelessWidget {
           ),
         ),
         Expanded(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: SizedBox(
-              width: _kIssuesRowW,
-              child: Column(
-                children: [
-                  _buildHeaderRow([
-                    (width: _kRefW, label: 'REF'),
-                    (width: _kDescW, label: 'DESCRIPTION'),
-                    (width: _kOwnerW, label: 'OWNER'),
-                    (width: _kDueW, label: 'DUE'),
-                    (width: _kPriorityW, label: 'PRIORITY'),
-                    (width: _kStatusW, label: 'STATUS'),
-                    (width: _kSourceW, label: 'SOURCE'),
-                    (width: _kMenuW, label: ''),
-                  ]),
-                  Expanded(
-                    child: StreamBuilder<List<Issue>>(
+          child: Column(
+            children: [
+              _buildHeaderRow([
+                (width: _kRefW, label: 'REF'),
+                (width: null, label: 'DESCRIPTION'),
+                (width: _kOwnerW, label: 'OWNER'),
+                (width: _kDueW, label: 'DUE'),
+                (width: _kPriorityW, label: 'PRIORITY'),
+                (width: _kStatusW, label: 'STATUS'),
+                (width: _kSourceW, label: 'SOURCE'),
+                (width: _kMenuW, label: ''),
+              ]),
+              Expanded(
+                child: StreamBuilder<List<Issue>>(
                       stream: db.raidDao.watchIssuesForProject(projectId),
                       builder: (context, snap) {
                         if (!snap.hasData) {
@@ -714,8 +691,6 @@ class _IssuesTab extends StatelessWidget {
                   ),
                 ],
               ),
-            ),
-          ),
         ),
       ],
     );
@@ -771,8 +746,7 @@ class _IssueRow extends StatelessWidget {
                 ],
               ),
             ),
-            SizedBox(
-              width: _kDescW,
+            Expanded(
               child: Text(issue.description, style: _kTitleStyle, maxLines: 3,
                   overflow: TextOverflow.ellipsis),
             ),
@@ -846,24 +820,20 @@ class _DependenciesTab extends StatelessWidget {
           ),
         ),
         Expanded(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: SizedBox(
-              width: _kDepsRowW,
-              child: Column(
-                children: [
-                  _buildHeaderRow([
-                    (width: _kRefW, label: 'REF'),
-                    (width: _kDescW, label: 'DESCRIPTION'),
-                    (width: _kTypeW, label: 'TYPE'),
-                    (width: _kOwnerW, label: 'OWNER'),
-                    (width: _kDueW, label: 'DUE'),
-                    (width: _kStatusW, label: 'STATUS'),
-                    (width: _kSourceW, label: 'SOURCE'),
-                    (width: _kMenuW, label: ''),
-                  ]),
-                  Expanded(
-                    child: StreamBuilder<List<ProgramDependency>>(
+          child: Column(
+            children: [
+              _buildHeaderRow([
+                (width: _kRefW, label: 'REF'),
+                (width: null, label: 'DESCRIPTION'),
+                (width: _kTypeW, label: 'TYPE'),
+                (width: _kOwnerW, label: 'OWNER'),
+                (width: _kDueW, label: 'DUE'),
+                (width: _kStatusW, label: 'STATUS'),
+                (width: _kSourceW, label: 'SOURCE'),
+                (width: _kMenuW, label: ''),
+              ]),
+              Expanded(
+                child: StreamBuilder<List<ProgramDependency>>(
                       stream: db.raidDao.watchDependenciesForProject(projectId),
                       builder: (context, snap) {
                         if (!snap.hasData) {
@@ -886,8 +856,6 @@ class _DependenciesTab extends StatelessWidget {
                   ),
                 ],
               ),
-            ),
-          ),
         ),
       ],
     );
@@ -932,8 +900,7 @@ class _DependencyRow extends StatelessWidget {
                 ],
               ),
             ),
-            SizedBox(
-              width: _kDescW,
+            Expanded(
               child: Text(dep.description, style: _kTitleStyle, maxLines: 3,
                   overflow: TextOverflow.ellipsis),
             ),
