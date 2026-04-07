@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../core/database/database.dart';
 import '../../core/llm/context_builder.dart';
 import '../../core/llm/llm_client_factory.dart';
+import '../../core/llm/ollama_client.dart';
 import '../../providers/project_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../shared/theme/keel_colors.dart';
@@ -128,6 +129,7 @@ class _ClaudePanelState extends State<ClaudePanel> {
     if (text.isEmpty || _isLoading) return;
 
     final settings = context.read<SettingsProvider>();
+    final sp = settings.settings;
     final projectId = context.read<ProjectProvider>().currentProjectId;
     final db = context.read<AppDatabase>();
 
@@ -149,6 +151,23 @@ class _ClaudePanelState extends State<ClaudePanel> {
       final systemPrompt = projectId != null
           ? await contextBuilder.buildSystemPrompt(projectId)
           : _defaultSystemPrompt();
+
+      // For Ollama: auto-correct the model to whatever is actually installed
+      if (sp.llmProvider == LLMProvider.ollama) {
+        final installed = await OllamaClient.getAvailableModels(sp.ollamaBaseUrl);
+        if (installed.isNotEmpty) {
+          final configuredBase = sp.ollamaModel.split(':').first;
+          final match = installed.firstWhere(
+            (m) => m.split(':').first == configuredBase,
+            orElse: () => '',
+          );
+          if (match.isEmpty) {
+            // Configured model not installed — silently use the first installed one
+            final firstBase = installed.first.split(':').first;
+            await settings.save(sp.copyWith(ollamaModel: firstBase));
+          }
+        }
+      }
 
       final client = LLMClientFactory.fromSettings(settings.settings);
       final userMessage = _buildUserMessage(text, pid);
@@ -214,13 +233,14 @@ class _ClaudePanelState extends State<ClaudePanel> {
       return 'Authentication failed — check your API key in Settings.';
     if (raw.contains('429'))
       return 'Rate limit reached. Please wait a moment and try again.';
-    if (raw.contains('500') || raw.contains('529')) {
-      return 'Anthropic API is temporarily unavailable. Please try again shortly.';
-    }
-    if (raw.contains('SocketException') ||
-        raw.contains('HandshakeException')) {
+    if (raw.contains('500') || raw.contains('529'))
+      return 'API is temporarily unavailable. Please try again shortly.';
+    if (raw.contains('SocketException') || raw.contains('HandshakeException'))
       return 'Network error — check your internet connection.';
-    }
+    if (raw.contains('404') && raw.contains('not found'))
+      return 'Model not found. Go to Settings → LLM Settings and check your Ollama model name.';
+    if (raw.contains('Connection refused') || raw.contains('localhost:11434'))
+      return 'Ollama is not running. Try reopening the Local AI Setup wizard in Settings.';
     return 'Error: $raw';
   }
 
@@ -512,6 +532,8 @@ class _PanelHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final settings = context.watch<SettingsProvider>().settings;
+    final name = _providerLabel(settings).toUpperCase();
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: const BoxDecoration(
@@ -519,11 +541,10 @@ class _PanelHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.auto_awesome,
-              size: 13, color: KColors.phosphor),
+          const Icon(Icons.auto_awesome, size: 13, color: KColors.phosphor),
           const SizedBox(width: 6),
           Text(
-            '⊹ CLAUDE',
+            '⊹ $name',
             style: GoogleFonts.syne(
               color: KColors.phosphor,
               fontSize: 12,
@@ -545,8 +566,7 @@ class _PanelHeader extends StatelessWidget {
           ),
           const SizedBox(width: 4),
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
             decoration: BoxDecoration(
               color: hasKey ? KColors.phosDim : KColors.amberDim,
               borderRadius: BorderRadius.circular(2),
@@ -563,6 +583,19 @@ class _PanelHeader extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+String _providerLabel(AppSettings s) {
+  switch (s.llmProvider) {
+    case LLMProvider.claudeApi:      return 'Claude';
+    case LLMProvider.openAi:         return 'ChatGPT';
+    case LLMProvider.grok:           return 'Grok';
+    case LLMProvider.githubModels:   return 'GitHub Models';
+    case LLMProvider.azureOpenAi:    return 'Azure OpenAI';
+    case LLMProvider.ollama:
+      final base = s.ollamaModel.split(':').first;
+      return base.isEmpty ? 'Ollama' : base;
   }
 }
 
@@ -593,7 +626,7 @@ class _InputBar extends StatelessWidget {
               controller: controller,
               enabled: enabled,
               decoration: InputDecoration(
-                hintText: 'Ask Claude…',
+                hintText: 'Ask ${_providerLabel(context.watch<SettingsProvider>().settings)}…',
                 isDense: true,
                 fillColor: KColors.bg,
                 focusedBorder: OutlineInputBorder(
@@ -688,7 +721,7 @@ class _MessageBubble extends StatelessWidget {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  isUser ? 'You' : 'Claude',
+                  isUser ? 'You' : _providerLabel(context.watch<SettingsProvider>().settings),
                   style: TextStyle(
                     color: isUser ? KColors.blue : KColors.phosphor,
                     fontSize: 9,

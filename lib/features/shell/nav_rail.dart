@@ -14,7 +14,7 @@ class KeelNavRail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 56,
+      width: 68,
       color: KColors.bg,
       child: Column(
         children: [
@@ -62,8 +62,8 @@ class _NavItem extends StatelessWidget {
     return GestureDetector(
       onTap: () => onTap(index),
       child: Container(
-        width: 40,
-        height: 40,
+        width: 50,
+        height: 50,
         margin: const EdgeInsets.symmetric(vertical: 2),
         decoration: BoxDecoration(
           color: selected ? KColors.surface2 : Colors.transparent,
@@ -74,15 +74,15 @@ class _NavItem extends StatelessWidget {
           children: [
             Icon(
               icon,
-              size: 14,
-              color: selected ? KColors.amber : KColors.textMuted,
+              size: 17,
+              color: selected ? KColors.amber : KColors.textDim,
             ),
             const SizedBox(height: 2),
             Text(
               label.toUpperCase(),
               style: TextStyle(
-                fontSize: 8,
-                color: selected ? KColors.amber : KColors.textMuted,
+                fontSize: 9,
+                color: selected ? KColors.amber : KColors.textDim,
                 fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
                 letterSpacing: 0.05,
               ),

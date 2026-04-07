@@ -5,6 +5,10 @@ import '../../core/database/database.dart';
 import '../../providers/project_provider.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/utils/date_utils.dart' as du;
+import '../actions/action_form.dart';
+import '../decisions/decision_form.dart';
+import '../raid/issue_form.dart';
+import '../raid/dependency_form.dart';
 import 'timeline_chart.dart';
 
 // ---------------------------------------------------------------------------
@@ -20,6 +24,7 @@ class _TimelineEvent {
   final _EventType type;
   final String? owner;
   final bool isOverdue;
+  final Object item; // original DB object for opening the detail dialog
 
   const _TimelineEvent({
     required this.title,
@@ -28,6 +33,7 @@ class _TimelineEvent {
     required this.type,
     this.owner,
     required this.isOverdue,
+    required this.item,
   });
 }
 
@@ -149,6 +155,7 @@ class _TimelineContentState extends State<_TimelineContent> {
         type: _EventType.action,
         owner: a.owner,
         isOverdue: overdue,
+        item: a,
       ));
     }
 
@@ -164,6 +171,7 @@ class _TimelineContentState extends State<_TimelineContent> {
         type: _EventType.decision,
         owner: d.decisionMaker,
         isOverdue: overdue,
+        item: d,
       ));
     }
 
@@ -179,6 +187,7 @@ class _TimelineContentState extends State<_TimelineContent> {
         type: _EventType.issue,
         owner: i.owner,
         isOverdue: overdue,
+        item: i,
       ));
     }
 
@@ -194,6 +203,7 @@ class _TimelineContentState extends State<_TimelineContent> {
         type: _EventType.dependency,
         owner: dep.owner,
         isOverdue: overdue,
+        item: dep,
       ));
     }
 
@@ -295,7 +305,7 @@ class _TimelineContentState extends State<_TimelineContent> {
                 dotColor: KColors.red,
               ),
               const SizedBox(height: 8),
-              ...overdue.map((e) => _EventRow(event: e)),
+              ...overdue.map((e) => _EventRow(event: e, projectId: widget.projectId, db: db)),
               const SizedBox(height: 20),
             ],
             if (thisWeek.isNotEmpty) ...[
@@ -304,7 +314,7 @@ class _TimelineContentState extends State<_TimelineContent> {
                 dotColor: KColors.amber,
               ),
               const SizedBox(height: 8),
-              ...thisWeek.map((e) => _EventRow(event: e)),
+              ...thisWeek.map((e) => _EventRow(event: e, projectId: widget.projectId, db: db)),
               const SizedBox(height: 20),
             ],
             if (thisMonth.isNotEmpty) ...[
@@ -313,7 +323,7 @@ class _TimelineContentState extends State<_TimelineContent> {
                 dotColor: KColors.textMuted,
               ),
               const SizedBox(height: 8),
-              ...thisMonth.map((e) => _EventRow(event: e)),
+              ...thisMonth.map((e) => _EventRow(event: e, projectId: widget.projectId, db: db)),
               const SizedBox(height: 20),
             ],
             if (future.isNotEmpty) ...[
@@ -322,7 +332,7 @@ class _TimelineContentState extends State<_TimelineContent> {
                 dotColor: KColors.textMuted,
               ),
               const SizedBox(height: 8),
-              ...future.map((e) => _EventRow(event: e)),
+              ...future.map((e) => _EventRow(event: e, projectId: widget.projectId, db: db)),
               const SizedBox(height: 20),
             ],
             if (noDate.isNotEmpty) ...[
@@ -331,7 +341,7 @@ class _TimelineContentState extends State<_TimelineContent> {
                 dotColor: KColors.textMuted,
               ),
               const SizedBox(height: 8),
-              ...noDate.map((e) => _EventRow(event: e)),
+              ...noDate.map((e) => _EventRow(event: e, projectId: widget.projectId, db: db)),
             ],
           ],
         );
@@ -545,15 +555,70 @@ class _SectionHeader extends StatelessWidget {
 
 class _EventRow extends StatelessWidget {
   final _TimelineEvent event;
+  final String projectId;
+  final AppDatabase db;
 
-  const _EventRow({required this.event});
+  const _EventRow({
+    required this.event,
+    required this.projectId,
+    required this.db,
+  });
+
+  void _openDetail(BuildContext context) {
+    final item = event.item;
+    switch (event.type) {
+      case _EventType.action:
+        showDialog(
+          context: context,
+          builder: (_) => ActionFormDialog(
+            projectId: projectId,
+            db: db,
+            action: item as ProjectAction,
+            startInViewMode: true,
+          ),
+        );
+      case _EventType.decision:
+        showDialog(
+          context: context,
+          builder: (_) => DecisionFormDialog(
+            projectId: projectId,
+            db: db,
+            decision: item as Decision,
+            startInViewMode: true,
+          ),
+        );
+      case _EventType.issue:
+        showDialog(
+          context: context,
+          builder: (_) => IssueFormDialog(
+            projectId: projectId,
+            db: db,
+            issue: item as Issue,
+            startInViewMode: true,
+          ),
+        );
+      case _EventType.dependency:
+        showDialog(
+          context: context,
+          builder: (_) => DependencyFormDialog(
+            projectId: projectId,
+            db: db,
+            dependency: item as ProgramDependency,
+            startInViewMode: true,
+          ),
+        );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final (typeBg, typeFg) = _colorsForType(event.type);
     final typeIcon = _iconForType(event.type);
 
-    return Container(
+    return InkWell(
+      onTap: () => _openDetail(context),
+      borderRadius: BorderRadius.circular(3),
+      child: Container(
       margin: const EdgeInsets.only(bottom: 4),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
@@ -660,6 +725,7 @@ class _EventRow extends StatelessWidget {
           ],
         ],
       ),
+    ),
     );
   }
 }

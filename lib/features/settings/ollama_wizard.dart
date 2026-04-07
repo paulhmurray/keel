@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import '../../core/llm/ollama_client.dart';
@@ -79,7 +80,7 @@ void showOllamaWizard(BuildContext context) {
 // Wizard dialog
 // ---------------------------------------------------------------------------
 
-enum _WizardStep { detecting, notInstalled, installing, selectModel, downloading, ready }
+enum _WizardStep { detecting, settingUp, selectModel, downloading, ready }
 
 class OllamaWizardDialog extends StatefulWidget {
   const OllamaWizardDialog({super.key});
@@ -91,21 +92,23 @@ class OllamaWizardDialog extends StatefulWidget {
 class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
   _WizardStep _step = _WizardStep.detecting;
 
-  // Detection
-  bool _ollamaInPath = false;
+  // Resolved path to the ollama binary (system PATH or our local install)
+  String _ollamaExe = 'ollama';
   bool _ollamaRunning = false;
   List<String> _installedModels = [];
 
-  // Install
-  final List<String> _installLog = [];
-  bool _installFailed = false;
+  // Binary download (setting up)
+  double _setupProgress = 0; // 0–1
+  String _setupStatus = '';
+  bool _setupFailed = false;
+  http.Client? _httpClient;
 
   // Model selection
   String _selectedModelId = 'llama3.2:3b';
   final _customCtrl = TextEditingController();
   bool _useCustom = false;
 
-  // Download
+  // Model download
   final List<String> _pullLog = [];
   double _pullProgress = 0; // 0–1
   String _pullStatus = '';
@@ -114,6 +117,28 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
   Process? _pullProcess;
 
   static const _baseUrl = 'http://localhost:11434';
+
+  // ---------------------------------------------------------------------------
+  // Local install paths
+  // ---------------------------------------------------------------------------
+
+  String get _localBinDir {
+    final home = Platform.environment['HOME'] ??
+        Platform.environment['USERPROFILE'] ?? '';
+    if (Platform.isWindows) {
+      return '${Platform.environment['LOCALAPPDATA']}\\Keel\\bin';
+    }
+    return '$home/.local/share/keel/bin';
+  }
+
+  String get _localOllamaExe {
+    if (Platform.isWindows) return '$_localBinDir\\ollama.exe';
+    return '$_localBinDir/ollama';
+  }
+
+  // ---------------------------------------------------------------------------
+  // Lifecycle
+  // ---------------------------------------------------------------------------
 
   @override
   void initState() {
@@ -124,101 +149,192 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
   @override
   void dispose() {
     _pullProcess?.kill();
+    _httpClient?.close();
     _customCtrl.dispose();
     super.dispose();
   }
 
   // ---------------------------------------------------------------------------
-  // Step 1: Detection
+  // Step 1: Detection — auto-triggers setup if Ollama not found
   // ---------------------------------------------------------------------------
 
   Future<void> _detect() async {
     setState(() => _step = _WizardStep.detecting);
 
-    // Check if ollama binary is in PATH
+    // 1. Check system PATH
     try {
       final result = await Process.run(
         Platform.isWindows ? 'where' : 'which',
         ['ollama'],
       );
-      _ollamaInPath = result.exitCode == 0;
-    } catch (_) {
-      _ollamaInPath = false;
-    }
+      if (result.exitCode == 0) {
+        _ollamaExe = 'ollama';
+        await _checkRunningAndProceed();
+        return;
+      }
+    } catch (_) {}
 
-    if (!_ollamaInPath) {
-      setState(() => _step = _WizardStep.notInstalled);
+    // 2. Check our own local install
+    final localExe = File(_localOllamaExe);
+    if (await localExe.exists()) {
+      _ollamaExe = _localOllamaExe;
+      await _checkRunningAndProceed();
       return;
     }
 
-    // Check if service is running and get installed models
+    // 3. Not found anywhere — silently download the binary
+    _downloadBinary();
+  }
+
+  Future<void> _checkRunningAndProceed() async {
     _ollamaRunning = await OllamaClient.isRunning(_baseUrl);
     if (_ollamaRunning) {
       _installedModels = await OllamaClient.getAvailableModels(_baseUrl);
     }
-
-    setState(() => _step = _WizardStep.selectModel);
+    if (mounted) setState(() => _step = _WizardStep.selectModel);
   }
 
   // ---------------------------------------------------------------------------
-  // Step 2: Install (optional)
+  // Step 2: Silent binary download — no sudo, no shell scripts
   // ---------------------------------------------------------------------------
 
-  Future<void> _runInstall() async {
+  Future<void> _downloadBinary() async {
     setState(() {
-      _step = _WizardStep.installing;
-      _installLog.clear();
-      _installFailed = false;
+      _step = _WizardStep.settingUp;
+      _setupProgress = 0;
+      _setupFailed = false;
+      _setupStatus = 'Preparing download...';
     });
 
+    Directory? tmpDir;
     try {
-      Process process;
-      if (Platform.isLinux || Platform.isMacOS) {
-        process = await Process.start(
-          'bash',
-          ['-c', 'curl -fsSL https://ollama.ai/install.sh | sh'],
-        );
-      } else {
-        // Windows: open browser to download page — no silent install
-        await Process.run('cmd', ['/c', 'start', 'https://ollama.com/download']);
-        setState(() {
-          _installLog.add('Opening ollama.com/download in your browser.');
-          _installLog.add('Install Ollama, then click "I installed it manually".');
-        });
-        return;
+      // Detect architecture on Linux
+      String arch = 'amd64';
+      if (Platform.isLinux) {
+        try {
+          final r = await Process.run('uname', ['-m']);
+          final m = r.stdout.toString().trim();
+          if (m == 'aarch64' || m == 'arm64') arch = 'arm64';
+        } catch (_) {}
       }
 
-      process.stdout
-          .transform(utf8.decoder)
-          .transform(const LineSplitter())
-          .listen((line) {
-        if (mounted) setState(() => _installLog.add(line));
-      });
-      process.stderr
-          .transform(utf8.decoder)
-          .transform(const LineSplitter())
-          .listen((line) {
-        if (mounted) setState(() => _installLog.add(line));
-      });
+      // Platform-specific download URL and archive type
+      final String url;
+      final String archiveType; // 'tar.zst' | 'zip' | 'exe'
+      if (Platform.isWindows) {
+        url = 'https://ollama.com/download/OllamaSetup.exe';
+        archiveType = 'exe';
+      } else if (Platform.isMacOS) {
+        url = 'https://ollama.com/download/Ollama-darwin.zip';
+        archiveType = 'zip';
+      } else {
+        url = 'https://ollama.com/download/ollama-linux-$arch.tar.zst';
+        archiveType = 'tar.zst';
+      }
 
-      final exitCode = await process.exitCode;
-      if (!mounted) return;
+      if (mounted) setState(() => _setupStatus = 'Connecting...');
 
-      if (exitCode == 0) {
-        _ollamaInPath = true;
-        // Give the service a moment to start
-        await Future.delayed(const Duration(seconds: 2));
-        _ollamaRunning = await OllamaClient.isRunning(_baseUrl);
-        if (_ollamaRunning) {
-          _installedModels = await OllamaClient.getAvailableModels(_baseUrl);
+      // Ensure local bin dir exists
+      final binDir = Directory(_localBinDir);
+      if (!await binDir.exists()) await binDir.create(recursive: true);
+
+      // Temp dir for download + extraction
+      tmpDir = await Directory.systemTemp.createTemp('keel_ollama_');
+      final tmpFile = File('${tmpDir.path}/ollama.$archiveType');
+
+      // Download
+      _httpClient?.close();
+      _httpClient = http.Client();
+      final request = http.Request('GET', Uri.parse(url));
+      final response = await _httpClient!
+          .send(request)
+          .timeout(const Duration(seconds: 30));
+
+      if (response.statusCode != 200) {
+        throw 'Server returned HTTP ${response.statusCode}';
+      }
+
+      final totalBytes = response.contentLength ?? 0;
+      var receivedBytes = 0;
+      final sink = tmpFile.openWrite();
+      await for (final chunk in response.stream) {
+        sink.add(chunk);
+        receivedBytes += chunk.length;
+        if (mounted) {
+          setState(() {
+            if (totalBytes > 0) {
+              _setupProgress = (receivedBytes / totalBytes).clamp(0.0, 1.0);
+              final mb = (receivedBytes / 1024 / 1024).toStringAsFixed(0);
+              final total = (totalBytes / 1024 / 1024).toStringAsFixed(0);
+              _setupStatus = '$mb MB / $total MB';
+            } else {
+              _setupStatus =
+                  '${(receivedBytes / 1024 / 1024).toStringAsFixed(0)} MB downloaded...';
+            }
+          });
         }
-        setState(() => _step = _WizardStep.selectModel);
-      } else {
-        setState(() => _installFailed = true);
       }
+      await sink.close();
+
+      if (mounted) setState(() => _setupStatus = 'Extracting...');
+
+      if (archiveType == 'tar.zst') {
+        // Extract bin/ollama from the archive into tmpDir
+        final result = await Process.run('tar', [
+          '--zstd', '-xf', tmpFile.path, '-C', tmpDir!.path, 'bin/ollama',
+        ]);
+        if (result.exitCode != 0) throw 'Extraction failed: ${result.stderr}';
+        final extracted = File('${tmpDir.path}/bin/ollama');
+        if (!await extracted.exists()) throw 'Binary not found in archive';
+        await extracted.copy(_localOllamaExe);
+        await Process.run('chmod', ['+x', _localOllamaExe]);
+        _ollamaExe = _localOllamaExe;
+      } else if (archiveType == 'zip') {
+        // macOS: unzip then locate the ollama CLI binary
+        await Process.run('unzip', ['-o', tmpFile.path, '-d', tmpDir!.path]);
+        final binary = await _findBinaryInDir(tmpDir, 'ollama');
+        if (binary == null) throw 'Could not find ollama binary in zip';
+        await binary.copy(_localOllamaExe);
+        await Process.run('chmod', ['+x', _localOllamaExe]);
+        _ollamaExe = _localOllamaExe;
+      } else {
+        // Windows: run NSIS silent installer
+        if (mounted) setState(() => _setupStatus = 'Installing...');
+        final result = await Process.run(tmpFile.path, ['/S']);
+        if (result.exitCode != 0) throw 'Installer exited with ${result.exitCode}';
+        _ollamaExe = 'ollama'; // installer adds to system PATH
+      }
+
+      if (mounted) setState(() => _setupStatus = 'Starting service...');
+      await Process.start(_ollamaExe, ['serve'],
+          mode: ProcessStartMode.detached);
+      await Future.delayed(const Duration(seconds: 2));
+      _ollamaRunning = await OllamaClient.isRunning(_baseUrl);
+      if (_ollamaRunning) {
+        _installedModels = await OllamaClient.getAvailableModels(_baseUrl);
+      }
+
+      if (mounted) setState(() => _step = _WizardStep.selectModel);
     } catch (e) {
-      if (mounted) setState(() => _installFailed = true);
+      if (mounted) {
+        setState(() {
+          _setupFailed = true;
+          _setupStatus = e.toString();
+        });
+      }
+    } finally {
+      try { await tmpDir?.delete(recursive: true); } catch (_) {}
     }
+  }
+
+  /// Recursively finds the first file named [name] inside [dir].
+  Future<File?> _findBinaryInDir(Directory dir, String name) async {
+    await for (final entity in dir.list(recursive: true)) {
+      if (entity is File && entity.uri.pathSegments.last == name) {
+        return entity;
+      }
+    }
+    return null;
   }
 
   // ---------------------------------------------------------------------------
@@ -242,15 +358,15 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
     });
 
     try {
-      // First ensure Ollama service is running; start it if not
+      // Ensure service is running
       if (!_ollamaRunning) {
-        await Process.start('ollama', ['serve'],
+        await Process.start(_ollamaExe, ['serve'],
             mode: ProcessStartMode.detached);
         await Future.delayed(const Duration(seconds: 2));
         _ollamaRunning = await OllamaClient.isRunning(_baseUrl);
       }
 
-      _pullProcess = await Process.start('ollama', ['pull', model]);
+      _pullProcess = await Process.start(_ollamaExe, ['pull', model]);
 
       _pullProcess!.stdout
           .transform(utf8.decoder)
@@ -276,7 +392,6 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
           _pullStatus = 'Download complete.';
         });
         await Future.delayed(const Duration(milliseconds: 500));
-        // Save model in settings and mark as ready
         _finalise();
       } else {
         setState(() {
@@ -285,17 +400,18 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() {
-        _pullFailed = true;
-        _pullStatus = 'Error: $e';
-      });
+      if (mounted) {
+        setState(() {
+          _pullFailed = true;
+          _pullStatus = 'Error: $e';
+        });
+      }
     }
   }
 
   void _onPullLine(String line) {
     if (!mounted) return;
     try {
-      // Ollama streams newline-delimited JSON
       final json = jsonDecode(line) as Map<String, dynamic>;
       final status = json['status'] as String? ?? '';
       final total = (json['total'] as num?)?.toDouble() ?? 0;
@@ -306,12 +422,10 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
         if (total > 0) {
           _pullProgress = (completed / total).clamp(0.0, 1.0);
         }
-        // Keep last 8 lines in log
         _pullLog.add(_formatPullStatus(status, total, completed));
         if (_pullLog.length > 8) _pullLog.removeAt(0);
       });
     } catch (_) {
-      // Not JSON — plain text line
       if (line.trim().isNotEmpty) {
         setState(() {
           _pullLog.add(line);
@@ -332,7 +446,6 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
   }
 
   void _finalise() async {
-    // Refresh installed models
     _installedModels = await OllamaClient.getAvailableModels(_baseUrl);
     if (!mounted) return;
     setState(() => _step = _WizardStep.ready);
@@ -379,6 +492,11 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
   }
 
   Widget _buildHeader() {
+    final busy = (_step == _WizardStep.detecting ||
+            _step == _WizardStep.settingUp ||
+            _step == _WizardStep.downloading) &&
+        !_setupFailed &&
+        !_pullFailed;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       child: Row(
@@ -386,7 +504,7 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
           const Icon(Icons.computer_outlined, size: 18, color: KColors.amber),
           const SizedBox(width: 10),
           const Text(
-            'OLLAMA SETUP WIZARD',
+            'LOCAL AI SETUP',
             style: TextStyle(
               color: KColors.amber,
               fontSize: 13,
@@ -395,7 +513,7 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
             ),
           ),
           const Spacer(),
-          if (_step != _WizardStep.downloading && _step != _WizardStep.installing)
+          if (!busy)
             InkWell(
               onTap: () => Navigator.of(context).pop(),
               borderRadius: BorderRadius.circular(3),
@@ -410,12 +528,11 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
   }
 
   Widget _buildStepIndicator() {
-    const steps = ['Detect', 'Select', 'Download', 'Ready'];
+    const steps = ['Setup', 'Choose', 'Download', 'Ready'];
     int currentStep;
     switch (_step) {
       case _WizardStep.detecting:
-      case _WizardStep.notInstalled:
-      case _WizardStep.installing:
+      case _WizardStep.settingUp:
         currentStep = 0;
       case _WizardStep.selectModel:
         currentStep = 1;
@@ -459,11 +576,14 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
                         ),
                         child: Center(
                           child: isDone
-                              ? const Icon(Icons.check, size: 12, color: KColors.phosphor)
+                              ? const Icon(Icons.check,
+                                  size: 12, color: KColors.phosphor)
                               : Text(
                                   '${i + 1}',
                                   style: TextStyle(
-                                    color: isActive ? KColors.amber : KColors.textMuted,
+                                    color: isActive
+                                        ? KColors.amber
+                                        : KColors.textMuted,
                                     fontSize: 10,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -474,9 +594,12 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
                       Text(
                         label,
                         style: TextStyle(
-                          color: isActive ? KColors.amber : KColors.textMuted,
+                          color:
+                              isActive ? KColors.amber : KColors.textMuted,
                           fontSize: 9,
-                          fontWeight: isActive ? FontWeight.w700 : FontWeight.normal,
+                          fontWeight: isActive
+                              ? FontWeight.w700
+                              : FontWeight.normal,
                         ),
                       ),
                     ],
@@ -500,10 +623,8 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
     switch (_step) {
       case _WizardStep.detecting:
         return _buildDetecting();
-      case _WizardStep.notInstalled:
-        return _buildNotInstalled();
-      case _WizardStep.installing:
-        return _buildInstalling();
+      case _WizardStep.settingUp:
+        return _buildSettingUp();
       case _WizardStep.selectModel:
         return _buildSelectModel();
       case _WizardStep.downloading:
@@ -525,7 +646,7 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
           CircularProgressIndicator(color: KColors.amber, strokeWidth: 2),
           SizedBox(height: 20),
           Text(
-            'Checking for Ollama...',
+            'Checking your system...',
             style: TextStyle(color: KColors.textDim, fontSize: 13),
           ),
         ],
@@ -533,137 +654,78 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
     );
   }
 
-  Widget _buildNotInstalled() {
+  Widget _buildSettingUp() {
     return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(Icons.info_outline, size: 16, color: KColors.amber),
-              SizedBox(width: 8),
-              Text(
-                'Ollama not found',
-                style: TextStyle(
-                  color: KColors.text,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Ollama is not installed on this machine. Keel can download and '
-            'run the installer for you, or you can install it manually.',
-            style: TextStyle(color: KColors.textDim, fontSize: 12, height: 1.5),
-          ),
-          const SizedBox(height: 24),
-          Row(
-            children: [
-              ElevatedButton.icon(
-                onPressed: _runInstall,
-                icon: const Icon(Icons.download_outlined, size: 14),
-                label: const Text('Download & Install Ollama'),
-              ),
-              const SizedBox(width: 12),
-              OutlinedButton(
-                onPressed: () async {
-                  // User says they'll install manually — re-detect after a moment
-                  await Future.delayed(const Duration(seconds: 1));
-                  _detect();
-                },
-                child: const Text("I'll install it myself"),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Ollama is free and open source. It runs entirely on your machine — '
-            'no data leaves your computer.',
-            style: TextStyle(color: KColors.textMuted, fontSize: 11, height: 1.5),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInstalling() {
-    return Padding(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              if (!_installFailed)
+              if (!_setupFailed)
                 const SizedBox(
                   width: 14,
                   height: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: KColors.amber),
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: KColors.amber),
                 )
               else
                 const Icon(Icons.error_outline, size: 14, color: KColors.red),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
               Text(
-                _installFailed ? 'Installation failed' : 'Installing Ollama...',
+                _setupFailed ? 'Setup failed' : 'Setting up local AI engine',
                 style: TextStyle(
-                  color: _installFailed ? KColors.red : KColors.text,
+                  color: _setupFailed ? KColors.red : KColors.text,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Container(
-            width: double.infinity,
-            constraints: const BoxConstraints(maxHeight: 180),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: KColors.bg,
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: KColors.border),
-            ),
-            child: SingleChildScrollView(
-              reverse: true,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: _installLog
-                    .map((l) => Text(
-                          l,
-                          style: const TextStyle(
-                            color: KColors.textDim,
-                            fontSize: 11,
-                            fontFamily: 'monospace',
-                          ),
-                        ))
-                    .toList(),
+          const SizedBox(height: 20),
+          if (!_setupFailed) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(2),
+              child: LinearProgressIndicator(
+                value: _setupProgress > 0 ? _setupProgress : null,
+                backgroundColor: KColors.surface2,
+                color: KColors.amber,
+                minHeight: 4,
               ),
             ),
-          ),
-          if (_installFailed) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
+            Text(
+              _setupStatus,
+              style: const TextStyle(color: KColors.textDim, fontSize: 11),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'This is a one-time setup. The AI engine runs entirely on your '
+              'computer — no data is sent anywhere.',
+              style: TextStyle(
+                  color: KColors.textMuted, fontSize: 11, height: 1.5),
+            ),
+          ] else ...[
+            const SizedBox(height: 8),
+            Text(
+              _setupStatus,
+              style: const TextStyle(
+                  color: KColors.textMuted, fontSize: 11, height: 1.5),
+            ),
+            const SizedBox(height: 20),
             Row(
               children: [
                 ElevatedButton.icon(
-                  onPressed: _runInstall,
+                  onPressed: _downloadBinary,
                   icon: const Icon(Icons.refresh, size: 14),
-                  label: const Text('Retry'),
+                  label: const Text('Try Again'),
                 ),
                 const SizedBox(width: 12),
                 TextButton(
-                  onPressed: () => setState(() => _step = _WizardStep.notInstalled),
-                  child: const Text('Back'),
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
                 ),
               ],
-            ),
-          ] else if (Platform.isWindows) ...[
-            const SizedBox(height: 16),
-            OutlinedButton(
-              onPressed: _detect,
-              child: const Text('I installed it — check again'),
             ),
           ],
         ],
@@ -679,9 +741,11 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
         children: [
           // Service status
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: _ollamaRunning ? KColors.phosDim : KColors.amberDim,
+              color:
+                  _ollamaRunning ? KColors.phosDim : KColors.amberDim,
               borderRadius: BorderRadius.circular(4),
             ),
             child: Row(
@@ -692,15 +756,18 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
                       ? Icons.check_circle_outline
                       : Icons.warning_amber_outlined,
                   size: 13,
-                  color: _ollamaRunning ? KColors.phosphor : KColors.amber,
+                  color:
+                      _ollamaRunning ? KColors.phosphor : KColors.amber,
                 ),
                 const SizedBox(width: 6),
                 Text(
                   _ollamaRunning
-                      ? 'Ollama is running · ${_installedModels.length} model${_installedModels.length == 1 ? '' : 's'} installed'
-                      : 'Ollama installed but not running — will start on pull',
+                      ? 'AI engine ready · ${_installedModels.length} model${_installedModels.length == 1 ? '' : 's'} installed'
+                      : 'AI engine installed — will start when you download a model',
                   style: TextStyle(
-                    color: _ollamaRunning ? KColors.phosphor : KColors.amber,
+                    color: _ollamaRunning
+                        ? KColors.phosphor
+                        : KColors.amber,
                     fontSize: 11,
                   ),
                 ),
@@ -745,18 +812,25 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
             onTap: () => setState(() => _useCustom = true),
             borderRadius: BorderRadius.circular(4),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: _useCustom ? KColors.amberDim : Colors.transparent,
+                color: _useCustom
+                    ? KColors.amberDim
+                    : Colors.transparent,
                 border: Border.all(
-                  color: _useCustom ? KColors.amber.withValues(alpha: 0.4) : KColors.border,
+                  color: _useCustom
+                      ? KColors.amber.withValues(alpha: 0.4)
+                      : KColors.border,
                 ),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Row(
                 children: [
                   Icon(
-                    _useCustom ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                    _useCustom
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_unchecked,
                     size: 14,
                     color: _useCustom ? KColors.amber : KColors.textDim,
                   ),
@@ -766,10 +840,12 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
                         ? TextField(
                             controller: _customCtrl,
                             autofocus: true,
-                            style: const TextStyle(color: KColors.text, fontSize: 12),
+                            style: const TextStyle(
+                                color: KColors.text, fontSize: 12),
                             decoration: const InputDecoration(
                               hintText: 'e.g. codellama:7b',
-                              hintStyle: TextStyle(color: KColors.textMuted, fontSize: 12),
+                              hintStyle: TextStyle(
+                                  color: KColors.textMuted, fontSize: 12),
                               border: InputBorder.none,
                               isDense: true,
                               contentPadding: EdgeInsets.zero,
@@ -777,7 +853,8 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
                           )
                         : const Text(
                             'Custom model',
-                            style: TextStyle(color: KColors.textDim, fontSize: 12),
+                            style: TextStyle(
+                                color: KColors.textDim, fontSize: 12),
                           ),
                   ),
                 ],
@@ -789,18 +866,18 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
           Row(
             children: [
               ElevatedButton.icon(
-                onPressed: _targetModel.isNotEmpty ? _pullModel : null,
+                onPressed:
+                    _targetModel.isNotEmpty ? _pullModel : null,
                 icon: const Icon(Icons.download_outlined, size: 14),
-                label: Text('Download ${_useCustom ? (_customCtrl.text.trim().isEmpty ? "model" : _customCtrl.text.trim()) : _selectedModelId}'),
+                label: Text(
+                    'Download ${_useCustom ? (_customCtrl.text.trim().isEmpty ? "model" : _customCtrl.text.trim()) : _selectedModelId}'),
               ),
               if (_installedModels.isNotEmpty) ...[
                 const SizedBox(width: 12),
                 OutlinedButton(
                   onPressed: () {
-                    // Already have models — skip to ready
                     setState(() {
-                      if (_installedModels.isNotEmpty &&
-                          !_installedModels.contains(_selectedModelId)) {
+                      if (!_installedModels.contains(_selectedModelId)) {
                         _selectedModelId = _installedModels.first;
                       }
                       _step = _WizardStep.ready;
@@ -833,9 +910,11 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
                       strokeWidth: 2, color: KColors.amber),
                 )
               else if (_pullComplete)
-                const Icon(Icons.check_circle, size: 14, color: KColors.phosphor)
+                const Icon(Icons.check_circle,
+                    size: 14, color: KColors.phosphor)
               else
-                const Icon(Icons.error_outline, size: 14, color: KColors.red),
+                const Icon(Icons.error_outline,
+                    size: 14, color: KColors.red),
               const SizedBox(width: 8),
               Text(
                 _pullFailed
@@ -868,7 +947,6 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
           ),
           const SizedBox(height: 12),
 
-          // Progress bar
           ClipRRect(
             borderRadius: BorderRadius.circular(2),
             child: LinearProgressIndicator(
@@ -885,7 +963,6 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
           ),
           const SizedBox(height: 12),
 
-          // Log
           Container(
             width: double.infinity,
             constraints: const BoxConstraints(maxHeight: 140),
@@ -924,7 +1001,8 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
                 ),
                 const SizedBox(width: 12),
                 TextButton(
-                  onPressed: () => setState(() => _step = _WizardStep.selectModel),
+                  onPressed: () =>
+                      setState(() => _step = _WizardStep.selectModel),
                   child: const Text('Back'),
                 ),
               ],
@@ -950,7 +1028,7 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
               Icon(Icons.check_circle, size: 20, color: KColors.phosphor),
               SizedBox(width: 10),
               Text(
-                'Ollama is ready',
+                'Local AI is ready',
                 style: TextStyle(
                   color: KColors.phosphor,
                   fontSize: 15,
@@ -960,13 +1038,14 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
             ],
           ),
           const SizedBox(height: 12),
-          Text(
-            'Local LLM ready. Keel can now run fully offline.',
-            style: const TextStyle(color: KColors.textDim, fontSize: 12),
+          const Text(
+            'Keel can now run fully offline. Everything stays on your computer.',
+            style: TextStyle(color: KColors.textDim, fontSize: 12),
           ),
           const SizedBox(height: 8),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: KColors.phosDim,
               borderRadius: BorderRadius.circular(4),
@@ -974,7 +1053,8 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.computer_outlined, size: 13, color: KColors.phosphor),
+                const Icon(Icons.computer_outlined,
+                    size: 13, color: KColors.phosphor),
                 const SizedBox(width: 6),
                 Text(
                   model,
@@ -991,7 +1071,8 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
           const Text(
             'Local models are faster and private but may produce shorter '
             'or less nuanced responses than cloud models.',
-            style: TextStyle(color: KColors.textMuted, fontSize: 11, height: 1.5),
+            style: TextStyle(
+                color: KColors.textMuted, fontSize: 11, height: 1.5),
           ),
           const SizedBox(height: 24),
           Row(
@@ -1003,7 +1084,8 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: KColors.phosDim,
                   foregroundColor: KColors.phosphor,
-                  side: const BorderSide(color: KColors.phosphor, width: 0.5),
+                  side: const BorderSide(
+                      color: KColors.phosphor, width: 0.5),
                 ),
               ),
               const SizedBox(width: 12),
@@ -1044,7 +1126,8 @@ class _ModelOption extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(4),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: isSelected ? KColors.amberDim : Colors.transparent,
             border: Border.all(
@@ -1065,76 +1148,76 @@ class _ModelOption extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    Row(
                       children: [
-                        Row(
-                          children: [
-                            Text(
-                              model.label,
+                        Text(
+                          model.label,
+                          style: TextStyle(
+                            color: isSelected
+                                ? KColors.amber
+                                : KColors.text,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        if (model.recommended) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 5, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: KColors.amberDim,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                            child: const Text(
+                              'RECOMMENDED',
                               style: TextStyle(
-                                color: isSelected ? KColors.amber : KColors.text,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
+                                color: KColors.amber,
+                                fontSize: 8,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.05,
                               ),
                             ),
-                            if (model.recommended) ...[
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 5, vertical: 1),
-                                decoration: BoxDecoration(
-                                  color: KColors.amberDim,
-                                  borderRadius: BorderRadius.circular(2),
-                                ),
-                                child: const Text(
-                                  'RECOMMENDED',
-                                  style: TextStyle(
-                                    color: KColors.amber,
-                                    fontSize: 8,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
+                          ),
+                        ],
+                        if (isInstalled) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 5, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: KColors.phosDim,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                            child: const Text(
+                              'INSTALLED',
+                              style: TextStyle(
+                                color: KColors.phosphor,
+                                fontSize: 8,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.05,
                               ),
-                            ],
-                            if (isInstalled) ...[
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 5, vertical: 1),
-                                decoration: BoxDecoration(
-                                  color: KColors.phosDim,
-                                  borderRadius: BorderRadius.circular(2),
-                                ),
-                                child: const Text(
-                                  'INSTALLED',
-                                  style: TextStyle(
-                                    color: KColors.phosphor,
-                                    fontSize: 8,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                        Text(
-                          model.description,
-                          style: const TextStyle(
-                              color: KColors.textDim, fontSize: 11),
-                        ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
-                    const Spacer(),
+                    const SizedBox(height: 2),
                     Text(
-                      model.size,
+                      model.description,
                       style: const TextStyle(
-                          color: KColors.textMuted, fontSize: 11),
+                          color: KColors.textDim, fontSize: 11),
                     ),
                   ],
                 ),
+              ),
+              Text(
+                model.size,
+                style: const TextStyle(
+                    color: KColors.textMuted, fontSize: 11),
               ),
             ],
           ),
@@ -1145,8 +1228,28 @@ class _ModelOption extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Inline model pull widget (used in settings card)
+// Standalone model pull button (used in LLM settings view)
 // ---------------------------------------------------------------------------
+
+/// Resolves the ollama binary path: system PATH first, then Keel's local install.
+Future<String> resolveOllamaExe() async {
+  try {
+    final r = await Process.run(
+      Platform.isWindows ? 'where' : 'which',
+      ['ollama'],
+    );
+    if (r.exitCode == 0) return 'ollama';
+  } catch (_) {}
+
+  final home = Platform.environment['HOME'] ??
+      Platform.environment['USERPROFILE'] ?? '';
+  final local = Platform.isWindows
+      ? '${Platform.environment['LOCALAPPDATA']}\\Keel\\bin\\ollama.exe'
+      : '$home/.local/share/keel/bin/ollama';
+
+  if (await File(local).exists()) return local;
+  return 'ollama'; // fallback — will fail gracefully if not found
+}
 
 class OllamaModelPullButton extends StatefulWidget {
   final String modelId;
@@ -1169,7 +1272,6 @@ class _OllamaModelPullButtonState extends State<OllamaModelPullButton> {
   bool _done = false;
   bool _failed = false;
   double _progress = 0;
-  String _status = '';
   Process? _process;
 
   @override
@@ -1184,106 +1286,114 @@ class _OllamaModelPullButtonState extends State<OllamaModelPullButton> {
       _done = false;
       _failed = false;
       _progress = 0;
-      _status = 'Starting...';
     });
 
     try {
-      _process = await Process.start('ollama', ['pull', widget.modelId]);
+      final exe = await resolveOllamaExe();
+
+      // Ensure service is running
+      final running = await OllamaClient.isRunning(widget.baseUrl);
+      if (!running) {
+        await Process.start(exe, ['serve'], mode: ProcessStartMode.detached);
+        await Future.delayed(const Duration(seconds: 2));
+      }
+
+      _process = await Process.start(exe, ['pull', widget.modelId]);
 
       _process!.stdout
           .transform(utf8.decoder)
           .transform(const LineSplitter())
-          .listen(_onLine);
+          .listen((line) {
+        if (!mounted) return;
+        try {
+          final json = jsonDecode(line) as Map<String, dynamic>;
+          final total = (json['total'] as num?)?.toDouble() ?? 0;
+          final completed = (json['completed'] as num?)?.toDouble() ?? 0;
+          if (total > 0 && mounted) {
+            setState(() => _progress = (completed / total).clamp(0.0, 1.0));
+          }
+        } catch (_) {}
+      });
 
       final exitCode = await _process!.exitCode;
       if (!mounted) return;
+
       if (exitCode == 0) {
         setState(() {
           _done = true;
           _pulling = false;
           _progress = 1.0;
-          _status = 'Done';
         });
         widget.onComplete?.call();
       } else {
         setState(() {
           _failed = true;
           _pulling = false;
-          _status = 'Failed';
         });
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) setState(() {
         _failed = true;
         _pulling = false;
-        _status = 'Error: $e';
       });
     }
-  }
-
-  void _onLine(String line) {
-    if (!mounted) return;
-    try {
-      final json = jsonDecode(line) as Map<String, dynamic>;
-      final status = json['status'] as String? ?? '';
-      final total = (json['total'] as num?)?.toDouble() ?? 0;
-      final completed = (json['completed'] as num?)?.toDouble() ?? 0;
-      setState(() {
-        _status = status;
-        if (total > 0) _progress = (completed / total).clamp(0.0, 1.0);
-      });
-    } catch (_) {}
   }
 
   @override
   Widget build(BuildContext context) {
     if (_done) {
-      return const Icon(Icons.check_circle, size: 14, color: KColors.phosphor);
+      return const Icon(Icons.check_circle, size: 16, color: KColors.phosphor);
     }
+
     if (_pulling) {
       return SizedBox(
         width: 80,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            LinearProgressIndicator(
-              value: _progress > 0 ? _progress : null,
-              backgroundColor: KColors.surface2,
-              color: KColors.amber,
-              minHeight: 3,
+            ClipRRect(
+              borderRadius: BorderRadius.circular(2),
+              child: LinearProgressIndicator(
+                value: _progress > 0 ? _progress : null,
+                backgroundColor: KColors.surface2,
+                color: KColors.amber,
+                minHeight: 3,
+              ),
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 3),
             Text(
-              _status,
-              style: const TextStyle(color: KColors.textMuted, fontSize: 9),
-              overflow: TextOverflow.ellipsis,
+              _progress > 0
+                  ? '${(_progress * 100).toStringAsFixed(0)}%'
+                  : 'Pulling...',
+              style: const TextStyle(color: KColors.textDim, fontSize: 9),
             ),
           ],
         ),
       );
     }
+
     return InkWell(
       onTap: _pull,
       borderRadius: BorderRadius.circular(3),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          border: Border.all(color: KColors.border2),
+          color: _failed ? KColors.redDim : KColors.amberDim,
           borderRadius: BorderRadius.circular(3),
+          border: Border.all(
+            color: _failed
+                ? KColors.red.withValues(alpha: 0.3)
+                : KColors.amber.withValues(alpha: 0.3),
+          ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.download_outlined, size: 11, color: KColors.textDim),
-            const SizedBox(width: 3),
-            Text(
-              _failed ? 'Retry' : 'Pull',
-              style: TextStyle(
-                color: _failed ? KColors.red : KColors.textDim,
-                fontSize: 10,
-              ),
-            ),
-          ],
+        child: Text(
+          _failed ? 'Retry' : 'Pull',
+          style: TextStyle(
+            color: _failed ? KColors.red : KColors.amber,
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );

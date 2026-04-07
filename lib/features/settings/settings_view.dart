@@ -51,18 +51,9 @@ class SettingsView extends StatelessWidget {
               children: [
                 _SettingsRow(
                   label: 'Provider',
-                  value: settings.settings.llmProvider == LLMProvider.claudeApi
-                      ? 'Claude API (Anthropic)'
-                      : 'Ollama (coming soon)',
+                  value: _llmProviderLabel(settings.settings.llmProvider),
                 ),
-                const SizedBox(height: 8),
-                _SettingsRow(
-                  label: 'API Key',
-                  value: settings.hasApiKey ? '••••••••••••••••' : 'Not set',
-                  valueColor: settings.hasApiKey
-                      ? KColors.phosphor
-                      : KColors.amber,
-                ),
+                ..._llmStatusRows(settings.settings),
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
                   onPressed: () {
@@ -269,6 +260,104 @@ class _WatcherSectionState extends State<_WatcherSection> {
         ],
       ),
     );
+  }
+}
+
+String _llmProviderLabel(LLMProvider p) {
+  switch (p) {
+    case LLMProvider.claudeApi:    return 'Claude (Anthropic)';
+    case LLMProvider.openAi:       return 'ChatGPT (OpenAI)';
+    case LLMProvider.grok:         return 'Grok (xAI)';
+    case LLMProvider.githubModels: return 'GitHub Models';
+    case LLMProvider.azureOpenAi:  return 'Azure OpenAI';
+    case LLMProvider.ollama:       return 'Ollama (Local / Free)';
+  }
+}
+
+List<Widget> _llmStatusRows(AppSettings s) {
+  switch (s.llmProvider) {
+    case LLMProvider.claudeApi:
+      final hasKey = s.claudeApiKey.isNotEmpty;
+      return [
+        const SizedBox(height: 4),
+        _SettingsRow(
+          label: 'API Key',
+          value: hasKey ? '••••••••••••••••' : 'Not set',
+          valueColor: hasKey ? KColors.phosphor : KColors.amber,
+        ),
+        const SizedBox(height: 4),
+        _SettingsRow(label: 'Model', value: s.claudeModel),
+      ];
+    case LLMProvider.openAi:
+      final hasKey = s.openAiApiKey.isNotEmpty;
+      return [
+        const SizedBox(height: 4),
+        _SettingsRow(
+          label: 'API Key',
+          value: hasKey ? '••••••••••••••••' : 'Not set',
+          valueColor: hasKey ? KColors.phosphor : KColors.amber,
+        ),
+        const SizedBox(height: 4),
+        _SettingsRow(label: 'Model', value: s.openAiModel),
+      ];
+    case LLMProvider.grok:
+      final hasKey = s.grokApiKey.isNotEmpty;
+      return [
+        const SizedBox(height: 4),
+        _SettingsRow(
+          label: 'API Key',
+          value: hasKey ? '••••••••••••••••' : 'Not set',
+          valueColor: hasKey ? KColors.phosphor : KColors.amber,
+        ),
+        const SizedBox(height: 4),
+        _SettingsRow(label: 'Model', value: s.grokModel),
+      ];
+    case LLMProvider.githubModels:
+      final hasToken = s.githubToken.isNotEmpty;
+      return [
+        const SizedBox(height: 4),
+        _SettingsRow(
+          label: 'Token',
+          value: hasToken ? '••••••••••••••••' : 'Not set',
+          valueColor: hasToken ? KColors.phosphor : KColors.amber,
+        ),
+        const SizedBox(height: 4),
+        _SettingsRow(label: 'Model', value: s.githubModel),
+      ];
+    case LLMProvider.azureOpenAi:
+      final hasKey = s.azureApiKey.isNotEmpty;
+      return [
+        const SizedBox(height: 4),
+        _SettingsRow(
+          label: 'Endpoint',
+          value: s.azureEndpoint.isNotEmpty ? s.azureEndpoint : 'Not set',
+          valueColor: s.azureEndpoint.isNotEmpty ? null : KColors.amber,
+        ),
+        const SizedBox(height: 4),
+        _SettingsRow(
+          label: 'API Key',
+          value: hasKey ? '••••••••••••••••' : 'Not set',
+          valueColor: hasKey ? KColors.phosphor : KColors.amber,
+        ),
+        const SizedBox(height: 4),
+        _SettingsRow(
+          label: 'Model',
+          value: s.azureModel.isNotEmpty ? s.azureModel : 'Not set',
+          valueColor: s.azureModel.isNotEmpty ? null : KColors.amber,
+        ),
+      ];
+    case LLMProvider.ollama:
+      final hasModel = s.ollamaModel.isNotEmpty;
+      return [
+        const SizedBox(height: 4),
+        _SettingsRow(label: 'Base URL', value: s.ollamaBaseUrl),
+        const SizedBox(height: 4),
+        _SettingsRow(
+          label: 'Model',
+          value: hasModel ? s.ollamaModel : 'Not set',
+          valueColor: hasModel ? KColors.phosphor : KColors.amber,
+        ),
+      ];
   }
 }
 
