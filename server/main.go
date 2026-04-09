@@ -11,11 +11,13 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/time/rate"
 
 	"github.com/keel/server/internal/auth"
 	"github.com/keel/server/internal/billing"
 	serverdb "github.com/keel/server/internal/db"
 	"github.com/keel/server/internal/inbox"
+	"github.com/keel/server/internal/middleware"
 	"github.com/keel/server/internal/sync"
 )
 
@@ -66,9 +68,13 @@ func main() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
+	// 30 requests per minute per IP, burst of 10
+	rateLimiter := middleware.NewRateLimiter(rate.Every(2*time.Second), 10)
+
 	router := gin.New()
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
+	router.Use(rateLimiter.Middleware())
 
 	// Health check
 	router.GET("/health", func(c *gin.Context) {
