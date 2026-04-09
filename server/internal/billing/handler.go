@@ -44,7 +44,7 @@ func (h *Handler) Portal(c *gin.Context) {
 
 	params := &stripe.BillingPortalSessionParams{
 		Customer:  stripe.String(*stripeID),
-		ReturnURL: stripe.String("https://keelapp.io/settings"),
+		ReturnURL: stripe.String("https://keel-app.dev/settings"),
 	}
 	s, err := session.New(params)
 	if err != nil {

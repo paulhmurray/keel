@@ -64,7 +64,7 @@ class AppSettings {
     this.ollamaModel = 'llama3.2:3b',
     this.watcherEnabled = false,
     this.watcherDirectory = '',
-    this.syncServerUrl = 'https://sync.keelapp.io',
+    this.syncServerUrl = 'https://sync.keel-app.dev',
     this.syncEnabled = false,
     this.syncEmail = '',
   });
@@ -177,7 +177,7 @@ class AppSettings {
       watcherEnabled: json['watcherEnabled'] as bool? ?? false,
       watcherDirectory: json['watcherDirectory'] as String? ?? '',
       syncServerUrl:
-          json['syncServerUrl'] as String? ?? 'https://sync.keelapp.io',
+          json['syncServerUrl'] as String? ?? 'https://sync.keel-app.dev',
       syncEnabled: json['syncEnabled'] as bool? ?? false,
       syncEmail: json['syncEmail'] as String? ?? '',
     );

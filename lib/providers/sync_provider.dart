@@ -22,7 +22,7 @@ class SyncProvider extends ChangeNotifier {
   DateTime? _lastSyncAt;
 
   // Persisted settings (loaded/saved by caller via SettingsProvider)
-  String serverUrl = 'https://sync.keelapp.io';
+  String serverUrl = 'https://sync.keel-app.dev';
   bool syncEnabled = false;
   String? email;
 
@@ -189,7 +189,7 @@ class SyncProvider extends ChangeNotifier {
       };
 
   void loadFromSettings(Map<String, dynamic> json) {
-    serverUrl = json['syncServerUrl'] as String? ?? 'https://sync.keelapp.io';
+    serverUrl = json['syncServerUrl'] as String? ?? 'https://sync.keel-app.dev';
     syncEnabled = json['syncEnabled'] as bool? ?? false;
     email = json['syncEmail'] as String? ?? '';
     if (email!.isEmpty) email = null;

@@ -749,7 +749,7 @@ class _SyncSectionState extends State<_SyncSection> {
                     controller: _serverUrlCtrl,
                     decoration: const InputDecoration(
                       labelText: 'Server URL',
-                      hintText: 'https://sync.keelapp.io',
+                      hintText: 'https://sync.keel-app.dev',
                     ),
                     style: const TextStyle(fontSize: 12),
                     onSubmitted: (v) async {
