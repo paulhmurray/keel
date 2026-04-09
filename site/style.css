@@ -95,9 +95,9 @@ nav {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(13, 13, 13, 0.92);
+  background: rgba(232, 232, 232, 0.96);
   backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid #d0d0d0;
 }
 .nav-inner {
   max-width: var(--max-w);
@@ -139,7 +139,7 @@ nav {
   font-weight: 700;
   font-size: 14px;
   letter-spacing: 0.15em;
-  color: var(--text);
+  color: #0d0d0d;
 }
 .nav-links {
   display: flex;
@@ -148,10 +148,10 @@ nav {
 }
 .nav-links a {
   font-size: 14px;
-  color: var(--text-dim);
+  color: #444;
   transition: color 0.15s;
 }
-.nav-links a:hover { color: var(--text); }
+.nav-links a:hover { color: #0d0d0d; }
 .nav-cta { margin-left: auto; }
 
 /* ============================================================
@@ -160,6 +160,13 @@ nav {
 .hero {
   padding: 100px 0 80px;
   text-align: center;
+}
+.hero-logo { margin-bottom: 40px; }
+.hero-logo-img {
+  width: 180px;
+  height: 180px;
+  border-radius: 36px;
+  box-shadow: 0 0 60px rgba(232, 164, 48, 0.2);
 }
 .hero-eyebrow { margin-bottom: 24px; }
 .badge {
