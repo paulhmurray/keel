@@ -1,6 +1,7 @@
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/database/database.dart';
@@ -451,6 +452,10 @@ class _SyncSectionState extends State<_SyncSection> {
 
   Future<void> _syncNow() async {
     final sync = context.read<SyncProvider>();
+    if (sync.plan != 'solo') {
+      _showSnack('Sync requires a Solo plan. Upgrade to continue.');
+      return;
+    }
     final db = context.read<AppDatabase>();
     final projectId = context.read<ProjectProvider>().currentProjectId;
     if (projectId == null) {
@@ -466,6 +471,11 @@ class _SyncSectionState extends State<_SyncSection> {
     final sync = context.read<SyncProvider>();
     final db = context.read<AppDatabase>();
     final projectProvider = context.read<ProjectProvider>();
+
+    if (sync.plan != 'solo') {
+      _showSnack('Sync requires a Solo plan. Upgrade to continue.');
+      return;
+    }
 
     // Always pull based on what's on the server, not the local project ID,
     // since the local project may be a seeded demo with a non-UUID id.
@@ -531,31 +541,19 @@ class _SyncSectionState extends State<_SyncSection> {
 
   Future<void> _showBillingPortal() async {
     final sync = context.read<SyncProvider>();
-    final url = await sync.getBillingPortalUrl();
+    final isSolo = sync.plan == 'solo';
+    final url = isSolo
+        ? await sync.getBillingPortalUrl()
+        : await sync.getCheckoutUrl();
     if (!mounted) return;
     if (url == null) {
-      _showSnack('Failed to get billing portal URL.');
+      _showSnack('Failed to open billing page.');
       return;
     }
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: KColors.surface,
-        title: const Text('Upgrade to Solo',
-            style: TextStyle(color: KColors.amber, fontSize: 15)),
-        content: SelectableText(
-          url,
-          style: const TextStyle(color: KColors.blue, fontSize: 12),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Close',
-                style: TextStyle(color: KColors.textDim)),
-          ),
-        ],
-      ),
-    );
+    final uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (mounted) _showSnack('Could not open browser.');
+    }
   }
 
   void _showSnack(String msg) {
@@ -684,12 +682,14 @@ class _SyncSectionState extends State<_SyncSection> {
                   icon: const Icon(Icons.download_outlined, size: 14),
                   label: const Text('Pull from Server'),
                 ),
-                if (sync.plan != 'solo')
-                  OutlinedButton.icon(
-                    onPressed: _showBillingPortal,
-                    icon: const Icon(Icons.star_outline, size: 14),
-                    label: const Text('Upgrade to Solo'),
+                OutlinedButton.icon(
+                  onPressed: _showBillingPortal,
+                  icon: Icon(
+                    sync.plan == 'solo' ? Icons.credit_card_outlined : Icons.star_outline,
+                    size: 14,
                   ),
+                  label: Text(sync.plan == 'solo' ? 'Manage Billing' : 'Upgrade to Solo'),
+                ),
                 TextButton.icon(
                   onPressed: isSyncing ? null : sync.logout,
                   icon: const Icon(Icons.logout, size: 14,

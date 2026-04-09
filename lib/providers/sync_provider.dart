@@ -180,7 +180,18 @@ class SyncProvider extends ChangeNotifier {
     }
   }
 
-  /// Fetches the Stripe billing portal URL for the current user.
+  /// Returns a Stripe Checkout URL for new subscribers (free → Solo).
+  Future<String?> getCheckoutUrl() async {
+    if (!isAuthenticated) return null;
+    try {
+      final token = await _ensureValidToken();
+      return await _getClient().getCheckoutUrl(token);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Fetches the Stripe billing portal URL for existing subscribers.
   Future<String?> getBillingPortalUrl() async {
     if (!isAuthenticated) return null;
     try {

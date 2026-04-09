@@ -153,9 +153,27 @@ func (h *Handler) DeleteProject(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
 }
 
+// requireSoloPlan checks the user's plan and aborts with 403 if not solo.
+func (h *Handler) requireSoloPlan(c *gin.Context) bool {
+	userID := c.GetString("userID")
+	var plan string
+	err := h.db.QueryRow(c.Request.Context(),
+		`SELECT plan FROM users WHERE id = $1`, userID,
+	).Scan(&plan)
+	if err != nil || plan != "solo" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "sync requires a Solo plan"})
+		return false
+	}
+	return true
+}
+
 // PushSync handles POST /projects/:id/sync
 // Body is raw base64-encoded encrypted bytes (Content-Type: application/octet-stream)
 func (h *Handler) PushSync(c *gin.Context) {
+	if !h.requireSoloPlan(c) {
+		return
+	}
+
 	userID := c.GetString("userID")
 	projectID := c.Param("id")
 
@@ -210,6 +228,10 @@ func (h *Handler) PushSync(c *gin.Context) {
 // PullSync handles GET /projects/:id/sync
 // Returns base64-encoded encrypted_data
 func (h *Handler) PullSync(c *gin.Context) {
+	if !h.requireSoloPlan(c) {
+		return
+	}
+
 	userID := c.GetString("userID")
 	projectID := c.Param("id")
 

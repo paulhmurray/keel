@@ -177,7 +177,18 @@ class SyncClient {
     );
   }
 
-  /// GET /billing/portal — returns Stripe portal URL
+  /// POST /billing/checkout — returns Stripe Checkout URL for new subscribers
+  Future<String> getCheckoutUrl(String accessToken) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl/billing/checkout'),
+      headers: _authHeaders(accessToken),
+    );
+    _checkStatus(response);
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    return body['url'] as String;
+  }
+
+  /// GET /billing/portal — returns Stripe portal URL for existing subscribers
   Future<String> getBillingPortalUrl(String accessToken) async {
     final response = await _client.get(
       Uri.parse('$baseUrl/billing/portal'),

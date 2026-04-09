@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stripe/stripe-go/v79"
+	checkoutsession "github.com/stripe/stripe-go/v79/checkout/session"
 	"github.com/stripe/stripe-go/v79/billingportal/session"
 	"github.com/stripe/stripe-go/v79/webhook"
 )
@@ -19,6 +20,36 @@ type Handler struct {
 
 func NewHandler(db *pgxpool.Pool) *Handler {
 	return &Handler{db: db}
+}
+
+// Checkout handles POST /billing/checkout
+// Creates a Stripe Checkout session for the Solo plan and returns the URL.
+func (h *Handler) Checkout(c *gin.Context) {
+	userID := c.GetString("userID")
+
+	stripe.Key = os.Getenv("STRIPE_SECRET_KEY")
+	priceID := os.Getenv("STRIPE_PRICE_ID")
+
+	params := &stripe.CheckoutSessionParams{
+		Mode: stripe.String(string(stripe.CheckoutSessionModeSubscription)),
+		LineItems: []*stripe.CheckoutSessionLineItemParams{
+			{
+				Price:    stripe.String(priceID),
+				Quantity: stripe.Int64(1),
+			},
+		},
+		ClientReferenceID: stripe.String(userID),
+		SuccessURL:        stripe.String("https://keel-app.dev/settings?upgraded=1"),
+		CancelURL:         stripe.String("https://keel-app.dev/settings"),
+	}
+
+	s, err := checkoutsession.New(params)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create checkout session"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"url": s.URL})
 }
 
 // Portal handles GET /billing/portal

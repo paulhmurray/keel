@@ -113,7 +113,8 @@ func main() {
 			projects.GET("/:id/sync", syncHandler.PullSync)
 		}
 
-		// Billing portal
+		// Billing
+		protected.POST("/billing/checkout", billingHandler.Checkout)
 		protected.GET("/billing/portal", billingHandler.Portal)
 
 		// Inbox relay
