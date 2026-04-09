@@ -24,7 +24,7 @@ class _PeopleViewState extends State<PeopleView>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -78,6 +78,8 @@ class _PeopleViewState extends State<PeopleView>
             tabs: const [
               Tab(text: 'Stakeholders'),
               Tab(text: 'Team / Colleagues'),
+              Tab(text: 'Executives'),
+              Tab(text: 'Vendors'),
             ],
             indicatorColor: KColors.amber,
             labelColor: KColors.amber,
@@ -101,6 +103,20 @@ class _PeopleViewState extends State<PeopleView>
                 personType: 'colleague',
                 onEdit: (p) =>
                     _showPersonForm(context, projectId, db, p, 'colleague'),
+              ),
+              _PersonsList(
+                projectId: projectId,
+                db: db,
+                personType: 'exec',
+                onEdit: (p) =>
+                    _showPersonForm(context, projectId, db, p, 'exec'),
+              ),
+              _PersonsList(
+                projectId: projectId,
+                db: db,
+                personType: 'vendor',
+                onEdit: (p) =>
+                    _showPersonForm(context, projectId, db, p, 'vendor'),
               ),
             ],
           ),
@@ -148,9 +164,13 @@ class _PersonsList extends StatelessWidget {
         if (persons.isEmpty) {
           return Center(
             child: Text(
-              personType == 'stakeholder'
-                  ? 'No stakeholders added yet.'
-                  : 'No team members added yet.',
+              switch (personType) {
+                'stakeholder' => 'No stakeholders added yet.',
+                'colleague' => 'No team members added yet.',
+                'exec' => 'No executives added yet.',
+                'vendor' => 'No vendors added yet.',
+                _ => 'No people added yet.',
+              },
               style: const TextStyle(color: KColors.textDim),
             ),
           );

@@ -10,6 +10,8 @@ import '../decisions/decision_form.dart';
 import '../raid/issue_form.dart';
 import '../raid/dependency_form.dart';
 import 'timeline_chart.dart';
+import 'gantt_chart.dart';
+import 'workstream_form.dart';
 
 // ---------------------------------------------------------------------------
 // Internal model (list view only)
@@ -129,6 +131,35 @@ class _TimelineContent extends StatefulWidget {
 class _TimelineContentState extends State<_TimelineContent> {
   bool _showChart = true;
 
+  Future<(List<_TimelineEvent>, List<GanttWorkstream>)> _loadAll(
+      AppDatabase db) async {
+    final events = await _loadEvents(db);
+    final workstreams = await _loadWorkstreams(db);
+    return (events, workstreams);
+  }
+
+  Future<List<GanttWorkstream>> _loadWorkstreams(AppDatabase db) async {
+    final wsList = await db.workstreamsDao.getForProject(widget.projectId);
+    final links = await db.workstreamsDao.getLinksForProject(widget.projectId);
+
+    return wsList.map((ws) {
+      final dependsOnIds = links
+          .where((l) => l.toId == ws.id)
+          .map((l) => l.fromId)
+          .toList();
+      return GanttWorkstream(
+        id: ws.id,
+        name: ws.name,
+        lane: ws.lane,
+        lead: ws.lead,
+        status: ws.status,
+        start: ws.startDate != null ? DateTime.tryParse(ws.startDate!) : null,
+        end: ws.endDate != null ? DateTime.tryParse(ws.endDate!) : null,
+        dependsOnIds: dependsOnIds,
+      );
+    }).toList();
+  }
+
   Future<List<_TimelineEvent>> _loadEvents(AppDatabase db) async {
     final today = du.toIsoDate(DateTime.now());
 
@@ -214,47 +245,20 @@ class _TimelineContentState extends State<_TimelineContent> {
   Widget build(BuildContext context) {
     final db = context.read<AppDatabase>();
 
-    return FutureBuilder<List<_TimelineEvent>>(
-      future: _loadEvents(db),
+    return FutureBuilder<(List<_TimelineEvent>, List<GanttWorkstream>)>(
+      future: _loadAll(db),
       builder: (context, snap) {
         if (snap.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
         if (snap.hasError) {
           return Center(
-            child: Text(
-              'Error loading timeline: ${snap.error}',
-              style: const TextStyle(color: KColors.red),
-            ),
+            child: Text('Error loading timeline: ${snap.error}',
+                style: const TextStyle(color: KColors.red)),
           );
         }
 
-        final events = snap.data ?? [];
-
-        if (events.isEmpty) {
-          return const Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.timeline_outlined,
-                    size: 40, color: KColors.textMuted),
-                SizedBox(height: 16),
-                Text(
-                  'No upcoming deadlines',
-                  style:
-                      TextStyle(color: KColors.textDim, fontSize: 14),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'Open actions, decisions, issues and dependencies\nwith due dates will appear here.',
-                  textAlign: TextAlign.center,
-                  style:
-                      TextStyle(color: KColors.textMuted, fontSize: 12),
-                ),
-              ],
-            ),
-          );
-        }
+        final (events, workstreams) = snap.data ?? (<_TimelineEvent>[], <GanttWorkstream>[]);
 
         final chartEvents = events
             .where((e) => e.dateIso != null && e.dateIso!.isNotEmpty)
@@ -263,10 +267,8 @@ class _TimelineContentState extends State<_TimelineContent> {
 
         final today = du.toIsoDate(DateTime.now());
         final now = DateTime.now();
-        final endOfWeek =
-            du.toIsoDate(now.add(const Duration(days: 6)));
-        final endOfMonth =
-            du.toIsoDate(DateTime(now.year, now.month + 1, 0));
+        final endOfWeek = du.toIsoDate(now.add(const Duration(days: 6)));
+        final endOfMonth = du.toIsoDate(DateTime(now.year, now.month + 1, 0));
 
         final overdue = <_TimelineEvent>[];
         final thisWeek = <_TimelineEvent>[];
@@ -296,78 +298,38 @@ class _TimelineContentState extends State<_TimelineContent> {
         thisMonth.sort(byDate);
         future.sort(byDate);
 
-        Widget listSection = Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (overdue.isNotEmpty) ...[
-              _SectionHeader(
-                label: 'OVERDUE',
-                dotColor: KColors.red,
-              ),
-              const SizedBox(height: 8),
-              ...overdue.map((e) => _EventRow(event: e, projectId: widget.projectId, db: db)),
-              const SizedBox(height: 20),
-            ],
-            if (thisWeek.isNotEmpty) ...[
-              _SectionHeader(
-                label: 'THIS WEEK',
-                dotColor: KColors.amber,
-              ),
-              const SizedBox(height: 8),
-              ...thisWeek.map((e) => _EventRow(event: e, projectId: widget.projectId, db: db)),
-              const SizedBox(height: 20),
-            ],
-            if (thisMonth.isNotEmpty) ...[
-              _SectionHeader(
-                label: 'THIS MONTH',
-                dotColor: KColors.textMuted,
-              ),
-              const SizedBox(height: 8),
-              ...thisMonth.map((e) => _EventRow(event: e, projectId: widget.projectId, db: db)),
-              const SizedBox(height: 20),
-            ],
-            if (future.isNotEmpty) ...[
-              _SectionHeader(
-                label: 'FUTURE',
-                dotColor: KColors.textMuted,
-              ),
-              const SizedBox(height: 8),
-              ...future.map((e) => _EventRow(event: e, projectId: widget.projectId, db: db)),
-              const SizedBox(height: 20),
-            ],
-            if (noDate.isNotEmpty) ...[
-              _SectionHeader(
-                label: 'NO DATE',
-                dotColor: KColors.textMuted,
-              ),
-              const SizedBox(height: 8),
-              ...noDate.map((e) => _EventRow(event: e, projectId: widget.projectId, db: db)),
-            ],
-          ],
-        );
-
         return SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ── Header ──────────────────────────────────────────────────
               Row(
                 children: [
                   const Icon(Icons.timeline, color: KColors.amber, size: 18),
                   const SizedBox(width: 8),
-                  Text(
-                    'TIMELINE',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
+                  Text('TIMELINE',
+                      style: Theme.of(context).textTheme.headlineSmall),
                   const Spacer(),
+                  ElevatedButton.icon(
+                    onPressed: () => showDialog(
+                      context: context,
+                      builder: (_) => WorkstreamFormDialog(
+                          projectId: widget.projectId, db: db),
+                    ).then((_) => setState(() {})),
+                    icon: const Icon(Icons.add, size: 14),
+                    label: const Text('Add Workstream'),
+                  ),
+                  const SizedBox(width: 10),
                   _ViewToggle(
                     showChart: _showChart,
                     onChanged: (v) => setState(() => _showChart = v),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
+              // ── Gantt chart ─────────────────────────────────────────────
               if (_showChart) ...[
                 Container(
                   padding: const EdgeInsets.all(16),
@@ -379,32 +341,229 @@ class _TimelineContentState extends State<_TimelineContent> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'VISUAL TIMELINE',
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.15,
-                          color: KColors.textMuted,
-                        ),
+                      Row(
+                        children: [
+                          const Text('WORKSTREAMS & EVENTS',
+                              style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.15,
+                                  color: KColors.textMuted)),
+                          const Spacer(),
+                          // Legend
+                          _StatusLegend(),
+                        ],
                       ),
                       const SizedBox(height: 12),
-                      TimelineChart(
-                        events: chartEvents,
-                        height: 260,
-                        compact: false,
-                      ),
+                      if (workstreams.isEmpty)
+                        _EmptyWorkstreams(
+                          projectId: widget.projectId,
+                          db: db,
+                          chartEvents: chartEvents,
+                          onAdded: () => setState(() {}),
+                        )
+                      else
+                        GanttChart(
+                          workstreams: workstreams,
+                          events: chartEvents,
+                        ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 24),
               ],
 
-              listSection,
+              // ── Deadline list ────────────────────────────────────────────
+              if (events.isEmpty && workstreams.isNotEmpty)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 32),
+                    child: Text('No upcoming deadlines.',
+                        style:
+                            TextStyle(color: KColors.textDim, fontSize: 13)),
+                  ),
+                )
+              else if (events.isEmpty && workstreams.isEmpty)
+                const Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.timeline_outlined,
+                          size: 40, color: KColors.textMuted),
+                      SizedBox(height: 16),
+                      Text('No workstreams or deadlines yet.',
+                          style:
+                              TextStyle(color: KColors.textDim, fontSize: 14)),
+                      SizedBox(height: 8),
+                      Text(
+                        'Add a workstream above, or add due dates\nto actions, decisions, issues and dependencies.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            color: KColors.textMuted, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (overdue.isNotEmpty) ...[
+                      _SectionHeader(label: 'OVERDUE', dotColor: KColors.red),
+                      const SizedBox(height: 8),
+                      ...overdue.map((e) => _EventRow(
+                          event: e, projectId: widget.projectId, db: db)),
+                      const SizedBox(height: 20),
+                    ],
+                    if (thisWeek.isNotEmpty) ...[
+                      _SectionHeader(
+                          label: 'THIS WEEK', dotColor: KColors.amber),
+                      const SizedBox(height: 8),
+                      ...thisWeek.map((e) => _EventRow(
+                          event: e, projectId: widget.projectId, db: db)),
+                      const SizedBox(height: 20),
+                    ],
+                    if (thisMonth.isNotEmpty) ...[
+                      _SectionHeader(
+                          label: 'THIS MONTH', dotColor: KColors.textMuted),
+                      const SizedBox(height: 8),
+                      ...thisMonth.map((e) => _EventRow(
+                          event: e, projectId: widget.projectId, db: db)),
+                      const SizedBox(height: 20),
+                    ],
+                    if (future.isNotEmpty) ...[
+                      _SectionHeader(
+                          label: 'FUTURE', dotColor: KColors.textMuted),
+                      const SizedBox(height: 8),
+                      ...future.map((e) => _EventRow(
+                          event: e, projectId: widget.projectId, db: db)),
+                      const SizedBox(height: 20),
+                    ],
+                    if (noDate.isNotEmpty) ...[
+                      _SectionHeader(
+                          label: 'NO DATE', dotColor: KColors.textMuted),
+                      const SizedBox(height: 8),
+                      ...noDate.map((e) => _EventRow(
+                          event: e, projectId: widget.projectId, db: db)),
+                    ],
+                  ],
+                ),
             ],
           ),
         );
       },
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Empty workstreams — shows existing event dots chart + prompt
+// ---------------------------------------------------------------------------
+
+class _EmptyWorkstreams extends StatelessWidget {
+  final String projectId;
+  final AppDatabase db;
+  final List<TimelineEvent> chartEvents;
+  final VoidCallback onAdded;
+
+  const _EmptyWorkstreams({
+    required this.projectId,
+    required this.db,
+    required this.chartEvents,
+    required this.onAdded,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        if (chartEvents.isNotEmpty) ...[
+          TimelineChart(events: chartEvents, height: 180, compact: false),
+          const SizedBox(height: 16),
+        ],
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: KColors.surface2,
+            border: Border.all(color: KColors.border2),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.view_timeline_outlined,
+                  size: 18, color: KColors.textMuted),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('No workstreams yet',
+                        style: TextStyle(
+                            color: KColors.text,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600)),
+                    SizedBox(height: 2),
+                    Text(
+                      'Add workstreams to see swim lanes, Gantt bars and dependency arrows.',
+                      style:
+                          TextStyle(color: KColors.textDim, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              ElevatedButton.icon(
+                onPressed: () => showDialog(
+                  context: context,
+                  builder: (_) =>
+                      WorkstreamFormDialog(projectId: projectId, db: db),
+                ).then((_) => onAdded()),
+                icon: const Icon(Icons.add, size: 14),
+                label: const Text('Add Workstream'),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Status legend
+// ---------------------------------------------------------------------------
+
+class _StatusLegend extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    const items = [
+      ('Not started', KColors.textMuted),
+      ('In progress', KColors.phosphor),
+      ('Complete', KColors.phosphor),
+      ('Blocked', KColors.red),
+    ];
+    return Wrap(
+      spacing: 12,
+      children: items.map((item) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                color: item.$2.withValues(alpha: 0.2),
+                border: Border.all(color: item.$2, width: 1),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 4),
+            Text(item.$1,
+                style: const TextStyle(
+                    color: KColors.textDim, fontSize: 10)),
+          ],
+        );
+      }).toList(),
     );
   }
 }

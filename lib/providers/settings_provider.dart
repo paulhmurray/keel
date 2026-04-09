@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 // Conditional dart:io import — only used on non-web platforms.
 import '_settings_io.dart' if (dart.library.html) '_settings_web.dart';
+import '../core/llm/ollama_client.dart';
 
 // Supported LLM providers
 enum LLMProvider { claudeApi, openAi, grok, githubModels, azureOpenAi, ollama }
@@ -225,6 +226,11 @@ class SettingsProvider extends ChangeNotifier {
     }
     _loaded = true;
     notifyListeners();
+
+    // Warm up Ollama in the background if it's the configured provider
+    if (!kIsWeb && _settings.llmProvider == LLMProvider.ollama) {
+      OllamaClient.ensureRunning(_settings.ollamaBaseUrl);
+    }
   }
 
   Future<void> save(AppSettings newSettings) async {

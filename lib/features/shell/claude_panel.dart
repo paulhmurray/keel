@@ -152,6 +152,19 @@ class _ClaudePanelState extends State<ClaudePanel> {
           ? await contextBuilder.buildSystemPrompt(projectId)
           : _defaultSystemPrompt();
 
+      // For Ollama: ensure the server is running, starting it if needed
+      if (sp.llmProvider == LLMProvider.ollama) {
+        final running =
+            await OllamaClient.ensureRunning(sp.ollamaBaseUrl);
+        if (!running) {
+          throw Exception(
+            'Could not reach Ollama at ${sp.ollamaBaseUrl}.\n'
+            'Make sure the ollama binary is installed and in your PATH, '
+            'or start it manually with: ollama serve',
+          );
+        }
+      }
+
       // For Ollama: auto-correct the model to whatever is actually installed
       if (sp.llmProvider == LLMProvider.ollama) {
         final installed = await OllamaClient.getAvailableModels(sp.ollamaBaseUrl);
@@ -172,25 +185,49 @@ class _ClaudePanelState extends State<ClaudePanel> {
       final client = LLMClientFactory.fromSettings(settings.settings);
       final userMessage = _buildUserMessage(text, pid);
 
-      final response = await client.complete(
-        systemPrompt: systemPrompt,
-        userMessage: userMessage,
-        maxTokens: 2000,
-      );
-
+      // Insert a placeholder the user sees immediately; fill it as tokens arrive.
       if (mounted) {
         setState(() {
           _historyByProject[pid]!.add(
-              _ChatMessage(role: _MessageRole.assistant, content: response));
+              _ChatMessage(role: _MessageRole.assistant, content: ''));
+        });
+        _scrollToBottom();
+      }
+
+      final buffer = StringBuffer();
+      await for (final token in client.stream(
+        systemPrompt: systemPrompt,
+        userMessage: userMessage,
+      )) {
+        buffer.write(token);
+        if (mounted) {
+          setState(() {
+            final msgs = _historyByProject[pid]!;
+            msgs[msgs.length - 1] =
+                _ChatMessage(role: _MessageRole.assistant, content: buffer.toString());
+          });
+          _scrollToBottom();
+        }
+      }
+
+      if (mounted) {
+        setState(() {
           _isLoading = false;
           final h = _historyByProject[pid]!;
           if (h.length > 20) h.removeRange(0, h.length - 20);
         });
-        _scrollToBottom();
       }
     } catch (e) {
       if (mounted) {
         setState(() {
+          // Remove empty assistant placeholder if streaming failed mid-flight
+          final msgs = _historyByProject[pid];
+          if (msgs != null &&
+              msgs.isNotEmpty &&
+              msgs.last.role == _MessageRole.assistant &&
+              msgs.last.content.isEmpty) {
+            msgs.removeLast();
+          }
           _isLoading = false;
           _errorMessage = _formatError(e.toString());
         });

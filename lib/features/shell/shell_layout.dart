@@ -207,10 +207,10 @@ class _ShellLayoutState extends State<ShellLayout> {
 
                 // Watermark opacity: higher on overview, high on onboarding
                 final watermarkOpacity = projectId == null
-                    ? 0.15
+                    ? 0.75
                     : _selectedIndex == 0
-                        ? 0.10
-                        : 0.06;
+                        ? 0.55
+                        : 0.40;
 
                 return Row(
                   children: [
@@ -267,8 +267,8 @@ class _ShellLayoutState extends State<ShellLayout> {
                               duration: const Duration(milliseconds: 500),
                               child: SvgPicture.asset(
                                 'assets/keel-logo.svg',
-                                width: 360,
-                                height: 360,
+                                width: 560,
+                                height: 560,
                               ),
                             ),
                           ),

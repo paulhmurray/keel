@@ -6,9 +6,9 @@ import 'package:drift/drift.dart' show Value;
 import '../../core/database/database.dart';
 import '../../providers/project_provider.dart';
 import '../../shared/theme/keel_colors.dart';
-import '../../shared/widgets/status_chip.dart';
+import '../timeline/gantt_chart.dart';
 import '../timeline/timeline_chart.dart';
-import 'workstream_form.dart';
+import '../timeline/workstream_form.dart';
 
 class ProgrammeView extends StatelessWidget {
   final VoidCallback? onNavigateToTimeline;
@@ -33,7 +33,7 @@ class ProgrammeView extends StatelessWidget {
   }
 }
 
-class _ProgrammeContent extends StatelessWidget {
+class _ProgrammeContent extends StatefulWidget {
   final String projectId;
   final VoidCallback? onNavigateToTimeline;
 
@@ -41,6 +41,67 @@ class _ProgrammeContent extends StatelessWidget {
     required this.projectId,
     this.onNavigateToTimeline,
   });
+
+  @override
+  State<_ProgrammeContent> createState() => _ProgrammeContentState();
+}
+
+class _ProgrammeContentState extends State<_ProgrammeContent> {
+  List<GanttWorkstream> _workstreams = [];
+  bool _loadingWorkstreams = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadWorkstreams();
+  }
+
+  @override
+  void didUpdateWidget(_ProgrammeContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.projectId != widget.projectId) {
+      _loadWorkstreams();
+    }
+  }
+
+  Future<void> _loadWorkstreams() async {
+    final db = context.read<AppDatabase>();
+    setState(() => _loadingWorkstreams = true);
+    final rows = await db.workstreamsDao.getForProject(widget.projectId);
+    final links =
+        await db.workstreamsDao.getLinksForProject(widget.projectId);
+    if (!mounted) return;
+    setState(() {
+      _workstreams = rows.map((ws) {
+        final deps = links
+            .where((l) => l.toId == ws.id)
+            .map((l) => l.fromId)
+            .toList();
+        return GanttWorkstream(
+          id: ws.id,
+          name: ws.name,
+          lane: ws.lane,
+          lead: ws.lead,
+          status: ws.status,
+          start: ws.startDate != null
+              ? DateTime.tryParse(ws.startDate!)
+              : null,
+          end: ws.endDate != null ? DateTime.tryParse(ws.endDate!) : null,
+          dependsOnIds: deps,
+        );
+      }).toList();
+      _loadingWorkstreams = false;
+    });
+  }
+
+  void _addWorkstream() {
+    final db = context.read<AppDatabase>();
+    showDialog(
+      context: context,
+      builder: (_) =>
+          WorkstreamFormDialog(projectId: widget.projectId, db: db),
+    ).then((_) => _loadWorkstreams());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,11 +130,11 @@ class _ProgrammeContent extends StatelessWidget {
 
           // Programme Overview grid
           StreamBuilder<ProgrammeOverview?>(
-            stream: db.programmeDao.watchOverviewForProject(projectId),
+            stream: db.programmeDao.watchOverviewForProject(widget.projectId),
             builder: (context, snap) {
               return _OverviewSection(
                 overview: snap.data,
-                projectId: projectId,
+                projectId: widget.projectId,
                 db: db,
               );
             },
@@ -87,7 +148,7 @@ class _ProgrammeContent extends StatelessWidget {
               const Flexible(child: _SectionLabel('WORKSTREAMS')),
               const SizedBox(width: 8),
               ElevatedButton.icon(
-                onPressed: () => _addWorkstream(context, projectId, db),
+                onPressed: _addWorkstream,
                 icon: const Icon(Icons.add, size: 14),
                 label: const Text('Add Workstream'),
               ),
@@ -95,46 +156,24 @@ class _ProgrammeContent extends StatelessWidget {
           ),
           const SizedBox(height: 10),
 
-          StreamBuilder<List<Workstream>>(
-            stream: db.programmeDao.watchWorkstreamsForProject(projectId),
-            builder: (context, snap) {
-              if (!snap.hasData) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              final workstreams = snap.data!;
-              if (workstreams.isEmpty) {
-                return _EmptyWorkstreams(
-                  onAdd: () => _addWorkstream(context, projectId, db),
-                );
-              }
-              return Column(
-                children: workstreams
-                    .map((w) => _WorkstreamRow(
-                          workstream: w,
-                          db: db,
-                          projectId: projectId,
-                        ))
-                    .toList(),
-              );
-            },
-          ),
+          if (_loadingWorkstreams)
+            const Center(child: CircularProgressIndicator())
+          else if (_workstreams.isEmpty)
+            _EmptyGantt(onAdd: _addWorkstream)
+          else
+            SizedBox(
+              height: 320,
+              child: GanttChart(workstreams: _workstreams, events: const []),
+            ),
 
           const SizedBox(height: 24),
           _TimelineSummaryCard(
-            projectId: projectId,
+            projectId: widget.projectId,
             db: db,
-            onNavigateToTimeline: onNavigateToTimeline,
+            onNavigateToTimeline: widget.onNavigateToTimeline,
           ),
         ],
       ),
-    );
-  }
-
-  void _addWorkstream(
-      BuildContext context, String projectId, AppDatabase db) {
-    showDialog(
-      context: context,
-      builder: (_) => WorkstreamFormDialog(projectId: projectId, db: db),
     );
   }
 }
@@ -395,133 +434,13 @@ class _OverviewField extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Workstream Row
+// Empty Gantt placeholder
 // ---------------------------------------------------------------------------
 
-Color _wsColor(String status) {
-  switch (status.toLowerCase()) {
-    case 'green':
-      return KColors.phosphor;
-    case 'amber':
-      return KColors.amber;
-    case 'red':
-      return KColors.red;
-    default:
-      return KColors.textDim;
-  }
-}
-
-class _WorkstreamRow extends StatelessWidget {
-  final Workstream workstream;
-  final AppDatabase db;
-  final String projectId;
-
-  const _WorkstreamRow(
-      {required this.workstream, required this.db, required this.projectId});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: KColors.surface,
-        border: Border.all(color: KColors.border),
-        borderRadius: BorderRadius.circular(3),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 3,
-            height: 28,
-            color: _wsColor(workstream.status),
-            margin: const EdgeInsets.only(right: 12),
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(workstream.name,
-                    style: const TextStyle(
-                        fontSize: 12,
-                        color: KColors.text,
-                        fontWeight: FontWeight.w500)),
-                if (workstream.notes != null &&
-                    workstream.notes!.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(workstream.notes!,
-                      style: const TextStyle(
-                          fontSize: 10, color: KColors.textDim),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis),
-                ],
-              ],
-            ),
-          ),
-          if (workstream.lead != null && workstream.lead!.isNotEmpty) ...[
-            Flexible(
-              child: Text('Lead: ${workstream.lead}',
-                  style: const TextStyle(fontSize: 11, color: KColors.textDim),
-                  overflow: TextOverflow.ellipsis),
-            ),
-            const SizedBox(width: 12),
-          ],
-          StatusChip(status: workstream.status),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert,
-                size: 16, color: KColors.textMuted),
-            onSelected: (val) {
-              if (val == 'edit') {
-                showDialog(
-                  context: context,
-                  builder: (_) => WorkstreamFormDialog(
-                    projectId: projectId,
-                    db: db,
-                    workstream: workstream,
-                  ),
-                );
-              } else if (val == 'delete') {
-                _confirmDelete(context);
-              }
-            },
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'edit', child: Text('Edit')),
-              PopupMenuItem(value: 'delete', child: Text('Delete')),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _confirmDelete(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Workstream'),
-        content: Text('Delete "${workstream.name}"?'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Cancel')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: KColors.red),
-            onPressed: () {
-              db.programmeDao.deleteWorkstream(workstream.id);
-              Navigator.of(ctx).pop();
-            },
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _EmptyWorkstreams extends StatelessWidget {
+class _EmptyGantt extends StatelessWidget {
   final VoidCallback onAdd;
 
-  const _EmptyWorkstreams({required this.onAdd});
+  const _EmptyGantt({required this.onAdd});
 
   @override
   Widget build(BuildContext context) {

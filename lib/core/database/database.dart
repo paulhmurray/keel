@@ -12,6 +12,7 @@ part 'daos/inbox_dao.dart';
 part 'daos/context_dao.dart';
 part 'daos/reports_dao.dart';
 part 'daos/journal_dao.dart';
+part 'daos/workstreams_dao.dart';
 
 // ---------------------------------------------------------------------------
 // Tables
@@ -52,12 +53,26 @@ class Workstreams extends Table {
   TextColumn get id => text().named('id')();
   TextColumn get projectId => text().references(Projects, #id)();
   TextColumn get name => text()();
+  TextColumn get lane => text().withDefault(const Constant('General'))();
   TextColumn get lead => text().nullable()();
-  TextColumn get status => text().withDefault(const Constant('green'))();
+  TextColumn get status => text().withDefault(const Constant('not_started'))();
+  TextColumn get startDate => text().nullable()();
+  TextColumn get endDate => text().nullable()();
   TextColumn get notes => text().nullable()();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class WorkstreamLinks extends Table {
+  TextColumn get id => text().named('id')();
+  TextColumn get projectId => text().references(Projects, #id)();
+  TextColumn get fromId => text()();
+  TextColumn get toId => text()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -342,6 +357,7 @@ class StatusReports extends Table {
     Projects,
     ProgrammeOverviews,
     Workstreams,
+    WorkstreamLinks,
     GovernanceCadences,
     Risks,
     Assumptions,
@@ -370,6 +386,7 @@ class StatusReports extends Table {
     ContextDao,
     ReportsDao,
     JournalDao,
+    WorkstreamsDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -377,7 +394,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.memory() : super(openMemoryConnection());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -399,6 +416,12 @@ class AppDatabase extends _$AppDatabase {
           if (from < 4) {
             await m.createTable(journalEntries);
             await m.createTable(journalEntryLinks);
+          }
+          if (from < 5) {
+            await m.addColumn(workstreams, workstreams.lane);
+            await m.addColumn(workstreams, workstreams.startDate);
+            await m.addColumn(workstreams, workstreams.endDate);
+            await m.createTable(workstreamLinks);
           }
         },
       );

@@ -1228,6 +1228,16 @@ class $WorkstreamsTable extends Workstreams
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _laneMeta = const VerificationMeta('lane');
+  @override
+  late final GeneratedColumn<String> lane = GeneratedColumn<String>(
+    'lane',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('General'),
+  );
   static const VerificationMeta _leadMeta = const VerificationMeta('lead');
   @override
   late final GeneratedColumn<String> lead = GeneratedColumn<String>(
@@ -1245,7 +1255,29 @@ class $WorkstreamsTable extends Workstreams
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
-    defaultValue: const Constant('green'),
+    defaultValue: const Constant('not_started'),
+  );
+  static const VerificationMeta _startDateMeta = const VerificationMeta(
+    'startDate',
+  );
+  @override
+  late final GeneratedColumn<String> startDate = GeneratedColumn<String>(
+    'start_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _endDateMeta = const VerificationMeta(
+    'endDate',
+  );
+  @override
+  late final GeneratedColumn<String> endDate = GeneratedColumn<String>(
+    'end_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _notesMeta = const VerificationMeta('notes');
   @override
@@ -1297,8 +1329,11 @@ class $WorkstreamsTable extends Workstreams
     id,
     projectId,
     name,
+    lane,
     lead,
     status,
+    startDate,
+    endDate,
     notes,
     sortOrder,
     createdAt,
@@ -1337,6 +1372,12 @@ class $WorkstreamsTable extends Workstreams
     } else if (isInserting) {
       context.missing(_nameMeta);
     }
+    if (data.containsKey('lane')) {
+      context.handle(
+        _laneMeta,
+        lane.isAcceptableOrUnknown(data['lane']!, _laneMeta),
+      );
+    }
     if (data.containsKey('lead')) {
       context.handle(
         _leadMeta,
@@ -1347,6 +1388,18 @@ class $WorkstreamsTable extends Workstreams
       context.handle(
         _statusMeta,
         status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('start_date')) {
+      context.handle(
+        _startDateMeta,
+        startDate.isAcceptableOrUnknown(data['start_date']!, _startDateMeta),
+      );
+    }
+    if (data.containsKey('end_date')) {
+      context.handle(
+        _endDateMeta,
+        endDate.isAcceptableOrUnknown(data['end_date']!, _endDateMeta),
       );
     }
     if (data.containsKey('notes')) {
@@ -1394,6 +1447,10 @@ class $WorkstreamsTable extends Workstreams
         DriftSqlType.string,
         data['${effectivePrefix}name'],
       )!,
+      lane: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}lane'],
+      )!,
       lead: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}lead'],
@@ -1402,6 +1459,14 @@ class $WorkstreamsTable extends Workstreams
         DriftSqlType.string,
         data['${effectivePrefix}status'],
       )!,
+      startDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}start_date'],
+      ),
+      endDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}end_date'],
+      ),
       notes: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
@@ -1431,8 +1496,11 @@ class Workstream extends DataClass implements Insertable<Workstream> {
   final String id;
   final String projectId;
   final String name;
+  final String lane;
   final String? lead;
   final String status;
+  final String? startDate;
+  final String? endDate;
   final String? notes;
   final int sortOrder;
   final DateTime createdAt;
@@ -1441,8 +1509,11 @@ class Workstream extends DataClass implements Insertable<Workstream> {
     required this.id,
     required this.projectId,
     required this.name,
+    required this.lane,
     this.lead,
     required this.status,
+    this.startDate,
+    this.endDate,
     this.notes,
     required this.sortOrder,
     required this.createdAt,
@@ -1454,10 +1525,17 @@ class Workstream extends DataClass implements Insertable<Workstream> {
     map['id'] = Variable<String>(id);
     map['project_id'] = Variable<String>(projectId);
     map['name'] = Variable<String>(name);
+    map['lane'] = Variable<String>(lane);
     if (!nullToAbsent || lead != null) {
       map['lead'] = Variable<String>(lead);
     }
     map['status'] = Variable<String>(status);
+    if (!nullToAbsent || startDate != null) {
+      map['start_date'] = Variable<String>(startDate);
+    }
+    if (!nullToAbsent || endDate != null) {
+      map['end_date'] = Variable<String>(endDate);
+    }
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
     }
@@ -1472,8 +1550,15 @@ class Workstream extends DataClass implements Insertable<Workstream> {
       id: Value(id),
       projectId: Value(projectId),
       name: Value(name),
+      lane: Value(lane),
       lead: lead == null && nullToAbsent ? const Value.absent() : Value(lead),
       status: Value(status),
+      startDate: startDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(startDate),
+      endDate: endDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endDate),
       notes: notes == null && nullToAbsent
           ? const Value.absent()
           : Value(notes),
@@ -1492,8 +1577,11 @@ class Workstream extends DataClass implements Insertable<Workstream> {
       id: serializer.fromJson<String>(json['id']),
       projectId: serializer.fromJson<String>(json['projectId']),
       name: serializer.fromJson<String>(json['name']),
+      lane: serializer.fromJson<String>(json['lane']),
       lead: serializer.fromJson<String?>(json['lead']),
       status: serializer.fromJson<String>(json['status']),
+      startDate: serializer.fromJson<String?>(json['startDate']),
+      endDate: serializer.fromJson<String?>(json['endDate']),
       notes: serializer.fromJson<String?>(json['notes']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
@@ -1507,8 +1595,11 @@ class Workstream extends DataClass implements Insertable<Workstream> {
       'id': serializer.toJson<String>(id),
       'projectId': serializer.toJson<String>(projectId),
       'name': serializer.toJson<String>(name),
+      'lane': serializer.toJson<String>(lane),
       'lead': serializer.toJson<String?>(lead),
       'status': serializer.toJson<String>(status),
+      'startDate': serializer.toJson<String?>(startDate),
+      'endDate': serializer.toJson<String?>(endDate),
       'notes': serializer.toJson<String?>(notes),
       'sortOrder': serializer.toJson<int>(sortOrder),
       'createdAt': serializer.toJson<DateTime>(createdAt),
@@ -1520,8 +1611,11 @@ class Workstream extends DataClass implements Insertable<Workstream> {
     String? id,
     String? projectId,
     String? name,
+    String? lane,
     Value<String?> lead = const Value.absent(),
     String? status,
+    Value<String?> startDate = const Value.absent(),
+    Value<String?> endDate = const Value.absent(),
     Value<String?> notes = const Value.absent(),
     int? sortOrder,
     DateTime? createdAt,
@@ -1530,8 +1624,11 @@ class Workstream extends DataClass implements Insertable<Workstream> {
     id: id ?? this.id,
     projectId: projectId ?? this.projectId,
     name: name ?? this.name,
+    lane: lane ?? this.lane,
     lead: lead.present ? lead.value : this.lead,
     status: status ?? this.status,
+    startDate: startDate.present ? startDate.value : this.startDate,
+    endDate: endDate.present ? endDate.value : this.endDate,
     notes: notes.present ? notes.value : this.notes,
     sortOrder: sortOrder ?? this.sortOrder,
     createdAt: createdAt ?? this.createdAt,
@@ -1542,8 +1639,11 @@ class Workstream extends DataClass implements Insertable<Workstream> {
       id: data.id.present ? data.id.value : this.id,
       projectId: data.projectId.present ? data.projectId.value : this.projectId,
       name: data.name.present ? data.name.value : this.name,
+      lane: data.lane.present ? data.lane.value : this.lane,
       lead: data.lead.present ? data.lead.value : this.lead,
       status: data.status.present ? data.status.value : this.status,
+      startDate: data.startDate.present ? data.startDate.value : this.startDate,
+      endDate: data.endDate.present ? data.endDate.value : this.endDate,
       notes: data.notes.present ? data.notes.value : this.notes,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
@@ -1557,8 +1657,11 @@ class Workstream extends DataClass implements Insertable<Workstream> {
           ..write('id: $id, ')
           ..write('projectId: $projectId, ')
           ..write('name: $name, ')
+          ..write('lane: $lane, ')
           ..write('lead: $lead, ')
           ..write('status: $status, ')
+          ..write('startDate: $startDate, ')
+          ..write('endDate: $endDate, ')
           ..write('notes: $notes, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('createdAt: $createdAt, ')
@@ -1572,8 +1675,11 @@ class Workstream extends DataClass implements Insertable<Workstream> {
     id,
     projectId,
     name,
+    lane,
     lead,
     status,
+    startDate,
+    endDate,
     notes,
     sortOrder,
     createdAt,
@@ -1586,8 +1692,11 @@ class Workstream extends DataClass implements Insertable<Workstream> {
           other.id == this.id &&
           other.projectId == this.projectId &&
           other.name == this.name &&
+          other.lane == this.lane &&
           other.lead == this.lead &&
           other.status == this.status &&
+          other.startDate == this.startDate &&
+          other.endDate == this.endDate &&
           other.notes == this.notes &&
           other.sortOrder == this.sortOrder &&
           other.createdAt == this.createdAt &&
@@ -1598,8 +1707,11 @@ class WorkstreamsCompanion extends UpdateCompanion<Workstream> {
   final Value<String> id;
   final Value<String> projectId;
   final Value<String> name;
+  final Value<String> lane;
   final Value<String?> lead;
   final Value<String> status;
+  final Value<String?> startDate;
+  final Value<String?> endDate;
   final Value<String?> notes;
   final Value<int> sortOrder;
   final Value<DateTime> createdAt;
@@ -1609,8 +1721,11 @@ class WorkstreamsCompanion extends UpdateCompanion<Workstream> {
     this.id = const Value.absent(),
     this.projectId = const Value.absent(),
     this.name = const Value.absent(),
+    this.lane = const Value.absent(),
     this.lead = const Value.absent(),
     this.status = const Value.absent(),
+    this.startDate = const Value.absent(),
+    this.endDate = const Value.absent(),
     this.notes = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -1621,8 +1736,11 @@ class WorkstreamsCompanion extends UpdateCompanion<Workstream> {
     required String id,
     required String projectId,
     required String name,
+    this.lane = const Value.absent(),
     this.lead = const Value.absent(),
     this.status = const Value.absent(),
+    this.startDate = const Value.absent(),
+    this.endDate = const Value.absent(),
     this.notes = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -1635,8 +1753,11 @@ class WorkstreamsCompanion extends UpdateCompanion<Workstream> {
     Expression<String>? id,
     Expression<String>? projectId,
     Expression<String>? name,
+    Expression<String>? lane,
     Expression<String>? lead,
     Expression<String>? status,
+    Expression<String>? startDate,
+    Expression<String>? endDate,
     Expression<String>? notes,
     Expression<int>? sortOrder,
     Expression<DateTime>? createdAt,
@@ -1647,8 +1768,11 @@ class WorkstreamsCompanion extends UpdateCompanion<Workstream> {
       if (id != null) 'id': id,
       if (projectId != null) 'project_id': projectId,
       if (name != null) 'name': name,
+      if (lane != null) 'lane': lane,
       if (lead != null) 'lead': lead,
       if (status != null) 'status': status,
+      if (startDate != null) 'start_date': startDate,
+      if (endDate != null) 'end_date': endDate,
       if (notes != null) 'notes': notes,
       if (sortOrder != null) 'sort_order': sortOrder,
       if (createdAt != null) 'created_at': createdAt,
@@ -1661,8 +1785,11 @@ class WorkstreamsCompanion extends UpdateCompanion<Workstream> {
     Value<String>? id,
     Value<String>? projectId,
     Value<String>? name,
+    Value<String>? lane,
     Value<String?>? lead,
     Value<String>? status,
+    Value<String?>? startDate,
+    Value<String?>? endDate,
     Value<String?>? notes,
     Value<int>? sortOrder,
     Value<DateTime>? createdAt,
@@ -1673,8 +1800,11 @@ class WorkstreamsCompanion extends UpdateCompanion<Workstream> {
       id: id ?? this.id,
       projectId: projectId ?? this.projectId,
       name: name ?? this.name,
+      lane: lane ?? this.lane,
       lead: lead ?? this.lead,
       status: status ?? this.status,
+      startDate: startDate ?? this.startDate,
+      endDate: endDate ?? this.endDate,
       notes: notes ?? this.notes,
       sortOrder: sortOrder ?? this.sortOrder,
       createdAt: createdAt ?? this.createdAt,
@@ -1695,11 +1825,20 @@ class WorkstreamsCompanion extends UpdateCompanion<Workstream> {
     if (name.present) {
       map['name'] = Variable<String>(name.value);
     }
+    if (lane.present) {
+      map['lane'] = Variable<String>(lane.value);
+    }
     if (lead.present) {
       map['lead'] = Variable<String>(lead.value);
     }
     if (status.present) {
       map['status'] = Variable<String>(status.value);
+    }
+    if (startDate.present) {
+      map['start_date'] = Variable<String>(startDate.value);
+    }
+    if (endDate.present) {
+      map['end_date'] = Variable<String>(endDate.value);
     }
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
@@ -1725,12 +1864,374 @@ class WorkstreamsCompanion extends UpdateCompanion<Workstream> {
           ..write('id: $id, ')
           ..write('projectId: $projectId, ')
           ..write('name: $name, ')
+          ..write('lane: $lane, ')
           ..write('lead: $lead, ')
           ..write('status: $status, ')
+          ..write('startDate: $startDate, ')
+          ..write('endDate: $endDate, ')
           ..write('notes: $notes, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $WorkstreamLinksTable extends WorkstreamLinks
+    with TableInfo<$WorkstreamLinksTable, WorkstreamLink> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WorkstreamLinksTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES projects (id)',
+    ),
+  );
+  static const VerificationMeta _fromIdMeta = const VerificationMeta('fromId');
+  @override
+  late final GeneratedColumn<String> fromId = GeneratedColumn<String>(
+    'from_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _toIdMeta = const VerificationMeta('toId');
+  @override
+  late final GeneratedColumn<String> toId = GeneratedColumn<String>(
+    'to_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    projectId,
+    fromId,
+    toId,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'workstream_links';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WorkstreamLink> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_projectIdMeta);
+    }
+    if (data.containsKey('from_id')) {
+      context.handle(
+        _fromIdMeta,
+        fromId.isAcceptableOrUnknown(data['from_id']!, _fromIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fromIdMeta);
+    }
+    if (data.containsKey('to_id')) {
+      context.handle(
+        _toIdMeta,
+        toId.isAcceptableOrUnknown(data['to_id']!, _toIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_toIdMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  WorkstreamLink map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WorkstreamLink(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      )!,
+      fromId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}from_id'],
+      )!,
+      toId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}to_id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $WorkstreamLinksTable createAlias(String alias) {
+    return $WorkstreamLinksTable(attachedDatabase, alias);
+  }
+}
+
+class WorkstreamLink extends DataClass implements Insertable<WorkstreamLink> {
+  final String id;
+  final String projectId;
+  final String fromId;
+  final String toId;
+  final DateTime createdAt;
+  const WorkstreamLink({
+    required this.id,
+    required this.projectId,
+    required this.fromId,
+    required this.toId,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['project_id'] = Variable<String>(projectId);
+    map['from_id'] = Variable<String>(fromId);
+    map['to_id'] = Variable<String>(toId);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  WorkstreamLinksCompanion toCompanion(bool nullToAbsent) {
+    return WorkstreamLinksCompanion(
+      id: Value(id),
+      projectId: Value(projectId),
+      fromId: Value(fromId),
+      toId: Value(toId),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory WorkstreamLink.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WorkstreamLink(
+      id: serializer.fromJson<String>(json['id']),
+      projectId: serializer.fromJson<String>(json['projectId']),
+      fromId: serializer.fromJson<String>(json['fromId']),
+      toId: serializer.fromJson<String>(json['toId']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'projectId': serializer.toJson<String>(projectId),
+      'fromId': serializer.toJson<String>(fromId),
+      'toId': serializer.toJson<String>(toId),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  WorkstreamLink copyWith({
+    String? id,
+    String? projectId,
+    String? fromId,
+    String? toId,
+    DateTime? createdAt,
+  }) => WorkstreamLink(
+    id: id ?? this.id,
+    projectId: projectId ?? this.projectId,
+    fromId: fromId ?? this.fromId,
+    toId: toId ?? this.toId,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  WorkstreamLink copyWithCompanion(WorkstreamLinksCompanion data) {
+    return WorkstreamLink(
+      id: data.id.present ? data.id.value : this.id,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      fromId: data.fromId.present ? data.fromId.value : this.fromId,
+      toId: data.toId.present ? data.toId.value : this.toId,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkstreamLink(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('fromId: $fromId, ')
+          ..write('toId: $toId, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, projectId, fromId, toId, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WorkstreamLink &&
+          other.id == this.id &&
+          other.projectId == this.projectId &&
+          other.fromId == this.fromId &&
+          other.toId == this.toId &&
+          other.createdAt == this.createdAt);
+}
+
+class WorkstreamLinksCompanion extends UpdateCompanion<WorkstreamLink> {
+  final Value<String> id;
+  final Value<String> projectId;
+  final Value<String> fromId;
+  final Value<String> toId;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const WorkstreamLinksCompanion({
+    this.id = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.fromId = const Value.absent(),
+    this.toId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WorkstreamLinksCompanion.insert({
+    required String id,
+    required String projectId,
+    required String fromId,
+    required String toId,
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       projectId = Value(projectId),
+       fromId = Value(fromId),
+       toId = Value(toId);
+  static Insertable<WorkstreamLink> custom({
+    Expression<String>? id,
+    Expression<String>? projectId,
+    Expression<String>? fromId,
+    Expression<String>? toId,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (projectId != null) 'project_id': projectId,
+      if (fromId != null) 'from_id': fromId,
+      if (toId != null) 'to_id': toId,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WorkstreamLinksCompanion copyWith({
+    Value<String>? id,
+    Value<String>? projectId,
+    Value<String>? fromId,
+    Value<String>? toId,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return WorkstreamLinksCompanion(
+      id: id ?? this.id,
+      projectId: projectId ?? this.projectId,
+      fromId: fromId ?? this.fromId,
+      toId: toId ?? this.toId,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (fromId.present) {
+      map['from_id'] = Variable<String>(fromId.value);
+    }
+    if (toId.present) {
+      map['to_id'] = Variable<String>(toId.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkstreamLinksCompanion(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('fromId: $fromId, ')
+          ..write('toId: $toId, ')
+          ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -12092,6 +12593,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ProgrammeOverviewsTable programmeOverviews =
       $ProgrammeOverviewsTable(this);
   late final $WorkstreamsTable workstreams = $WorkstreamsTable(this);
+  late final $WorkstreamLinksTable workstreamLinks = $WorkstreamLinksTable(
+    this,
+  );
   late final $GovernanceCadencesTable governanceCadences =
       $GovernanceCadencesTable(this);
   late final $RisksTable risks = $RisksTable(this);
@@ -12123,6 +12627,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final ContextDao contextDao = ContextDao(this as AppDatabase);
   late final ReportsDao reportsDao = ReportsDao(this as AppDatabase);
   late final JournalDao journalDao = JournalDao(this as AppDatabase);
+  late final WorkstreamsDao workstreamsDao = WorkstreamsDao(
+    this as AppDatabase,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -12131,6 +12638,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     projects,
     programmeOverviews,
     workstreams,
+    workstreamLinks,
     governanceCadences,
     risks,
     assumptions,
@@ -12214,6 +12722,29 @@ final class $$ProjectsTableReferences
     ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_workstreamsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$WorkstreamLinksTable, List<WorkstreamLink>>
+  _workstreamLinksRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.workstreamLinks,
+    aliasName: $_aliasNameGenerator(
+      db.projects.id,
+      db.workstreamLinks.projectId,
+    ),
+  );
+
+  $$WorkstreamLinksTableProcessedTableManager get workstreamLinksRefs {
+    final manager = $$WorkstreamLinksTableTableManager(
+      $_db,
+      $_db.workstreamLinks,
+    ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _workstreamLinksRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -12614,6 +13145,31 @@ class $$ProjectsTableFilterComposer
           }) => $$WorkstreamsTableFilterComposer(
             $db: $db,
             $table: $db.workstreams,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> workstreamLinksRefs(
+    Expression<bool> Function($$WorkstreamLinksTableFilterComposer f) f,
+  ) {
+    final $$WorkstreamLinksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.workstreamLinks,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkstreamLinksTableFilterComposer(
+            $db: $db,
+            $table: $db.workstreamLinks,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -13127,6 +13683,31 @@ class $$ProjectsTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> workstreamLinksRefs<T extends Object>(
+    Expression<T> Function($$WorkstreamLinksTableAnnotationComposer a) f,
+  ) {
+    final $$WorkstreamLinksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.workstreamLinks,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkstreamLinksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.workstreamLinks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> governanceCadencesRefs<T extends Object>(
     Expression<T> Function($$GovernanceCadencesTableAnnotationComposer a) f,
   ) {
@@ -13523,6 +14104,7 @@ class $$ProjectsTableTableManager
           PrefetchHooks Function({
             bool programmeOverviewsRefs,
             bool workstreamsRefs,
+            bool workstreamLinksRefs,
             bool governanceCadencesRefs,
             bool risksRefs,
             bool assumptionsRefs,
@@ -13603,6 +14185,7 @@ class $$ProjectsTableTableManager
               ({
                 programmeOverviewsRefs = false,
                 workstreamsRefs = false,
+                workstreamLinksRefs = false,
                 governanceCadencesRefs = false,
                 risksRefs = false,
                 assumptionsRefs = false,
@@ -13624,6 +14207,7 @@ class $$ProjectsTableTableManager
                   explicitlyWatchedTables: [
                     if (programmeOverviewsRefs) db.programmeOverviews,
                     if (workstreamsRefs) db.workstreams,
+                    if (workstreamLinksRefs) db.workstreamLinks,
                     if (governanceCadencesRefs) db.governanceCadences,
                     if (risksRefs) db.risks,
                     if (assumptionsRefs) db.assumptions,
@@ -13679,6 +14263,27 @@ class $$ProjectsTableTableManager
                                 table,
                                 p0,
                               ).workstreamsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.projectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (workstreamLinksRefs)
+                        await $_getPrefetchedData<
+                          Project,
+                          $ProjectsTable,
+                          WorkstreamLink
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProjectsTableReferences
+                              ._workstreamLinksRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).workstreamLinksRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.projectId == item.id,
@@ -14023,6 +14628,7 @@ typedef $$ProjectsTableProcessedTableManager =
       PrefetchHooks Function({
         bool programmeOverviewsRefs,
         bool workstreamsRefs,
+        bool workstreamLinksRefs,
         bool governanceCadencesRefs,
         bool risksRefs,
         bool assumptionsRefs,
@@ -14521,8 +15127,11 @@ typedef $$WorkstreamsTableCreateCompanionBuilder =
       required String id,
       required String projectId,
       required String name,
+      Value<String> lane,
       Value<String?> lead,
       Value<String> status,
+      Value<String?> startDate,
+      Value<String?> endDate,
       Value<String?> notes,
       Value<int> sortOrder,
       Value<DateTime> createdAt,
@@ -14534,8 +15143,11 @@ typedef $$WorkstreamsTableUpdateCompanionBuilder =
       Value<String> id,
       Value<String> projectId,
       Value<String> name,
+      Value<String> lane,
       Value<String?> lead,
       Value<String> status,
+      Value<String?> startDate,
+      Value<String?> endDate,
       Value<String?> notes,
       Value<int> sortOrder,
       Value<DateTime> createdAt,
@@ -14586,6 +15198,11 @@ class $$WorkstreamsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get lane => $composableBuilder(
+    column: $table.lane,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get lead => $composableBuilder(
     column: $table.lead,
     builder: (column) => ColumnFilters(column),
@@ -14593,6 +15210,16 @@ class $$WorkstreamsTableFilterComposer
 
   ColumnFilters<String> get status => $composableBuilder(
     column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get startDate => $composableBuilder(
+    column: $table.startDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get endDate => $composableBuilder(
+    column: $table.endDate,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -14659,6 +15286,11 @@ class $$WorkstreamsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get lane => $composableBuilder(
+    column: $table.lane,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get lead => $composableBuilder(
     column: $table.lead,
     builder: (column) => ColumnOrderings(column),
@@ -14666,6 +15298,16 @@ class $$WorkstreamsTableOrderingComposer
 
   ColumnOrderings<String> get status => $composableBuilder(
     column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get startDate => $composableBuilder(
+    column: $table.startDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get endDate => $composableBuilder(
+    column: $table.endDate,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -14728,11 +15370,20 @@ class $$WorkstreamsTableAnnotationComposer
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
 
+  GeneratedColumn<String> get lane =>
+      $composableBuilder(column: $table.lane, builder: (column) => column);
+
   GeneratedColumn<String> get lead =>
       $composableBuilder(column: $table.lead, builder: (column) => column);
 
   GeneratedColumn<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get startDate =>
+      $composableBuilder(column: $table.startDate, builder: (column) => column);
+
+  GeneratedColumn<String> get endDate =>
+      $composableBuilder(column: $table.endDate, builder: (column) => column);
 
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
@@ -14801,8 +15452,11 @@ class $$WorkstreamsTableTableManager
                 Value<String> id = const Value.absent(),
                 Value<String> projectId = const Value.absent(),
                 Value<String> name = const Value.absent(),
+                Value<String> lane = const Value.absent(),
                 Value<String?> lead = const Value.absent(),
                 Value<String> status = const Value.absent(),
+                Value<String?> startDate = const Value.absent(),
+                Value<String?> endDate = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
@@ -14812,8 +15466,11 @@ class $$WorkstreamsTableTableManager
                 id: id,
                 projectId: projectId,
                 name: name,
+                lane: lane,
                 lead: lead,
                 status: status,
+                startDate: startDate,
+                endDate: endDate,
                 notes: notes,
                 sortOrder: sortOrder,
                 createdAt: createdAt,
@@ -14825,8 +15482,11 @@ class $$WorkstreamsTableTableManager
                 required String id,
                 required String projectId,
                 required String name,
+                Value<String> lane = const Value.absent(),
                 Value<String?> lead = const Value.absent(),
                 Value<String> status = const Value.absent(),
+                Value<String?> startDate = const Value.absent(),
+                Value<String?> endDate = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
@@ -14836,8 +15496,11 @@ class $$WorkstreamsTableTableManager
                 id: id,
                 projectId: projectId,
                 name: name,
+                lane: lane,
                 lead: lead,
                 status: status,
+                startDate: startDate,
+                endDate: endDate,
                 notes: notes,
                 sortOrder: sortOrder,
                 createdAt: createdAt,
@@ -14909,6 +15572,334 @@ typedef $$WorkstreamsTableProcessedTableManager =
       $$WorkstreamsTableUpdateCompanionBuilder,
       (Workstream, $$WorkstreamsTableReferences),
       Workstream,
+      PrefetchHooks Function({bool projectId})
+    >;
+typedef $$WorkstreamLinksTableCreateCompanionBuilder =
+    WorkstreamLinksCompanion Function({
+      required String id,
+      required String projectId,
+      required String fromId,
+      required String toId,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+typedef $$WorkstreamLinksTableUpdateCompanionBuilder =
+    WorkstreamLinksCompanion Function({
+      Value<String> id,
+      Value<String> projectId,
+      Value<String> fromId,
+      Value<String> toId,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+final class $$WorkstreamLinksTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $WorkstreamLinksTable, WorkstreamLink> {
+  $$WorkstreamLinksTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ProjectsTable _projectIdTable(_$AppDatabase db) =>
+      db.projects.createAlias(
+        $_aliasNameGenerator(db.workstreamLinks.projectId, db.projects.id),
+      );
+
+  $$ProjectsTableProcessedTableManager get projectId {
+    final $_column = $_itemColumn<String>('project_id')!;
+
+    final manager = $$ProjectsTableTableManager(
+      $_db,
+      $_db.projects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_projectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$WorkstreamLinksTableFilterComposer
+    extends Composer<_$AppDatabase, $WorkstreamLinksTable> {
+  $$WorkstreamLinksTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fromId => $composableBuilder(
+    column: $table.fromId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get toId => $composableBuilder(
+    column: $table.toId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ProjectsTableFilterComposer get projectId {
+    final $$ProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkstreamLinksTableOrderingComposer
+    extends Composer<_$AppDatabase, $WorkstreamLinksTable> {
+  $$WorkstreamLinksTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fromId => $composableBuilder(
+    column: $table.fromId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get toId => $composableBuilder(
+    column: $table.toId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ProjectsTableOrderingComposer get projectId {
+    final $$ProjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkstreamLinksTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WorkstreamLinksTable> {
+  $$WorkstreamLinksTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get fromId =>
+      $composableBuilder(column: $table.fromId, builder: (column) => column);
+
+  GeneratedColumn<String> get toId =>
+      $composableBuilder(column: $table.toId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$ProjectsTableAnnotationComposer get projectId {
+    final $$ProjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkstreamLinksTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WorkstreamLinksTable,
+          WorkstreamLink,
+          $$WorkstreamLinksTableFilterComposer,
+          $$WorkstreamLinksTableOrderingComposer,
+          $$WorkstreamLinksTableAnnotationComposer,
+          $$WorkstreamLinksTableCreateCompanionBuilder,
+          $$WorkstreamLinksTableUpdateCompanionBuilder,
+          (WorkstreamLink, $$WorkstreamLinksTableReferences),
+          WorkstreamLink,
+          PrefetchHooks Function({bool projectId})
+        > {
+  $$WorkstreamLinksTableTableManager(
+    _$AppDatabase db,
+    $WorkstreamLinksTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WorkstreamLinksTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$WorkstreamLinksTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$WorkstreamLinksTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> projectId = const Value.absent(),
+                Value<String> fromId = const Value.absent(),
+                Value<String> toId = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkstreamLinksCompanion(
+                id: id,
+                projectId: projectId,
+                fromId: fromId,
+                toId: toId,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String projectId,
+                required String fromId,
+                required String toId,
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkstreamLinksCompanion.insert(
+                id: id,
+                projectId: projectId,
+                fromId: fromId,
+                toId: toId,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$WorkstreamLinksTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({projectId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (projectId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.projectId,
+                                referencedTable:
+                                    $$WorkstreamLinksTableReferences
+                                        ._projectIdTable(db),
+                                referencedColumn:
+                                    $$WorkstreamLinksTableReferences
+                                        ._projectIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$WorkstreamLinksTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WorkstreamLinksTable,
+      WorkstreamLink,
+      $$WorkstreamLinksTableFilterComposer,
+      $$WorkstreamLinksTableOrderingComposer,
+      $$WorkstreamLinksTableAnnotationComposer,
+      $$WorkstreamLinksTableCreateCompanionBuilder,
+      $$WorkstreamLinksTableUpdateCompanionBuilder,
+      (WorkstreamLink, $$WorkstreamLinksTableReferences),
+      WorkstreamLink,
       PrefetchHooks Function({bool projectId})
     >;
 typedef $$GovernanceCadencesTableCreateCompanionBuilder =
@@ -22441,6 +23432,8 @@ class $AppDatabaseManager {
       $$ProgrammeOverviewsTableTableManager(_db, _db.programmeOverviews);
   $$WorkstreamsTableTableManager get workstreams =>
       $$WorkstreamsTableTableManager(_db, _db.workstreams);
+  $$WorkstreamLinksTableTableManager get workstreamLinks =>
+      $$WorkstreamLinksTableTableManager(_db, _db.workstreamLinks);
   $$GovernanceCadencesTableTableManager get governanceCadences =>
       $$GovernanceCadencesTableTableManager(_db, _db.governanceCadences);
   $$RisksTableTableManager get risks =>
@@ -22679,5 +23672,26 @@ class JournalDaoManager {
       $$JournalEntryLinksTableTableManager(
         _db.attachedDatabase,
         _db.journalEntryLinks,
+      );
+}
+
+mixin _$WorkstreamsDaoMixin on DatabaseAccessor<AppDatabase> {
+  $ProjectsTable get projects => attachedDatabase.projects;
+  $WorkstreamsTable get workstreams => attachedDatabase.workstreams;
+  $WorkstreamLinksTable get workstreamLinks => attachedDatabase.workstreamLinks;
+  WorkstreamsDaoManager get managers => WorkstreamsDaoManager(this);
+}
+
+class WorkstreamsDaoManager {
+  final _$WorkstreamsDaoMixin _db;
+  WorkstreamsDaoManager(this._db);
+  $$ProjectsTableTableManager get projects =>
+      $$ProjectsTableTableManager(_db.attachedDatabase, _db.projects);
+  $$WorkstreamsTableTableManager get workstreams =>
+      $$WorkstreamsTableTableManager(_db.attachedDatabase, _db.workstreams);
+  $$WorkstreamLinksTableTableManager get workstreamLinks =>
+      $$WorkstreamLinksTableTableManager(
+        _db.attachedDatabase,
+        _db.workstreamLinks,
       );
 }
