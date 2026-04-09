@@ -19,7 +19,6 @@ class ProjectProvider extends ChangeNotifier {
   String? get currentProjectId => _currentProject?.id;
 
   Future<void> _loadProjects() async {
-    await SeedService.maybeSeed(_db);
     _projects = await _db.projectDao.getAllProjects();
     if (_projects.isNotEmpty && _currentProject == null) {
       _currentProject = _projects.first;

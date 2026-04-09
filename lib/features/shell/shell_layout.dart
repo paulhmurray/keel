@@ -272,7 +272,7 @@ class _ShellLayoutState extends State<ShellLayout> {
                               ),
                             ),
                           ),
-                          if (projectId == null)
+                          if (projectId == null && _selectedIndex != 9)
                             _OnboardingScreen(
                               onNewProject: () => _showNewProjectDialog(context),
                               onLoadDemo: () => _loadDemo(context),
@@ -329,8 +329,12 @@ class _OnboardingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 60.0),
+          child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
@@ -380,6 +384,8 @@ class _OnboardingScreen extends StatelessWidget {
           ),
         ],
       ),
+        ),
+      ],
     );
   }
 }

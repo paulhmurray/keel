@@ -169,6 +169,17 @@ class SyncProvider extends ChangeNotifier {
     }
   }
 
+  /// Lists projects from the server. Returns empty list on error.
+  Future<List<ProjectSummary>> listServerProjects() async {
+    if (!isAuthenticated) return [];
+    try {
+      final token = await _ensureValidToken();
+      return await _getClient().listProjects(token);
+    } catch (_) {
+      return [];
+    }
+  }
+
   /// Fetches the Stripe billing portal URL for the current user.
   Future<String?> getBillingPortalUrl() async {
     if (!isAuthenticated) return null;

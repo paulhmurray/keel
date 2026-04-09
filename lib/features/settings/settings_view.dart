@@ -465,14 +465,20 @@ class _SyncSectionState extends State<_SyncSection> {
   Future<void> _pullNow() async {
     final sync = context.read<SyncProvider>();
     final db = context.read<AppDatabase>();
-    final projectId = context.read<ProjectProvider>().currentProjectId;
-    if (projectId == null) {
-      _showSnack('Select a project first.');
+    final projectProvider = context.read<ProjectProvider>();
+
+    // Always pull based on what's on the server, not the local project ID,
+    // since the local project may be a seeded demo with a non-UUID id.
+    final serverProjects = await sync.listServerProjects();
+    if (serverProjects.isEmpty) {
+      _showSnack('No projects found on server.');
       return;
     }
+
     final syncPwd = await _askSyncPassword();
     if (syncPwd == null || syncPwd.isEmpty) return;
-    await sync.pullProject(projectId, syncPwd, db);
+    await sync.pullProject(serverProjects.first.id, syncPwd, db);
+    await projectProvider.refreshProjects();
   }
 
   /// Shows an inline password dialog via a bottom sheet-style dialog.

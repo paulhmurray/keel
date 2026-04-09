@@ -114,6 +114,12 @@ nav {
   gap: 8px;
   flex-shrink: 0;
 }
+.logo-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
 .logo-mark {
   display: flex;
   align-items: center;
