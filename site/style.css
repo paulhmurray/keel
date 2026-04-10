@@ -208,6 +208,47 @@ nav {
   font-size: 13px;
   color: var(--text-muted);
 }
+.hero-screenshot {
+  margin-top: 64px;
+  text-align: center;
+}
+.hero-screenshot-img {
+  width: 100%;
+  max-width: 1000px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+}
+
+/* ============================================================
+   Testimonial
+   ============================================================ */
+.testimonial { padding: 80px 0; }
+.testimonial-inner {
+  max-width: 720px;
+  margin: 0 auto;
+  text-align: center;
+}
+.testimonial-mark {
+  font-size: 80px;
+  color: var(--amber);
+  line-height: 1;
+  margin-bottom: 16px;
+}
+blockquote {
+  font-size: 20px;
+  line-height: 1.7;
+  color: var(--text);
+  font-style: italic;
+  margin: 0 0 24px;
+}
+.testimonial-attr {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--amber);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
 
 /* ============================================================
    Section scaffolding

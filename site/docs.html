@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Docs — Getting Started with Keel</title>
+  <meta name="description" content="Get started with Keel — download, install, and start managing your projects in minutes.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .docs-layout {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 60px;
+      padding: 80px 0 120px;
+      align-items: start;
+    }
+    .docs-sidebar {
+      position: sticky;
+      top: 80px;
+    }
+    .docs-sidebar-label {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--amber);
+      margin-bottom: 16px;
+    }
+    .docs-sidebar nav a {
+      display: block;
+      font-size: 14px;
+      color: var(--text-dim);
+      text-decoration: none;
+      padding: 6px 0;
+      border-left: 2px solid transparent;
+      padding-left: 12px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .docs-sidebar nav a:hover,
+    .docs-sidebar nav a.active {
+      color: var(--text);
+      border-left-color: var(--amber);
+    }
+    .docs-content h1 {
+      font-family: var(--mono);
+      font-size: clamp(28px, 4vw, 44px);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+    .docs-content .lead {
+      font-size: 17px;
+      color: var(--text-dim);
+      line-height: 1.65;
+      max-width: 600px;
+      margin-bottom: 48px;
+    }
+    .docs-content h2 {
+      font-size: clamp(18px, 2.5vw, 24px);
+      margin-top: 56px;
+      margin-bottom: 16px;
+    }
+    .docs-content h3 {
+      font-family: var(--mono);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--amber);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 32px;
+      margin-bottom: 12px;
+    }
+    .docs-content p {
+      color: var(--text-dim);
+      line-height: 1.7;
+      margin-bottom: 16px;
+    }
+    .docs-content ul, .docs-content ol {
+      color: var(--text-dim);
+      line-height: 1.7;
+      padding-left: 24px;
+      margin-bottom: 16px;
+    }
+    .docs-content li { margin-bottom: 6px; }
+    .docs-content code {
+      font-family: var(--mono);
+      font-size: 13px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 6px;
+      color: var(--amber);
+    }
+    .docs-content pre {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px 24px;
+      overflow-x: auto;
+      margin-bottom: 24px;
+    }
+    .docs-content pre code {
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: 13px;
+      color: var(--text);
+    }
+    .platform-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .platform-tab {
+      padding: 6px 16px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-dim);
+      background: transparent;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .platform-tab.active {
+      background: var(--amber);
+      border-color: var(--amber);
+      color: #000;
+    }
+    .install-block { margin-bottom: 32px; }
+    .callout {
+      background: rgba(232, 164, 48, 0.06);
+      border: 1px solid rgba(232, 164, 48, 0.2);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+    }
+    .callout p {
+      margin: 0;
+      font-size: 14px;
+      color: var(--text-dim);
+    }
+    .callout strong { color: var(--text); }
+    .docs-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 56px 0;
+    }
+    @media (max-width: 760px) {
+      .docs-layout {
+        grid-template-columns: 1fr;
+        gap: 32px;
+        padding: 40px 0 80px;
+      }
+      .docs-sidebar { position: static; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav>
+    <div class="nav-inner">
+      <a href="/" class="logo">
+        <img src="keel-icon.svg" alt="Keel" class="logo-icon">
+        <span class="logo-text">KEEL</span>
+      </a>
+      <div class="nav-links">
+        <a href="/#features">Features</a>
+        <a href="/#security">Security</a>
+        <a href="/#pricing">Pricing</a>
+        <a href="docs.html" style="color: var(--text);">Docs</a>
+      </div>
+      <a href="https://github.com/your-org/keel/releases/latest" class="btn btn-primary nav-cta">Download</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="docs-layout">
+
+      <!-- Sidebar -->
+      <aside class="docs-sidebar">
+        <div class="docs-sidebar-label">Documentation</div>
+        <nav>
+          <a href="#getting-started" class="active">Getting Started</a>
+          <a href="#install">Installation</a>
+          <a href="#first-project">Your First Project</a>
+          <a href="#modules">Modules</a>
+          <a href="#sync">Sync (Solo plan)</a>
+          <a href="#data">Your Data</a>
+          <a href="#faq">FAQ</a>
+        </nav>
+      </aside>
+
+      <!-- Content -->
+      <main class="docs-content">
+
+        <section id="getting-started">
+          <h1>Getting Started</h1>
+          <p class="lead">
+            Keel is a local-first desktop app for project and programme managers.
+            Everything lives on your machine — no cloud account required to get started.
+          </p>
+        </section>
+
+        <hr class="docs-divider">
+
+        <section id="install">
+          <h2>Installation</h2>
+          <p>Download the build for your operating system from the latest GitHub release.</p>
+
+          <h3>Linux</h3>
+          <div class="install-block">
+            <p>Download the <code>.tar.gz</code> archive, extract it, and run the <code>keel</code> binary:</p>
+            <pre><code>tar -xzf keel-linux-x64.tar.gz
+cd keel
+./keel</code></pre>
+            <p>To install system-wide, move the extracted folder to <code>/opt/keel</code> and create a symlink:</p>
+            <pre><code>sudo mv keel /opt/keel
+sudo ln -s /opt/keel/keel /usr/local/bin/keel</code></pre>
+          </div>
+
+          <h3>macOS</h3>
+          <div class="install-block">
+            <p>Download the <code>.dmg</code>, open it, and drag <strong>Keel</strong> to your Applications folder.</p>
+            <div class="callout">
+              <p><strong>Gatekeeper warning?</strong> Right-click the app and choose <em>Open</em> the first time, then click <em>Open</em> in the dialog. This only needs to happen once.</p>
+            </div>
+          </div>
+
+          <h3>Windows</h3>
+          <div class="install-block">
+            <p>Download the <code>.zip</code>, extract it, and run <code>keel.exe</code>. No installer is needed — Keel is fully portable.</p>
+            <div class="callout">
+              <p><strong>SmartScreen warning?</strong> Click <em>More info</em> then <em>Run anyway</em>. This is expected for apps not yet in Microsoft's certificate database.</p>
+            </div>
+          </div>
+        </section>
+
+        <hr class="docs-divider">
+
+        <section id="first-project">
+          <h2>Your First Project</h2>
+          <p>When Keel opens for the first time you'll see a blank canvas. Create a new project with <strong>+ New Project</strong> and give it a name — your programme, workstream, or client engagement.</p>
+          <p>Each project is a self-contained database file stored locally. You can have as many projects as you like.</p>
+          <p>If you want to explore with sample data first, choose <strong>Load Demo Data</strong> to create a pre-populated project you can poke around in.</p>
+        </section>
+
+        <hr class="docs-divider">
+
+        <section id="modules">
+          <h2>Modules</h2>
+          <p>Keel organises your programme work into focused modules, accessible from the left sidebar:</p>
+          <ul>
+            <li><strong>RAID Log</strong> — Risks, Assumptions, Issues, Dependencies. Track status, owner, and impact in one view.</li>
+            <li><strong>Decisions</strong> — Log decisions with context, rationale, and outcome so nothing is lost.</li>
+            <li><strong>Actions</strong> — Task list tied to your project, not a generic to-do app.</li>
+            <li><strong>Journal</strong> — Daily notes, meeting notes, retrospectives. Full-text search across all entries.</li>
+            <li><strong>People</strong> — Stakeholder register. Track roles, engagement level, and contact info.</li>
+            <li><strong>Settings</strong> — App preferences and sync configuration.</li>
+          </ul>
+        </section>
+
+        <hr class="docs-divider">
+
+        <section id="sync">
+          <h2>Sync (Solo plan)</h2>
+          <p>
+            The <strong>Solo plan</strong> ($8/month) adds encrypted sync across your devices via the Keel sync server.
+            Your data is encrypted on your device before it ever leaves — the server never sees plaintext.
+          </p>
+
+          <h3>Setting up sync</h3>
+          <ol>
+            <li>Open <strong>Settings</strong> in the sidebar.</li>
+            <li>Under <em>Sync</em>, click <strong>Create account</strong> (or sign in if you already have one).</li>
+            <li>Click <strong>Upgrade to Solo</strong> to subscribe via Stripe.</li>
+            <li>Once subscribed, enter an <strong>encryption password</strong>. This password encrypts your data — keep it safe. It is never stored or sent to the server.</li>
+            <li>Click <strong>Sync Now</strong> to push your current project to the server.</li>
+          </ol>
+
+          <div class="callout">
+            <p><strong>Important:</strong> Your encryption password is not recoverable. If you forget it, your synced data cannot be decrypted. Store it in a password manager.</p>
+          </div>
+
+          <h3>Pulling to another device</h3>
+          <ol>
+            <li>Install Keel on the second device and open <strong>Settings</strong>.</li>
+            <li>Sign in with the same account credentials.</li>
+            <li>Enter the same encryption password you used when you first synced.</li>
+            <li>Click <strong>Pull from Server</strong> to download and decrypt your project.</li>
+          </ol>
+        </section>
+
+        <hr class="docs-divider">
+
+        <section id="data">
+          <h2>Your Data</h2>
+          <p>
+            Each Keel project is stored as a single SQLite database file on your machine.
+            You can find your databases in your OS application data directory:
+          </p>
+          <ul>
+            <li><strong>Linux:</strong> <code>~/.local/share/keel/</code></li>
+            <li><strong>macOS:</strong> <code>~/Library/Application Support/keel/</code></li>
+            <li><strong>Windows:</strong> <code>%APPDATA%\keel\</code></li>
+          </ul>
+          <p>
+            You can back these files up manually, move them between machines, or open them with any SQLite viewer.
+            Keel will never delete or modify your files without your instruction.
+          </p>
+        </section>
+
+        <hr class="docs-divider">
+
+        <section id="faq">
+          <h2>FAQ</h2>
+
+          <h3>Is there a web or mobile version?</h3>
+          <p>Not yet. Keel is desktop-first. A web app is in progress.</p>
+
+          <h3>Can I use Keel without a subscription?</h3>
+          <p>Yes. The core app — all modules, unlimited projects, local storage — is free forever. Sync across devices requires a Solo plan.</p>
+
+          <h3>What happens if I cancel my Solo plan?</h3>
+          <p>Your local data is unaffected. You can keep using Keel; you just won't be able to push or pull from the sync server.</p>
+
+          <h3>Is my data private?</h3>
+          <p>Yes. Data never leaves your machine unless you enable sync, and even then it's encrypted with a key derived from your password before transmission. The sync server stores only ciphertext.</p>
+
+          <h3>Something isn't working</h3>
+          <p>
+            Open an issue on <a href="https://github.com/your-org/keel/issues" style="color: var(--amber);">GitHub</a>
+            or email <a href="mailto:hello@keel-app.dev" style="color: var(--amber);">hello@keel-app.dev</a>.
+          </p>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <a href="/" class="logo">
+            <img src="keel-icon.svg" alt="Keel" class="logo-icon">
+            <span class="logo-text">KEEL</span>
+          </a>
+          <p class="footer-tagline">Built by a Senior TPM who got tired of<br>switching between twelve tools.</p>
+        </div>
+        <div class="footer-links">
+          <div class="footer-col">
+            <div class="footer-col-label">Product</div>
+            <a href="/#features">Features</a>
+            <a href="/#security">Security</a>
+            <a href="/#pricing">Pricing</a>
+            <a href="docs.html">Docs</a>
+          </div>
+          <div class="footer-col">
+            <div class="footer-col-label">Download</div>
+            <a href="https://github.com/your-org/keel/releases/latest">Linux</a>
+            <a href="https://github.com/your-org/keel/releases/latest">macOS</a>
+            <a href="https://github.com/your-org/keel/releases/latest">Windows</a>
+          </div>
+          <div class="footer-col">
+            <div class="footer-col-label">Company</div>
+            <a href="mailto:hello@keel-app.dev">Contact</a>
+            <a href="https://github.com/your-org/keel">GitHub</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2025 Keel. All rights reserved.</span>
+        <span>
+          <a href="#">Privacy</a>
+          <a href="#">Terms</a>
+        </span>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
