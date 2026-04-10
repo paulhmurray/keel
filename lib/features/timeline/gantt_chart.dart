@@ -114,24 +114,74 @@ Color _eventColor(TimelineEventType t) {
 class GanttChart extends StatefulWidget {
   final List<GanttWorkstream> workstreams;
   final List<TimelineEvent> events;
+  final void Function(TimelineEvent)? onEventTap;
 
   const GanttChart({
     super.key,
     required this.workstreams,
     required this.events,
+    this.onEventTap,
   });
 
   @override
   State<GanttChart> createState() => _GanttChartState();
 }
 
+// Dot position for hit-testing
+class _DotHit {
+  final double x;
+  final double y;
+  final TimelineEvent event;
+  const _DotHit(this.x, this.y, this.event);
+}
+
 class _GanttChartState extends State<GanttChart> {
   final ScrollController _hScroll = ScrollController();
+  // Populated by _computeDotPositions; used by tap handler
+  List<_DotHit> _dotHits = [];
 
   @override
   void dispose() {
     _hScroll.dispose();
     super.dispose();
+  }
+
+  List<_DotHit> _computeDotPositions({
+    required List<_RowInfo> rows,
+    required DateTime winStart,
+    required double pxPerDay,
+  }) {
+    if (widget.onEventTap == null) return [];
+
+    double xFor(DateTime d) {
+      final days = DateTime(d.year, d.month, d.day).difference(winStart).inDays;
+      return days * pxPerDay;
+    }
+
+    final evY = rows.isEmpty ? _kHeaderH : rows.last.y + rows.last.h;
+    final axisY = evY + _kEventH / 2;
+    final hits = <_DotHit>[];
+    final placed = <double>[];
+
+    for (final ev in widget.events) {
+      if (ev.date == null) continue;
+      final x = xFor(ev.date!);
+      final nearBy = placed.where((px) => (px - x).abs() < 10).length;
+      final dotY = nearBy.isEven ? axisY - 8 : axisY + 8;
+      placed.add(x);
+      hits.add(_DotHit(x, dotY, ev));
+    }
+    return hits;
+  }
+
+  void _handleTap(Offset localPos) {
+    if (widget.onEventTap == null) return;
+    for (final dot in _dotHits) {
+      if ((localPos - Offset(dot.x, dot.y)).distance <= 12) {
+        widget.onEventTap!(dot.event);
+        return;
+      }
+    }
   }
 
   List<_RowInfo> _buildRows() {
@@ -195,6 +245,29 @@ class _GanttChartState extends State<GanttChart> {
     final today = DateTime.now();
     final todayNorm = DateTime(today.year, today.month, today.day);
 
+    _dotHits = _computeDotPositions(
+      rows: rows,
+      winStart: winStart,
+      pxPerDay: _kPxPerDay,
+    );
+
+    final rightCanvas = SizedBox(
+      width: canvasW,
+      height: totalH,
+      child: CustomPaint(
+        painter: _RightPainter(
+          rows: rows,
+          allWorkstreams: widget.workstreams,
+          events: widget.events,
+          winStart: winStart,
+          totalDays: totalDays,
+          pxPerDay: _kPxPerDay,
+          todayNorm: todayNorm,
+          totalH: totalH,
+        ),
+      ),
+    );
+
     return SizedBox(
       height: math.max(totalH, _kHeaderH + _kEventH + 16),
       child: Row(
@@ -215,22 +288,15 @@ class _GanttChartState extends State<GanttChart> {
               child: SingleChildScrollView(
                 controller: _hScroll,
                 scrollDirection: Axis.horizontal,
-                child: SizedBox(
-                  width: canvasW,
-                  height: totalH,
-                  child: CustomPaint(
-                    painter: _RightPainter(
-                      rows: rows,
-                      allWorkstreams: widget.workstreams,
-                      events: widget.events,
-                      winStart: winStart,
-                      totalDays: totalDays,
-                      pxPerDay: _kPxPerDay,
-                      todayNorm: todayNorm,
-                      totalH: totalH,
-                    ),
-                  ),
-                ),
+                child: widget.onEventTap != null
+                    ? GestureDetector(
+                        onTapUp: (d) => _handleTap(d.localPosition),
+                        child: MouseRegion(
+                          cursor: SystemMouseCursors.click,
+                          child: rightCanvas,
+                        ),
+                      )
+                    : rightCanvas,
               ),
             ),
           ),

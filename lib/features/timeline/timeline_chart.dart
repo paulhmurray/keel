@@ -16,6 +16,8 @@ class TimelineEvent {
   final DateTime? date;
   final TimelineEventType type;
   final String? owner;
+  /// Original DB object — passed through for tap handlers.
+  final Object? item;
 
   const TimelineEvent({
     required this.title,
@@ -23,6 +25,7 @@ class TimelineEvent {
     this.date,
     required this.type,
     this.owner,
+    this.item,
   });
 }
 

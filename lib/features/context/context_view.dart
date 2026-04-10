@@ -15,6 +15,7 @@ import '../../shared/theme/keel_colors.dart';
 import '../../shared/utils/date_utils.dart' as du;
 import '../../shared/widgets/dropdown_field.dart';
 import '../../shared/widgets/source_badge.dart';
+import 'glossary_form.dart';
 
 // ---------------------------------------------------------------------------
 // Entry type colour mapping
@@ -61,7 +62,7 @@ class _ContextViewState extends State<ContextView>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -104,6 +105,7 @@ class _ContextViewState extends State<ContextView>
             tabs: const [
               Tab(text: 'Entries'),
               Tab(text: 'Documents'),
+              Tab(text: 'Glossary'),
             ],
             indicatorColor: KColors.amber,
             labelColor: KColors.amber,
@@ -116,6 +118,7 @@ class _ContextViewState extends State<ContextView>
             children: [
               _EntriesTab(projectId: projectId, db: db),
               _DocumentsTab(projectId: projectId, db: db),
+              _GlossaryTab(projectId: projectId, db: db),
             ],
           ),
         ),
@@ -1401,6 +1404,327 @@ class _DocumentDetailDialogState extends State<_DocumentDetailDialog> {
           ],
         );
       },
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Glossary tab
+// ---------------------------------------------------------------------------
+
+class _GlossaryTab extends StatelessWidget {
+  final String projectId;
+  final AppDatabase db;
+
+  const _GlossaryTab({required this.projectId, required this.db});
+
+  void _openForm(BuildContext context, {GlossaryEntry? entry}) {
+    showDialog(
+      context: context,
+      builder: (_) => GlossaryFormDialog(
+        projectId: projectId,
+        db: db,
+        entry: entry,
+      ),
+    );
+  }
+
+  Future<void> _delete(GlossaryEntry entry) async {
+    await db.glossaryDao.deleteEntry(entry.id);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<GlossaryEntry>>(
+      stream: db.glossaryDao.watchForProject(projectId),
+      builder: (context, snap) {
+        final entries = snap.data ?? [];
+        final systems = entries.where((e) => e.type == 'system').toList();
+        final terms = entries.where((e) => e.type == 'term').toList();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 12),
+              child: Row(
+                children: [
+                  const Text(
+                    'SYSTEMS & TERMS',
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.15,
+                      color: KColors.textMuted,
+                    ),
+                  ),
+                  const Spacer(),
+                  ElevatedButton.icon(
+                    onPressed: () => _openForm(context),
+                    icon: const Icon(Icons.add, size: 14),
+                    label: const Text('Add Entry'),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: entries.isEmpty
+                  ? const Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.menu_book_outlined,
+                              size: 36, color: KColors.textMuted),
+                          SizedBox(height: 12),
+                          Text('No glossary entries yet.',
+                              style: TextStyle(color: KColors.textDim)),
+                          SizedBox(height: 4),
+                          Text(
+                            'Add systems, acronyms and project terms.',
+                            style: TextStyle(
+                                color: KColors.textMuted, fontSize: 11),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView(
+                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                      children: [
+                        if (systems.isNotEmpty) ...[
+                          _GlossaryGroupHeader(
+                            label: 'SYSTEMS',
+                            icon: Icons.dns_outlined,
+                            color: KColors.phosphor,
+                          ),
+                          const SizedBox(height: 6),
+                          ...systems.map((e) => _GlossaryRow(
+                                entry: e,
+                                onEdit: () => _openForm(context, entry: e),
+                                onDelete: () => _delete(e),
+                              )),
+                          const SizedBox(height: 20),
+                        ],
+                        if (terms.isNotEmpty) ...[
+                          _GlossaryGroupHeader(
+                            label: 'TERMS & ACRONYMS',
+                            icon: Icons.abc_outlined,
+                            color: KColors.amber,
+                          ),
+                          const SizedBox(height: 6),
+                          ...terms.map((e) => _GlossaryRow(
+                                entry: e,
+                                onEdit: () => _openForm(context, entry: e),
+                                onDelete: () => _delete(e),
+                              )),
+                        ],
+                      ],
+                    ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _GlossaryGroupHeader extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+
+  const _GlossaryGroupHeader({
+    required this.label,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 11, color: color),
+        const SizedBox(width: 5),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 9,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.15,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _GlossaryRow extends StatelessWidget {
+  final GlossaryEntry entry;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const _GlossaryRow({
+    required this.entry,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isSystem = entry.type == 'system';
+    final accentColor = isSystem ? KColors.phosphor : KColors.amber;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 4),
+      decoration: BoxDecoration(
+        color: KColors.surface,
+        border: Border.all(color: KColors.border),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 3,
+            constraints: const BoxConstraints(minHeight: 48),
+            decoration: BoxDecoration(
+              color: accentColor,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(4),
+                bottomLeft: Radius.circular(4),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          if (entry.acronym != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 12, right: 10),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: accentColor.withAlpha(30),
+                  border: Border.all(color: accentColor.withAlpha(80)),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                child: Text(
+                  entry.acronym!,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: accentColor,
+                  ),
+                ),
+              ),
+            ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    entry.name,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: KColors.text,
+                    ),
+                  ),
+                  if (entry.description != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      entry.description!,
+                      style: const TextStyle(fontSize: 11, color: KColors.textDim),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                  if (isSystem) ...[
+                    const SizedBox(height: 4),
+                    Wrap(
+                      spacing: 6,
+                      children: [
+                        if (entry.owner != null)
+                          _MetaChip(label: entry.owner!),
+                        if (entry.environment != null)
+                          _MetaChip(label: entry.environment!),
+                        if (entry.status != null)
+                          _GlossaryStatusChip(status: entry.status!),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, size: 15),
+                color: KColors.textDim,
+                tooltip: 'Edit',
+                onPressed: onEdit,
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline, size: 15),
+                color: KColors.red,
+                tooltip: 'Delete',
+                onPressed: onDelete,
+              ),
+              const SizedBox(width: 4),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MetaChip extends StatelessWidget {
+  final String label;
+  const _MetaChip({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+      decoration: BoxDecoration(
+        color: KColors.surface2,
+        border: Border.all(color: KColors.border2),
+        borderRadius: BorderRadius.circular(3),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(fontSize: 10, color: KColors.textDim),
+      ),
+    );
+  }
+}
+
+class _GlossaryStatusChip extends StatelessWidget {
+  final String status;
+  const _GlossaryStatusChip({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (status) {
+      'active' => KColors.phosphor,
+      'planned' => KColors.amber,
+      'decommissioned' => KColors.red,
+      _ => KColors.textMuted,
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+      decoration: BoxDecoration(
+        color: color.withAlpha(25),
+        border: Border.all(color: color.withAlpha(80)),
+        borderRadius: BorderRadius.circular(3),
+      ),
+      child: Text(
+        status,
+        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color),
+      ),
     );
   }
 }

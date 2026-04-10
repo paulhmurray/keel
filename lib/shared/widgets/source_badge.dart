@@ -78,21 +78,25 @@ class SourceBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(2),
         border: Border.all(color: _fg.withAlpha(80)),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(_icon, size: 11, color: _fg),
-          const SizedBox(width: 4),
-          Text(
-            _label,
-            style: TextStyle(
-              color: _fg,
-              fontSize: 9,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.1,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(_icon, size: 11, color: _fg),
+            const SizedBox(width: 4),
+            Text(
+              _label,
+              style: TextStyle(
+                color: _fg,
+                fontSize: 9,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.1,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

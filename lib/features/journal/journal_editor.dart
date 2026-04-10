@@ -34,6 +34,8 @@ class _JournalEditorState extends State<JournalEditor> {
   bool _showMentionMenu = false;
   String _slashQuery = '';
   String _mentionQuery = '';
+  int _slashSelectedIndex = 0;
+  int _mentionSelectedIndex = 0;
 
   final LayerLink _layerLink = LayerLink();
 
@@ -60,10 +62,12 @@ class _JournalEditorState extends State<JournalEditor> {
     final slashMatch = RegExp(r'(?:^|[\n ])(\/\w*)$').firstMatch(textBeforeCursor);
     if (slashMatch != null) {
       final query = slashMatch.group(1)!.substring(1); // remove /
+      final wasShowing = _showSlashMenu && _slashQuery == query;
       setState(() {
         _showSlashMenu = true;
         _showMentionMenu = false;
         _slashQuery = query;
+        if (!wasShowing) _slashSelectedIndex = 0;
       });
       return;
     }
@@ -72,10 +76,12 @@ class _JournalEditorState extends State<JournalEditor> {
     final mentionMatch = RegExp(r'@(\w*)$').firstMatch(textBeforeCursor);
     if (mentionMatch != null) {
       final query = mentionMatch.group(1)!;
+      final wasShowing = _showMentionMenu && _mentionQuery == query;
       setState(() {
         _showMentionMenu = true;
         _showSlashMenu = false;
         _mentionQuery = query;
+        if (!wasShowing) _mentionSelectedIndex = 0;
       });
       return;
     }
@@ -101,7 +107,10 @@ class _JournalEditorState extends State<JournalEditor> {
       text: newText,
       selection: TextSelection.collapsed(offset: slashStart + cmd.template.length),
     );
-    setState(() => _showSlashMenu = false);
+    setState(() {
+      _showSlashMenu = false;
+      _slashSelectedIndex = 0;
+    });
   }
 
   void _insertMention(Person person) {
@@ -117,11 +126,15 @@ class _JournalEditorState extends State<JournalEditor> {
       text: newText,
       selection: TextSelection.collapsed(offset: atStart + mention.length),
     );
-    setState(() => _showMentionMenu = false);
+    setState(() {
+      _showMentionMenu = false;
+      _mentionSelectedIndex = 0;
+    });
   }
 
   KeyEventResult _handleEditorKey(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
+
     final isMetaOrCtrl = HardwareKeyboard.instance.isMetaPressed ||
         HardwareKeyboard.instance.isControlPressed;
 
@@ -130,13 +143,56 @@ class _JournalEditorState extends State<JournalEditor> {
       return KeyEventResult.handled;
     }
 
-    if (_showSlashMenu && event.logicalKey == LogicalKeyboardKey.escape) {
-      setState(() => _showSlashMenu = false);
-      return KeyEventResult.handled;
+    // Slash command menu navigation
+    if (_showSlashMenu) {
+      final items = filteredSlashCommands(_slashQuery);
+      if (items.isNotEmpty) {
+        if (event.logicalKey == LogicalKeyboardKey.arrowDown ||
+            event.logicalKey == LogicalKeyboardKey.tab) {
+          setState(() =>
+              _slashSelectedIndex = (_slashSelectedIndex + 1) % items.length);
+          return KeyEventResult.handled;
+        }
+        if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+          setState(() =>
+              _slashSelectedIndex = (_slashSelectedIndex - 1 + items.length) % items.length);
+          return KeyEventResult.handled;
+        }
+        if (event.logicalKey == LogicalKeyboardKey.enter) {
+          _insertSlashTemplate(items[_slashSelectedIndex.clamp(0, items.length - 1)]);
+          return KeyEventResult.handled;
+        }
+      }
+      if (event.logicalKey == LogicalKeyboardKey.escape) {
+        setState(() => _showSlashMenu = false);
+        return KeyEventResult.handled;
+      }
     }
-    if (_showMentionMenu && event.logicalKey == LogicalKeyboardKey.escape) {
-      setState(() => _showMentionMenu = false);
-      return KeyEventResult.handled;
+
+    // Person mention menu navigation
+    if (_showMentionMenu) {
+      final items = filteredPersons(widget.persons, _mentionQuery);
+      if (items.isNotEmpty) {
+        if (event.logicalKey == LogicalKeyboardKey.arrowDown ||
+            event.logicalKey == LogicalKeyboardKey.tab) {
+          setState(() =>
+              _mentionSelectedIndex = (_mentionSelectedIndex + 1) % items.length);
+          return KeyEventResult.handled;
+        }
+        if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+          setState(() =>
+              _mentionSelectedIndex = (_mentionSelectedIndex - 1 + items.length) % items.length);
+          return KeyEventResult.handled;
+        }
+        if (event.logicalKey == LogicalKeyboardKey.enter) {
+          _insertMention(items[_mentionSelectedIndex.clamp(0, items.length - 1)]);
+          return KeyEventResult.handled;
+        }
+      }
+      if (event.logicalKey == LogicalKeyboardKey.escape) {
+        setState(() => _showMentionMenu = false);
+        return KeyEventResult.handled;
+      }
     }
 
     return KeyEventResult.ignored;
@@ -194,6 +250,7 @@ class _JournalEditorState extends State<JournalEditor> {
                     maxLines: null,
                     expands: true,
                     textAlignVertical: TextAlignVertical.top,
+                    scrollPadding: const EdgeInsets.only(bottom: 120),
                     style: const TextStyle(
                       color: KColors.text,
                       fontSize: 13,
@@ -207,7 +264,7 @@ class _JournalEditorState extends State<JournalEditor> {
                         height: 1.7,
                       ),
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.zero,
+                      contentPadding: EdgeInsets.only(top: 8, bottom: 80),
                     ),
                   ),
                 ),
@@ -219,6 +276,7 @@ class _JournalEditorState extends State<JournalEditor> {
                     left: 0,
                     child: JournalSlashMenu(
                       query: _slashQuery,
+                      selectedIndex: _slashSelectedIndex,
                       onSelect: _insertSlashTemplate,
                       onDismiss: () => setState(() => _showSlashMenu = false),
                     ),
@@ -232,6 +290,7 @@ class _JournalEditorState extends State<JournalEditor> {
                     child: JournalPersonMention(
                       persons: widget.persons,
                       query: _mentionQuery,
+                      selectedIndex: _mentionSelectedIndex,
                       onSelect: _insertMention,
                     ),
                   ),
@@ -245,11 +304,13 @@ class _JournalEditorState extends State<JournalEditor> {
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Row(
               children: [
-                _buildHint('Cmd+Enter', 'Save & parse'),
+                _buildHint('⌘↵', 'Save & parse'),
                 const SizedBox(width: 16),
                 _buildHint('/', 'Commands'),
                 const SizedBox(width: 16),
                 _buildHint('@', 'Mention'),
+                const SizedBox(width: 16),
+                _buildHint('↑↓', 'Navigate menu'),
                 const Spacer(),
                 ListenableBuilder(
                   listenable: widget.bodyController,

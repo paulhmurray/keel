@@ -13,6 +13,7 @@ part 'daos/context_dao.dart';
 part 'daos/reports_dao.dart';
 part 'daos/journal_dao.dart';
 part 'daos/workstreams_dao.dart';
+part 'daos/glossary_dao.dart';
 
 // ---------------------------------------------------------------------------
 // Tables
@@ -286,6 +287,25 @@ class ContextEntries extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+class GlossaryEntries extends Table {
+  TextColumn get id => text().named('id')();
+  TextColumn get projectId => text().references(Projects, #id)();
+  // 'system' or 'term'
+  TextColumn get type => text().withDefault(const Constant('term'))();
+  TextColumn get name => text()();
+  TextColumn get acronym => text().nullable()();
+  TextColumn get description => text().nullable()();
+  // system-only fields
+  TextColumn get owner => text().nullable()();
+  TextColumn get environment => text().nullable()();
+  TextColumn get status => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 class Documents extends Table {
   TextColumn get id => text().named('id')();
   TextColumn get projectId => text().references(Projects, #id)();
@@ -370,6 +390,7 @@ class StatusReports extends Table {
     ProjectActions,
     InboxItems,
     ContextEntries,
+    GlossaryEntries,
     Documents,
     StatusReports,
     JournalEntries,
@@ -384,6 +405,7 @@ class StatusReports extends Table {
     ActionsDao,
     InboxDao,
     ContextDao,
+    GlossaryDao,
     ReportsDao,
     JournalDao,
     WorkstreamsDao,
@@ -394,7 +416,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.memory() : super(openMemoryConnection());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -423,6 +445,9 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(workstreams, workstreams.endDate);
             await m.createTable(workstreamLinks);
           }
+          if (from < 6) {
+            await m.createTable(glossaryEntries);
+          }
         },
       );
 
@@ -442,6 +467,7 @@ class AppDatabase extends _$AppDatabase {
       }
       await (delete(journalEntries)..where((t) => t.projectId.equals(projectId))).go();
       await (delete(contextEntries)..where((t) => t.projectId.equals(projectId))).go();
+      await (delete(glossaryEntries)..where((t) => t.projectId.equals(projectId))).go();
       await (delete(inboxItems)..where((t) => t.projectId.equals(projectId))).go();
       await (delete(projectActions)..where((t) => t.projectId.equals(projectId))).go();
       await (delete(documents)..where((t) => t.projectId.equals(projectId))).go();

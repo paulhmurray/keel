@@ -60,38 +60,35 @@ const kSlashCommands = [
   ),
 ];
 
-class JournalSlashMenu extends StatefulWidget {
+List<SlashCommand> filteredSlashCommands(String query) {
+  final q = query.toLowerCase();
+  if (q.isEmpty) return kSlashCommands;
+  return kSlashCommands
+      .where((c) =>
+          c.command.toLowerCase().contains(q) ||
+          c.description.toLowerCase().contains(q))
+      .toList();
+}
+
+class JournalSlashMenu extends StatelessWidget {
   final String query;
+  final int selectedIndex;
   final void Function(SlashCommand) onSelect;
   final VoidCallback onDismiss;
 
   const JournalSlashMenu({
     super.key,
     required this.query,
+    required this.selectedIndex,
     required this.onSelect,
     required this.onDismiss,
   });
 
   @override
-  State<JournalSlashMenu> createState() => _JournalSlashMenuState();
-}
-
-class _JournalSlashMenuState extends State<JournalSlashMenu> {
-  int _selectedIndex = 0;
-
-  List<SlashCommand> get _filtered {
-    final q = widget.query.toLowerCase();
-    if (q.isEmpty) return kSlashCommands;
-    return kSlashCommands.where((c) =>
-        c.command.toLowerCase().contains(q) ||
-        c.description.toLowerCase().contains(q)).toList();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final items = _filtered;
+    final items = filteredSlashCommands(query);
     if (items.isEmpty) return const SizedBox.shrink();
-    final sel = _selectedIndex.clamp(0, items.length - 1);
+    final sel = selectedIndex.clamp(0, items.length - 1);
 
     return Container(
       constraints: const BoxConstraints(maxWidth: 280, maxHeight: 240),
@@ -125,7 +122,7 @@ class _JournalSlashMenuState extends State<JournalSlashMenu> {
                 ),
                 const Spacer(),
                 const Text(
-                  'Esc to dismiss',
+                  '↑↓ navigate  ↵ select  Esc dismiss',
                   style: TextStyle(color: KColors.textMuted, fontSize: 9),
                 ),
               ],
@@ -137,44 +134,47 @@ class _JournalSlashMenuState extends State<JournalSlashMenu> {
               shrinkWrap: true,
               padding: EdgeInsets.zero,
               children: items.asMap().entries.map((e) {
-            final i = e.key;
-            final cmd = e.value;
-            final isSelected = i == sel;
-            return InkWell(
-              onTap: () => widget.onSelect(cmd),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                color: isSelected ? KColors.amberDim : Colors.transparent,
-                child: Row(
-                  children: [
-                    Icon(cmd.icon, size: 14,
-                        color: isSelected ? KColors.amber : KColors.textDim),
-                    const SizedBox(width: 10),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                final i = e.key;
+                final cmd = e.value;
+                final isSelected = i == sel;
+                return InkWell(
+                  onTap: () => onSelect(cmd),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    color: isSelected ? KColors.amberDim : Colors.transparent,
+                    child: Row(
                       children: [
-                        Text(
-                          cmd.command,
-                          style: TextStyle(
-                            color: isSelected ? KColors.amber : KColors.text,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Text(
-                          cmd.description,
-                          style: const TextStyle(
-                            color: KColors.textDim,
-                            fontSize: 10,
+                        Icon(cmd.icon,
+                            size: 14,
+                            color: isSelected ? KColors.amber : KColors.textDim),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                cmd.command,
+                                style: TextStyle(
+                                  color: isSelected ? KColors.amber : KColors.text,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Text(
+                                cmd.description,
+                                style: const TextStyle(
+                                  color: KColors.textDim,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
+                  ),
+                );
+              }).toList(),
             ),
           ),
         ],

@@ -10229,6 +10229,666 @@ class ContextEntriesCompanion extends UpdateCompanion<ContextEntry> {
   }
 }
 
+class $GlossaryEntriesTable extends GlossaryEntries
+    with TableInfo<$GlossaryEntriesTable, GlossaryEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $GlossaryEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES projects (id)',
+    ),
+  );
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+    'type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('term'),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _acronymMeta = const VerificationMeta(
+    'acronym',
+  );
+  @override
+  late final GeneratedColumn<String> acronym = GeneratedColumn<String>(
+    'acronym',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ownerMeta = const VerificationMeta('owner');
+  @override
+  late final GeneratedColumn<String> owner = GeneratedColumn<String>(
+    'owner',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _environmentMeta = const VerificationMeta(
+    'environment',
+  );
+  @override
+  late final GeneratedColumn<String> environment = GeneratedColumn<String>(
+    'environment',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    projectId,
+    type,
+    name,
+    acronym,
+    description,
+    owner,
+    environment,
+    status,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'glossary_entries';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<GlossaryEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_projectIdMeta);
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+        _typeMeta,
+        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
+      );
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('acronym')) {
+      context.handle(
+        _acronymMeta,
+        acronym.isAcceptableOrUnknown(data['acronym']!, _acronymMeta),
+      );
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('owner')) {
+      context.handle(
+        _ownerMeta,
+        owner.isAcceptableOrUnknown(data['owner']!, _ownerMeta),
+      );
+    }
+    if (data.containsKey('environment')) {
+      context.handle(
+        _environmentMeta,
+        environment.isAcceptableOrUnknown(
+          data['environment']!,
+          _environmentMeta,
+        ),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  GlossaryEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return GlossaryEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      )!,
+      type: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}type'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      acronym: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}acronym'],
+      ),
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      ),
+      owner: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner'],
+      ),
+      environment: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}environment'],
+      ),
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $GlossaryEntriesTable createAlias(String alias) {
+    return $GlossaryEntriesTable(attachedDatabase, alias);
+  }
+}
+
+class GlossaryEntry extends DataClass implements Insertable<GlossaryEntry> {
+  final String id;
+  final String projectId;
+  final String type;
+  final String name;
+  final String? acronym;
+  final String? description;
+  final String? owner;
+  final String? environment;
+  final String? status;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const GlossaryEntry({
+    required this.id,
+    required this.projectId,
+    required this.type,
+    required this.name,
+    this.acronym,
+    this.description,
+    this.owner,
+    this.environment,
+    this.status,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['project_id'] = Variable<String>(projectId);
+    map['type'] = Variable<String>(type);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || acronym != null) {
+      map['acronym'] = Variable<String>(acronym);
+    }
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    if (!nullToAbsent || owner != null) {
+      map['owner'] = Variable<String>(owner);
+    }
+    if (!nullToAbsent || environment != null) {
+      map['environment'] = Variable<String>(environment);
+    }
+    if (!nullToAbsent || status != null) {
+      map['status'] = Variable<String>(status);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  GlossaryEntriesCompanion toCompanion(bool nullToAbsent) {
+    return GlossaryEntriesCompanion(
+      id: Value(id),
+      projectId: Value(projectId),
+      type: Value(type),
+      name: Value(name),
+      acronym: acronym == null && nullToAbsent
+          ? const Value.absent()
+          : Value(acronym),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
+      owner: owner == null && nullToAbsent
+          ? const Value.absent()
+          : Value(owner),
+      environment: environment == null && nullToAbsent
+          ? const Value.absent()
+          : Value(environment),
+      status: status == null && nullToAbsent
+          ? const Value.absent()
+          : Value(status),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory GlossaryEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return GlossaryEntry(
+      id: serializer.fromJson<String>(json['id']),
+      projectId: serializer.fromJson<String>(json['projectId']),
+      type: serializer.fromJson<String>(json['type']),
+      name: serializer.fromJson<String>(json['name']),
+      acronym: serializer.fromJson<String?>(json['acronym']),
+      description: serializer.fromJson<String?>(json['description']),
+      owner: serializer.fromJson<String?>(json['owner']),
+      environment: serializer.fromJson<String?>(json['environment']),
+      status: serializer.fromJson<String?>(json['status']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'projectId': serializer.toJson<String>(projectId),
+      'type': serializer.toJson<String>(type),
+      'name': serializer.toJson<String>(name),
+      'acronym': serializer.toJson<String?>(acronym),
+      'description': serializer.toJson<String?>(description),
+      'owner': serializer.toJson<String?>(owner),
+      'environment': serializer.toJson<String?>(environment),
+      'status': serializer.toJson<String?>(status),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  GlossaryEntry copyWith({
+    String? id,
+    String? projectId,
+    String? type,
+    String? name,
+    Value<String?> acronym = const Value.absent(),
+    Value<String?> description = const Value.absent(),
+    Value<String?> owner = const Value.absent(),
+    Value<String?> environment = const Value.absent(),
+    Value<String?> status = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => GlossaryEntry(
+    id: id ?? this.id,
+    projectId: projectId ?? this.projectId,
+    type: type ?? this.type,
+    name: name ?? this.name,
+    acronym: acronym.present ? acronym.value : this.acronym,
+    description: description.present ? description.value : this.description,
+    owner: owner.present ? owner.value : this.owner,
+    environment: environment.present ? environment.value : this.environment,
+    status: status.present ? status.value : this.status,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  GlossaryEntry copyWithCompanion(GlossaryEntriesCompanion data) {
+    return GlossaryEntry(
+      id: data.id.present ? data.id.value : this.id,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      type: data.type.present ? data.type.value : this.type,
+      name: data.name.present ? data.name.value : this.name,
+      acronym: data.acronym.present ? data.acronym.value : this.acronym,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+      owner: data.owner.present ? data.owner.value : this.owner,
+      environment: data.environment.present
+          ? data.environment.value
+          : this.environment,
+      status: data.status.present ? data.status.value : this.status,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('GlossaryEntry(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('type: $type, ')
+          ..write('name: $name, ')
+          ..write('acronym: $acronym, ')
+          ..write('description: $description, ')
+          ..write('owner: $owner, ')
+          ..write('environment: $environment, ')
+          ..write('status: $status, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    projectId,
+    type,
+    name,
+    acronym,
+    description,
+    owner,
+    environment,
+    status,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is GlossaryEntry &&
+          other.id == this.id &&
+          other.projectId == this.projectId &&
+          other.type == this.type &&
+          other.name == this.name &&
+          other.acronym == this.acronym &&
+          other.description == this.description &&
+          other.owner == this.owner &&
+          other.environment == this.environment &&
+          other.status == this.status &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class GlossaryEntriesCompanion extends UpdateCompanion<GlossaryEntry> {
+  final Value<String> id;
+  final Value<String> projectId;
+  final Value<String> type;
+  final Value<String> name;
+  final Value<String?> acronym;
+  final Value<String?> description;
+  final Value<String?> owner;
+  final Value<String?> environment;
+  final Value<String?> status;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const GlossaryEntriesCompanion({
+    this.id = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.type = const Value.absent(),
+    this.name = const Value.absent(),
+    this.acronym = const Value.absent(),
+    this.description = const Value.absent(),
+    this.owner = const Value.absent(),
+    this.environment = const Value.absent(),
+    this.status = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  GlossaryEntriesCompanion.insert({
+    required String id,
+    required String projectId,
+    this.type = const Value.absent(),
+    required String name,
+    this.acronym = const Value.absent(),
+    this.description = const Value.absent(),
+    this.owner = const Value.absent(),
+    this.environment = const Value.absent(),
+    this.status = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       projectId = Value(projectId),
+       name = Value(name);
+  static Insertable<GlossaryEntry> custom({
+    Expression<String>? id,
+    Expression<String>? projectId,
+    Expression<String>? type,
+    Expression<String>? name,
+    Expression<String>? acronym,
+    Expression<String>? description,
+    Expression<String>? owner,
+    Expression<String>? environment,
+    Expression<String>? status,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (projectId != null) 'project_id': projectId,
+      if (type != null) 'type': type,
+      if (name != null) 'name': name,
+      if (acronym != null) 'acronym': acronym,
+      if (description != null) 'description': description,
+      if (owner != null) 'owner': owner,
+      if (environment != null) 'environment': environment,
+      if (status != null) 'status': status,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  GlossaryEntriesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? projectId,
+    Value<String>? type,
+    Value<String>? name,
+    Value<String?>? acronym,
+    Value<String?>? description,
+    Value<String?>? owner,
+    Value<String?>? environment,
+    Value<String?>? status,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return GlossaryEntriesCompanion(
+      id: id ?? this.id,
+      projectId: projectId ?? this.projectId,
+      type: type ?? this.type,
+      name: name ?? this.name,
+      acronym: acronym ?? this.acronym,
+      description: description ?? this.description,
+      owner: owner ?? this.owner,
+      environment: environment ?? this.environment,
+      status: status ?? this.status,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (acronym.present) {
+      map['acronym'] = Variable<String>(acronym.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (owner.present) {
+      map['owner'] = Variable<String>(owner.value);
+    }
+    if (environment.present) {
+      map['environment'] = Variable<String>(environment.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('GlossaryEntriesCompanion(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('type: $type, ')
+          ..write('name: $name, ')
+          ..write('acronym: $acronym, ')
+          ..write('description: $description, ')
+          ..write('owner: $owner, ')
+          ..write('environment: $environment, ')
+          ..write('status: $status, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $DocumentsTable extends Documents
     with TableInfo<$DocumentsTable, Document> {
   @override
@@ -12612,6 +13272,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ProjectActionsTable projectActions = $ProjectActionsTable(this);
   late final $InboxItemsTable inboxItems = $InboxItemsTable(this);
   late final $ContextEntriesTable contextEntries = $ContextEntriesTable(this);
+  late final $GlossaryEntriesTable glossaryEntries = $GlossaryEntriesTable(
+    this,
+  );
   late final $DocumentsTable documents = $DocumentsTable(this);
   late final $StatusReportsTable statusReports = $StatusReportsTable(this);
   late final $JournalEntriesTable journalEntries = $JournalEntriesTable(this);
@@ -12625,6 +13288,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final ActionsDao actionsDao = ActionsDao(this as AppDatabase);
   late final InboxDao inboxDao = InboxDao(this as AppDatabase);
   late final ContextDao contextDao = ContextDao(this as AppDatabase);
+  late final GlossaryDao glossaryDao = GlossaryDao(this as AppDatabase);
   late final ReportsDao reportsDao = ReportsDao(this as AppDatabase);
   late final JournalDao journalDao = JournalDao(this as AppDatabase);
   late final WorkstreamsDao workstreamsDao = WorkstreamsDao(
@@ -12651,6 +13315,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     projectActions,
     inboxItems,
     contextEntries,
+    glossaryEntries,
     documents,
     statusReports,
     journalEntries,
@@ -12997,6 +13662,29 @@ final class $$ProjectsTableReferences
     ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_contextEntriesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$GlossaryEntriesTable, List<GlossaryEntry>>
+  _glossaryEntriesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.glossaryEntries,
+    aliasName: $_aliasNameGenerator(
+      db.projects.id,
+      db.glossaryEntries.projectId,
+    ),
+  );
+
+  $$GlossaryEntriesTableProcessedTableManager get glossaryEntriesRefs {
+    final manager = $$GlossaryEntriesTableTableManager(
+      $_db,
+      $_db.glossaryEntries,
+    ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _glossaryEntriesRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -13470,6 +14158,31 @@ class $$ProjectsTableFilterComposer
           }) => $$ContextEntriesTableFilterComposer(
             $db: $db,
             $table: $db.contextEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> glossaryEntriesRefs(
+    Expression<bool> Function($$GlossaryEntriesTableFilterComposer f) f,
+  ) {
+    final $$GlossaryEntriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.glossaryEntries,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$GlossaryEntriesTableFilterComposer(
+            $db: $db,
+            $table: $db.glossaryEntries,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -14012,6 +14725,31 @@ class $$ProjectsTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> glossaryEntriesRefs<T extends Object>(
+    Expression<T> Function($$GlossaryEntriesTableAnnotationComposer a) f,
+  ) {
+    final $$GlossaryEntriesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.glossaryEntries,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$GlossaryEntriesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.glossaryEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> documentsRefs<T extends Object>(
     Expression<T> Function($$DocumentsTableAnnotationComposer a) f,
   ) {
@@ -14117,6 +14855,7 @@ class $$ProjectsTableTableManager
             bool projectActionsRefs,
             bool inboxItemsRefs,
             bool contextEntriesRefs,
+            bool glossaryEntriesRefs,
             bool documentsRefs,
             bool statusReportsRefs,
             bool journalEntriesRefs,
@@ -14198,6 +14937,7 @@ class $$ProjectsTableTableManager
                 projectActionsRefs = false,
                 inboxItemsRefs = false,
                 contextEntriesRefs = false,
+                glossaryEntriesRefs = false,
                 documentsRefs = false,
                 statusReportsRefs = false,
                 journalEntriesRefs = false,
@@ -14220,6 +14960,7 @@ class $$ProjectsTableTableManager
                     if (projectActionsRefs) db.projectActions,
                     if (inboxItemsRefs) db.inboxItems,
                     if (contextEntriesRefs) db.contextEntries,
+                    if (glossaryEntriesRefs) db.glossaryEntries,
                     if (documentsRefs) db.documents,
                     if (statusReportsRefs) db.statusReports,
                     if (journalEntriesRefs) db.journalEntries,
@@ -14542,6 +15283,27 @@ class $$ProjectsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (glossaryEntriesRefs)
+                        await $_getPrefetchedData<
+                          Project,
+                          $ProjectsTable,
+                          GlossaryEntry
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProjectsTableReferences
+                              ._glossaryEntriesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).glossaryEntriesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.projectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (documentsRefs)
                         await $_getPrefetchedData<
                           Project,
@@ -14641,6 +15403,7 @@ typedef $$ProjectsTableProcessedTableManager =
         bool projectActionsRefs,
         bool inboxItemsRefs,
         bool contextEntriesRefs,
+        bool glossaryEntriesRefs,
         bool documentsRefs,
         bool statusReportsRefs,
         bool journalEntriesRefs,
@@ -21659,6 +22422,452 @@ typedef $$ContextEntriesTableProcessedTableManager =
       ContextEntry,
       PrefetchHooks Function({bool projectId})
     >;
+typedef $$GlossaryEntriesTableCreateCompanionBuilder =
+    GlossaryEntriesCompanion Function({
+      required String id,
+      required String projectId,
+      Value<String> type,
+      required String name,
+      Value<String?> acronym,
+      Value<String?> description,
+      Value<String?> owner,
+      Value<String?> environment,
+      Value<String?> status,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$GlossaryEntriesTableUpdateCompanionBuilder =
+    GlossaryEntriesCompanion Function({
+      Value<String> id,
+      Value<String> projectId,
+      Value<String> type,
+      Value<String> name,
+      Value<String?> acronym,
+      Value<String?> description,
+      Value<String?> owner,
+      Value<String?> environment,
+      Value<String?> status,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$GlossaryEntriesTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $GlossaryEntriesTable, GlossaryEntry> {
+  $$GlossaryEntriesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ProjectsTable _projectIdTable(_$AppDatabase db) =>
+      db.projects.createAlias(
+        $_aliasNameGenerator(db.glossaryEntries.projectId, db.projects.id),
+      );
+
+  $$ProjectsTableProcessedTableManager get projectId {
+    final $_column = $_itemColumn<String>('project_id')!;
+
+    final manager = $$ProjectsTableTableManager(
+      $_db,
+      $_db.projects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_projectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$GlossaryEntriesTableFilterComposer
+    extends Composer<_$AppDatabase, $GlossaryEntriesTable> {
+  $$GlossaryEntriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get acronym => $composableBuilder(
+    column: $table.acronym,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get owner => $composableBuilder(
+    column: $table.owner,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get environment => $composableBuilder(
+    column: $table.environment,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ProjectsTableFilterComposer get projectId {
+    final $$ProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$GlossaryEntriesTableOrderingComposer
+    extends Composer<_$AppDatabase, $GlossaryEntriesTable> {
+  $$GlossaryEntriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get acronym => $composableBuilder(
+    column: $table.acronym,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get owner => $composableBuilder(
+    column: $table.owner,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get environment => $composableBuilder(
+    column: $table.environment,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ProjectsTableOrderingComposer get projectId {
+    final $$ProjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$GlossaryEntriesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $GlossaryEntriesTable> {
+  $$GlossaryEntriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get acronym =>
+      $composableBuilder(column: $table.acronym, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get owner =>
+      $composableBuilder(column: $table.owner, builder: (column) => column);
+
+  GeneratedColumn<String> get environment => $composableBuilder(
+    column: $table.environment,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$ProjectsTableAnnotationComposer get projectId {
+    final $$ProjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$GlossaryEntriesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $GlossaryEntriesTable,
+          GlossaryEntry,
+          $$GlossaryEntriesTableFilterComposer,
+          $$GlossaryEntriesTableOrderingComposer,
+          $$GlossaryEntriesTableAnnotationComposer,
+          $$GlossaryEntriesTableCreateCompanionBuilder,
+          $$GlossaryEntriesTableUpdateCompanionBuilder,
+          (GlossaryEntry, $$GlossaryEntriesTableReferences),
+          GlossaryEntry,
+          PrefetchHooks Function({bool projectId})
+        > {
+  $$GlossaryEntriesTableTableManager(
+    _$AppDatabase db,
+    $GlossaryEntriesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$GlossaryEntriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$GlossaryEntriesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$GlossaryEntriesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> projectId = const Value.absent(),
+                Value<String> type = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> acronym = const Value.absent(),
+                Value<String?> description = const Value.absent(),
+                Value<String?> owner = const Value.absent(),
+                Value<String?> environment = const Value.absent(),
+                Value<String?> status = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => GlossaryEntriesCompanion(
+                id: id,
+                projectId: projectId,
+                type: type,
+                name: name,
+                acronym: acronym,
+                description: description,
+                owner: owner,
+                environment: environment,
+                status: status,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String projectId,
+                Value<String> type = const Value.absent(),
+                required String name,
+                Value<String?> acronym = const Value.absent(),
+                Value<String?> description = const Value.absent(),
+                Value<String?> owner = const Value.absent(),
+                Value<String?> environment = const Value.absent(),
+                Value<String?> status = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => GlossaryEntriesCompanion.insert(
+                id: id,
+                projectId: projectId,
+                type: type,
+                name: name,
+                acronym: acronym,
+                description: description,
+                owner: owner,
+                environment: environment,
+                status: status,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$GlossaryEntriesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({projectId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (projectId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.projectId,
+                                referencedTable:
+                                    $$GlossaryEntriesTableReferences
+                                        ._projectIdTable(db),
+                                referencedColumn:
+                                    $$GlossaryEntriesTableReferences
+                                        ._projectIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$GlossaryEntriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $GlossaryEntriesTable,
+      GlossaryEntry,
+      $$GlossaryEntriesTableFilterComposer,
+      $$GlossaryEntriesTableOrderingComposer,
+      $$GlossaryEntriesTableAnnotationComposer,
+      $$GlossaryEntriesTableCreateCompanionBuilder,
+      $$GlossaryEntriesTableUpdateCompanionBuilder,
+      (GlossaryEntry, $$GlossaryEntriesTableReferences),
+      GlossaryEntry,
+      PrefetchHooks Function({bool projectId})
+    >;
 typedef $$DocumentsTableCreateCompanionBuilder =
     DocumentsCompanion Function({
       required String id,
@@ -23458,6 +24667,8 @@ class $AppDatabaseManager {
       $$InboxItemsTableTableManager(_db, _db.inboxItems);
   $$ContextEntriesTableTableManager get contextEntries =>
       $$ContextEntriesTableTableManager(_db, _db.contextEntries);
+  $$GlossaryEntriesTableTableManager get glossaryEntries =>
+      $$GlossaryEntriesTableTableManager(_db, _db.glossaryEntries);
   $$DocumentsTableTableManager get documents =>
       $$DocumentsTableTableManager(_db, _db.documents);
   $$StatusReportsTableTableManager get statusReports =>
@@ -23633,6 +24844,24 @@ class ContextDaoManager {
       );
   $$DocumentsTableTableManager get documents =>
       $$DocumentsTableTableManager(_db.attachedDatabase, _db.documents);
+}
+
+mixin _$GlossaryDaoMixin on DatabaseAccessor<AppDatabase> {
+  $ProjectsTable get projects => attachedDatabase.projects;
+  $GlossaryEntriesTable get glossaryEntries => attachedDatabase.glossaryEntries;
+  GlossaryDaoManager get managers => GlossaryDaoManager(this);
+}
+
+class GlossaryDaoManager {
+  final _$GlossaryDaoMixin _db;
+  GlossaryDaoManager(this._db);
+  $$ProjectsTableTableManager get projects =>
+      $$ProjectsTableTableManager(_db.attachedDatabase, _db.projects);
+  $$GlossaryEntriesTableTableManager get glossaryEntries =>
+      $$GlossaryEntriesTableTableManager(
+        _db.attachedDatabase,
+        _db.glossaryEntries,
+      );
 }
 
 mixin _$ReportsDaoMixin on DatabaseAccessor<AppDatabase> {

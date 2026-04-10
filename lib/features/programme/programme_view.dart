@@ -8,7 +8,6 @@ import '../../providers/project_provider.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../timeline/gantt_chart.dart';
 import '../timeline/timeline_chart.dart';
-import '../timeline/workstream_form.dart';
 
 class ProgrammeView extends StatelessWidget {
   final VoidCallback? onNavigateToTimeline;
@@ -94,14 +93,6 @@ class _ProgrammeContentState extends State<_ProgrammeContent> {
     });
   }
 
-  void _addWorkstream() {
-    final db = context.read<AppDatabase>();
-    showDialog(
-      context: context,
-      builder: (_) =>
-          WorkstreamFormDialog(projectId: widget.projectId, db: db),
-    ).then((_) => _loadWorkstreams());
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -143,23 +134,13 @@ class _ProgrammeContentState extends State<_ProgrammeContent> {
           const SizedBox(height: 24),
 
           // Workstreams section
-          Row(
-            children: [
-              const Flexible(child: _SectionLabel('WORKSTREAMS')),
-              const SizedBox(width: 8),
-              ElevatedButton.icon(
-                onPressed: _addWorkstream,
-                icon: const Icon(Icons.add, size: 14),
-                label: const Text('Add Workstream'),
-              ),
-            ],
-          ),
+          const _SectionLabel('WORKSTREAMS'),
           const SizedBox(height: 10),
 
           if (_loadingWorkstreams)
             const Center(child: CircularProgressIndicator())
           else if (_workstreams.isEmpty)
-            _EmptyGantt(onAdd: _addWorkstream)
+            _EmptyGantt()
           else
             SizedBox(
               height: 320,
@@ -438,9 +419,7 @@ class _OverviewField extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _EmptyGantt extends StatelessWidget {
-  final VoidCallback onAdd;
-
-  const _EmptyGantt({required this.onAdd});
+  const _EmptyGantt();
 
   @override
   Widget build(BuildContext context) {
@@ -451,20 +430,17 @@ class _EmptyGantt extends StatelessWidget {
         border: Border.all(color: KColors.border),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Center(
+      child: const Center(
         child: Column(
           children: [
-            const Icon(Icons.account_tree_outlined,
+            Icon(Icons.account_tree_outlined,
                 size: 36, color: KColors.textMuted),
-            const SizedBox(height: 12),
-            const Text('No workstreams yet',
+            SizedBox(height: 12),
+            Text('No workstreams yet',
                 style: TextStyle(color: KColors.textDim)),
-            const SizedBox(height: 12),
-            ElevatedButton.icon(
-              onPressed: onAdd,
-              icon: const Icon(Icons.add, size: 14),
-              label: const Text('Add Workstream'),
-            ),
+            SizedBox(height: 4),
+            Text('Add workstreams in the Timeline tab.',
+                style: TextStyle(color: KColors.textMuted, fontSize: 11)),
           ],
         ),
       ),
