@@ -24,6 +24,7 @@
 
   --font:       'Inter', system-ui, sans-serif;
   --mono:       'JetBrains Mono', 'Fira Code', monospace;
+  --syne:       'Syne', system-ui, sans-serif;
 }
 
 /* Reset */
@@ -135,11 +136,12 @@ nav {
 }
 .logo-mark.small { width: 20px; height: 20px; font-size: 11px; border-radius: 3px; }
 .logo-text {
-  font-family: var(--mono);
-  font-weight: 700;
-  font-size: 14px;
-  letter-spacing: 0.15em;
-  color: #0d0d0d;
+  font-family: var(--syne);
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: 0.01em;
+  color: var(--amber);
+  text-decoration: none;
 }
 .nav-links {
   display: flex;
