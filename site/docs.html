@@ -12,7 +12,7 @@
   <style>
     .docs-layout {
       display: grid;
-      grid-template-columns: 220px 1fr;
+      grid-template-columns: 240px 1fr;
       gap: 60px;
       padding: 80px 0 120px;
       align-items: start;
@@ -20,30 +20,50 @@
     .docs-sidebar {
       position: sticky;
       top: 80px;
+      max-height: calc(100vh - 100px);
+      overflow-y: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px 0 16px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border2) transparent;
     }
+    .docs-sidebar::-webkit-scrollbar { width: 4px; }
+    .docs-sidebar::-webkit-scrollbar-track { background: transparent; }
+    .docs-sidebar::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
     .docs-sidebar-label {
       font-family: var(--mono);
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.1em;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
       text-transform: uppercase;
       color: var(--amber);
-      margin-bottom: 16px;
+      padding: 0 20px 12px;
+      display: block;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 8px;
     }
     .docs-sidebar nav a {
       display: block;
       font-size: 14px;
-      color: var(--text-dim);
-      text-decoration: none;
-      padding: 6px 0;
-      border-left: 2px solid transparent;
-      padding-left: 12px;
-      transition: color 0.15s, border-color 0.15s;
-    }
-    .docs-sidebar nav a:hover,
-    .docs-sidebar nav a.active {
+      font-weight: 500;
       color: var(--text);
+      text-decoration: none;
+      padding: 9px 20px 9px 18px;
+      border-left: 3px solid transparent;
+      transition: color 0.15s, border-color 0.15s, background 0.15s;
+    }
+    .docs-sidebar nav a:hover {
+      color: var(--amber);
+      background: rgba(240, 165, 0, 0.05);
+      border-left-color: rgba(240, 165, 0, 0.4);
+    }
+    .docs-sidebar nav a.active {
+      color: var(--amber);
+      background: rgba(240, 165, 0, 0.08);
       border-left-color: var(--amber);
+      font-weight: 600;
     }
     .docs-content h1 {
       font-family: var(--mono);
@@ -157,7 +177,11 @@
         gap: 32px;
         padding: 40px 0 80px;
       }
-      .docs-sidebar { position: static; }
+      .docs-sidebar {
+        position: static;
+        max-height: none;
+        overflow-y: visible;
+      }
     }
   </style>
 </head>
@@ -177,6 +201,7 @@
         <a href="docs.html" style="color: var(--text);">Docs</a>
       </div>
       <a href="https://github.com/your-org/keel/releases/latest" class="btn btn-primary nav-cta">Download</a>
+
     </div>
   </nav>
 
