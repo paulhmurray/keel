@@ -96,8 +96,8 @@ func main() {
 			"release_notes": releaseNotes,
 			"download_url": gin.H{
 				"linux":   baseURL + "/keel-linux.tar.gz",
-				"windows": baseURL + "/keel-windows.zip",
-				"macos":   baseURL + "/keel-macos.zip",
+				"windows": baseURL + "/keel-windows-setup.exe",
+				"macos":   baseURL + "/keel-macos.dmg",
 			},
 			"minimum_version": "1.0.0",
 			"critical":        false,

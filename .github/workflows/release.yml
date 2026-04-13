@@ -20,11 +20,11 @@ jobs:
 
           - os: macos-latest
             platform: macos
-            artifact_name: keel-macos.zip
+            artifact_name: keel-macos.dmg
 
           - os: windows-latest
             platform: windows
-            artifact_name: keel-windows.zip
+            artifact_name: keel-windows-setup.exe
 
     runs-on: ${{ matrix.os }}
 
@@ -59,6 +59,8 @@ jobs:
       - name: Package (Linux)
         if: matrix.platform == 'linux'
         run: |
+          cp linux/install.sh build/linux/x64/release/bundle/install.sh
+          chmod +x build/linux/x64/release/bundle/install.sh
           tar -czf keel-linux.tar.gz \
             -C build/linux/x64/release/bundle .
 
@@ -73,24 +75,35 @@ jobs:
           APP=$(find build/macos/Build/Products/Release -name "*.app" -maxdepth 1 | head -1)
           codesign --deep --force --sign - "$APP"
 
-      - name: Package (macOS)
+      - name: Package as DMG (macOS)
         if: matrix.platform == 'macos'
         run: |
           APP=$(find build/macos/Build/Products/Release -name "*.app" -maxdepth 1 | head -1)
-          ditto -c -k --sequesterRsrc --keepParent "$APP" keel-macos.zip
+          mkdir -p dmg_staging
+          cp -r "$APP" dmg_staging/
+          ln -s /Applications dmg_staging/Applications
+          hdiutil create \
+            -volname "Keel" \
+            -srcfolder dmg_staging \
+            -ov \
+            -format UDZO \
+            keel-macos.dmg
 
       # ── Windows ────────────────────────────────────────────────────────────
       - name: Build (Windows)
         if: matrix.platform == 'windows'
         run: flutter build windows --release
 
-      - name: Package (Windows)
+      - name: Install Inno Setup
+        if: matrix.platform == 'windows'
+        run: choco install innosetup --no-progress -y
+
+      - name: Build installer (Windows)
         if: matrix.platform == 'windows'
         shell: pwsh
         run: |
-          Compress-Archive `
-            -Path build/windows/x64/runner/Release/* `
-            -DestinationPath keel-windows.zip
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" windows\installer\keel.iss
+          Copy-Item windows\installer\installer_output\keel-windows-setup.exe keel-windows-setup.exe
 
       # ── Upload ─────────────────────────────────────────────────────────────
       - name: Upload artifact
@@ -117,5 +130,5 @@ jobs:
           generate_release_notes: true
           files: |
             keel-linux.tar.gz
-            keel-macos.zip
-            keel-windows.zip
+            keel-macos.dmg
+            keel-windows-setup.exe
