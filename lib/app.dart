@@ -99,7 +99,23 @@ class _KeelAppState extends State<KeelApp> {
         title: 'Keel',
         theme: keelTheme,
         debugShowCheckedModeBanner: false,
-        home: const ShellLayout(),
+        home: Consumer<SettingsProvider>(
+          builder: (context, settingsProvider, _) {
+            final scale = settingsProvider.settings.uiScale;
+            if (scale == 1.0) return const ShellLayout();
+            return LayoutBuilder(
+              builder: (context, constraints) => Transform.scale(
+                scale: scale,
+                alignment: Alignment.topLeft,
+                child: SizedBox(
+                  width: constraints.maxWidth / scale,
+                  height: constraints.maxHeight / scale,
+                  child: const ShellLayout(),
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
   }

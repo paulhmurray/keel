@@ -50,6 +50,9 @@ class AppSettings {
   // Identity
   final String myName;
 
+  // Display
+  final double uiScale;
+
   // Editor
   final bool journalVimMode;
   final String vimEscapeSequence; // e.g. 'jk', empty = disabled
@@ -75,6 +78,7 @@ class AppSettings {
     this.syncEnabled = false,
     this.syncEmail = '',
     this.myName = '',
+    this.uiScale = 1.0,
     this.journalVimMode = false,
     this.vimEscapeSequence = '',
   });
@@ -117,6 +121,7 @@ class AppSettings {
     bool? syncEnabled,
     String? syncEmail,
     String? myName,
+    double? uiScale,
     bool? journalVimMode,
     String? vimEscapeSequence,
   }) {
@@ -141,6 +146,7 @@ class AppSettings {
       syncEnabled: syncEnabled ?? this.syncEnabled,
       syncEmail: syncEmail ?? this.syncEmail,
       myName: myName ?? this.myName,
+      uiScale: uiScale ?? this.uiScale,
       journalVimMode: journalVimMode ?? this.journalVimMode,
       vimEscapeSequence: vimEscapeSequence ?? this.vimEscapeSequence,
     );
@@ -167,6 +173,7 @@ class AppSettings {
         'syncEnabled': syncEnabled,
         'syncEmail': syncEmail,
         'myName': myName,
+        'uiScale': uiScale,
         'journalVimMode': journalVimMode,
         'vimEscapeSequence': vimEscapeSequence,
       };
@@ -200,6 +207,7 @@ class AppSettings {
       syncEnabled: json['syncEnabled'] as bool? ?? false,
       syncEmail: json['syncEmail'] as String? ?? '',
       myName: json['myName'] as String? ?? '',
+      uiScale: (json['uiScale'] as num?)?.toDouble() ?? 1.0,
       journalVimMode: json['journalVimMode'] as bool? ?? false,
       vimEscapeSequence: json['vimEscapeSequence'] as String? ?? '',
     );

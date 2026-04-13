@@ -78,6 +78,11 @@ class SettingsView extends StatelessWidget {
 
           const SizedBox(height: 16),
 
+          const SizedBox(height: 16),
+
+          // Display section — not available on web
+          if (!kIsWeb) _DisplaySection(),
+
           // File Watcher section — not available on web
           if (!kIsWeb) _WatcherSection(),
 
@@ -155,6 +160,83 @@ class _SettingsSection extends StatelessWidget {
             child,
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Display Section
+// ---------------------------------------------------------------------------
+
+class _DisplaySection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final settingsProvider = context.watch<SettingsProvider>();
+    final scale = settingsProvider.settings.uiScale;
+
+    return _SettingsSection(
+      title: 'Display',
+      icon: Icons.display_settings_outlined,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Adjust the UI scale if the app appears too large or small on your display. Default is 1.0.',
+            style: TextStyle(color: KColors.textDim, fontSize: 12),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              const Text('UI Scale',
+                  style: TextStyle(color: KColors.text, fontSize: 13)),
+              const SizedBox(width: 16),
+              Expanded(
+                child: SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    activeTrackColor: KColors.amber,
+                    inactiveTrackColor: KColors.border2,
+                    thumbColor: KColors.amber,
+                    overlayColor: KColors.amber.withValues(alpha: 0.12),
+                    trackHeight: 2,
+                  ),
+                  child: Slider(
+                    value: scale,
+                    min: 0.7,
+                    max: 1.3,
+                    divisions: 12,
+                    onChanged: (v) {
+                      final rounded = (v * 20).round() / 20;
+                      settingsProvider
+                          .save(settingsProvider.settings.copyWith(uiScale: rounded));
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 36,
+                child: Text(
+                  scale.toStringAsFixed(2),
+                  style: const TextStyle(
+                    color: KColors.amber,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              TextButton(
+                onPressed: scale == 1.0
+                    ? null
+                    : () => settingsProvider
+                        .save(settingsProvider.settings.copyWith(uiScale: 1.0)),
+                child: const Text('Reset', style: TextStyle(fontSize: 12)),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
