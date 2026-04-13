@@ -105,12 +105,28 @@ jobs:
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" windows\installer\keel.iss
           Copy-Item windows\installer\installer_output\keel-windows-setup.exe keel-windows-setup.exe
 
+      - name: Package zip (Windows)
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          Compress-Archive `
+            -Path build/windows/x64/runner/Release/* `
+            -DestinationPath keel-windows.zip
+
       # ── Upload ─────────────────────────────────────────────────────────────
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
           path: ${{ matrix.artifact_name }}
+          retention-days: 1
+
+      - name: Upload zip artifact (Windows)
+        if: matrix.platform == 'windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: keel-windows.zip
+          path: keel-windows.zip
           retention-days: 1
 
   release:
@@ -132,3 +148,4 @@ jobs:
             keel-linux.tar.gz
             keel-macos.dmg
             keel-windows-setup.exe
+            keel-windows.zip
