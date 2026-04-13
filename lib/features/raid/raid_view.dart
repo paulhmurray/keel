@@ -159,7 +159,10 @@ Widget _colourBar(Color color) => Container(
 // ---------------------------------------------------------------------------
 
 class RaidView extends StatefulWidget {
-  const RaidView({super.key});
+  final int? initialTab;
+  final bool triggerNew;
+
+  const RaidView({super.key, this.initialTab, this.triggerNew = false});
 
   @override
   State<RaidView> createState() => _RaidViewState();
@@ -171,7 +174,11 @@ class _RaidViewState extends State<RaidView> with SingleTickerProviderStateMixin
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(
+      length: 4,
+      vsync: this,
+      initialIndex: widget.initialTab ?? 0,
+    );
   }
 
   @override
@@ -239,10 +246,14 @@ class _RaidViewState extends State<RaidView> with SingleTickerProviderStateMixin
           child: TabBarView(
             controller: _tabController,
             children: [
-              _RisksTab(projectId: projectId, db: db),
-              _AssumptionsTab(projectId: projectId, db: db),
-              _IssuesTab(projectId: projectId, db: db),
-              _DependenciesTab(projectId: projectId, db: db),
+              _RisksTab(projectId: projectId, db: db,
+                  triggerNew: widget.initialTab == 0 && widget.triggerNew),
+              _AssumptionsTab(projectId: projectId, db: db,
+                  triggerNew: widget.initialTab == 1 && widget.triggerNew),
+              _IssuesTab(projectId: projectId, db: db,
+                  triggerNew: widget.initialTab == 2 && widget.triggerNew),
+              _DependenciesTab(projectId: projectId, db: db,
+                  triggerNew: widget.initialTab == 3 && widget.triggerNew),
             ],
           ),
         ),
@@ -295,11 +306,30 @@ class _RaidTab extends StatelessWidget {
 // Risks Tab
 // ---------------------------------------------------------------------------
 
-class _RisksTab extends StatelessWidget {
+class _RisksTab extends StatefulWidget {
   final String projectId;
   final AppDatabase db;
+  final bool triggerNew;
 
-  const _RisksTab({required this.projectId, required this.db});
+  const _RisksTab({required this.projectId, required this.db, this.triggerNew = false});
+
+  @override
+  State<_RisksTab> createState() => _RisksTabState();
+}
+
+class _RisksTabState extends State<_RisksTab> {
+  @override
+  void initState() {
+    super.initState();
+    if (widget.triggerNew) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) showDialog(
+          context: context,
+          builder: (_) => RiskFormDialog(projectId: widget.projectId, db: widget.db),
+        );
+      });
+    }
+  }
 
   Color _riskBarColor(Risk risk) {
     int s(String v) =>
@@ -312,6 +342,8 @@ class _RisksTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final projectId = widget.projectId;
+    final db = widget.db;
     return Column(
       children: [
         Padding(
@@ -484,14 +516,35 @@ class _RiskRow extends StatelessWidget {
 // Assumptions Tab
 // ---------------------------------------------------------------------------
 
-class _AssumptionsTab extends StatelessWidget {
+class _AssumptionsTab extends StatefulWidget {
   final String projectId;
   final AppDatabase db;
+  final bool triggerNew;
 
-  const _AssumptionsTab({required this.projectId, required this.db});
+  const _AssumptionsTab({required this.projectId, required this.db, this.triggerNew = false});
+
+  @override
+  State<_AssumptionsTab> createState() => _AssumptionsTabState();
+}
+
+class _AssumptionsTabState extends State<_AssumptionsTab> {
+  @override
+  void initState() {
+    super.initState();
+    if (widget.triggerNew) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) showDialog(
+          context: context,
+          builder: (_) => AssumptionFormDialog(projectId: widget.projectId, db: widget.db),
+        );
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final projectId = widget.projectId;
+    final db = widget.db;
     return Column(
       children: [
         Padding(
@@ -628,14 +681,35 @@ class _AssumptionRow extends StatelessWidget {
 // Issues Tab
 // ---------------------------------------------------------------------------
 
-class _IssuesTab extends StatelessWidget {
+class _IssuesTab extends StatefulWidget {
   final String projectId;
   final AppDatabase db;
+  final bool triggerNew;
 
-  const _IssuesTab({required this.projectId, required this.db});
+  const _IssuesTab({required this.projectId, required this.db, this.triggerNew = false});
+
+  @override
+  State<_IssuesTab> createState() => _IssuesTabState();
+}
+
+class _IssuesTabState extends State<_IssuesTab> {
+  @override
+  void initState() {
+    super.initState();
+    if (widget.triggerNew) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) showDialog(
+          context: context,
+          builder: (_) => IssueFormDialog(projectId: widget.projectId, db: widget.db),
+        );
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final projectId = widget.projectId;
+    final db = widget.db;
     return Column(
       children: [
         Padding(
@@ -793,14 +867,35 @@ class _IssueRow extends StatelessWidget {
 // Dependencies Tab
 // ---------------------------------------------------------------------------
 
-class _DependenciesTab extends StatelessWidget {
+class _DependenciesTab extends StatefulWidget {
   final String projectId;
   final AppDatabase db;
+  final bool triggerNew;
 
-  const _DependenciesTab({required this.projectId, required this.db});
+  const _DependenciesTab({required this.projectId, required this.db, this.triggerNew = false});
+
+  @override
+  State<_DependenciesTab> createState() => _DependenciesTabState();
+}
+
+class _DependenciesTabState extends State<_DependenciesTab> {
+  @override
+  void initState() {
+    super.initState();
+    if (widget.triggerNew) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) showDialog(
+          context: context,
+          builder: (_) => DependencyFormDialog(projectId: widget.projectId, db: widget.db),
+        );
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final projectId = widget.projectId;
+    final db = widget.db;
     return Column(
       children: [
         Padding(

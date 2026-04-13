@@ -6,6 +6,7 @@ import 'core/inbox/watcher_service.dart';
 import 'providers/project_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/sync_provider.dart';
+import 'providers/update_provider.dart';
 import 'shared/theme/keel_theme.dart';
 import 'features/shell/shell_layout.dart';
 
@@ -56,6 +57,8 @@ class _KeelAppState extends State<KeelApp> {
             sp.serverUrl = s.syncServerUrl;
             sp.syncEnabled = s.syncEnabled;
             sp.email = s.syncEmail.isEmpty ? null : s.syncEmail;
+            sp.loadTimestamps();
+            sp.tryRestoreSession();
             return sp;
           },
           update: (ctx, settings, previous) {
@@ -70,6 +73,11 @@ class _KeelAppState extends State<KeelApp> {
             }
             return sp;
           },
+        ),
+
+        // Update checker — runs on launch, rechecks every 4 hours
+        ChangeNotifierProvider<UpdateProvider>(
+          create: (_) => UpdateProvider()..start(),
         ),
 
         // File watcher — depends on db, settings, and project

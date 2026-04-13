@@ -47,6 +47,13 @@ class AppSettings {
   final bool syncEnabled;
   final String syncEmail;
 
+  // Identity
+  final String myName;
+
+  // Editor
+  final bool journalVimMode;
+  final String vimEscapeSequence; // e.g. 'jk', empty = disabled
+
   const AppSettings({
     this.llmProvider = LLMProvider.claudeApi,
     this.claudeApiKey = '',
@@ -67,6 +74,9 @@ class AppSettings {
     this.syncServerUrl = 'https://sync.keel-app.dev',
     this.syncEnabled = false,
     this.syncEmail = '',
+    this.myName = '',
+    this.journalVimMode = false,
+    this.vimEscapeSequence = '',
   });
 
   bool get hasApiKey {
@@ -106,6 +116,9 @@ class AppSettings {
     String? syncServerUrl,
     bool? syncEnabled,
     String? syncEmail,
+    String? myName,
+    bool? journalVimMode,
+    String? vimEscapeSequence,
   }) {
     return AppSettings(
       llmProvider: llmProvider ?? this.llmProvider,
@@ -127,6 +140,9 @@ class AppSettings {
       syncServerUrl: syncServerUrl ?? this.syncServerUrl,
       syncEnabled: syncEnabled ?? this.syncEnabled,
       syncEmail: syncEmail ?? this.syncEmail,
+      myName: myName ?? this.myName,
+      journalVimMode: journalVimMode ?? this.journalVimMode,
+      vimEscapeSequence: vimEscapeSequence ?? this.vimEscapeSequence,
     );
   }
 
@@ -150,6 +166,9 @@ class AppSettings {
         'syncServerUrl': syncServerUrl,
         'syncEnabled': syncEnabled,
         'syncEmail': syncEmail,
+        'myName': myName,
+        'journalVimMode': journalVimMode,
+        'vimEscapeSequence': vimEscapeSequence,
       };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) {
@@ -180,6 +199,9 @@ class AppSettings {
           json['syncServerUrl'] as String? ?? 'https://sync.keel-app.dev',
       syncEnabled: json['syncEnabled'] as bool? ?? false,
       syncEmail: json['syncEmail'] as String? ?? '',
+      myName: json['myName'] as String? ?? '',
+      journalVimMode: json['journalVimMode'] as bool? ?? false,
+      vimEscapeSequence: json['vimEscapeSequence'] as String? ?? '',
     );
   }
 }

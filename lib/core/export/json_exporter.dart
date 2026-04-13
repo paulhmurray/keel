@@ -97,8 +97,11 @@ class JsonExporter {
             .map((w) => {
                   'id': w.id,
                   'name': w.name,
+                  'lane': w.lane,
                   'lead': w.lead,
                   'status': w.status,
+                  'start_date': w.startDate,
+                  'end_date': w.endDate,
                   'notes': w.notes,
                   'sort_order': w.sortOrder,
                 })
@@ -259,19 +262,18 @@ class JsonExporter {
                 'updated_at': c.updatedAt.toIso8601String(),
               })
           .toList(),
-      'documents': {
-        'metadata': documents
-            .map((d) => {
-                  'id': d.id,
-                  'title': d.title,
-                  'file_path': d.filePath,
-                  'document_type': d.documentType,
-                  'tags': d.tags,
-                  'created_at': d.createdAt.toIso8601String(),
-                  'updated_at': d.updatedAt.toIso8601String(),
-                })
-            .toList(),
-      },
+      'documents': documents
+          .map((d) => {
+                'id': d.id,
+                'title': d.title,
+                'content': d.content,
+                'file_path': d.filePath,
+                'document_type': d.documentType,
+                'tags': d.tags,
+                'created_at': d.createdAt.toIso8601String(),
+                'updated_at': d.updatedAt.toIso8601String(),
+              })
+          .toList(),
       'journal': {
         'entries': journalEntries
             .map((e) => {

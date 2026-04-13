@@ -84,8 +84,11 @@ class JsonImporter {
           id: Value(wm['id'] as String),
           projectId: Value(projectId),
           name: Value(wm['name'] as String),
+          lane: Value(wm['lane'] as String? ?? 'General'),
           lead: Value(wm['lead'] as String?),
-          status: Value(wm['status'] as String? ?? 'green'),
+          status: Value(wm['status'] as String? ?? 'not_started'),
+          startDate: Value(wm['start_date'] as String?),
+          endDate: Value(wm['end_date'] as String?),
           notes: Value(wm['notes'] as String?),
           sortOrder: Value(wm['sort_order'] as int? ?? 0),
         ));
@@ -278,6 +281,25 @@ class JsonImporter {
         source: Value(cm['source'] as String? ?? 'manual'),
       ));
       contextCount++;
+    }
+
+    // Documents
+    final docList = data['documents'];
+    // Support both old format ({metadata: [...]}) and new flat list
+    final rawDocs = docList is Map
+        ? (docList['metadata'] as List? ?? [])
+        : (docList as List? ?? []);
+    for (final d in rawDocs) {
+      final dm = d as Map<String, dynamic>;
+      await db.contextDao.upsertDocument(DocumentsCompanion(
+        id: Value(dm['id'] as String),
+        projectId: Value(projectId),
+        title: Value(dm['title'] as String),
+        content: Value(dm['content'] as String?),
+        filePath: Value(dm['file_path'] as String?),
+        documentType: Value(dm['document_type'] as String?),
+        tags: Value(dm['tags'] as String?),
+      ));
     }
 
     // Journal entries + links

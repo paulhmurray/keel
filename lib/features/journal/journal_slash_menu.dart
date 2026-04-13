@@ -58,6 +58,12 @@ const kSlashCommands = [
     template: '**Note:** ',
     icon: Icons.sticky_note_2_outlined,
   ),
+  SlashCommand(
+    command: '/date',
+    description: 'Insert today\'s date',
+    template: '{{today}}',
+    icon: Icons.calendar_today_outlined,
+  ),
 ];
 
 List<SlashCommand> filteredSlashCommands(String query) {

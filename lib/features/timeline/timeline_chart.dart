@@ -4,6 +4,12 @@ import 'package:flutter/material.dart';
 
 import '../../shared/theme/keel_colors.dart';
 
+// Parses a '#RRGGBB' hex string to a Flutter Color.
+Color parseHexColor(String hex) {
+  final h = hex.replaceFirst('#', '');
+  return Color(int.parse('FF$h', radix: 16));
+}
+
 // ---------------------------------------------------------------------------
 // Public model
 // ---------------------------------------------------------------------------
@@ -11,21 +17,26 @@ import '../../shared/theme/keel_colors.dart';
 enum TimelineEventType { action, decision, issue, dependency }
 
 class TimelineEvent {
+  final String? id;            // DB action id — used for linked-line lookup
   final String title;
   final String? ref;
   final DateTime? date;
   final TimelineEventType type;
   final String? owner;
-  /// Original DB object — passed through for tap handlers.
-  final Object? item;
+  final Object? item;          // original DB object for tap handlers
+  final Color? categoryColor;  // overrides default type colour in charts
+  final String? linkedActionId; // draws a dotted line to this action in Gantt
 
   const TimelineEvent({
+    this.id,
     required this.title,
     this.ref,
     this.date,
     required this.type,
     this.owner,
     this.item,
+    this.categoryColor,
+    this.linkedActionId,
   });
 }
 
@@ -69,6 +80,7 @@ class TimelineChart extends StatefulWidget {
 
 class _TimelineChartState extends State<TimelineChart> {
   final ScrollController _scrollController = ScrollController();
+  bool _scrolledToToday = false;
 
   // Tooltip state for compact mode
   String? _tooltipText;
@@ -78,6 +90,22 @@ class _TimelineChartState extends State<TimelineChart> {
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _scrollToToday(DateTime windowStart) {
+    if (_scrolledToToday) return;
+    _scrolledToToday = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      const pxPerDay = 12.0;
+      final today = DateTime.now();
+      final todayNorm = DateTime(today.year, today.month, today.day);
+      final daysFromStart = todayNorm.difference(windowStart).inDays;
+      final todayX = daysFromStart * pxPerDay;
+      // Centre today with a ~120px left margin so context is visible
+      final target = (todayX - 120).clamp(0.0, _scrollController.position.maxScrollExtent);
+      _scrollController.jumpTo(target);
+    });
   }
 
   @override
@@ -241,6 +269,7 @@ class _TimelineChartState extends State<TimelineChart> {
   ) {
     const pxPerDay = 12.0;
     final paintWidth = totalDays * pxPerDay;
+    _scrollToToday(windowStart);
     final chartHeight = widget.height;
 
     final placedDots = _computePlacedDots(

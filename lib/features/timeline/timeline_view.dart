@@ -9,7 +9,7 @@ import '../actions/action_form.dart';
 import '../decisions/decision_form.dart';
 import '../raid/issue_form.dart';
 import '../raid/dependency_form.dart';
-import 'timeline_chart.dart';
+import 'timeline_chart.dart' show TimelineEvent, TimelineEventType, TimelineChart, parseHexColor;
 import 'gantt_chart.dart';
 import 'workstream_form.dart';
 
@@ -20,15 +20,19 @@ import 'workstream_form.dart';
 enum _EventType { action, decision, issue, dependency }
 
 class _TimelineEvent {
+  final String? id;
   final String title;
   final String? ref;
   final String? dateIso;
   final _EventType type;
   final String? owner;
   final bool isOverdue;
-  final Object item; // original DB object for opening the detail dialog
+  final Object item;
+  final Color? categoryColor;
+  final String? linkedActionId;
 
   const _TimelineEvent({
+    this.id,
     required this.title,
     this.ref,
     this.dateIso,
@@ -36,8 +40,16 @@ class _TimelineEvent {
     this.owner,
     required this.isOverdue,
     required this.item,
+    this.categoryColor,
+    this.linkedActionId,
   });
 }
+
+// ---------------------------------------------------------------------------
+// Internal model — extended with category info for chart
+// ---------------------------------------------------------------------------
+
+// (see _TimelineEvent above — categoryColor and linkedActionId added below)
 
 // ---------------------------------------------------------------------------
 // Conversion helper
@@ -57,12 +69,15 @@ TimelineEvent _toChartEvent(_TimelineEvent e) {
   }
 
   return TimelineEvent(
+    id: e.id,
     title: e.title,
     ref: e.ref,
     date: date,
     type: type,
     owner: e.owner,
     item: e.item,
+    categoryColor: e.categoryColor,
+    linkedActionId: e.linkedActionId,
   );
 }
 
@@ -269,6 +284,11 @@ class _TimelineContentState extends State<_TimelineContent> {
     final dependencies =
         await db.raidDao.getDependenciesForProject(widget.projectId);
 
+    // Load categories for colour lookup
+    final categories =
+        await db.actionCategoriesDao.getForProject(widget.projectId);
+    final catMap = {for (final c in categories) c.id: c};
+
     final events = <_TimelineEvent>[];
 
     for (final a in actions) {
@@ -276,7 +296,9 @@ class _TimelineContentState extends State<_TimelineContent> {
       final overdue = a.dueDate != null &&
           a.dueDate!.isNotEmpty &&
           a.dueDate!.compareTo(today) < 0;
+      final cat = a.categoryId != null ? catMap[a.categoryId!] : null;
       events.add(_TimelineEvent(
+        id: a.id,
         title: a.description,
         ref: a.ref,
         dateIso: a.dueDate,
@@ -284,6 +306,8 @@ class _TimelineContentState extends State<_TimelineContent> {
         owner: a.owner,
         isOverdue: overdue,
         item: a,
+        categoryColor: cat != null ? parseHexColor(cat.color) : null,
+        linkedActionId: a.linkedActionId,
       ));
     }
 

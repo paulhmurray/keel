@@ -7,6 +7,9 @@ import '../../shared/theme/keel_colors.dart';
 import '../../shared/widgets/dropdown_field.dart';
 import '../../shared/widgets/date_picker_field.dart';
 
+// Sentinel value used in the autocomplete options list
+const _kAddSentinel = '\x00__add__';
+
 class DecisionFormDialog extends StatefulWidget {
   final String projectId;
   final AppDatabase db;
@@ -39,6 +42,7 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
   String _source = 'manual';
 
   late bool _isViewing;
+  List<Person> _persons = [];
 
   final _statuses = ['pending', 'approved', 'rejected', 'deferred', 'closed'];
   final _sources = ['manual', 'inbox', 'document', 'observation', 'meeting'];
@@ -57,6 +61,12 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
     _status = d?.status ?? 'pending';
     _source = d?.source ?? 'manual';
     _isViewing = widget.startInViewMode && d != null;
+    _loadPersons();
+  }
+
+  Future<void> _loadPersons() async {
+    final persons = await widget.db.peopleDao.getPersonsForProject(widget.projectId);
+    if (mounted) setState(() => _persons = persons);
   }
 
   @override
@@ -213,10 +223,13 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: TextFormField(
+                      child: _PersonPickerField(
                         controller: _decisionMakerCtrl,
-                        decoration:
-                            const InputDecoration(labelText: 'Decision Maker'),
+                        label: 'Decision Maker',
+                        persons: _persons,
+                        db: widget.db,
+                        projectId: widget.projectId,
+                        onPersonCreated: _loadPersons,
                       ),
                     ),
                   ],
@@ -284,6 +297,309 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Person picker autocomplete field
+// ---------------------------------------------------------------------------
+
+class _PersonPickerField extends StatefulWidget {
+  final TextEditingController controller;
+  final String label;
+  final List<Person> persons;
+  final AppDatabase db;
+  final String projectId;
+  final VoidCallback onPersonCreated;
+
+  const _PersonPickerField({
+    required this.controller,
+    required this.label,
+    required this.persons,
+    required this.db,
+    required this.projectId,
+    required this.onPersonCreated,
+  });
+
+  @override
+  State<_PersonPickerField> createState() => _PersonPickerFieldState();
+}
+
+class _PersonPickerFieldState extends State<_PersonPickerField> {
+  late final FocusNode _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode = FocusNode();
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  List<String> _optionsFor(String query) {
+    final q = query.toLowerCase().trim();
+    final matches = widget.persons
+        .where((p) => p.name.toLowerCase().contains(q))
+        .map((p) => p.name)
+        .take(6)
+        .toList();
+    if (q.isNotEmpty) matches.add(_kAddSentinel);
+    return matches;
+  }
+
+  Future<void> _handleAddNew(String query) async {
+    final result = await showDialog<_NewPersonResult>(
+      context: context,
+      builder: (_) => _AddPersonDialog(name: query),
+    );
+    if (result != null && mounted) {
+      final id = const Uuid().v4();
+      final now = DateTime.now();
+      await widget.db.peopleDao.upsertPerson(PersonsCompanion(
+        id: Value(id),
+        projectId: Value(widget.projectId),
+        name: Value(result.name),
+        role: Value(result.role),
+        organisation: Value(result.organisation),
+        personType: Value(result.personType),
+        createdAt: Value(now),
+        updatedAt: Value(now),
+      ));
+      widget.controller.text = result.name;
+      widget.onPersonCreated();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RawAutocomplete<String>(
+      textEditingController: widget.controller,
+      focusNode: _focusNode,
+      optionsBuilder: (v) => _optionsFor(v.text),
+      displayStringForOption: (opt) =>
+          opt == _kAddSentinel ? widget.controller.text : opt,
+      fieldViewBuilder: (ctx, ctrl, focusNode, onSubmitted) => TextFormField(
+        controller: ctrl,
+        focusNode: focusNode,
+        decoration: InputDecoration(labelText: widget.label),
+        onFieldSubmitted: (_) => onSubmitted(),
+      ),
+      optionsViewBuilder: (ctx, onSelected, options) {
+        final query = widget.controller.text.trim();
+        return Align(
+          alignment: Alignment.topLeft,
+          child: Material(
+            color: KColors.surface2,
+            elevation: 6,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(4),
+              side: const BorderSide(color: KColors.border2),
+            ),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 220, maxWidth: 280),
+              child: ListView(
+                shrinkWrap: true,
+                padding: EdgeInsets.zero,
+                children: options.map((opt) {
+                  if (opt == _kAddSentinel) {
+                    return ListTile(
+                      dense: true,
+                      visualDensity: VisualDensity.compact,
+                      leading: const Icon(Icons.person_add_outlined,
+                          size: 14, color: KColors.phosphor),
+                      title: Text(
+                        'Add "$query" as new person',
+                        style: const TextStyle(
+                          color: KColors.phosphor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      onTap: () {
+                        onSelected(opt);
+                        _handleAddNew(query);
+                      },
+                    );
+                  }
+                  return ListTile(
+                    dense: true,
+                    visualDensity: VisualDensity.compact,
+                    leading: const Icon(Icons.person_outline,
+                        size: 14, color: KColors.textDim),
+                    title: Text(opt,
+                        style: const TextStyle(
+                            color: KColors.text, fontSize: 12)),
+                    onTap: () => onSelected(opt),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+        );
+      },
+      onSelected: (opt) {
+        if (opt != _kAddSentinel) {
+          widget.controller.text = opt;
+        }
+      },
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Add new person dialog (with type selector)
+// ---------------------------------------------------------------------------
+
+class _NewPersonResult {
+  final String name;
+  final String? role;
+  final String? organisation;
+  final String personType;
+
+  const _NewPersonResult({
+    required this.name,
+    this.role,
+    this.organisation,
+    required this.personType,
+  });
+}
+
+class _AddPersonDialog extends StatefulWidget {
+  final String name;
+  const _AddPersonDialog({required this.name});
+
+  @override
+  State<_AddPersonDialog> createState() => _AddPersonDialogState();
+}
+
+class _AddPersonDialogState extends State<_AddPersonDialog> {
+  late TextEditingController _nameCtrl;
+  final _roleCtrl = TextEditingController();
+  final _orgCtrl = TextEditingController();
+  String _personType = 'stakeholder';
+
+  static const _types = [
+    ('stakeholder', 'Stakeholder'),
+    ('colleague', 'Colleague'),
+    ('exec', 'Executive'),
+    ('vendor', 'Vendor'),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtrl = TextEditingController(text: widget.name);
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _roleCtrl.dispose();
+    _orgCtrl.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final name = _nameCtrl.text.trim();
+    if (name.isEmpty) return;
+    Navigator.of(context).pop(_NewPersonResult(
+      name: name,
+      role: _roleCtrl.text.trim().isEmpty ? null : _roleCtrl.text.trim(),
+      organisation:
+          _orgCtrl.text.trim().isEmpty ? null : _orgCtrl.text.trim(),
+      personType: _personType,
+    ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: KColors.surface,
+      title: const Text('Add New Person',
+          style: TextStyle(color: KColors.text, fontSize: 14)),
+      content: SizedBox(
+        width: 340,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: _nameCtrl,
+              autofocus: true,
+              style: const TextStyle(color: KColors.text, fontSize: 13),
+              decoration: const InputDecoration(labelText: 'Name *'),
+              onSubmitted: (_) => _submit(),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _roleCtrl,
+              style: const TextStyle(color: KColors.text, fontSize: 13),
+              decoration:
+                  const InputDecoration(labelText: 'Role (optional)'),
+              onSubmitted: (_) => _submit(),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _orgCtrl,
+              style: const TextStyle(color: KColors.text, fontSize: 13),
+              decoration: const InputDecoration(
+                  labelText: 'Organisation (optional)'),
+              onSubmitted: (_) => _submit(),
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              'TYPE',
+              style: TextStyle(
+                color: KColors.textMuted,
+                fontSize: 9,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.1,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 8,
+              children: _types.map((t) {
+                final (value, label) = t;
+                final selected = _personType == value;
+                return ChoiceChip(
+                  label: Text(label,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: selected ? KColors.bg : KColors.textDim,
+                      )),
+                  selected: selected,
+                  selectedColor: KColors.amber,
+                  backgroundColor: KColors.surface2,
+                  side: BorderSide(
+                    color: selected ? KColors.amber : KColors.border2,
+                  ),
+                  onSelected: (_) =>
+                      setState(() => _personType = value),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel',
+              style: TextStyle(color: KColors.textDim, fontSize: 12)),
+        ),
+        ElevatedButton(
+          onPressed: _submit,
+          child: const Text('Add Person'),
+        ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 Widget _viewField(String label, String? value, {bool large = false}) {
   if (value == null || value.isEmpty) return const SizedBox.shrink();

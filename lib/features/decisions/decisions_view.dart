@@ -9,8 +9,32 @@ import '../../shared/widgets/source_badge.dart';
 import '../../shared/utils/date_utils.dart' as du;
 import 'decision_form.dart';
 
-class DecisionsView extends StatelessWidget {
-  const DecisionsView({super.key});
+class DecisionsView extends StatefulWidget {
+  final bool triggerNew;
+
+  const DecisionsView({super.key, this.triggerNew = false});
+
+  @override
+  State<DecisionsView> createState() => _DecisionsViewState();
+}
+
+class _DecisionsViewState extends State<DecisionsView> {
+  @override
+  void initState() {
+    super.initState();
+    if (widget.triggerNew) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final projectId = context.read<ProjectProvider>().currentProjectId;
+        if (projectId == null) return;
+        final db = context.read<AppDatabase>();
+        showDialog(
+          context: context,
+          builder: (_) => DecisionFormDialog(projectId: projectId, db: db),
+        );
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

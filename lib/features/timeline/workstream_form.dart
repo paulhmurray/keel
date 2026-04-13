@@ -6,6 +6,7 @@ import '../../core/database/database.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/widgets/date_picker_field.dart';
 import '../../shared/widgets/dropdown_field.dart';
+import '../../shared/widgets/person_picker_field.dart';
 
 class WorkstreamFormDialog extends StatefulWidget {
   final String projectId;
@@ -37,6 +38,7 @@ class _WorkstreamFormDialogState extends State<WorkstreamFormDialog> {
 
   List<Workstream> _otherWorkstreams = [];
   List<String> _existingLanes = [];
+  List<Person> _persons = [];
 
   static const _statuses = [
     'not_started',
@@ -64,6 +66,7 @@ class _WorkstreamFormDialogState extends State<WorkstreamFormDialog> {
     final links = await widget.db.workstreamsDao.getLinksForProject(widget.projectId);
     final others = all.where((w) => w.id != widget.workstream?.id).toList();
     final lanes = all.map((w) => w.lane).toSet().toList()..sort();
+    final persons = await widget.db.peopleDao.getPersonsForProject(widget.projectId);
 
     // Load existing depends-on IDs for this workstream
     List<String> deps = [];
@@ -79,6 +82,7 @@ class _WorkstreamFormDialogState extends State<WorkstreamFormDialog> {
         _otherWorkstreams = others;
         _existingLanes = lanes;
         _dependsOnIds = deps;
+        _persons = persons;
       });
     }
   }
@@ -213,10 +217,13 @@ class _WorkstreamFormDialogState extends State<WorkstreamFormDialog> {
                 Row(
                   children: [
                     Expanded(
-                      child: TextFormField(
+                      child: PersonPickerField(
                         controller: _leadCtrl,
-                        decoration:
-                            const InputDecoration(labelText: 'Lead / Owner'),
+                        label: 'Lead / Owner',
+                        persons: _persons,
+                        db: widget.db,
+                        projectId: widget.projectId,
+                        onPersonCreated: _loadData,
                       ),
                     ),
                     const SizedBox(width: 12),

@@ -81,6 +81,22 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
+	// Version endpoint — no auth required
+	router.GET("/version/latest", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"version":      "1.0.0",
+			"release_date": "2026-04-12",
+			"release_notes": "",
+			"download_url": gin.H{
+				"linux":   "https://releases.keel-app.dev/v1.0.0/keel-linux-x86_64.AppImage",
+				"windows": "https://releases.keel-app.dev/v1.0.0/keel-windows-x64-setup.exe",
+				"macos":   "https://releases.keel-app.dev/v1.0.0/keel-macos-universal.dmg",
+			},
+			"minimum_version": "1.0.0",
+			"critical":        false,
+		})
+	})
+
 	// Handlers
 	authHandler := auth.NewHandler(db)
 	syncHandler := sync.NewHandler(db)

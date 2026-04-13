@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
+import 'package:uuid/uuid.dart';
 import 'connection.dart';
 
 part 'database.g.dart';
@@ -14,6 +17,8 @@ part 'daos/reports_dao.dart';
 part 'daos/journal_dao.dart';
 part 'daos/workstreams_dao.dart';
 part 'daos/glossary_dao.dart';
+part 'daos/action_categories_dao.dart';
+part 'daos/playbook_dao.dart';
 
 // ---------------------------------------------------------------------------
 // Tables
@@ -238,6 +243,18 @@ class ColleagueProfiles extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+class ActionCategories extends Table {
+  TextColumn get id => text().named('id')();
+  TextColumn get projectId => text().references(Projects, #id)();
+  TextColumn get name => text()();
+  TextColumn get color => text()(); // hex e.g. '#8B5CF6'
+  BoolColumn get isPreset => boolean().withDefault(const Constant(true))();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 class ProjectActions extends Table {
   TextColumn get id => text().named('id')();
   TextColumn get projectId => text().references(Projects, #id)();
@@ -249,6 +266,10 @@ class ProjectActions extends Table {
   TextColumn get priority => text().withDefault(const Constant('medium'))();
   TextColumn get source => text().withDefault(const Constant('manual'))();
   TextColumn get sourceNote => text().nullable()();
+  TextColumn get outcome => text().nullable()();
+  TextColumn get categoryId => text().nullable()();
+  TextColumn get recurrenceGroupId => text().nullable()();
+  TextColumn get linkedActionId => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
@@ -369,6 +390,106 @@ class StatusReports extends Table {
 }
 
 // ---------------------------------------------------------------------------
+// Playbook tables
+// ---------------------------------------------------------------------------
+
+class Organisations extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+  TextColumn get shortName => text().nullable()();
+  TextColumn get notes => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class Playbooks extends Table {
+  TextColumn get id => text()();
+  TextColumn get organisationId => text().references(Organisations, #id)();
+  TextColumn get name => text()();
+  TextColumn get description => text().nullable()();
+  TextColumn get version => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class PlaybookStages extends Table {
+  TextColumn get id => text()();
+  TextColumn get playbookId => text().references(Playbooks, #id)();
+  TextColumn get name => text()();
+  TextColumn get description => text().nullable()();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  TextColumn get approverRole => text().nullable()();
+  TextColumn get gateCondition => text().nullable()();
+  TextColumn get notes => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class StageTemplates extends Table {
+  TextColumn get id => text()();
+  TextColumn get stageId => text().references(PlaybookStages, #id)();
+  TextColumn get name => text()();
+  TextColumn get filename => text()();
+  TextColumn get filePath => text()();
+  // docx | pdf | other
+  TextColumn get fileType => text().withDefault(const Constant('other'))();
+  // direct | companion
+  TextColumn get fillStrategy => text().withDefault(const Constant('companion'))();
+  TextColumn get fieldHints => text().nullable()(); // JSON
+  DateTimeColumn get uploadedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class ProjectPlaybooks extends Table {
+  TextColumn get id => text()();
+  TextColumn get projectId => text().references(Projects, #id)();
+  TextColumn get playbookId => text().references(Playbooks, #id)();
+  TextColumn get currentStageId => text().nullable()();
+  DateTimeColumn get attachedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class ProjectStageProgresses extends Table {
+  TextColumn get id => text()();
+  TextColumn get projectPlaybookId =>
+      text().references(ProjectPlaybooks, #id)();
+  TextColumn get stageId => text().references(PlaybookStages, #id)();
+  // not_started | in_progress | blocked | pending_approval | complete
+  TextColumn get status =>
+      text().withDefault(const Constant('not_started'))();
+  BoolColumn get gateMet => boolean().withDefault(const Constant(false))();
+  TextColumn get approvedBy => text().nullable()();
+  DateTimeColumn get approvedAt => dateTime().nullable()();
+  TextColumn get approvalNotes => text().nullable()();
+  TextColumn get evidenceFilename => text().nullable()();
+  TextColumn get evidenceFilePath => text().nullable()();
+  DateTimeColumn get evidenceUploadedAt => dateTime().nullable()();
+  TextColumn get checklist => text().nullable()(); // JSON array
+  TextColumn get generatedDocPath => text().nullable()();
+  DateTimeColumn get generatedAt => dateTime().nullable()();
+  TextColumn get journalEntryId => text().nullable()();
+  TextColumn get notes => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+// ---------------------------------------------------------------------------
 // Database
 // ---------------------------------------------------------------------------
 
@@ -387,6 +508,7 @@ class StatusReports extends Table {
     Persons,
     StakeholderProfiles,
     ColleagueProfiles,
+    ActionCategories,
     ProjectActions,
     InboxItems,
     ContextEntries,
@@ -395,6 +517,12 @@ class StatusReports extends Table {
     StatusReports,
     JournalEntries,
     JournalEntryLinks,
+    Organisations,
+    Playbooks,
+    PlaybookStages,
+    StageTemplates,
+    ProjectPlaybooks,
+    ProjectStageProgresses,
   ],
   daos: [
     ProjectDao,
@@ -402,6 +530,7 @@ class StatusReports extends Table {
     RaidDao,
     DecisionsDao,
     PeopleDao,
+    ActionCategoriesDao,
     ActionsDao,
     InboxDao,
     ContextDao,
@@ -409,6 +538,7 @@ class StatusReports extends Table {
     ReportsDao,
     JournalDao,
     WorkstreamsDao,
+    PlaybookDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -416,7 +546,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.memory() : super(openMemoryConnection());
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -448,8 +578,30 @@ class AppDatabase extends _$AppDatabase {
           if (from < 6) {
             await m.createTable(glossaryEntries);
           }
+          if (from < 7) {
+            await m.createTable(actionCategories);
+            await m.addColumn(projectActions, projectActions.categoryId);
+            await m.addColumn(projectActions, projectActions.recurrenceGroupId);
+            await m.addColumn(projectActions, projectActions.linkedActionId);
+          }
+          if (from < 8) {
+            await m.addColumn(projectActions, projectActions.outcome);
+          }
+          if (from < 9) {
+            await m.createTable(organisations);
+            await m.createTable(playbooks);
+            await m.createTable(playbookStages);
+            await m.createTable(stageTemplates);
+            await m.createTable(projectPlaybooks);
+            await m.createTable(projectStageProgresses);
+          }
         },
       );
+
+  /// Emits once whenever any table in the database is written to.
+  Stream<void> watchAnyChange() {
+    return tableUpdates().map((_) => null);
+  }
 
   /// Deletes a project and all its associated data across every table.
   Future<void> deleteProjectCascade(String projectId) async {
@@ -469,6 +621,7 @@ class AppDatabase extends _$AppDatabase {
       await (delete(contextEntries)..where((t) => t.projectId.equals(projectId))).go();
       await (delete(glossaryEntries)..where((t) => t.projectId.equals(projectId))).go();
       await (delete(inboxItems)..where((t) => t.projectId.equals(projectId))).go();
+      await (delete(actionCategories)..where((t) => t.projectId.equals(projectId))).go();
       await (delete(projectActions)..where((t) => t.projectId.equals(projectId))).go();
       await (delete(documents)..where((t) => t.projectId.equals(projectId))).go();
       // Profiles reference persons — delete profiles first
@@ -493,6 +646,17 @@ class AppDatabase extends _$AppDatabase {
       await (delete(governanceCadences)..where((t) => t.projectId.equals(projectId))).go();
       await (delete(workstreams)..where((t) => t.projectId.equals(projectId))).go();
       await (delete(programmeOverviews)..where((t) => t.projectId.equals(projectId))).go();
+      // Playbook progress — delete stage progress before project_playbooks
+      final ppIds = await (select(projectPlaybooks)
+            ..where((t) => t.projectId.equals(projectId)))
+          .map((p) => p.id)
+          .get();
+      if (ppIds.isNotEmpty) {
+        await (delete(projectStageProgresses)
+              ..where((t) => t.projectPlaybookId.isIn(ppIds)))
+            .go();
+      }
+      await (delete(projectPlaybooks)..where((t) => t.projectId.equals(projectId))).go();
       await (delete(projects)..where((t) => t.id.equals(projectId))).go();
     });
   }

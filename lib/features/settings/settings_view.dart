@@ -43,6 +43,11 @@ class SettingsView extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
+          // Profile section
+          _ProfileSection(),
+
+          const SizedBox(height: 16),
+
           // LLM Settings section
           _SettingsSection(
             title: 'LLM / AI Settings',
@@ -81,6 +86,9 @@ class SettingsView extends StatelessWidget {
 
           const SizedBox(height: 16),
           _DataSection(),
+
+          const SizedBox(height: 16),
+          _EditorSection(),
 
           const SizedBox(height: 16),
           if (!kIsWeb)
@@ -151,6 +159,100 @@ class _SettingsSection extends StatelessWidget {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Profile Section
+// ---------------------------------------------------------------------------
+
+class _ProfileSection extends StatefulWidget {
+  @override
+  State<_ProfileSection> createState() => _ProfileSectionState();
+}
+
+class _ProfileSectionState extends State<_ProfileSection> {
+  late TextEditingController _nameCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    final settings = context.read<SettingsProvider>().settings;
+    _nameCtrl = TextEditingController(text: settings.myName);
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final settings = context.watch<SettingsProvider>();
+    return _SettingsSection(
+      title: 'Your Profile',
+      icon: Icons.person_outline,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Set your name so you can quickly assign tasks to yourself and be identified in People lists.',
+            style: TextStyle(color: KColors.textDim, fontSize: 12),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _nameCtrl,
+                  style: const TextStyle(color: KColors.text, fontSize: 13),
+                  decoration: const InputDecoration(
+                    labelText: 'Your name',
+                    hintText: 'e.g. Paul Murray',
+                  ),
+                  onSubmitted: (_) => _save(context),
+                ),
+              ),
+              const SizedBox(width: 12),
+              ElevatedButton(
+                onPressed: () => _save(context),
+                child: const Text('Save'),
+              ),
+            ],
+          ),
+          if (settings.settings.myName.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: const BoxDecoration(
+                    color: KColors.phosphor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'Showing as "Me — ${settings.settings.myName}" in owner dropdowns',
+                  style: const TextStyle(
+                      color: KColors.phosphor, fontSize: 11),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _save(BuildContext context) async {
+    final provider = context.read<SettingsProvider>();
+    await provider.save(
+        provider.settings.copyWith(myName: _nameCtrl.text.trim()));
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 class _WatcherSection extends StatefulWidget {
   @override
@@ -988,6 +1090,133 @@ class _DataSectionState extends State<_DataSection> {
                 color: _isError ? KColors.red : KColors.phosphor,
                 fontSize: 12,
               ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Editor section
+// ---------------------------------------------------------------------------
+
+class _EditorSection extends StatefulWidget {
+  @override
+  State<_EditorSection> createState() => _EditorSectionState();
+}
+
+class _EditorSectionState extends State<_EditorSection> {
+  late TextEditingController _escCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    final settings = context.read<SettingsProvider>().settings;
+    _escCtrl = TextEditingController(text: settings.vimEscapeSequence);
+  }
+
+  @override
+  void dispose() {
+    _escCtrl.dispose();
+    super.dispose();
+  }
+
+  void _saveEsc(SettingsProvider provider) {
+    final seq = _escCtrl.text.trim();
+    provider.save(provider.settings.copyWith(vimEscapeSequence: seq));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<SettingsProvider>();
+    final vim = provider.settings.journalVimMode;
+    return _SettingsSection(
+      title: 'Editor',
+      icon: Icons.edit_outlined,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Vim mode toggle
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Vim mode for journal',
+                        style: TextStyle(color: KColors.text, fontSize: 13)),
+                    const SizedBox(height: 2),
+                    Text(
+                      vim
+                          ? 'Normal mode on open · i/a/o to insert · Esc for normal'
+                          : 'Standard text editing',
+                      style: const TextStyle(
+                          color: KColors.textMuted, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+              Switch(
+                value: vim,
+                onChanged: (v) => provider
+                    .save(provider.settings.copyWith(journalVimMode: v)),
+                activeThumbColor: KColors.amber,
+              ),
+            ],
+          ),
+          // Escape sequence — only shown when vim mode is enabled
+          if (vim) ...[
+            const SizedBox(height: 14),
+            const Divider(height: 1),
+            const SizedBox(height: 14),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Escape sequence',
+                          style:
+                              TextStyle(color: KColors.text, fontSize: 13)),
+                      const SizedBox(height: 2),
+                      const Text(
+                        'Type this in Insert mode to return to Normal (e.g. jk). '
+                        'Only triggers if both keys are pressed within 300 ms. '
+                        'Leave blank to disable.',
+                        style: TextStyle(
+                            color: KColors.textMuted, fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                SizedBox(
+                  width: 72,
+                  child: TextField(
+                    controller: _escCtrl,
+                    maxLength: 3,
+                    style: const TextStyle(
+                        color: KColors.text,
+                        fontSize: 13,
+                        fontFamily: 'monospace'),
+                    decoration: const InputDecoration(
+                      hintText: 'e.g. jk',
+                      hintStyle: TextStyle(
+                          color: KColors.textMuted, fontSize: 12),
+                      counterText: '',
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 8),
+                      border: OutlineInputBorder(),
+                    ),
+                    onEditingComplete: () => _saveEsc(provider),
+                    onTapOutside: (_) => _saveEsc(provider),
+                  ),
+                ),
+              ],
             ),
           ],
         ],

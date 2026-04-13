@@ -1,12 +1,23 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/database/database.dart';
 import '../core/export/json_exporter.dart';
 import '../core/import/json_importer.dart';
 import '../core/sync/encryption_service.dart';
 import '../core/sync/sync_client.dart';
+
+const _kSecureRefreshToken = 'keel_refresh_token';
+const _kSecureUserId = 'keel_user_id';
+const _kSecureEmail = 'keel_email';
+const _kSecurePlan = 'keel_plan';
+
+const _secureStorage = FlutterSecureStorage(
+  aOptions: AndroidOptions(encryptedSharedPreferences: true),
+);
 
 enum SyncStatus { idle, syncing, error, success }
 
@@ -20,6 +31,7 @@ class SyncProvider extends ChangeNotifier {
   SyncStatus _status = SyncStatus.idle;
   String? _lastError;
   DateTime? _lastSyncAt;
+  DateTime? _lastLocalChangeAt;
 
   // Persisted settings (loaded/saved by caller via SettingsProvider)
   String serverUrl = 'https://sync.keel-app.dev';
@@ -35,6 +47,39 @@ class SyncProvider extends ChangeNotifier {
   SyncStatus get status => _status;
   String? get lastError => _lastError;
   DateTime? get lastSyncAt => _lastSyncAt;
+
+  /// True when the user has unsynced local changes and is authenticated.
+  bool get hasPendingChanges {
+    if (!isAuthenticated) return false;
+    if (_lastLocalChangeAt == null) return false;
+    if (_lastSyncAt == null) return true;
+    return _lastLocalChangeAt!.isAfter(_lastSyncAt!);
+  }
+
+  void markLocalChange() {
+    _lastLocalChangeAt = DateTime.now();
+    notifyListeners();
+    _saveTimestamps();
+  }
+
+  Future<void> _saveTimestamps() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (_lastLocalChangeAt != null) {
+      await prefs.setString('keel_sync_lastLocalChangeAt', _lastLocalChangeAt!.toIso8601String());
+    }
+    if (_lastSyncAt != null) {
+      await prefs.setString('keel_sync_lastSyncAt', _lastSyncAt!.toIso8601String());
+    }
+  }
+
+  Future<void> loadTimestamps() async {
+    final prefs = await SharedPreferences.getInstance();
+    final changeStr = prefs.getString('keel_sync_lastLocalChangeAt') ?? '';
+    final syncStr = prefs.getString('keel_sync_lastSyncAt') ?? '';
+    _lastLocalChangeAt = changeStr.isNotEmpty ? DateTime.tryParse(changeStr) : null;
+    _lastSyncAt = syncStr.isNotEmpty ? DateTime.tryParse(syncStr) : null;
+    notifyListeners();
+  }
 
   SyncClient? _client;
 
@@ -88,6 +133,7 @@ class SyncProvider extends ChangeNotifier {
     _status = SyncStatus.idle;
     _lastError = null;
     _lastSyncAt = null;
+    await _clearStoredSession();
     notifyListeners();
   }
 
@@ -130,6 +176,7 @@ class SyncProvider extends ChangeNotifier {
       final updatedAt =
           await _getClient().pushSync(token, projectId, encryptedBlob);
       _lastSyncAt = updatedAt;
+      _saveTimestamps();
       _setStatus(SyncStatus.success);
     } on SyncApiException catch (e) {
       _setError(e.message);
@@ -161,6 +208,7 @@ class SyncProvider extends ChangeNotifier {
 
       await JsonImporter.importFromString(jsonStr, db);
       _lastSyncAt = result.updatedAt;
+      _saveTimestamps();
       _setStatus(SyncStatus.success);
     } on SyncApiException catch (e) {
       _setError(e.message);
@@ -208,6 +256,8 @@ class SyncProvider extends ChangeNotifier {
         'syncServerUrl': serverUrl,
         'syncEnabled': syncEnabled,
         'syncEmail': email ?? '',
+        'lastSyncAt': _lastSyncAt?.toIso8601String() ?? '',
+        'lastLocalChangeAt': _lastLocalChangeAt?.toIso8601String() ?? '',
       };
 
   void loadFromSettings(Map<String, dynamic> json) {
@@ -215,6 +265,10 @@ class SyncProvider extends ChangeNotifier {
     syncEnabled = json['syncEnabled'] as bool? ?? false;
     email = json['syncEmail'] as String? ?? '';
     if (email!.isEmpty) email = null;
+    final lastSyncStr = json['lastSyncAt'] as String? ?? '';
+    _lastSyncAt = lastSyncStr.isNotEmpty ? DateTime.tryParse(lastSyncStr) : null;
+    final lastChangeStr = json['lastLocalChangeAt'] as String? ?? '';
+    _lastLocalChangeAt = lastChangeStr.isNotEmpty ? DateTime.tryParse(lastChangeStr) : null;
     // Do not load tokens from settings — security boundary
   }
 
@@ -226,6 +280,50 @@ class SyncProvider extends ChangeNotifier {
     _userId = tokens.userId;
     _plan = tokens.plan;
     email = userEmail;
+    _persistSession(tokens.refreshToken, tokens.userId, userEmail, tokens.plan);
+  }
+
+  Future<void> _persistSession(
+      String refreshToken, String userId, String userEmail, String plan) async {
+    await _secureStorage.write(key: _kSecureRefreshToken, value: refreshToken);
+    await _secureStorage.write(key: _kSecureUserId, value: userId);
+    await _secureStorage.write(key: _kSecureEmail, value: userEmail);
+    await _secureStorage.write(key: _kSecurePlan, value: plan);
+  }
+
+  /// Called on app startup. Silently restores session using the stored refresh
+  /// token. Returns true if session was successfully restored.
+  Future<bool> tryRestoreSession() async {
+    try {
+      final storedRefreshToken =
+          await _secureStorage.read(key: _kSecureRefreshToken);
+      if (storedRefreshToken == null) return false;
+
+      final storedUserId = await _secureStorage.read(key: _kSecureUserId) ?? '';
+      final storedEmail = await _secureStorage.read(key: _kSecureEmail) ?? '';
+      final storedPlan = await _secureStorage.read(key: _kSecurePlan) ?? 'free';
+
+      final newAccessToken = await _getClient().refresh(storedRefreshToken);
+
+      _accessToken = newAccessToken;
+      _refreshToken = storedRefreshToken;
+      _userId = storedUserId;
+      _plan = storedPlan;
+      email = storedEmail.isEmpty ? null : storedEmail;
+      notifyListeners();
+      return true;
+    } catch (_) {
+      // Refresh failed — token expired or revoked; clear stored session
+      await _clearStoredSession();
+      return false;
+    }
+  }
+
+  Future<void> _clearStoredSession() async {
+    await _secureStorage.delete(key: _kSecureRefreshToken);
+    await _secureStorage.delete(key: _kSecureUserId);
+    await _secureStorage.delete(key: _kSecureEmail);
+    await _secureStorage.delete(key: _kSecurePlan);
   }
 
   /// Ensures we have a valid access token; refreshes if needed.

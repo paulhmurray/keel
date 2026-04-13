@@ -59,4 +59,10 @@ class ActionsDao extends DatabaseAccessor<AppDatabase> with _$ActionsDaoMixin {
   Future<void> upsertAction(ProjectActionsCompanion entry) {
     return into(projectActions).insertOnConflictUpdate(entry);
   }
+
+  Future<void> deleteByRecurrenceGroup(String groupId) {
+    return (delete(projectActions)
+          ..where((t) => t.recurrenceGroupId.equals(groupId)))
+        .go();
+  }
 }

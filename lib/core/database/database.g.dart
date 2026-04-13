@@ -8373,6 +8373,414 @@ class ColleagueProfilesCompanion extends UpdateCompanion<ColleagueProfile> {
   }
 }
 
+class $ActionCategoriesTable extends ActionCategories
+    with TableInfo<$ActionCategoriesTable, ActionCategory> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ActionCategoriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES projects (id)',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _colorMeta = const VerificationMeta('color');
+  @override
+  late final GeneratedColumn<String> color = GeneratedColumn<String>(
+    'color',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isPresetMeta = const VerificationMeta(
+    'isPreset',
+  );
+  @override
+  late final GeneratedColumn<bool> isPreset = GeneratedColumn<bool>(
+    'is_preset',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_preset" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    projectId,
+    name,
+    color,
+    isPreset,
+    sortOrder,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'action_categories';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ActionCategory> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_projectIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('color')) {
+      context.handle(
+        _colorMeta,
+        color.isAcceptableOrUnknown(data['color']!, _colorMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_colorMeta);
+    }
+    if (data.containsKey('is_preset')) {
+      context.handle(
+        _isPresetMeta,
+        isPreset.isAcceptableOrUnknown(data['is_preset']!, _isPresetMeta),
+      );
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ActionCategory map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ActionCategory(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      color: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}color'],
+      )!,
+      isPreset: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_preset'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+    );
+  }
+
+  @override
+  $ActionCategoriesTable createAlias(String alias) {
+    return $ActionCategoriesTable(attachedDatabase, alias);
+  }
+}
+
+class ActionCategory extends DataClass implements Insertable<ActionCategory> {
+  final String id;
+  final String projectId;
+  final String name;
+  final String color;
+  final bool isPreset;
+  final int sortOrder;
+  const ActionCategory({
+    required this.id,
+    required this.projectId,
+    required this.name,
+    required this.color,
+    required this.isPreset,
+    required this.sortOrder,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['project_id'] = Variable<String>(projectId);
+    map['name'] = Variable<String>(name);
+    map['color'] = Variable<String>(color);
+    map['is_preset'] = Variable<bool>(isPreset);
+    map['sort_order'] = Variable<int>(sortOrder);
+    return map;
+  }
+
+  ActionCategoriesCompanion toCompanion(bool nullToAbsent) {
+    return ActionCategoriesCompanion(
+      id: Value(id),
+      projectId: Value(projectId),
+      name: Value(name),
+      color: Value(color),
+      isPreset: Value(isPreset),
+      sortOrder: Value(sortOrder),
+    );
+  }
+
+  factory ActionCategory.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ActionCategory(
+      id: serializer.fromJson<String>(json['id']),
+      projectId: serializer.fromJson<String>(json['projectId']),
+      name: serializer.fromJson<String>(json['name']),
+      color: serializer.fromJson<String>(json['color']),
+      isPreset: serializer.fromJson<bool>(json['isPreset']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'projectId': serializer.toJson<String>(projectId),
+      'name': serializer.toJson<String>(name),
+      'color': serializer.toJson<String>(color),
+      'isPreset': serializer.toJson<bool>(isPreset),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+    };
+  }
+
+  ActionCategory copyWith({
+    String? id,
+    String? projectId,
+    String? name,
+    String? color,
+    bool? isPreset,
+    int? sortOrder,
+  }) => ActionCategory(
+    id: id ?? this.id,
+    projectId: projectId ?? this.projectId,
+    name: name ?? this.name,
+    color: color ?? this.color,
+    isPreset: isPreset ?? this.isPreset,
+    sortOrder: sortOrder ?? this.sortOrder,
+  );
+  ActionCategory copyWithCompanion(ActionCategoriesCompanion data) {
+    return ActionCategory(
+      id: data.id.present ? data.id.value : this.id,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      name: data.name.present ? data.name.value : this.name,
+      color: data.color.present ? data.color.value : this.color,
+      isPreset: data.isPreset.present ? data.isPreset.value : this.isPreset,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ActionCategory(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('name: $name, ')
+          ..write('color: $color, ')
+          ..write('isPreset: $isPreset, ')
+          ..write('sortOrder: $sortOrder')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, projectId, name, color, isPreset, sortOrder);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ActionCategory &&
+          other.id == this.id &&
+          other.projectId == this.projectId &&
+          other.name == this.name &&
+          other.color == this.color &&
+          other.isPreset == this.isPreset &&
+          other.sortOrder == this.sortOrder);
+}
+
+class ActionCategoriesCompanion extends UpdateCompanion<ActionCategory> {
+  final Value<String> id;
+  final Value<String> projectId;
+  final Value<String> name;
+  final Value<String> color;
+  final Value<bool> isPreset;
+  final Value<int> sortOrder;
+  final Value<int> rowid;
+  const ActionCategoriesCompanion({
+    this.id = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.color = const Value.absent(),
+    this.isPreset = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ActionCategoriesCompanion.insert({
+    required String id,
+    required String projectId,
+    required String name,
+    required String color,
+    this.isPreset = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       projectId = Value(projectId),
+       name = Value(name),
+       color = Value(color);
+  static Insertable<ActionCategory> custom({
+    Expression<String>? id,
+    Expression<String>? projectId,
+    Expression<String>? name,
+    Expression<String>? color,
+    Expression<bool>? isPreset,
+    Expression<int>? sortOrder,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (projectId != null) 'project_id': projectId,
+      if (name != null) 'name': name,
+      if (color != null) 'color': color,
+      if (isPreset != null) 'is_preset': isPreset,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ActionCategoriesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? projectId,
+    Value<String>? name,
+    Value<String>? color,
+    Value<bool>? isPreset,
+    Value<int>? sortOrder,
+    Value<int>? rowid,
+  }) {
+    return ActionCategoriesCompanion(
+      id: id ?? this.id,
+      projectId: projectId ?? this.projectId,
+      name: name ?? this.name,
+      color: color ?? this.color,
+      isPreset: isPreset ?? this.isPreset,
+      sortOrder: sortOrder ?? this.sortOrder,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (color.present) {
+      map['color'] = Variable<String>(color.value);
+    }
+    if (isPreset.present) {
+      map['is_preset'] = Variable<bool>(isPreset.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ActionCategoriesCompanion(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('name: $name, ')
+          ..write('color: $color, ')
+          ..write('isPreset: $isPreset, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ProjectActionsTable extends ProjectActions
     with TableInfo<$ProjectActionsTable, ProjectAction> {
   @override
@@ -8485,6 +8893,51 @@ class $ProjectActionsTable extends ProjectActions
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _outcomeMeta = const VerificationMeta(
+    'outcome',
+  );
+  @override
+  late final GeneratedColumn<String> outcome = GeneratedColumn<String>(
+    'outcome',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _categoryIdMeta = const VerificationMeta(
+    'categoryId',
+  );
+  @override
+  late final GeneratedColumn<String> categoryId = GeneratedColumn<String>(
+    'category_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _recurrenceGroupIdMeta = const VerificationMeta(
+    'recurrenceGroupId',
+  );
+  @override
+  late final GeneratedColumn<String> recurrenceGroupId =
+      GeneratedColumn<String>(
+        'recurrence_group_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _linkedActionIdMeta = const VerificationMeta(
+    'linkedActionId',
+  );
+  @override
+  late final GeneratedColumn<String> linkedActionId = GeneratedColumn<String>(
+    'linked_action_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -8521,6 +8974,10 @@ class $ProjectActionsTable extends ProjectActions
     priority,
     source,
     sourceNote,
+    outcome,
+    categoryId,
+    recurrenceGroupId,
+    linkedActionId,
     createdAt,
     updatedAt,
   ];
@@ -8602,6 +9059,36 @@ class $ProjectActionsTable extends ProjectActions
         sourceNote.isAcceptableOrUnknown(data['source_note']!, _sourceNoteMeta),
       );
     }
+    if (data.containsKey('outcome')) {
+      context.handle(
+        _outcomeMeta,
+        outcome.isAcceptableOrUnknown(data['outcome']!, _outcomeMeta),
+      );
+    }
+    if (data.containsKey('category_id')) {
+      context.handle(
+        _categoryIdMeta,
+        categoryId.isAcceptableOrUnknown(data['category_id']!, _categoryIdMeta),
+      );
+    }
+    if (data.containsKey('recurrence_group_id')) {
+      context.handle(
+        _recurrenceGroupIdMeta,
+        recurrenceGroupId.isAcceptableOrUnknown(
+          data['recurrence_group_id']!,
+          _recurrenceGroupIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('linked_action_id')) {
+      context.handle(
+        _linkedActionIdMeta,
+        linkedActionId.isAcceptableOrUnknown(
+          data['linked_action_id']!,
+          _linkedActionIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -8663,6 +9150,22 @@ class $ProjectActionsTable extends ProjectActions
         DriftSqlType.string,
         data['${effectivePrefix}source_note'],
       ),
+      outcome: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}outcome'],
+      ),
+      categoryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}category_id'],
+      ),
+      recurrenceGroupId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}recurrence_group_id'],
+      ),
+      linkedActionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}linked_action_id'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -8691,6 +9194,10 @@ class ProjectAction extends DataClass implements Insertable<ProjectAction> {
   final String priority;
   final String source;
   final String? sourceNote;
+  final String? outcome;
+  final String? categoryId;
+  final String? recurrenceGroupId;
+  final String? linkedActionId;
   final DateTime createdAt;
   final DateTime updatedAt;
   const ProjectAction({
@@ -8704,6 +9211,10 @@ class ProjectAction extends DataClass implements Insertable<ProjectAction> {
     required this.priority,
     required this.source,
     this.sourceNote,
+    this.outcome,
+    this.categoryId,
+    this.recurrenceGroupId,
+    this.linkedActionId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -8728,6 +9239,18 @@ class ProjectAction extends DataClass implements Insertable<ProjectAction> {
     if (!nullToAbsent || sourceNote != null) {
       map['source_note'] = Variable<String>(sourceNote);
     }
+    if (!nullToAbsent || outcome != null) {
+      map['outcome'] = Variable<String>(outcome);
+    }
+    if (!nullToAbsent || categoryId != null) {
+      map['category_id'] = Variable<String>(categoryId);
+    }
+    if (!nullToAbsent || recurrenceGroupId != null) {
+      map['recurrence_group_id'] = Variable<String>(recurrenceGroupId);
+    }
+    if (!nullToAbsent || linkedActionId != null) {
+      map['linked_action_id'] = Variable<String>(linkedActionId);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -8751,6 +9274,18 @@ class ProjectAction extends DataClass implements Insertable<ProjectAction> {
       sourceNote: sourceNote == null && nullToAbsent
           ? const Value.absent()
           : Value(sourceNote),
+      outcome: outcome == null && nullToAbsent
+          ? const Value.absent()
+          : Value(outcome),
+      categoryId: categoryId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(categoryId),
+      recurrenceGroupId: recurrenceGroupId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(recurrenceGroupId),
+      linkedActionId: linkedActionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(linkedActionId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -8772,6 +9307,12 @@ class ProjectAction extends DataClass implements Insertable<ProjectAction> {
       priority: serializer.fromJson<String>(json['priority']),
       source: serializer.fromJson<String>(json['source']),
       sourceNote: serializer.fromJson<String?>(json['sourceNote']),
+      outcome: serializer.fromJson<String?>(json['outcome']),
+      categoryId: serializer.fromJson<String?>(json['categoryId']),
+      recurrenceGroupId: serializer.fromJson<String?>(
+        json['recurrenceGroupId'],
+      ),
+      linkedActionId: serializer.fromJson<String?>(json['linkedActionId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -8790,6 +9331,10 @@ class ProjectAction extends DataClass implements Insertable<ProjectAction> {
       'priority': serializer.toJson<String>(priority),
       'source': serializer.toJson<String>(source),
       'sourceNote': serializer.toJson<String?>(sourceNote),
+      'outcome': serializer.toJson<String?>(outcome),
+      'categoryId': serializer.toJson<String?>(categoryId),
+      'recurrenceGroupId': serializer.toJson<String?>(recurrenceGroupId),
+      'linkedActionId': serializer.toJson<String?>(linkedActionId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -8806,6 +9351,10 @@ class ProjectAction extends DataClass implements Insertable<ProjectAction> {
     String? priority,
     String? source,
     Value<String?> sourceNote = const Value.absent(),
+    Value<String?> outcome = const Value.absent(),
+    Value<String?> categoryId = const Value.absent(),
+    Value<String?> recurrenceGroupId = const Value.absent(),
+    Value<String?> linkedActionId = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => ProjectAction(
@@ -8819,6 +9368,14 @@ class ProjectAction extends DataClass implements Insertable<ProjectAction> {
     priority: priority ?? this.priority,
     source: source ?? this.source,
     sourceNote: sourceNote.present ? sourceNote.value : this.sourceNote,
+    outcome: outcome.present ? outcome.value : this.outcome,
+    categoryId: categoryId.present ? categoryId.value : this.categoryId,
+    recurrenceGroupId: recurrenceGroupId.present
+        ? recurrenceGroupId.value
+        : this.recurrenceGroupId,
+    linkedActionId: linkedActionId.present
+        ? linkedActionId.value
+        : this.linkedActionId,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -8838,6 +9395,16 @@ class ProjectAction extends DataClass implements Insertable<ProjectAction> {
       sourceNote: data.sourceNote.present
           ? data.sourceNote.value
           : this.sourceNote,
+      outcome: data.outcome.present ? data.outcome.value : this.outcome,
+      categoryId: data.categoryId.present
+          ? data.categoryId.value
+          : this.categoryId,
+      recurrenceGroupId: data.recurrenceGroupId.present
+          ? data.recurrenceGroupId.value
+          : this.recurrenceGroupId,
+      linkedActionId: data.linkedActionId.present
+          ? data.linkedActionId.value
+          : this.linkedActionId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -8856,6 +9423,10 @@ class ProjectAction extends DataClass implements Insertable<ProjectAction> {
           ..write('priority: $priority, ')
           ..write('source: $source, ')
           ..write('sourceNote: $sourceNote, ')
+          ..write('outcome: $outcome, ')
+          ..write('categoryId: $categoryId, ')
+          ..write('recurrenceGroupId: $recurrenceGroupId, ')
+          ..write('linkedActionId: $linkedActionId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -8874,6 +9445,10 @@ class ProjectAction extends DataClass implements Insertable<ProjectAction> {
     priority,
     source,
     sourceNote,
+    outcome,
+    categoryId,
+    recurrenceGroupId,
+    linkedActionId,
     createdAt,
     updatedAt,
   );
@@ -8891,6 +9466,10 @@ class ProjectAction extends DataClass implements Insertable<ProjectAction> {
           other.priority == this.priority &&
           other.source == this.source &&
           other.sourceNote == this.sourceNote &&
+          other.outcome == this.outcome &&
+          other.categoryId == this.categoryId &&
+          other.recurrenceGroupId == this.recurrenceGroupId &&
+          other.linkedActionId == this.linkedActionId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -8906,6 +9485,10 @@ class ProjectActionsCompanion extends UpdateCompanion<ProjectAction> {
   final Value<String> priority;
   final Value<String> source;
   final Value<String?> sourceNote;
+  final Value<String?> outcome;
+  final Value<String?> categoryId;
+  final Value<String?> recurrenceGroupId;
+  final Value<String?> linkedActionId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -8920,6 +9503,10 @@ class ProjectActionsCompanion extends UpdateCompanion<ProjectAction> {
     this.priority = const Value.absent(),
     this.source = const Value.absent(),
     this.sourceNote = const Value.absent(),
+    this.outcome = const Value.absent(),
+    this.categoryId = const Value.absent(),
+    this.recurrenceGroupId = const Value.absent(),
+    this.linkedActionId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -8935,6 +9522,10 @@ class ProjectActionsCompanion extends UpdateCompanion<ProjectAction> {
     this.priority = const Value.absent(),
     this.source = const Value.absent(),
     this.sourceNote = const Value.absent(),
+    this.outcome = const Value.absent(),
+    this.categoryId = const Value.absent(),
+    this.recurrenceGroupId = const Value.absent(),
+    this.linkedActionId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -8952,6 +9543,10 @@ class ProjectActionsCompanion extends UpdateCompanion<ProjectAction> {
     Expression<String>? priority,
     Expression<String>? source,
     Expression<String>? sourceNote,
+    Expression<String>? outcome,
+    Expression<String>? categoryId,
+    Expression<String>? recurrenceGroupId,
+    Expression<String>? linkedActionId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -8967,6 +9562,10 @@ class ProjectActionsCompanion extends UpdateCompanion<ProjectAction> {
       if (priority != null) 'priority': priority,
       if (source != null) 'source': source,
       if (sourceNote != null) 'source_note': sourceNote,
+      if (outcome != null) 'outcome': outcome,
+      if (categoryId != null) 'category_id': categoryId,
+      if (recurrenceGroupId != null) 'recurrence_group_id': recurrenceGroupId,
+      if (linkedActionId != null) 'linked_action_id': linkedActionId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -8984,6 +9583,10 @@ class ProjectActionsCompanion extends UpdateCompanion<ProjectAction> {
     Value<String>? priority,
     Value<String>? source,
     Value<String?>? sourceNote,
+    Value<String?>? outcome,
+    Value<String?>? categoryId,
+    Value<String?>? recurrenceGroupId,
+    Value<String?>? linkedActionId,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -8999,6 +9602,10 @@ class ProjectActionsCompanion extends UpdateCompanion<ProjectAction> {
       priority: priority ?? this.priority,
       source: source ?? this.source,
       sourceNote: sourceNote ?? this.sourceNote,
+      outcome: outcome ?? this.outcome,
+      categoryId: categoryId ?? this.categoryId,
+      recurrenceGroupId: recurrenceGroupId ?? this.recurrenceGroupId,
+      linkedActionId: linkedActionId ?? this.linkedActionId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -9038,6 +9645,18 @@ class ProjectActionsCompanion extends UpdateCompanion<ProjectAction> {
     if (sourceNote.present) {
       map['source_note'] = Variable<String>(sourceNote.value);
     }
+    if (outcome.present) {
+      map['outcome'] = Variable<String>(outcome.value);
+    }
+    if (categoryId.present) {
+      map['category_id'] = Variable<String>(categoryId.value);
+    }
+    if (recurrenceGroupId.present) {
+      map['recurrence_group_id'] = Variable<String>(recurrenceGroupId.value);
+    }
+    if (linkedActionId.present) {
+      map['linked_action_id'] = Variable<String>(linkedActionId.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -9063,6 +9682,10 @@ class ProjectActionsCompanion extends UpdateCompanion<ProjectAction> {
           ..write('priority: $priority, ')
           ..write('source: $source, ')
           ..write('sourceNote: $sourceNote, ')
+          ..write('outcome: $outcome, ')
+          ..write('categoryId: $categoryId, ')
+          ..write('recurrenceGroupId: $recurrenceGroupId, ')
+          ..write('linkedActionId: $linkedActionId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -13246,6 +13869,3520 @@ class JournalEntryLinksCompanion extends UpdateCompanion<JournalEntryLink> {
   }
 }
 
+class $OrganisationsTable extends Organisations
+    with TableInfo<$OrganisationsTable, Organisation> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $OrganisationsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _shortNameMeta = const VerificationMeta(
+    'shortName',
+  );
+  @override
+  late final GeneratedColumn<String> shortName = GeneratedColumn<String>(
+    'short_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    shortName,
+    notes,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'organisations';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Organisation> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('short_name')) {
+      context.handle(
+        _shortNameMeta,
+        shortName.isAcceptableOrUnknown(data['short_name']!, _shortNameMeta),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Organisation map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Organisation(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      shortName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}short_name'],
+      ),
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $OrganisationsTable createAlias(String alias) {
+    return $OrganisationsTable(attachedDatabase, alias);
+  }
+}
+
+class Organisation extends DataClass implements Insertable<Organisation> {
+  final String id;
+  final String name;
+  final String? shortName;
+  final String? notes;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const Organisation({
+    required this.id,
+    required this.name,
+    this.shortName,
+    this.notes,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || shortName != null) {
+      map['short_name'] = Variable<String>(shortName);
+    }
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  OrganisationsCompanion toCompanion(bool nullToAbsent) {
+    return OrganisationsCompanion(
+      id: Value(id),
+      name: Value(name),
+      shortName: shortName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(shortName),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory Organisation.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Organisation(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      shortName: serializer.fromJson<String?>(json['shortName']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'shortName': serializer.toJson<String?>(shortName),
+      'notes': serializer.toJson<String?>(notes),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  Organisation copyWith({
+    String? id,
+    String? name,
+    Value<String?> shortName = const Value.absent(),
+    Value<String?> notes = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => Organisation(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    shortName: shortName.present ? shortName.value : this.shortName,
+    notes: notes.present ? notes.value : this.notes,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  Organisation copyWithCompanion(OrganisationsCompanion data) {
+    return Organisation(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      shortName: data.shortName.present ? data.shortName.value : this.shortName,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Organisation(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('shortName: $shortName, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, name, shortName, notes, createdAt, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Organisation &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.shortName == this.shortName &&
+          other.notes == this.notes &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class OrganisationsCompanion extends UpdateCompanion<Organisation> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String?> shortName;
+  final Value<String?> notes;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const OrganisationsCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.shortName = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  OrganisationsCompanion.insert({
+    required String id,
+    required String name,
+    this.shortName = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name);
+  static Insertable<Organisation> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? shortName,
+    Expression<String>? notes,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (shortName != null) 'short_name': shortName,
+      if (notes != null) 'notes': notes,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  OrganisationsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String?>? shortName,
+    Value<String?>? notes,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return OrganisationsCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      shortName: shortName ?? this.shortName,
+      notes: notes ?? this.notes,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (shortName.present) {
+      map['short_name'] = Variable<String>(shortName.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OrganisationsCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('shortName: $shortName, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $PlaybooksTable extends Playbooks
+    with TableInfo<$PlaybooksTable, Playbook> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PlaybooksTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _organisationIdMeta = const VerificationMeta(
+    'organisationId',
+  );
+  @override
+  late final GeneratedColumn<String> organisationId = GeneratedColumn<String>(
+    'organisation_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES organisations (id)',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _versionMeta = const VerificationMeta(
+    'version',
+  );
+  @override
+  late final GeneratedColumn<String> version = GeneratedColumn<String>(
+    'version',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    organisationId,
+    name,
+    description,
+    version,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'playbooks';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Playbook> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('organisation_id')) {
+      context.handle(
+        _organisationIdMeta,
+        organisationId.isAcceptableOrUnknown(
+          data['organisation_id']!,
+          _organisationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_organisationIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('version')) {
+      context.handle(
+        _versionMeta,
+        version.isAcceptableOrUnknown(data['version']!, _versionMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Playbook map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Playbook(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      organisationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}organisation_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      ),
+      version: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}version'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $PlaybooksTable createAlias(String alias) {
+    return $PlaybooksTable(attachedDatabase, alias);
+  }
+}
+
+class Playbook extends DataClass implements Insertable<Playbook> {
+  final String id;
+  final String organisationId;
+  final String name;
+  final String? description;
+  final String? version;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const Playbook({
+    required this.id,
+    required this.organisationId,
+    required this.name,
+    this.description,
+    this.version,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['organisation_id'] = Variable<String>(organisationId);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    if (!nullToAbsent || version != null) {
+      map['version'] = Variable<String>(version);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  PlaybooksCompanion toCompanion(bool nullToAbsent) {
+    return PlaybooksCompanion(
+      id: Value(id),
+      organisationId: Value(organisationId),
+      name: Value(name),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
+      version: version == null && nullToAbsent
+          ? const Value.absent()
+          : Value(version),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory Playbook.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Playbook(
+      id: serializer.fromJson<String>(json['id']),
+      organisationId: serializer.fromJson<String>(json['organisationId']),
+      name: serializer.fromJson<String>(json['name']),
+      description: serializer.fromJson<String?>(json['description']),
+      version: serializer.fromJson<String?>(json['version']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'organisationId': serializer.toJson<String>(organisationId),
+      'name': serializer.toJson<String>(name),
+      'description': serializer.toJson<String?>(description),
+      'version': serializer.toJson<String?>(version),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  Playbook copyWith({
+    String? id,
+    String? organisationId,
+    String? name,
+    Value<String?> description = const Value.absent(),
+    Value<String?> version = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => Playbook(
+    id: id ?? this.id,
+    organisationId: organisationId ?? this.organisationId,
+    name: name ?? this.name,
+    description: description.present ? description.value : this.description,
+    version: version.present ? version.value : this.version,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  Playbook copyWithCompanion(PlaybooksCompanion data) {
+    return Playbook(
+      id: data.id.present ? data.id.value : this.id,
+      organisationId: data.organisationId.present
+          ? data.organisationId.value
+          : this.organisationId,
+      name: data.name.present ? data.name.value : this.name,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+      version: data.version.present ? data.version.value : this.version,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Playbook(')
+          ..write('id: $id, ')
+          ..write('organisationId: $organisationId, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('version: $version, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    organisationId,
+    name,
+    description,
+    version,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Playbook &&
+          other.id == this.id &&
+          other.organisationId == this.organisationId &&
+          other.name == this.name &&
+          other.description == this.description &&
+          other.version == this.version &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class PlaybooksCompanion extends UpdateCompanion<Playbook> {
+  final Value<String> id;
+  final Value<String> organisationId;
+  final Value<String> name;
+  final Value<String?> description;
+  final Value<String?> version;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const PlaybooksCompanion({
+    this.id = const Value.absent(),
+    this.organisationId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.description = const Value.absent(),
+    this.version = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PlaybooksCompanion.insert({
+    required String id,
+    required String organisationId,
+    required String name,
+    this.description = const Value.absent(),
+    this.version = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       organisationId = Value(organisationId),
+       name = Value(name);
+  static Insertable<Playbook> custom({
+    Expression<String>? id,
+    Expression<String>? organisationId,
+    Expression<String>? name,
+    Expression<String>? description,
+    Expression<String>? version,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (organisationId != null) 'organisation_id': organisationId,
+      if (name != null) 'name': name,
+      if (description != null) 'description': description,
+      if (version != null) 'version': version,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PlaybooksCompanion copyWith({
+    Value<String>? id,
+    Value<String>? organisationId,
+    Value<String>? name,
+    Value<String?>? description,
+    Value<String?>? version,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return PlaybooksCompanion(
+      id: id ?? this.id,
+      organisationId: organisationId ?? this.organisationId,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      version: version ?? this.version,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (organisationId.present) {
+      map['organisation_id'] = Variable<String>(organisationId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<String>(version.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PlaybooksCompanion(')
+          ..write('id: $id, ')
+          ..write('organisationId: $organisationId, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('version: $version, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $PlaybookStagesTable extends PlaybookStages
+    with TableInfo<$PlaybookStagesTable, PlaybookStage> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PlaybookStagesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _playbookIdMeta = const VerificationMeta(
+    'playbookId',
+  );
+  @override
+  late final GeneratedColumn<String> playbookId = GeneratedColumn<String>(
+    'playbook_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES playbooks (id)',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _approverRoleMeta = const VerificationMeta(
+    'approverRole',
+  );
+  @override
+  late final GeneratedColumn<String> approverRole = GeneratedColumn<String>(
+    'approver_role',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _gateConditionMeta = const VerificationMeta(
+    'gateCondition',
+  );
+  @override
+  late final GeneratedColumn<String> gateCondition = GeneratedColumn<String>(
+    'gate_condition',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    playbookId,
+    name,
+    description,
+    sortOrder,
+    approverRole,
+    gateCondition,
+    notes,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'playbook_stages';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PlaybookStage> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('playbook_id')) {
+      context.handle(
+        _playbookIdMeta,
+        playbookId.isAcceptableOrUnknown(data['playbook_id']!, _playbookIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_playbookIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
+    if (data.containsKey('approver_role')) {
+      context.handle(
+        _approverRoleMeta,
+        approverRole.isAcceptableOrUnknown(
+          data['approver_role']!,
+          _approverRoleMeta,
+        ),
+      );
+    }
+    if (data.containsKey('gate_condition')) {
+      context.handle(
+        _gateConditionMeta,
+        gateCondition.isAcceptableOrUnknown(
+          data['gate_condition']!,
+          _gateConditionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PlaybookStage map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PlaybookStage(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      playbookId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}playbook_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      ),
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+      approverRole: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}approver_role'],
+      ),
+      gateCondition: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}gate_condition'],
+      ),
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $PlaybookStagesTable createAlias(String alias) {
+    return $PlaybookStagesTable(attachedDatabase, alias);
+  }
+}
+
+class PlaybookStage extends DataClass implements Insertable<PlaybookStage> {
+  final String id;
+  final String playbookId;
+  final String name;
+  final String? description;
+  final int sortOrder;
+  final String? approverRole;
+  final String? gateCondition;
+  final String? notes;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const PlaybookStage({
+    required this.id,
+    required this.playbookId,
+    required this.name,
+    this.description,
+    required this.sortOrder,
+    this.approverRole,
+    this.gateCondition,
+    this.notes,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['playbook_id'] = Variable<String>(playbookId);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    map['sort_order'] = Variable<int>(sortOrder);
+    if (!nullToAbsent || approverRole != null) {
+      map['approver_role'] = Variable<String>(approverRole);
+    }
+    if (!nullToAbsent || gateCondition != null) {
+      map['gate_condition'] = Variable<String>(gateCondition);
+    }
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  PlaybookStagesCompanion toCompanion(bool nullToAbsent) {
+    return PlaybookStagesCompanion(
+      id: Value(id),
+      playbookId: Value(playbookId),
+      name: Value(name),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
+      sortOrder: Value(sortOrder),
+      approverRole: approverRole == null && nullToAbsent
+          ? const Value.absent()
+          : Value(approverRole),
+      gateCondition: gateCondition == null && nullToAbsent
+          ? const Value.absent()
+          : Value(gateCondition),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory PlaybookStage.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PlaybookStage(
+      id: serializer.fromJson<String>(json['id']),
+      playbookId: serializer.fromJson<String>(json['playbookId']),
+      name: serializer.fromJson<String>(json['name']),
+      description: serializer.fromJson<String?>(json['description']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      approverRole: serializer.fromJson<String?>(json['approverRole']),
+      gateCondition: serializer.fromJson<String?>(json['gateCondition']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'playbookId': serializer.toJson<String>(playbookId),
+      'name': serializer.toJson<String>(name),
+      'description': serializer.toJson<String?>(description),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+      'approverRole': serializer.toJson<String?>(approverRole),
+      'gateCondition': serializer.toJson<String?>(gateCondition),
+      'notes': serializer.toJson<String?>(notes),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  PlaybookStage copyWith({
+    String? id,
+    String? playbookId,
+    String? name,
+    Value<String?> description = const Value.absent(),
+    int? sortOrder,
+    Value<String?> approverRole = const Value.absent(),
+    Value<String?> gateCondition = const Value.absent(),
+    Value<String?> notes = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => PlaybookStage(
+    id: id ?? this.id,
+    playbookId: playbookId ?? this.playbookId,
+    name: name ?? this.name,
+    description: description.present ? description.value : this.description,
+    sortOrder: sortOrder ?? this.sortOrder,
+    approverRole: approverRole.present ? approverRole.value : this.approverRole,
+    gateCondition: gateCondition.present
+        ? gateCondition.value
+        : this.gateCondition,
+    notes: notes.present ? notes.value : this.notes,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  PlaybookStage copyWithCompanion(PlaybookStagesCompanion data) {
+    return PlaybookStage(
+      id: data.id.present ? data.id.value : this.id,
+      playbookId: data.playbookId.present
+          ? data.playbookId.value
+          : this.playbookId,
+      name: data.name.present ? data.name.value : this.name,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      approverRole: data.approverRole.present
+          ? data.approverRole.value
+          : this.approverRole,
+      gateCondition: data.gateCondition.present
+          ? data.gateCondition.value
+          : this.gateCondition,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PlaybookStage(')
+          ..write('id: $id, ')
+          ..write('playbookId: $playbookId, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('approverRole: $approverRole, ')
+          ..write('gateCondition: $gateCondition, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    playbookId,
+    name,
+    description,
+    sortOrder,
+    approverRole,
+    gateCondition,
+    notes,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PlaybookStage &&
+          other.id == this.id &&
+          other.playbookId == this.playbookId &&
+          other.name == this.name &&
+          other.description == this.description &&
+          other.sortOrder == this.sortOrder &&
+          other.approverRole == this.approverRole &&
+          other.gateCondition == this.gateCondition &&
+          other.notes == this.notes &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class PlaybookStagesCompanion extends UpdateCompanion<PlaybookStage> {
+  final Value<String> id;
+  final Value<String> playbookId;
+  final Value<String> name;
+  final Value<String?> description;
+  final Value<int> sortOrder;
+  final Value<String?> approverRole;
+  final Value<String?> gateCondition;
+  final Value<String?> notes;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const PlaybookStagesCompanion({
+    this.id = const Value.absent(),
+    this.playbookId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.description = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.approverRole = const Value.absent(),
+    this.gateCondition = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PlaybookStagesCompanion.insert({
+    required String id,
+    required String playbookId,
+    required String name,
+    this.description = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.approverRole = const Value.absent(),
+    this.gateCondition = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       playbookId = Value(playbookId),
+       name = Value(name);
+  static Insertable<PlaybookStage> custom({
+    Expression<String>? id,
+    Expression<String>? playbookId,
+    Expression<String>? name,
+    Expression<String>? description,
+    Expression<int>? sortOrder,
+    Expression<String>? approverRole,
+    Expression<String>? gateCondition,
+    Expression<String>? notes,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (playbookId != null) 'playbook_id': playbookId,
+      if (name != null) 'name': name,
+      if (description != null) 'description': description,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (approverRole != null) 'approver_role': approverRole,
+      if (gateCondition != null) 'gate_condition': gateCondition,
+      if (notes != null) 'notes': notes,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PlaybookStagesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? playbookId,
+    Value<String>? name,
+    Value<String?>? description,
+    Value<int>? sortOrder,
+    Value<String?>? approverRole,
+    Value<String?>? gateCondition,
+    Value<String?>? notes,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return PlaybookStagesCompanion(
+      id: id ?? this.id,
+      playbookId: playbookId ?? this.playbookId,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      sortOrder: sortOrder ?? this.sortOrder,
+      approverRole: approverRole ?? this.approverRole,
+      gateCondition: gateCondition ?? this.gateCondition,
+      notes: notes ?? this.notes,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (playbookId.present) {
+      map['playbook_id'] = Variable<String>(playbookId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (approverRole.present) {
+      map['approver_role'] = Variable<String>(approverRole.value);
+    }
+    if (gateCondition.present) {
+      map['gate_condition'] = Variable<String>(gateCondition.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PlaybookStagesCompanion(')
+          ..write('id: $id, ')
+          ..write('playbookId: $playbookId, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('approverRole: $approverRole, ')
+          ..write('gateCondition: $gateCondition, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $StageTemplatesTable extends StageTemplates
+    with TableInfo<$StageTemplatesTable, StageTemplate> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $StageTemplatesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _stageIdMeta = const VerificationMeta(
+    'stageId',
+  );
+  @override
+  late final GeneratedColumn<String> stageId = GeneratedColumn<String>(
+    'stage_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES playbook_stages (id)',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _filenameMeta = const VerificationMeta(
+    'filename',
+  );
+  @override
+  late final GeneratedColumn<String> filename = GeneratedColumn<String>(
+    'filename',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _filePathMeta = const VerificationMeta(
+    'filePath',
+  );
+  @override
+  late final GeneratedColumn<String> filePath = GeneratedColumn<String>(
+    'file_path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fileTypeMeta = const VerificationMeta(
+    'fileType',
+  );
+  @override
+  late final GeneratedColumn<String> fileType = GeneratedColumn<String>(
+    'file_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('other'),
+  );
+  static const VerificationMeta _fillStrategyMeta = const VerificationMeta(
+    'fillStrategy',
+  );
+  @override
+  late final GeneratedColumn<String> fillStrategy = GeneratedColumn<String>(
+    'fill_strategy',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('companion'),
+  );
+  static const VerificationMeta _fieldHintsMeta = const VerificationMeta(
+    'fieldHints',
+  );
+  @override
+  late final GeneratedColumn<String> fieldHints = GeneratedColumn<String>(
+    'field_hints',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _uploadedAtMeta = const VerificationMeta(
+    'uploadedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> uploadedAt = GeneratedColumn<DateTime>(
+    'uploaded_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    stageId,
+    name,
+    filename,
+    filePath,
+    fileType,
+    fillStrategy,
+    fieldHints,
+    uploadedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'stage_templates';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<StageTemplate> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('stage_id')) {
+      context.handle(
+        _stageIdMeta,
+        stageId.isAcceptableOrUnknown(data['stage_id']!, _stageIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_stageIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('filename')) {
+      context.handle(
+        _filenameMeta,
+        filename.isAcceptableOrUnknown(data['filename']!, _filenameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_filenameMeta);
+    }
+    if (data.containsKey('file_path')) {
+      context.handle(
+        _filePathMeta,
+        filePath.isAcceptableOrUnknown(data['file_path']!, _filePathMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_filePathMeta);
+    }
+    if (data.containsKey('file_type')) {
+      context.handle(
+        _fileTypeMeta,
+        fileType.isAcceptableOrUnknown(data['file_type']!, _fileTypeMeta),
+      );
+    }
+    if (data.containsKey('fill_strategy')) {
+      context.handle(
+        _fillStrategyMeta,
+        fillStrategy.isAcceptableOrUnknown(
+          data['fill_strategy']!,
+          _fillStrategyMeta,
+        ),
+      );
+    }
+    if (data.containsKey('field_hints')) {
+      context.handle(
+        _fieldHintsMeta,
+        fieldHints.isAcceptableOrUnknown(data['field_hints']!, _fieldHintsMeta),
+      );
+    }
+    if (data.containsKey('uploaded_at')) {
+      context.handle(
+        _uploadedAtMeta,
+        uploadedAt.isAcceptableOrUnknown(data['uploaded_at']!, _uploadedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  StageTemplate map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return StageTemplate(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      stageId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}stage_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      filename: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}filename'],
+      )!,
+      filePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}file_path'],
+      )!,
+      fileType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}file_type'],
+      )!,
+      fillStrategy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}fill_strategy'],
+      )!,
+      fieldHints: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}field_hints'],
+      ),
+      uploadedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}uploaded_at'],
+      )!,
+    );
+  }
+
+  @override
+  $StageTemplatesTable createAlias(String alias) {
+    return $StageTemplatesTable(attachedDatabase, alias);
+  }
+}
+
+class StageTemplate extends DataClass implements Insertable<StageTemplate> {
+  final String id;
+  final String stageId;
+  final String name;
+  final String filename;
+  final String filePath;
+  final String fileType;
+  final String fillStrategy;
+  final String? fieldHints;
+  final DateTime uploadedAt;
+  const StageTemplate({
+    required this.id,
+    required this.stageId,
+    required this.name,
+    required this.filename,
+    required this.filePath,
+    required this.fileType,
+    required this.fillStrategy,
+    this.fieldHints,
+    required this.uploadedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['stage_id'] = Variable<String>(stageId);
+    map['name'] = Variable<String>(name);
+    map['filename'] = Variable<String>(filename);
+    map['file_path'] = Variable<String>(filePath);
+    map['file_type'] = Variable<String>(fileType);
+    map['fill_strategy'] = Variable<String>(fillStrategy);
+    if (!nullToAbsent || fieldHints != null) {
+      map['field_hints'] = Variable<String>(fieldHints);
+    }
+    map['uploaded_at'] = Variable<DateTime>(uploadedAt);
+    return map;
+  }
+
+  StageTemplatesCompanion toCompanion(bool nullToAbsent) {
+    return StageTemplatesCompanion(
+      id: Value(id),
+      stageId: Value(stageId),
+      name: Value(name),
+      filename: Value(filename),
+      filePath: Value(filePath),
+      fileType: Value(fileType),
+      fillStrategy: Value(fillStrategy),
+      fieldHints: fieldHints == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fieldHints),
+      uploadedAt: Value(uploadedAt),
+    );
+  }
+
+  factory StageTemplate.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return StageTemplate(
+      id: serializer.fromJson<String>(json['id']),
+      stageId: serializer.fromJson<String>(json['stageId']),
+      name: serializer.fromJson<String>(json['name']),
+      filename: serializer.fromJson<String>(json['filename']),
+      filePath: serializer.fromJson<String>(json['filePath']),
+      fileType: serializer.fromJson<String>(json['fileType']),
+      fillStrategy: serializer.fromJson<String>(json['fillStrategy']),
+      fieldHints: serializer.fromJson<String?>(json['fieldHints']),
+      uploadedAt: serializer.fromJson<DateTime>(json['uploadedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'stageId': serializer.toJson<String>(stageId),
+      'name': serializer.toJson<String>(name),
+      'filename': serializer.toJson<String>(filename),
+      'filePath': serializer.toJson<String>(filePath),
+      'fileType': serializer.toJson<String>(fileType),
+      'fillStrategy': serializer.toJson<String>(fillStrategy),
+      'fieldHints': serializer.toJson<String?>(fieldHints),
+      'uploadedAt': serializer.toJson<DateTime>(uploadedAt),
+    };
+  }
+
+  StageTemplate copyWith({
+    String? id,
+    String? stageId,
+    String? name,
+    String? filename,
+    String? filePath,
+    String? fileType,
+    String? fillStrategy,
+    Value<String?> fieldHints = const Value.absent(),
+    DateTime? uploadedAt,
+  }) => StageTemplate(
+    id: id ?? this.id,
+    stageId: stageId ?? this.stageId,
+    name: name ?? this.name,
+    filename: filename ?? this.filename,
+    filePath: filePath ?? this.filePath,
+    fileType: fileType ?? this.fileType,
+    fillStrategy: fillStrategy ?? this.fillStrategy,
+    fieldHints: fieldHints.present ? fieldHints.value : this.fieldHints,
+    uploadedAt: uploadedAt ?? this.uploadedAt,
+  );
+  StageTemplate copyWithCompanion(StageTemplatesCompanion data) {
+    return StageTemplate(
+      id: data.id.present ? data.id.value : this.id,
+      stageId: data.stageId.present ? data.stageId.value : this.stageId,
+      name: data.name.present ? data.name.value : this.name,
+      filename: data.filename.present ? data.filename.value : this.filename,
+      filePath: data.filePath.present ? data.filePath.value : this.filePath,
+      fileType: data.fileType.present ? data.fileType.value : this.fileType,
+      fillStrategy: data.fillStrategy.present
+          ? data.fillStrategy.value
+          : this.fillStrategy,
+      fieldHints: data.fieldHints.present
+          ? data.fieldHints.value
+          : this.fieldHints,
+      uploadedAt: data.uploadedAt.present
+          ? data.uploadedAt.value
+          : this.uploadedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StageTemplate(')
+          ..write('id: $id, ')
+          ..write('stageId: $stageId, ')
+          ..write('name: $name, ')
+          ..write('filename: $filename, ')
+          ..write('filePath: $filePath, ')
+          ..write('fileType: $fileType, ')
+          ..write('fillStrategy: $fillStrategy, ')
+          ..write('fieldHints: $fieldHints, ')
+          ..write('uploadedAt: $uploadedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    stageId,
+    name,
+    filename,
+    filePath,
+    fileType,
+    fillStrategy,
+    fieldHints,
+    uploadedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is StageTemplate &&
+          other.id == this.id &&
+          other.stageId == this.stageId &&
+          other.name == this.name &&
+          other.filename == this.filename &&
+          other.filePath == this.filePath &&
+          other.fileType == this.fileType &&
+          other.fillStrategy == this.fillStrategy &&
+          other.fieldHints == this.fieldHints &&
+          other.uploadedAt == this.uploadedAt);
+}
+
+class StageTemplatesCompanion extends UpdateCompanion<StageTemplate> {
+  final Value<String> id;
+  final Value<String> stageId;
+  final Value<String> name;
+  final Value<String> filename;
+  final Value<String> filePath;
+  final Value<String> fileType;
+  final Value<String> fillStrategy;
+  final Value<String?> fieldHints;
+  final Value<DateTime> uploadedAt;
+  final Value<int> rowid;
+  const StageTemplatesCompanion({
+    this.id = const Value.absent(),
+    this.stageId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.filename = const Value.absent(),
+    this.filePath = const Value.absent(),
+    this.fileType = const Value.absent(),
+    this.fillStrategy = const Value.absent(),
+    this.fieldHints = const Value.absent(),
+    this.uploadedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  StageTemplatesCompanion.insert({
+    required String id,
+    required String stageId,
+    required String name,
+    required String filename,
+    required String filePath,
+    this.fileType = const Value.absent(),
+    this.fillStrategy = const Value.absent(),
+    this.fieldHints = const Value.absent(),
+    this.uploadedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       stageId = Value(stageId),
+       name = Value(name),
+       filename = Value(filename),
+       filePath = Value(filePath);
+  static Insertable<StageTemplate> custom({
+    Expression<String>? id,
+    Expression<String>? stageId,
+    Expression<String>? name,
+    Expression<String>? filename,
+    Expression<String>? filePath,
+    Expression<String>? fileType,
+    Expression<String>? fillStrategy,
+    Expression<String>? fieldHints,
+    Expression<DateTime>? uploadedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (stageId != null) 'stage_id': stageId,
+      if (name != null) 'name': name,
+      if (filename != null) 'filename': filename,
+      if (filePath != null) 'file_path': filePath,
+      if (fileType != null) 'file_type': fileType,
+      if (fillStrategy != null) 'fill_strategy': fillStrategy,
+      if (fieldHints != null) 'field_hints': fieldHints,
+      if (uploadedAt != null) 'uploaded_at': uploadedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  StageTemplatesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? stageId,
+    Value<String>? name,
+    Value<String>? filename,
+    Value<String>? filePath,
+    Value<String>? fileType,
+    Value<String>? fillStrategy,
+    Value<String?>? fieldHints,
+    Value<DateTime>? uploadedAt,
+    Value<int>? rowid,
+  }) {
+    return StageTemplatesCompanion(
+      id: id ?? this.id,
+      stageId: stageId ?? this.stageId,
+      name: name ?? this.name,
+      filename: filename ?? this.filename,
+      filePath: filePath ?? this.filePath,
+      fileType: fileType ?? this.fileType,
+      fillStrategy: fillStrategy ?? this.fillStrategy,
+      fieldHints: fieldHints ?? this.fieldHints,
+      uploadedAt: uploadedAt ?? this.uploadedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (stageId.present) {
+      map['stage_id'] = Variable<String>(stageId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (filename.present) {
+      map['filename'] = Variable<String>(filename.value);
+    }
+    if (filePath.present) {
+      map['file_path'] = Variable<String>(filePath.value);
+    }
+    if (fileType.present) {
+      map['file_type'] = Variable<String>(fileType.value);
+    }
+    if (fillStrategy.present) {
+      map['fill_strategy'] = Variable<String>(fillStrategy.value);
+    }
+    if (fieldHints.present) {
+      map['field_hints'] = Variable<String>(fieldHints.value);
+    }
+    if (uploadedAt.present) {
+      map['uploaded_at'] = Variable<DateTime>(uploadedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StageTemplatesCompanion(')
+          ..write('id: $id, ')
+          ..write('stageId: $stageId, ')
+          ..write('name: $name, ')
+          ..write('filename: $filename, ')
+          ..write('filePath: $filePath, ')
+          ..write('fileType: $fileType, ')
+          ..write('fillStrategy: $fillStrategy, ')
+          ..write('fieldHints: $fieldHints, ')
+          ..write('uploadedAt: $uploadedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ProjectPlaybooksTable extends ProjectPlaybooks
+    with TableInfo<$ProjectPlaybooksTable, ProjectPlaybook> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ProjectPlaybooksTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES projects (id)',
+    ),
+  );
+  static const VerificationMeta _playbookIdMeta = const VerificationMeta(
+    'playbookId',
+  );
+  @override
+  late final GeneratedColumn<String> playbookId = GeneratedColumn<String>(
+    'playbook_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES playbooks (id)',
+    ),
+  );
+  static const VerificationMeta _currentStageIdMeta = const VerificationMeta(
+    'currentStageId',
+  );
+  @override
+  late final GeneratedColumn<String> currentStageId = GeneratedColumn<String>(
+    'current_stage_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _attachedAtMeta = const VerificationMeta(
+    'attachedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> attachedAt = GeneratedColumn<DateTime>(
+    'attached_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    projectId,
+    playbookId,
+    currentStageId,
+    attachedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'project_playbooks';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ProjectPlaybook> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_projectIdMeta);
+    }
+    if (data.containsKey('playbook_id')) {
+      context.handle(
+        _playbookIdMeta,
+        playbookId.isAcceptableOrUnknown(data['playbook_id']!, _playbookIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_playbookIdMeta);
+    }
+    if (data.containsKey('current_stage_id')) {
+      context.handle(
+        _currentStageIdMeta,
+        currentStageId.isAcceptableOrUnknown(
+          data['current_stage_id']!,
+          _currentStageIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('attached_at')) {
+      context.handle(
+        _attachedAtMeta,
+        attachedAt.isAcceptableOrUnknown(data['attached_at']!, _attachedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ProjectPlaybook map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ProjectPlaybook(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      )!,
+      playbookId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}playbook_id'],
+      )!,
+      currentStageId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}current_stage_id'],
+      ),
+      attachedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}attached_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ProjectPlaybooksTable createAlias(String alias) {
+    return $ProjectPlaybooksTable(attachedDatabase, alias);
+  }
+}
+
+class ProjectPlaybook extends DataClass implements Insertable<ProjectPlaybook> {
+  final String id;
+  final String projectId;
+  final String playbookId;
+  final String? currentStageId;
+  final DateTime attachedAt;
+  const ProjectPlaybook({
+    required this.id,
+    required this.projectId,
+    required this.playbookId,
+    this.currentStageId,
+    required this.attachedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['project_id'] = Variable<String>(projectId);
+    map['playbook_id'] = Variable<String>(playbookId);
+    if (!nullToAbsent || currentStageId != null) {
+      map['current_stage_id'] = Variable<String>(currentStageId);
+    }
+    map['attached_at'] = Variable<DateTime>(attachedAt);
+    return map;
+  }
+
+  ProjectPlaybooksCompanion toCompanion(bool nullToAbsent) {
+    return ProjectPlaybooksCompanion(
+      id: Value(id),
+      projectId: Value(projectId),
+      playbookId: Value(playbookId),
+      currentStageId: currentStageId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(currentStageId),
+      attachedAt: Value(attachedAt),
+    );
+  }
+
+  factory ProjectPlaybook.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ProjectPlaybook(
+      id: serializer.fromJson<String>(json['id']),
+      projectId: serializer.fromJson<String>(json['projectId']),
+      playbookId: serializer.fromJson<String>(json['playbookId']),
+      currentStageId: serializer.fromJson<String?>(json['currentStageId']),
+      attachedAt: serializer.fromJson<DateTime>(json['attachedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'projectId': serializer.toJson<String>(projectId),
+      'playbookId': serializer.toJson<String>(playbookId),
+      'currentStageId': serializer.toJson<String?>(currentStageId),
+      'attachedAt': serializer.toJson<DateTime>(attachedAt),
+    };
+  }
+
+  ProjectPlaybook copyWith({
+    String? id,
+    String? projectId,
+    String? playbookId,
+    Value<String?> currentStageId = const Value.absent(),
+    DateTime? attachedAt,
+  }) => ProjectPlaybook(
+    id: id ?? this.id,
+    projectId: projectId ?? this.projectId,
+    playbookId: playbookId ?? this.playbookId,
+    currentStageId: currentStageId.present
+        ? currentStageId.value
+        : this.currentStageId,
+    attachedAt: attachedAt ?? this.attachedAt,
+  );
+  ProjectPlaybook copyWithCompanion(ProjectPlaybooksCompanion data) {
+    return ProjectPlaybook(
+      id: data.id.present ? data.id.value : this.id,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      playbookId: data.playbookId.present
+          ? data.playbookId.value
+          : this.playbookId,
+      currentStageId: data.currentStageId.present
+          ? data.currentStageId.value
+          : this.currentStageId,
+      attachedAt: data.attachedAt.present
+          ? data.attachedAt.value
+          : this.attachedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProjectPlaybook(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('playbookId: $playbookId, ')
+          ..write('currentStageId: $currentStageId, ')
+          ..write('attachedAt: $attachedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, projectId, playbookId, currentStageId, attachedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ProjectPlaybook &&
+          other.id == this.id &&
+          other.projectId == this.projectId &&
+          other.playbookId == this.playbookId &&
+          other.currentStageId == this.currentStageId &&
+          other.attachedAt == this.attachedAt);
+}
+
+class ProjectPlaybooksCompanion extends UpdateCompanion<ProjectPlaybook> {
+  final Value<String> id;
+  final Value<String> projectId;
+  final Value<String> playbookId;
+  final Value<String?> currentStageId;
+  final Value<DateTime> attachedAt;
+  final Value<int> rowid;
+  const ProjectPlaybooksCompanion({
+    this.id = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.playbookId = const Value.absent(),
+    this.currentStageId = const Value.absent(),
+    this.attachedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ProjectPlaybooksCompanion.insert({
+    required String id,
+    required String projectId,
+    required String playbookId,
+    this.currentStageId = const Value.absent(),
+    this.attachedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       projectId = Value(projectId),
+       playbookId = Value(playbookId);
+  static Insertable<ProjectPlaybook> custom({
+    Expression<String>? id,
+    Expression<String>? projectId,
+    Expression<String>? playbookId,
+    Expression<String>? currentStageId,
+    Expression<DateTime>? attachedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (projectId != null) 'project_id': projectId,
+      if (playbookId != null) 'playbook_id': playbookId,
+      if (currentStageId != null) 'current_stage_id': currentStageId,
+      if (attachedAt != null) 'attached_at': attachedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ProjectPlaybooksCompanion copyWith({
+    Value<String>? id,
+    Value<String>? projectId,
+    Value<String>? playbookId,
+    Value<String?>? currentStageId,
+    Value<DateTime>? attachedAt,
+    Value<int>? rowid,
+  }) {
+    return ProjectPlaybooksCompanion(
+      id: id ?? this.id,
+      projectId: projectId ?? this.projectId,
+      playbookId: playbookId ?? this.playbookId,
+      currentStageId: currentStageId ?? this.currentStageId,
+      attachedAt: attachedAt ?? this.attachedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (playbookId.present) {
+      map['playbook_id'] = Variable<String>(playbookId.value);
+    }
+    if (currentStageId.present) {
+      map['current_stage_id'] = Variable<String>(currentStageId.value);
+    }
+    if (attachedAt.present) {
+      map['attached_at'] = Variable<DateTime>(attachedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProjectPlaybooksCompanion(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('playbookId: $playbookId, ')
+          ..write('currentStageId: $currentStageId, ')
+          ..write('attachedAt: $attachedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ProjectStageProgressesTable extends ProjectStageProgresses
+    with TableInfo<$ProjectStageProgressesTable, ProjectStageProgressesData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ProjectStageProgressesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _projectPlaybookIdMeta = const VerificationMeta(
+    'projectPlaybookId',
+  );
+  @override
+  late final GeneratedColumn<String> projectPlaybookId =
+      GeneratedColumn<String>(
+        'project_playbook_id',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES project_playbooks (id)',
+        ),
+      );
+  static const VerificationMeta _stageIdMeta = const VerificationMeta(
+    'stageId',
+  );
+  @override
+  late final GeneratedColumn<String> stageId = GeneratedColumn<String>(
+    'stage_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES playbook_stages (id)',
+    ),
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('not_started'),
+  );
+  static const VerificationMeta _gateMetMeta = const VerificationMeta(
+    'gateMet',
+  );
+  @override
+  late final GeneratedColumn<bool> gateMet = GeneratedColumn<bool>(
+    'gate_met',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("gate_met" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _approvedByMeta = const VerificationMeta(
+    'approvedBy',
+  );
+  @override
+  late final GeneratedColumn<String> approvedBy = GeneratedColumn<String>(
+    'approved_by',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _approvedAtMeta = const VerificationMeta(
+    'approvedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> approvedAt = GeneratedColumn<DateTime>(
+    'approved_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _approvalNotesMeta = const VerificationMeta(
+    'approvalNotes',
+  );
+  @override
+  late final GeneratedColumn<String> approvalNotes = GeneratedColumn<String>(
+    'approval_notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _evidenceFilenameMeta = const VerificationMeta(
+    'evidenceFilename',
+  );
+  @override
+  late final GeneratedColumn<String> evidenceFilename = GeneratedColumn<String>(
+    'evidence_filename',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _evidenceFilePathMeta = const VerificationMeta(
+    'evidenceFilePath',
+  );
+  @override
+  late final GeneratedColumn<String> evidenceFilePath = GeneratedColumn<String>(
+    'evidence_file_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _evidenceUploadedAtMeta =
+      const VerificationMeta('evidenceUploadedAt');
+  @override
+  late final GeneratedColumn<DateTime> evidenceUploadedAt =
+      GeneratedColumn<DateTime>(
+        'evidence_uploaded_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _checklistMeta = const VerificationMeta(
+    'checklist',
+  );
+  @override
+  late final GeneratedColumn<String> checklist = GeneratedColumn<String>(
+    'checklist',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _generatedDocPathMeta = const VerificationMeta(
+    'generatedDocPath',
+  );
+  @override
+  late final GeneratedColumn<String> generatedDocPath = GeneratedColumn<String>(
+    'generated_doc_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _generatedAtMeta = const VerificationMeta(
+    'generatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> generatedAt = GeneratedColumn<DateTime>(
+    'generated_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _journalEntryIdMeta = const VerificationMeta(
+    'journalEntryId',
+  );
+  @override
+  late final GeneratedColumn<String> journalEntryId = GeneratedColumn<String>(
+    'journal_entry_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    projectPlaybookId,
+    stageId,
+    status,
+    gateMet,
+    approvedBy,
+    approvedAt,
+    approvalNotes,
+    evidenceFilename,
+    evidenceFilePath,
+    evidenceUploadedAt,
+    checklist,
+    generatedDocPath,
+    generatedAt,
+    journalEntryId,
+    notes,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'project_stage_progresses';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ProjectStageProgressesData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('project_playbook_id')) {
+      context.handle(
+        _projectPlaybookIdMeta,
+        projectPlaybookId.isAcceptableOrUnknown(
+          data['project_playbook_id']!,
+          _projectPlaybookIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_projectPlaybookIdMeta);
+    }
+    if (data.containsKey('stage_id')) {
+      context.handle(
+        _stageIdMeta,
+        stageId.isAcceptableOrUnknown(data['stage_id']!, _stageIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_stageIdMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('gate_met')) {
+      context.handle(
+        _gateMetMeta,
+        gateMet.isAcceptableOrUnknown(data['gate_met']!, _gateMetMeta),
+      );
+    }
+    if (data.containsKey('approved_by')) {
+      context.handle(
+        _approvedByMeta,
+        approvedBy.isAcceptableOrUnknown(data['approved_by']!, _approvedByMeta),
+      );
+    }
+    if (data.containsKey('approved_at')) {
+      context.handle(
+        _approvedAtMeta,
+        approvedAt.isAcceptableOrUnknown(data['approved_at']!, _approvedAtMeta),
+      );
+    }
+    if (data.containsKey('approval_notes')) {
+      context.handle(
+        _approvalNotesMeta,
+        approvalNotes.isAcceptableOrUnknown(
+          data['approval_notes']!,
+          _approvalNotesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('evidence_filename')) {
+      context.handle(
+        _evidenceFilenameMeta,
+        evidenceFilename.isAcceptableOrUnknown(
+          data['evidence_filename']!,
+          _evidenceFilenameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('evidence_file_path')) {
+      context.handle(
+        _evidenceFilePathMeta,
+        evidenceFilePath.isAcceptableOrUnknown(
+          data['evidence_file_path']!,
+          _evidenceFilePathMeta,
+        ),
+      );
+    }
+    if (data.containsKey('evidence_uploaded_at')) {
+      context.handle(
+        _evidenceUploadedAtMeta,
+        evidenceUploadedAt.isAcceptableOrUnknown(
+          data['evidence_uploaded_at']!,
+          _evidenceUploadedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('checklist')) {
+      context.handle(
+        _checklistMeta,
+        checklist.isAcceptableOrUnknown(data['checklist']!, _checklistMeta),
+      );
+    }
+    if (data.containsKey('generated_doc_path')) {
+      context.handle(
+        _generatedDocPathMeta,
+        generatedDocPath.isAcceptableOrUnknown(
+          data['generated_doc_path']!,
+          _generatedDocPathMeta,
+        ),
+      );
+    }
+    if (data.containsKey('generated_at')) {
+      context.handle(
+        _generatedAtMeta,
+        generatedAt.isAcceptableOrUnknown(
+          data['generated_at']!,
+          _generatedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('journal_entry_id')) {
+      context.handle(
+        _journalEntryIdMeta,
+        journalEntryId.isAcceptableOrUnknown(
+          data['journal_entry_id']!,
+          _journalEntryIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ProjectStageProgressesData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ProjectStageProgressesData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      projectPlaybookId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_playbook_id'],
+      )!,
+      stageId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}stage_id'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      gateMet: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}gate_met'],
+      )!,
+      approvedBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}approved_by'],
+      ),
+      approvedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}approved_at'],
+      ),
+      approvalNotes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}approval_notes'],
+      ),
+      evidenceFilename: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}evidence_filename'],
+      ),
+      evidenceFilePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}evidence_file_path'],
+      ),
+      evidenceUploadedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}evidence_uploaded_at'],
+      ),
+      checklist: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}checklist'],
+      ),
+      generatedDocPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}generated_doc_path'],
+      ),
+      generatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}generated_at'],
+      ),
+      journalEntryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}journal_entry_id'],
+      ),
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ProjectStageProgressesTable createAlias(String alias) {
+    return $ProjectStageProgressesTable(attachedDatabase, alias);
+  }
+}
+
+class ProjectStageProgressesData extends DataClass
+    implements Insertable<ProjectStageProgressesData> {
+  final String id;
+  final String projectPlaybookId;
+  final String stageId;
+  final String status;
+  final bool gateMet;
+  final String? approvedBy;
+  final DateTime? approvedAt;
+  final String? approvalNotes;
+  final String? evidenceFilename;
+  final String? evidenceFilePath;
+  final DateTime? evidenceUploadedAt;
+  final String? checklist;
+  final String? generatedDocPath;
+  final DateTime? generatedAt;
+  final String? journalEntryId;
+  final String? notes;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const ProjectStageProgressesData({
+    required this.id,
+    required this.projectPlaybookId,
+    required this.stageId,
+    required this.status,
+    required this.gateMet,
+    this.approvedBy,
+    this.approvedAt,
+    this.approvalNotes,
+    this.evidenceFilename,
+    this.evidenceFilePath,
+    this.evidenceUploadedAt,
+    this.checklist,
+    this.generatedDocPath,
+    this.generatedAt,
+    this.journalEntryId,
+    this.notes,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['project_playbook_id'] = Variable<String>(projectPlaybookId);
+    map['stage_id'] = Variable<String>(stageId);
+    map['status'] = Variable<String>(status);
+    map['gate_met'] = Variable<bool>(gateMet);
+    if (!nullToAbsent || approvedBy != null) {
+      map['approved_by'] = Variable<String>(approvedBy);
+    }
+    if (!nullToAbsent || approvedAt != null) {
+      map['approved_at'] = Variable<DateTime>(approvedAt);
+    }
+    if (!nullToAbsent || approvalNotes != null) {
+      map['approval_notes'] = Variable<String>(approvalNotes);
+    }
+    if (!nullToAbsent || evidenceFilename != null) {
+      map['evidence_filename'] = Variable<String>(evidenceFilename);
+    }
+    if (!nullToAbsent || evidenceFilePath != null) {
+      map['evidence_file_path'] = Variable<String>(evidenceFilePath);
+    }
+    if (!nullToAbsent || evidenceUploadedAt != null) {
+      map['evidence_uploaded_at'] = Variable<DateTime>(evidenceUploadedAt);
+    }
+    if (!nullToAbsent || checklist != null) {
+      map['checklist'] = Variable<String>(checklist);
+    }
+    if (!nullToAbsent || generatedDocPath != null) {
+      map['generated_doc_path'] = Variable<String>(generatedDocPath);
+    }
+    if (!nullToAbsent || generatedAt != null) {
+      map['generated_at'] = Variable<DateTime>(generatedAt);
+    }
+    if (!nullToAbsent || journalEntryId != null) {
+      map['journal_entry_id'] = Variable<String>(journalEntryId);
+    }
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  ProjectStageProgressesCompanion toCompanion(bool nullToAbsent) {
+    return ProjectStageProgressesCompanion(
+      id: Value(id),
+      projectPlaybookId: Value(projectPlaybookId),
+      stageId: Value(stageId),
+      status: Value(status),
+      gateMet: Value(gateMet),
+      approvedBy: approvedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(approvedBy),
+      approvedAt: approvedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(approvedAt),
+      approvalNotes: approvalNotes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(approvalNotes),
+      evidenceFilename: evidenceFilename == null && nullToAbsent
+          ? const Value.absent()
+          : Value(evidenceFilename),
+      evidenceFilePath: evidenceFilePath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(evidenceFilePath),
+      evidenceUploadedAt: evidenceUploadedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(evidenceUploadedAt),
+      checklist: checklist == null && nullToAbsent
+          ? const Value.absent()
+          : Value(checklist),
+      generatedDocPath: generatedDocPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(generatedDocPath),
+      generatedAt: generatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(generatedAt),
+      journalEntryId: journalEntryId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(journalEntryId),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory ProjectStageProgressesData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ProjectStageProgressesData(
+      id: serializer.fromJson<String>(json['id']),
+      projectPlaybookId: serializer.fromJson<String>(json['projectPlaybookId']),
+      stageId: serializer.fromJson<String>(json['stageId']),
+      status: serializer.fromJson<String>(json['status']),
+      gateMet: serializer.fromJson<bool>(json['gateMet']),
+      approvedBy: serializer.fromJson<String?>(json['approvedBy']),
+      approvedAt: serializer.fromJson<DateTime?>(json['approvedAt']),
+      approvalNotes: serializer.fromJson<String?>(json['approvalNotes']),
+      evidenceFilename: serializer.fromJson<String?>(json['evidenceFilename']),
+      evidenceFilePath: serializer.fromJson<String?>(json['evidenceFilePath']),
+      evidenceUploadedAt: serializer.fromJson<DateTime?>(
+        json['evidenceUploadedAt'],
+      ),
+      checklist: serializer.fromJson<String?>(json['checklist']),
+      generatedDocPath: serializer.fromJson<String?>(json['generatedDocPath']),
+      generatedAt: serializer.fromJson<DateTime?>(json['generatedAt']),
+      journalEntryId: serializer.fromJson<String?>(json['journalEntryId']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'projectPlaybookId': serializer.toJson<String>(projectPlaybookId),
+      'stageId': serializer.toJson<String>(stageId),
+      'status': serializer.toJson<String>(status),
+      'gateMet': serializer.toJson<bool>(gateMet),
+      'approvedBy': serializer.toJson<String?>(approvedBy),
+      'approvedAt': serializer.toJson<DateTime?>(approvedAt),
+      'approvalNotes': serializer.toJson<String?>(approvalNotes),
+      'evidenceFilename': serializer.toJson<String?>(evidenceFilename),
+      'evidenceFilePath': serializer.toJson<String?>(evidenceFilePath),
+      'evidenceUploadedAt': serializer.toJson<DateTime?>(evidenceUploadedAt),
+      'checklist': serializer.toJson<String?>(checklist),
+      'generatedDocPath': serializer.toJson<String?>(generatedDocPath),
+      'generatedAt': serializer.toJson<DateTime?>(generatedAt),
+      'journalEntryId': serializer.toJson<String?>(journalEntryId),
+      'notes': serializer.toJson<String?>(notes),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  ProjectStageProgressesData copyWith({
+    String? id,
+    String? projectPlaybookId,
+    String? stageId,
+    String? status,
+    bool? gateMet,
+    Value<String?> approvedBy = const Value.absent(),
+    Value<DateTime?> approvedAt = const Value.absent(),
+    Value<String?> approvalNotes = const Value.absent(),
+    Value<String?> evidenceFilename = const Value.absent(),
+    Value<String?> evidenceFilePath = const Value.absent(),
+    Value<DateTime?> evidenceUploadedAt = const Value.absent(),
+    Value<String?> checklist = const Value.absent(),
+    Value<String?> generatedDocPath = const Value.absent(),
+    Value<DateTime?> generatedAt = const Value.absent(),
+    Value<String?> journalEntryId = const Value.absent(),
+    Value<String?> notes = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => ProjectStageProgressesData(
+    id: id ?? this.id,
+    projectPlaybookId: projectPlaybookId ?? this.projectPlaybookId,
+    stageId: stageId ?? this.stageId,
+    status: status ?? this.status,
+    gateMet: gateMet ?? this.gateMet,
+    approvedBy: approvedBy.present ? approvedBy.value : this.approvedBy,
+    approvedAt: approvedAt.present ? approvedAt.value : this.approvedAt,
+    approvalNotes: approvalNotes.present
+        ? approvalNotes.value
+        : this.approvalNotes,
+    evidenceFilename: evidenceFilename.present
+        ? evidenceFilename.value
+        : this.evidenceFilename,
+    evidenceFilePath: evidenceFilePath.present
+        ? evidenceFilePath.value
+        : this.evidenceFilePath,
+    evidenceUploadedAt: evidenceUploadedAt.present
+        ? evidenceUploadedAt.value
+        : this.evidenceUploadedAt,
+    checklist: checklist.present ? checklist.value : this.checklist,
+    generatedDocPath: generatedDocPath.present
+        ? generatedDocPath.value
+        : this.generatedDocPath,
+    generatedAt: generatedAt.present ? generatedAt.value : this.generatedAt,
+    journalEntryId: journalEntryId.present
+        ? journalEntryId.value
+        : this.journalEntryId,
+    notes: notes.present ? notes.value : this.notes,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  ProjectStageProgressesData copyWithCompanion(
+    ProjectStageProgressesCompanion data,
+  ) {
+    return ProjectStageProgressesData(
+      id: data.id.present ? data.id.value : this.id,
+      projectPlaybookId: data.projectPlaybookId.present
+          ? data.projectPlaybookId.value
+          : this.projectPlaybookId,
+      stageId: data.stageId.present ? data.stageId.value : this.stageId,
+      status: data.status.present ? data.status.value : this.status,
+      gateMet: data.gateMet.present ? data.gateMet.value : this.gateMet,
+      approvedBy: data.approvedBy.present
+          ? data.approvedBy.value
+          : this.approvedBy,
+      approvedAt: data.approvedAt.present
+          ? data.approvedAt.value
+          : this.approvedAt,
+      approvalNotes: data.approvalNotes.present
+          ? data.approvalNotes.value
+          : this.approvalNotes,
+      evidenceFilename: data.evidenceFilename.present
+          ? data.evidenceFilename.value
+          : this.evidenceFilename,
+      evidenceFilePath: data.evidenceFilePath.present
+          ? data.evidenceFilePath.value
+          : this.evidenceFilePath,
+      evidenceUploadedAt: data.evidenceUploadedAt.present
+          ? data.evidenceUploadedAt.value
+          : this.evidenceUploadedAt,
+      checklist: data.checklist.present ? data.checklist.value : this.checklist,
+      generatedDocPath: data.generatedDocPath.present
+          ? data.generatedDocPath.value
+          : this.generatedDocPath,
+      generatedAt: data.generatedAt.present
+          ? data.generatedAt.value
+          : this.generatedAt,
+      journalEntryId: data.journalEntryId.present
+          ? data.journalEntryId.value
+          : this.journalEntryId,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProjectStageProgressesData(')
+          ..write('id: $id, ')
+          ..write('projectPlaybookId: $projectPlaybookId, ')
+          ..write('stageId: $stageId, ')
+          ..write('status: $status, ')
+          ..write('gateMet: $gateMet, ')
+          ..write('approvedBy: $approvedBy, ')
+          ..write('approvedAt: $approvedAt, ')
+          ..write('approvalNotes: $approvalNotes, ')
+          ..write('evidenceFilename: $evidenceFilename, ')
+          ..write('evidenceFilePath: $evidenceFilePath, ')
+          ..write('evidenceUploadedAt: $evidenceUploadedAt, ')
+          ..write('checklist: $checklist, ')
+          ..write('generatedDocPath: $generatedDocPath, ')
+          ..write('generatedAt: $generatedAt, ')
+          ..write('journalEntryId: $journalEntryId, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    projectPlaybookId,
+    stageId,
+    status,
+    gateMet,
+    approvedBy,
+    approvedAt,
+    approvalNotes,
+    evidenceFilename,
+    evidenceFilePath,
+    evidenceUploadedAt,
+    checklist,
+    generatedDocPath,
+    generatedAt,
+    journalEntryId,
+    notes,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ProjectStageProgressesData &&
+          other.id == this.id &&
+          other.projectPlaybookId == this.projectPlaybookId &&
+          other.stageId == this.stageId &&
+          other.status == this.status &&
+          other.gateMet == this.gateMet &&
+          other.approvedBy == this.approvedBy &&
+          other.approvedAt == this.approvedAt &&
+          other.approvalNotes == this.approvalNotes &&
+          other.evidenceFilename == this.evidenceFilename &&
+          other.evidenceFilePath == this.evidenceFilePath &&
+          other.evidenceUploadedAt == this.evidenceUploadedAt &&
+          other.checklist == this.checklist &&
+          other.generatedDocPath == this.generatedDocPath &&
+          other.generatedAt == this.generatedAt &&
+          other.journalEntryId == this.journalEntryId &&
+          other.notes == this.notes &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class ProjectStageProgressesCompanion
+    extends UpdateCompanion<ProjectStageProgressesData> {
+  final Value<String> id;
+  final Value<String> projectPlaybookId;
+  final Value<String> stageId;
+  final Value<String> status;
+  final Value<bool> gateMet;
+  final Value<String?> approvedBy;
+  final Value<DateTime?> approvedAt;
+  final Value<String?> approvalNotes;
+  final Value<String?> evidenceFilename;
+  final Value<String?> evidenceFilePath;
+  final Value<DateTime?> evidenceUploadedAt;
+  final Value<String?> checklist;
+  final Value<String?> generatedDocPath;
+  final Value<DateTime?> generatedAt;
+  final Value<String?> journalEntryId;
+  final Value<String?> notes;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const ProjectStageProgressesCompanion({
+    this.id = const Value.absent(),
+    this.projectPlaybookId = const Value.absent(),
+    this.stageId = const Value.absent(),
+    this.status = const Value.absent(),
+    this.gateMet = const Value.absent(),
+    this.approvedBy = const Value.absent(),
+    this.approvedAt = const Value.absent(),
+    this.approvalNotes = const Value.absent(),
+    this.evidenceFilename = const Value.absent(),
+    this.evidenceFilePath = const Value.absent(),
+    this.evidenceUploadedAt = const Value.absent(),
+    this.checklist = const Value.absent(),
+    this.generatedDocPath = const Value.absent(),
+    this.generatedAt = const Value.absent(),
+    this.journalEntryId = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ProjectStageProgressesCompanion.insert({
+    required String id,
+    required String projectPlaybookId,
+    required String stageId,
+    this.status = const Value.absent(),
+    this.gateMet = const Value.absent(),
+    this.approvedBy = const Value.absent(),
+    this.approvedAt = const Value.absent(),
+    this.approvalNotes = const Value.absent(),
+    this.evidenceFilename = const Value.absent(),
+    this.evidenceFilePath = const Value.absent(),
+    this.evidenceUploadedAt = const Value.absent(),
+    this.checklist = const Value.absent(),
+    this.generatedDocPath = const Value.absent(),
+    this.generatedAt = const Value.absent(),
+    this.journalEntryId = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       projectPlaybookId = Value(projectPlaybookId),
+       stageId = Value(stageId);
+  static Insertable<ProjectStageProgressesData> custom({
+    Expression<String>? id,
+    Expression<String>? projectPlaybookId,
+    Expression<String>? stageId,
+    Expression<String>? status,
+    Expression<bool>? gateMet,
+    Expression<String>? approvedBy,
+    Expression<DateTime>? approvedAt,
+    Expression<String>? approvalNotes,
+    Expression<String>? evidenceFilename,
+    Expression<String>? evidenceFilePath,
+    Expression<DateTime>? evidenceUploadedAt,
+    Expression<String>? checklist,
+    Expression<String>? generatedDocPath,
+    Expression<DateTime>? generatedAt,
+    Expression<String>? journalEntryId,
+    Expression<String>? notes,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (projectPlaybookId != null) 'project_playbook_id': projectPlaybookId,
+      if (stageId != null) 'stage_id': stageId,
+      if (status != null) 'status': status,
+      if (gateMet != null) 'gate_met': gateMet,
+      if (approvedBy != null) 'approved_by': approvedBy,
+      if (approvedAt != null) 'approved_at': approvedAt,
+      if (approvalNotes != null) 'approval_notes': approvalNotes,
+      if (evidenceFilename != null) 'evidence_filename': evidenceFilename,
+      if (evidenceFilePath != null) 'evidence_file_path': evidenceFilePath,
+      if (evidenceUploadedAt != null)
+        'evidence_uploaded_at': evidenceUploadedAt,
+      if (checklist != null) 'checklist': checklist,
+      if (generatedDocPath != null) 'generated_doc_path': generatedDocPath,
+      if (generatedAt != null) 'generated_at': generatedAt,
+      if (journalEntryId != null) 'journal_entry_id': journalEntryId,
+      if (notes != null) 'notes': notes,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ProjectStageProgressesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? projectPlaybookId,
+    Value<String>? stageId,
+    Value<String>? status,
+    Value<bool>? gateMet,
+    Value<String?>? approvedBy,
+    Value<DateTime?>? approvedAt,
+    Value<String?>? approvalNotes,
+    Value<String?>? evidenceFilename,
+    Value<String?>? evidenceFilePath,
+    Value<DateTime?>? evidenceUploadedAt,
+    Value<String?>? checklist,
+    Value<String?>? generatedDocPath,
+    Value<DateTime?>? generatedAt,
+    Value<String?>? journalEntryId,
+    Value<String?>? notes,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return ProjectStageProgressesCompanion(
+      id: id ?? this.id,
+      projectPlaybookId: projectPlaybookId ?? this.projectPlaybookId,
+      stageId: stageId ?? this.stageId,
+      status: status ?? this.status,
+      gateMet: gateMet ?? this.gateMet,
+      approvedBy: approvedBy ?? this.approvedBy,
+      approvedAt: approvedAt ?? this.approvedAt,
+      approvalNotes: approvalNotes ?? this.approvalNotes,
+      evidenceFilename: evidenceFilename ?? this.evidenceFilename,
+      evidenceFilePath: evidenceFilePath ?? this.evidenceFilePath,
+      evidenceUploadedAt: evidenceUploadedAt ?? this.evidenceUploadedAt,
+      checklist: checklist ?? this.checklist,
+      generatedDocPath: generatedDocPath ?? this.generatedDocPath,
+      generatedAt: generatedAt ?? this.generatedAt,
+      journalEntryId: journalEntryId ?? this.journalEntryId,
+      notes: notes ?? this.notes,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (projectPlaybookId.present) {
+      map['project_playbook_id'] = Variable<String>(projectPlaybookId.value);
+    }
+    if (stageId.present) {
+      map['stage_id'] = Variable<String>(stageId.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (gateMet.present) {
+      map['gate_met'] = Variable<bool>(gateMet.value);
+    }
+    if (approvedBy.present) {
+      map['approved_by'] = Variable<String>(approvedBy.value);
+    }
+    if (approvedAt.present) {
+      map['approved_at'] = Variable<DateTime>(approvedAt.value);
+    }
+    if (approvalNotes.present) {
+      map['approval_notes'] = Variable<String>(approvalNotes.value);
+    }
+    if (evidenceFilename.present) {
+      map['evidence_filename'] = Variable<String>(evidenceFilename.value);
+    }
+    if (evidenceFilePath.present) {
+      map['evidence_file_path'] = Variable<String>(evidenceFilePath.value);
+    }
+    if (evidenceUploadedAt.present) {
+      map['evidence_uploaded_at'] = Variable<DateTime>(
+        evidenceUploadedAt.value,
+      );
+    }
+    if (checklist.present) {
+      map['checklist'] = Variable<String>(checklist.value);
+    }
+    if (generatedDocPath.present) {
+      map['generated_doc_path'] = Variable<String>(generatedDocPath.value);
+    }
+    if (generatedAt.present) {
+      map['generated_at'] = Variable<DateTime>(generatedAt.value);
+    }
+    if (journalEntryId.present) {
+      map['journal_entry_id'] = Variable<String>(journalEntryId.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProjectStageProgressesCompanion(')
+          ..write('id: $id, ')
+          ..write('projectPlaybookId: $projectPlaybookId, ')
+          ..write('stageId: $stageId, ')
+          ..write('status: $status, ')
+          ..write('gateMet: $gateMet, ')
+          ..write('approvedBy: $approvedBy, ')
+          ..write('approvedAt: $approvedAt, ')
+          ..write('approvalNotes: $approvalNotes, ')
+          ..write('evidenceFilename: $evidenceFilename, ')
+          ..write('evidenceFilePath: $evidenceFilePath, ')
+          ..write('evidenceUploadedAt: $evidenceUploadedAt, ')
+          ..write('checklist: $checklist, ')
+          ..write('generatedDocPath: $generatedDocPath, ')
+          ..write('generatedAt: $generatedAt, ')
+          ..write('journalEntryId: $journalEntryId, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -13269,6 +17406,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $StakeholderProfilesTable(this);
   late final $ColleagueProfilesTable colleagueProfiles =
       $ColleagueProfilesTable(this);
+  late final $ActionCategoriesTable actionCategories = $ActionCategoriesTable(
+    this,
+  );
   late final $ProjectActionsTable projectActions = $ProjectActionsTable(this);
   late final $InboxItemsTable inboxItems = $InboxItemsTable(this);
   late final $ContextEntriesTable contextEntries = $ContextEntriesTable(this);
@@ -13280,11 +17420,23 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $JournalEntriesTable journalEntries = $JournalEntriesTable(this);
   late final $JournalEntryLinksTable journalEntryLinks =
       $JournalEntryLinksTable(this);
+  late final $OrganisationsTable organisations = $OrganisationsTable(this);
+  late final $PlaybooksTable playbooks = $PlaybooksTable(this);
+  late final $PlaybookStagesTable playbookStages = $PlaybookStagesTable(this);
+  late final $StageTemplatesTable stageTemplates = $StageTemplatesTable(this);
+  late final $ProjectPlaybooksTable projectPlaybooks = $ProjectPlaybooksTable(
+    this,
+  );
+  late final $ProjectStageProgressesTable projectStageProgresses =
+      $ProjectStageProgressesTable(this);
   late final ProjectDao projectDao = ProjectDao(this as AppDatabase);
   late final ProgrammeDao programmeDao = ProgrammeDao(this as AppDatabase);
   late final RaidDao raidDao = RaidDao(this as AppDatabase);
   late final DecisionsDao decisionsDao = DecisionsDao(this as AppDatabase);
   late final PeopleDao peopleDao = PeopleDao(this as AppDatabase);
+  late final ActionCategoriesDao actionCategoriesDao = ActionCategoriesDao(
+    this as AppDatabase,
+  );
   late final ActionsDao actionsDao = ActionsDao(this as AppDatabase);
   late final InboxDao inboxDao = InboxDao(this as AppDatabase);
   late final ContextDao contextDao = ContextDao(this as AppDatabase);
@@ -13294,6 +17446,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final WorkstreamsDao workstreamsDao = WorkstreamsDao(
     this as AppDatabase,
   );
+  late final PlaybookDao playbookDao = PlaybookDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -13312,6 +17465,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     persons,
     stakeholderProfiles,
     colleagueProfiles,
+    actionCategories,
     projectActions,
     inboxItems,
     contextEntries,
@@ -13320,6 +17474,12 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     statusReports,
     journalEntries,
     journalEntryLinks,
+    organisations,
+    playbooks,
+    playbookStages,
+    stageTemplates,
+    projectPlaybooks,
+    projectStageProgresses,
   ];
 }
 
@@ -13607,6 +17767,29 @@ final class $$ProjectsTableReferences
     );
   }
 
+  static MultiTypedResultKey<$ActionCategoriesTable, List<ActionCategory>>
+  _actionCategoriesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.actionCategories,
+    aliasName: $_aliasNameGenerator(
+      db.projects.id,
+      db.actionCategories.projectId,
+    ),
+  );
+
+  $$ActionCategoriesTableProcessedTableManager get actionCategoriesRefs {
+    final manager = $$ActionCategoriesTableTableManager(
+      $_db,
+      $_db.actionCategories,
+    ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _actionCategoriesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
   static MultiTypedResultKey<$ProjectActionsTable, List<ProjectAction>>
   _projectActionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.projectActions,
@@ -13742,6 +17925,29 @@ final class $$ProjectsTableReferences
     ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_journalEntriesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$ProjectPlaybooksTable, List<ProjectPlaybook>>
+  _projectPlaybooksRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.projectPlaybooks,
+    aliasName: $_aliasNameGenerator(
+      db.projects.id,
+      db.projectPlaybooks.projectId,
+    ),
+  );
+
+  $$ProjectPlaybooksTableProcessedTableManager get projectPlaybooksRefs {
+    final manager = $$ProjectPlaybooksTableTableManager(
+      $_db,
+      $_db.projectPlaybooks,
+    ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _projectPlaybooksRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -14092,6 +18298,31 @@ class $$ProjectsTableFilterComposer
     return f(composer);
   }
 
+  Expression<bool> actionCategoriesRefs(
+    Expression<bool> Function($$ActionCategoriesTableFilterComposer f) f,
+  ) {
+    final $$ActionCategoriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.actionCategories,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ActionCategoriesTableFilterComposer(
+            $db: $db,
+            $table: $db.actionCategories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<bool> projectActionsRefs(
     Expression<bool> Function($$ProjectActionsTableFilterComposer f) f,
   ) {
@@ -14258,6 +18489,31 @@ class $$ProjectsTableFilterComposer
           }) => $$JournalEntriesTableFilterComposer(
             $db: $db,
             $table: $db.journalEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> projectPlaybooksRefs(
+    Expression<bool> Function($$ProjectPlaybooksTableFilterComposer f) f,
+  ) {
+    final $$ProjectPlaybooksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.projectPlaybooks,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectPlaybooksTableFilterComposer(
+            $db: $db,
+            $table: $db.projectPlaybooks,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -14650,6 +18906,31 @@ class $$ProjectsTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> actionCategoriesRefs<T extends Object>(
+    Expression<T> Function($$ActionCategoriesTableAnnotationComposer a) f,
+  ) {
+    final $$ActionCategoriesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.actionCategories,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ActionCategoriesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.actionCategories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> projectActionsRefs<T extends Object>(
     Expression<T> Function($$ProjectActionsTableAnnotationComposer a) f,
   ) {
@@ -14824,6 +19105,31 @@ class $$ProjectsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> projectPlaybooksRefs<T extends Object>(
+    Expression<T> Function($$ProjectPlaybooksTableAnnotationComposer a) f,
+  ) {
+    final $$ProjectPlaybooksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.projectPlaybooks,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectPlaybooksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.projectPlaybooks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$ProjectsTableTableManager
@@ -14852,6 +19158,7 @@ class $$ProjectsTableTableManager
             bool personsRefs,
             bool stakeholderProfilesRefs,
             bool colleagueProfilesRefs,
+            bool actionCategoriesRefs,
             bool projectActionsRefs,
             bool inboxItemsRefs,
             bool contextEntriesRefs,
@@ -14859,6 +19166,7 @@ class $$ProjectsTableTableManager
             bool documentsRefs,
             bool statusReportsRefs,
             bool journalEntriesRefs,
+            bool projectPlaybooksRefs,
           })
         > {
   $$ProjectsTableTableManager(_$AppDatabase db, $ProjectsTable table)
@@ -14934,6 +19242,7 @@ class $$ProjectsTableTableManager
                 personsRefs = false,
                 stakeholderProfilesRefs = false,
                 colleagueProfilesRefs = false,
+                actionCategoriesRefs = false,
                 projectActionsRefs = false,
                 inboxItemsRefs = false,
                 contextEntriesRefs = false,
@@ -14941,6 +19250,7 @@ class $$ProjectsTableTableManager
                 documentsRefs = false,
                 statusReportsRefs = false,
                 journalEntriesRefs = false,
+                projectPlaybooksRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -14957,6 +19267,7 @@ class $$ProjectsTableTableManager
                     if (personsRefs) db.persons,
                     if (stakeholderProfilesRefs) db.stakeholderProfiles,
                     if (colleagueProfilesRefs) db.colleagueProfiles,
+                    if (actionCategoriesRefs) db.actionCategories,
                     if (projectActionsRefs) db.projectActions,
                     if (inboxItemsRefs) db.inboxItems,
                     if (contextEntriesRefs) db.contextEntries,
@@ -14964,6 +19275,7 @@ class $$ProjectsTableTableManager
                     if (documentsRefs) db.documents,
                     if (statusReportsRefs) db.statusReports,
                     if (journalEntriesRefs) db.journalEntries,
+                    if (projectPlaybooksRefs) db.projectPlaybooks,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -15220,6 +19532,27 @@ class $$ProjectsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (actionCategoriesRefs)
+                        await $_getPrefetchedData<
+                          Project,
+                          $ProjectsTable,
+                          ActionCategory
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProjectsTableReferences
+                              ._actionCategoriesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).actionCategoriesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.projectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (projectActionsRefs)
                         await $_getPrefetchedData<
                           Project,
@@ -15367,6 +19700,27 @@ class $$ProjectsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (projectPlaybooksRefs)
+                        await $_getPrefetchedData<
+                          Project,
+                          $ProjectsTable,
+                          ProjectPlaybook
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProjectsTableReferences
+                              ._projectPlaybooksRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).projectPlaybooksRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.projectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -15400,6 +19754,7 @@ typedef $$ProjectsTableProcessedTableManager =
         bool personsRefs,
         bool stakeholderProfilesRefs,
         bool colleagueProfilesRefs,
+        bool actionCategoriesRefs,
         bool projectActionsRefs,
         bool inboxItemsRefs,
         bool contextEntriesRefs,
@@ -15407,6 +19762,7 @@ typedef $$ProjectsTableProcessedTableManager =
         bool documentsRefs,
         bool statusReportsRefs,
         bool journalEntriesRefs,
+        bool projectPlaybooksRefs,
       })
     >;
 typedef $$ProgrammeOverviewsTableCreateCompanionBuilder =
@@ -21139,6 +25495,353 @@ typedef $$ColleagueProfilesTableProcessedTableManager =
       ColleagueProfile,
       PrefetchHooks Function({bool projectId, bool personId})
     >;
+typedef $$ActionCategoriesTableCreateCompanionBuilder =
+    ActionCategoriesCompanion Function({
+      required String id,
+      required String projectId,
+      required String name,
+      required String color,
+      Value<bool> isPreset,
+      Value<int> sortOrder,
+      Value<int> rowid,
+    });
+typedef $$ActionCategoriesTableUpdateCompanionBuilder =
+    ActionCategoriesCompanion Function({
+      Value<String> id,
+      Value<String> projectId,
+      Value<String> name,
+      Value<String> color,
+      Value<bool> isPreset,
+      Value<int> sortOrder,
+      Value<int> rowid,
+    });
+
+final class $$ActionCategoriesTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $ActionCategoriesTable, ActionCategory> {
+  $$ActionCategoriesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ProjectsTable _projectIdTable(_$AppDatabase db) =>
+      db.projects.createAlias(
+        $_aliasNameGenerator(db.actionCategories.projectId, db.projects.id),
+      );
+
+  $$ProjectsTableProcessedTableManager get projectId {
+    final $_column = $_itemColumn<String>('project_id')!;
+
+    final manager = $$ProjectsTableTableManager(
+      $_db,
+      $_db.projects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_projectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ActionCategoriesTableFilterComposer
+    extends Composer<_$AppDatabase, $ActionCategoriesTable> {
+  $$ActionCategoriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get color => $composableBuilder(
+    column: $table.color,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isPreset => $composableBuilder(
+    column: $table.isPreset,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ProjectsTableFilterComposer get projectId {
+    final $$ProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ActionCategoriesTableOrderingComposer
+    extends Composer<_$AppDatabase, $ActionCategoriesTable> {
+  $$ActionCategoriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get color => $composableBuilder(
+    column: $table.color,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isPreset => $composableBuilder(
+    column: $table.isPreset,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ProjectsTableOrderingComposer get projectId {
+    final $$ProjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ActionCategoriesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ActionCategoriesTable> {
+  $$ActionCategoriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get color =>
+      $composableBuilder(column: $table.color, builder: (column) => column);
+
+  GeneratedColumn<bool> get isPreset =>
+      $composableBuilder(column: $table.isPreset, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  $$ProjectsTableAnnotationComposer get projectId {
+    final $$ProjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ActionCategoriesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ActionCategoriesTable,
+          ActionCategory,
+          $$ActionCategoriesTableFilterComposer,
+          $$ActionCategoriesTableOrderingComposer,
+          $$ActionCategoriesTableAnnotationComposer,
+          $$ActionCategoriesTableCreateCompanionBuilder,
+          $$ActionCategoriesTableUpdateCompanionBuilder,
+          (ActionCategory, $$ActionCategoriesTableReferences),
+          ActionCategory,
+          PrefetchHooks Function({bool projectId})
+        > {
+  $$ActionCategoriesTableTableManager(
+    _$AppDatabase db,
+    $ActionCategoriesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ActionCategoriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ActionCategoriesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ActionCategoriesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> projectId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> color = const Value.absent(),
+                Value<bool> isPreset = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ActionCategoriesCompanion(
+                id: id,
+                projectId: projectId,
+                name: name,
+                color: color,
+                isPreset: isPreset,
+                sortOrder: sortOrder,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String projectId,
+                required String name,
+                required String color,
+                Value<bool> isPreset = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ActionCategoriesCompanion.insert(
+                id: id,
+                projectId: projectId,
+                name: name,
+                color: color,
+                isPreset: isPreset,
+                sortOrder: sortOrder,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ActionCategoriesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({projectId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (projectId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.projectId,
+                                referencedTable:
+                                    $$ActionCategoriesTableReferences
+                                        ._projectIdTable(db),
+                                referencedColumn:
+                                    $$ActionCategoriesTableReferences
+                                        ._projectIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ActionCategoriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ActionCategoriesTable,
+      ActionCategory,
+      $$ActionCategoriesTableFilterComposer,
+      $$ActionCategoriesTableOrderingComposer,
+      $$ActionCategoriesTableAnnotationComposer,
+      $$ActionCategoriesTableCreateCompanionBuilder,
+      $$ActionCategoriesTableUpdateCompanionBuilder,
+      (ActionCategory, $$ActionCategoriesTableReferences),
+      ActionCategory,
+      PrefetchHooks Function({bool projectId})
+    >;
 typedef $$ProjectActionsTableCreateCompanionBuilder =
     ProjectActionsCompanion Function({
       required String id,
@@ -21151,6 +25854,10 @@ typedef $$ProjectActionsTableCreateCompanionBuilder =
       Value<String> priority,
       Value<String> source,
       Value<String?> sourceNote,
+      Value<String?> outcome,
+      Value<String?> categoryId,
+      Value<String?> recurrenceGroupId,
+      Value<String?> linkedActionId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -21167,6 +25874,10 @@ typedef $$ProjectActionsTableUpdateCompanionBuilder =
       Value<String> priority,
       Value<String> source,
       Value<String?> sourceNote,
+      Value<String?> outcome,
+      Value<String?> categoryId,
+      Value<String?> recurrenceGroupId,
+      Value<String?> linkedActionId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -21251,6 +25962,26 @@ class $$ProjectActionsTableFilterComposer
 
   ColumnFilters<String> get sourceNote => $composableBuilder(
     column: $table.sourceNote,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get outcome => $composableBuilder(
+    column: $table.outcome,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get categoryId => $composableBuilder(
+    column: $table.categoryId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get recurrenceGroupId => $composableBuilder(
+    column: $table.recurrenceGroupId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get linkedActionId => $composableBuilder(
+    column: $table.linkedActionId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -21342,6 +26073,26 @@ class $$ProjectActionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get outcome => $composableBuilder(
+    column: $table.outcome,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get categoryId => $composableBuilder(
+    column: $table.categoryId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get recurrenceGroupId => $composableBuilder(
+    column: $table.recurrenceGroupId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get linkedActionId => $composableBuilder(
+    column: $table.linkedActionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -21416,6 +26167,24 @@ class $$ProjectActionsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get outcome =>
+      $composableBuilder(column: $table.outcome, builder: (column) => column);
+
+  GeneratedColumn<String> get categoryId => $composableBuilder(
+    column: $table.categoryId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get recurrenceGroupId => $composableBuilder(
+    column: $table.recurrenceGroupId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get linkedActionId => $composableBuilder(
+    column: $table.linkedActionId,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -21486,6 +26255,10 @@ class $$ProjectActionsTableTableManager
                 Value<String> priority = const Value.absent(),
                 Value<String> source = const Value.absent(),
                 Value<String?> sourceNote = const Value.absent(),
+                Value<String?> outcome = const Value.absent(),
+                Value<String?> categoryId = const Value.absent(),
+                Value<String?> recurrenceGroupId = const Value.absent(),
+                Value<String?> linkedActionId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -21500,6 +26273,10 @@ class $$ProjectActionsTableTableManager
                 priority: priority,
                 source: source,
                 sourceNote: sourceNote,
+                outcome: outcome,
+                categoryId: categoryId,
+                recurrenceGroupId: recurrenceGroupId,
+                linkedActionId: linkedActionId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -21516,6 +26293,10 @@ class $$ProjectActionsTableTableManager
                 Value<String> priority = const Value.absent(),
                 Value<String> source = const Value.absent(),
                 Value<String?> sourceNote = const Value.absent(),
+                Value<String?> outcome = const Value.absent(),
+                Value<String?> categoryId = const Value.absent(),
+                Value<String?> recurrenceGroupId = const Value.absent(),
+                Value<String?> linkedActionId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -21530,6 +26311,10 @@ class $$ProjectActionsTableTableManager
                 priority: priority,
                 source: source,
                 sourceNote: sourceNote,
+                outcome: outcome,
+                categoryId: categoryId,
+                recurrenceGroupId: recurrenceGroupId,
+                linkedActionId: linkedActionId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -24631,6 +29416,3188 @@ typedef $$JournalEntryLinksTableProcessedTableManager =
       JournalEntryLink,
       PrefetchHooks Function({bool entryId})
     >;
+typedef $$OrganisationsTableCreateCompanionBuilder =
+    OrganisationsCompanion Function({
+      required String id,
+      required String name,
+      Value<String?> shortName,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$OrganisationsTableUpdateCompanionBuilder =
+    OrganisationsCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<String?> shortName,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$OrganisationsTableReferences
+    extends BaseReferences<_$AppDatabase, $OrganisationsTable, Organisation> {
+  $$OrganisationsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static MultiTypedResultKey<$PlaybooksTable, List<Playbook>>
+  _playbooksRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.playbooks,
+    aliasName: $_aliasNameGenerator(
+      db.organisations.id,
+      db.playbooks.organisationId,
+    ),
+  );
+
+  $$PlaybooksTableProcessedTableManager get playbooksRefs {
+    final manager = $$PlaybooksTableTableManager(
+      $_db,
+      $_db.playbooks,
+    ).filter((f) => f.organisationId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_playbooksRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$OrganisationsTableFilterComposer
+    extends Composer<_$AppDatabase, $OrganisationsTable> {
+  $$OrganisationsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get shortName => $composableBuilder(
+    column: $table.shortName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> playbooksRefs(
+    Expression<bool> Function($$PlaybooksTableFilterComposer f) f,
+  ) {
+    final $$PlaybooksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.playbooks,
+      getReferencedColumn: (t) => t.organisationId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlaybooksTableFilterComposer(
+            $db: $db,
+            $table: $db.playbooks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$OrganisationsTableOrderingComposer
+    extends Composer<_$AppDatabase, $OrganisationsTable> {
+  $$OrganisationsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get shortName => $composableBuilder(
+    column: $table.shortName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$OrganisationsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $OrganisationsTable> {
+  $$OrganisationsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get shortName =>
+      $composableBuilder(column: $table.shortName, builder: (column) => column);
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  Expression<T> playbooksRefs<T extends Object>(
+    Expression<T> Function($$PlaybooksTableAnnotationComposer a) f,
+  ) {
+    final $$PlaybooksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.playbooks,
+      getReferencedColumn: (t) => t.organisationId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlaybooksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.playbooks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$OrganisationsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $OrganisationsTable,
+          Organisation,
+          $$OrganisationsTableFilterComposer,
+          $$OrganisationsTableOrderingComposer,
+          $$OrganisationsTableAnnotationComposer,
+          $$OrganisationsTableCreateCompanionBuilder,
+          $$OrganisationsTableUpdateCompanionBuilder,
+          (Organisation, $$OrganisationsTableReferences),
+          Organisation,
+          PrefetchHooks Function({bool playbooksRefs})
+        > {
+  $$OrganisationsTableTableManager(_$AppDatabase db, $OrganisationsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$OrganisationsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$OrganisationsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$OrganisationsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> shortName = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => OrganisationsCompanion(
+                id: id,
+                name: name,
+                shortName: shortName,
+                notes: notes,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                Value<String?> shortName = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => OrganisationsCompanion.insert(
+                id: id,
+                name: name,
+                shortName: shortName,
+                notes: notes,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$OrganisationsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({playbooksRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (playbooksRefs) db.playbooks],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (playbooksRefs)
+                    await $_getPrefetchedData<
+                      Organisation,
+                      $OrganisationsTable,
+                      Playbook
+                    >(
+                      currentTable: table,
+                      referencedTable: $$OrganisationsTableReferences
+                          ._playbooksRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$OrganisationsTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).playbooksRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where(
+                            (e) => e.organisationId == item.id,
+                          ),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$OrganisationsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $OrganisationsTable,
+      Organisation,
+      $$OrganisationsTableFilterComposer,
+      $$OrganisationsTableOrderingComposer,
+      $$OrganisationsTableAnnotationComposer,
+      $$OrganisationsTableCreateCompanionBuilder,
+      $$OrganisationsTableUpdateCompanionBuilder,
+      (Organisation, $$OrganisationsTableReferences),
+      Organisation,
+      PrefetchHooks Function({bool playbooksRefs})
+    >;
+typedef $$PlaybooksTableCreateCompanionBuilder =
+    PlaybooksCompanion Function({
+      required String id,
+      required String organisationId,
+      required String name,
+      Value<String?> description,
+      Value<String?> version,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$PlaybooksTableUpdateCompanionBuilder =
+    PlaybooksCompanion Function({
+      Value<String> id,
+      Value<String> organisationId,
+      Value<String> name,
+      Value<String?> description,
+      Value<String?> version,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$PlaybooksTableReferences
+    extends BaseReferences<_$AppDatabase, $PlaybooksTable, Playbook> {
+  $$PlaybooksTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $OrganisationsTable _organisationIdTable(_$AppDatabase db) =>
+      db.organisations.createAlias(
+        $_aliasNameGenerator(db.playbooks.organisationId, db.organisations.id),
+      );
+
+  $$OrganisationsTableProcessedTableManager get organisationId {
+    final $_column = $_itemColumn<String>('organisation_id')!;
+
+    final manager = $$OrganisationsTableTableManager(
+      $_db,
+      $_db.organisations,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_organisationIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$PlaybookStagesTable, List<PlaybookStage>>
+  _playbookStagesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.playbookStages,
+    aliasName: $_aliasNameGenerator(
+      db.playbooks.id,
+      db.playbookStages.playbookId,
+    ),
+  );
+
+  $$PlaybookStagesTableProcessedTableManager get playbookStagesRefs {
+    final manager = $$PlaybookStagesTableTableManager(
+      $_db,
+      $_db.playbookStages,
+    ).filter((f) => f.playbookId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_playbookStagesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$ProjectPlaybooksTable, List<ProjectPlaybook>>
+  _projectPlaybooksRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.projectPlaybooks,
+    aliasName: $_aliasNameGenerator(
+      db.playbooks.id,
+      db.projectPlaybooks.playbookId,
+    ),
+  );
+
+  $$ProjectPlaybooksTableProcessedTableManager get projectPlaybooksRefs {
+    final manager = $$ProjectPlaybooksTableTableManager(
+      $_db,
+      $_db.projectPlaybooks,
+    ).filter((f) => f.playbookId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _projectPlaybooksRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$PlaybooksTableFilterComposer
+    extends Composer<_$AppDatabase, $PlaybooksTable> {
+  $$PlaybooksTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get version => $composableBuilder(
+    column: $table.version,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$OrganisationsTableFilterComposer get organisationId {
+    final $$OrganisationsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.organisationId,
+      referencedTable: $db.organisations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$OrganisationsTableFilterComposer(
+            $db: $db,
+            $table: $db.organisations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> playbookStagesRefs(
+    Expression<bool> Function($$PlaybookStagesTableFilterComposer f) f,
+  ) {
+    final $$PlaybookStagesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.playbookStages,
+      getReferencedColumn: (t) => t.playbookId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlaybookStagesTableFilterComposer(
+            $db: $db,
+            $table: $db.playbookStages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> projectPlaybooksRefs(
+    Expression<bool> Function($$ProjectPlaybooksTableFilterComposer f) f,
+  ) {
+    final $$ProjectPlaybooksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.projectPlaybooks,
+      getReferencedColumn: (t) => t.playbookId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectPlaybooksTableFilterComposer(
+            $db: $db,
+            $table: $db.projectPlaybooks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$PlaybooksTableOrderingComposer
+    extends Composer<_$AppDatabase, $PlaybooksTable> {
+  $$PlaybooksTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get version => $composableBuilder(
+    column: $table.version,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$OrganisationsTableOrderingComposer get organisationId {
+    final $$OrganisationsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.organisationId,
+      referencedTable: $db.organisations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$OrganisationsTableOrderingComposer(
+            $db: $db,
+            $table: $db.organisations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PlaybooksTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PlaybooksTable> {
+  $$PlaybooksTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$OrganisationsTableAnnotationComposer get organisationId {
+    final $$OrganisationsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.organisationId,
+      referencedTable: $db.organisations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$OrganisationsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.organisations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> playbookStagesRefs<T extends Object>(
+    Expression<T> Function($$PlaybookStagesTableAnnotationComposer a) f,
+  ) {
+    final $$PlaybookStagesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.playbookStages,
+      getReferencedColumn: (t) => t.playbookId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlaybookStagesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.playbookStages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> projectPlaybooksRefs<T extends Object>(
+    Expression<T> Function($$ProjectPlaybooksTableAnnotationComposer a) f,
+  ) {
+    final $$ProjectPlaybooksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.projectPlaybooks,
+      getReferencedColumn: (t) => t.playbookId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectPlaybooksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.projectPlaybooks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$PlaybooksTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PlaybooksTable,
+          Playbook,
+          $$PlaybooksTableFilterComposer,
+          $$PlaybooksTableOrderingComposer,
+          $$PlaybooksTableAnnotationComposer,
+          $$PlaybooksTableCreateCompanionBuilder,
+          $$PlaybooksTableUpdateCompanionBuilder,
+          (Playbook, $$PlaybooksTableReferences),
+          Playbook,
+          PrefetchHooks Function({
+            bool organisationId,
+            bool playbookStagesRefs,
+            bool projectPlaybooksRefs,
+          })
+        > {
+  $$PlaybooksTableTableManager(_$AppDatabase db, $PlaybooksTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PlaybooksTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PlaybooksTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PlaybooksTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> organisationId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> description = const Value.absent(),
+                Value<String?> version = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PlaybooksCompanion(
+                id: id,
+                organisationId: organisationId,
+                name: name,
+                description: description,
+                version: version,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String organisationId,
+                required String name,
+                Value<String?> description = const Value.absent(),
+                Value<String?> version = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PlaybooksCompanion.insert(
+                id: id,
+                organisationId: organisationId,
+                name: name,
+                description: description,
+                version: version,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$PlaybooksTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                organisationId = false,
+                playbookStagesRefs = false,
+                projectPlaybooksRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (playbookStagesRefs) db.playbookStages,
+                    if (projectPlaybooksRefs) db.projectPlaybooks,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (organisationId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.organisationId,
+                                    referencedTable: $$PlaybooksTableReferences
+                                        ._organisationIdTable(db),
+                                    referencedColumn: $$PlaybooksTableReferences
+                                        ._organisationIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (playbookStagesRefs)
+                        await $_getPrefetchedData<
+                          Playbook,
+                          $PlaybooksTable,
+                          PlaybookStage
+                        >(
+                          currentTable: table,
+                          referencedTable: $$PlaybooksTableReferences
+                              ._playbookStagesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$PlaybooksTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).playbookStagesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.playbookId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (projectPlaybooksRefs)
+                        await $_getPrefetchedData<
+                          Playbook,
+                          $PlaybooksTable,
+                          ProjectPlaybook
+                        >(
+                          currentTable: table,
+                          referencedTable: $$PlaybooksTableReferences
+                              ._projectPlaybooksRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$PlaybooksTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).projectPlaybooksRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.playbookId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$PlaybooksTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PlaybooksTable,
+      Playbook,
+      $$PlaybooksTableFilterComposer,
+      $$PlaybooksTableOrderingComposer,
+      $$PlaybooksTableAnnotationComposer,
+      $$PlaybooksTableCreateCompanionBuilder,
+      $$PlaybooksTableUpdateCompanionBuilder,
+      (Playbook, $$PlaybooksTableReferences),
+      Playbook,
+      PrefetchHooks Function({
+        bool organisationId,
+        bool playbookStagesRefs,
+        bool projectPlaybooksRefs,
+      })
+    >;
+typedef $$PlaybookStagesTableCreateCompanionBuilder =
+    PlaybookStagesCompanion Function({
+      required String id,
+      required String playbookId,
+      required String name,
+      Value<String?> description,
+      Value<int> sortOrder,
+      Value<String?> approverRole,
+      Value<String?> gateCondition,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$PlaybookStagesTableUpdateCompanionBuilder =
+    PlaybookStagesCompanion Function({
+      Value<String> id,
+      Value<String> playbookId,
+      Value<String> name,
+      Value<String?> description,
+      Value<int> sortOrder,
+      Value<String?> approverRole,
+      Value<String?> gateCondition,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$PlaybookStagesTableReferences
+    extends BaseReferences<_$AppDatabase, $PlaybookStagesTable, PlaybookStage> {
+  $$PlaybookStagesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $PlaybooksTable _playbookIdTable(_$AppDatabase db) =>
+      db.playbooks.createAlias(
+        $_aliasNameGenerator(db.playbookStages.playbookId, db.playbooks.id),
+      );
+
+  $$PlaybooksTableProcessedTableManager get playbookId {
+    final $_column = $_itemColumn<String>('playbook_id')!;
+
+    final manager = $$PlaybooksTableTableManager(
+      $_db,
+      $_db.playbooks,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_playbookIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$StageTemplatesTable, List<StageTemplate>>
+  _stageTemplatesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.stageTemplates,
+    aliasName: $_aliasNameGenerator(
+      db.playbookStages.id,
+      db.stageTemplates.stageId,
+    ),
+  );
+
+  $$StageTemplatesTableProcessedTableManager get stageTemplatesRefs {
+    final manager = $$StageTemplatesTableTableManager(
+      $_db,
+      $_db.stageTemplates,
+    ).filter((f) => f.stageId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_stageTemplatesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $ProjectStageProgressesTable,
+    List<ProjectStageProgressesData>
+  >
+  _projectStageProgressesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.projectStageProgresses,
+        aliasName: $_aliasNameGenerator(
+          db.playbookStages.id,
+          db.projectStageProgresses.stageId,
+        ),
+      );
+
+  $$ProjectStageProgressesTableProcessedTableManager
+  get projectStageProgressesRefs {
+    final manager = $$ProjectStageProgressesTableTableManager(
+      $_db,
+      $_db.projectStageProgresses,
+    ).filter((f) => f.stageId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _projectStageProgressesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$PlaybookStagesTableFilterComposer
+    extends Composer<_$AppDatabase, $PlaybookStagesTable> {
+  $$PlaybookStagesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get approverRole => $composableBuilder(
+    column: $table.approverRole,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get gateCondition => $composableBuilder(
+    column: $table.gateCondition,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$PlaybooksTableFilterComposer get playbookId {
+    final $$PlaybooksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.playbookId,
+      referencedTable: $db.playbooks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlaybooksTableFilterComposer(
+            $db: $db,
+            $table: $db.playbooks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> stageTemplatesRefs(
+    Expression<bool> Function($$StageTemplatesTableFilterComposer f) f,
+  ) {
+    final $$StageTemplatesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.stageTemplates,
+      getReferencedColumn: (t) => t.stageId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StageTemplatesTableFilterComposer(
+            $db: $db,
+            $table: $db.stageTemplates,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> projectStageProgressesRefs(
+    Expression<bool> Function($$ProjectStageProgressesTableFilterComposer f) f,
+  ) {
+    final $$ProjectStageProgressesTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.projectStageProgresses,
+          getReferencedColumn: (t) => t.stageId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ProjectStageProgressesTableFilterComposer(
+                $db: $db,
+                $table: $db.projectStageProgresses,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$PlaybookStagesTableOrderingComposer
+    extends Composer<_$AppDatabase, $PlaybookStagesTable> {
+  $$PlaybookStagesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get approverRole => $composableBuilder(
+    column: $table.approverRole,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get gateCondition => $composableBuilder(
+    column: $table.gateCondition,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$PlaybooksTableOrderingComposer get playbookId {
+    final $$PlaybooksTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.playbookId,
+      referencedTable: $db.playbooks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlaybooksTableOrderingComposer(
+            $db: $db,
+            $table: $db.playbooks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PlaybookStagesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PlaybookStagesTable> {
+  $$PlaybookStagesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<String> get approverRole => $composableBuilder(
+    column: $table.approverRole,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get gateCondition => $composableBuilder(
+    column: $table.gateCondition,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$PlaybooksTableAnnotationComposer get playbookId {
+    final $$PlaybooksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.playbookId,
+      referencedTable: $db.playbooks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlaybooksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.playbooks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> stageTemplatesRefs<T extends Object>(
+    Expression<T> Function($$StageTemplatesTableAnnotationComposer a) f,
+  ) {
+    final $$StageTemplatesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.stageTemplates,
+      getReferencedColumn: (t) => t.stageId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StageTemplatesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.stageTemplates,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> projectStageProgressesRefs<T extends Object>(
+    Expression<T> Function($$ProjectStageProgressesTableAnnotationComposer a) f,
+  ) {
+    final $$ProjectStageProgressesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.projectStageProgresses,
+          getReferencedColumn: (t) => t.stageId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ProjectStageProgressesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.projectStageProgresses,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$PlaybookStagesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PlaybookStagesTable,
+          PlaybookStage,
+          $$PlaybookStagesTableFilterComposer,
+          $$PlaybookStagesTableOrderingComposer,
+          $$PlaybookStagesTableAnnotationComposer,
+          $$PlaybookStagesTableCreateCompanionBuilder,
+          $$PlaybookStagesTableUpdateCompanionBuilder,
+          (PlaybookStage, $$PlaybookStagesTableReferences),
+          PlaybookStage,
+          PrefetchHooks Function({
+            bool playbookId,
+            bool stageTemplatesRefs,
+            bool projectStageProgressesRefs,
+          })
+        > {
+  $$PlaybookStagesTableTableManager(
+    _$AppDatabase db,
+    $PlaybookStagesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PlaybookStagesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PlaybookStagesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PlaybookStagesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> playbookId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> description = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<String?> approverRole = const Value.absent(),
+                Value<String?> gateCondition = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PlaybookStagesCompanion(
+                id: id,
+                playbookId: playbookId,
+                name: name,
+                description: description,
+                sortOrder: sortOrder,
+                approverRole: approverRole,
+                gateCondition: gateCondition,
+                notes: notes,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String playbookId,
+                required String name,
+                Value<String?> description = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<String?> approverRole = const Value.absent(),
+                Value<String?> gateCondition = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PlaybookStagesCompanion.insert(
+                id: id,
+                playbookId: playbookId,
+                name: name,
+                description: description,
+                sortOrder: sortOrder,
+                approverRole: approverRole,
+                gateCondition: gateCondition,
+                notes: notes,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$PlaybookStagesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                playbookId = false,
+                stageTemplatesRefs = false,
+                projectStageProgressesRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (stageTemplatesRefs) db.stageTemplates,
+                    if (projectStageProgressesRefs) db.projectStageProgresses,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (playbookId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.playbookId,
+                                    referencedTable:
+                                        $$PlaybookStagesTableReferences
+                                            ._playbookIdTable(db),
+                                    referencedColumn:
+                                        $$PlaybookStagesTableReferences
+                                            ._playbookIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (stageTemplatesRefs)
+                        await $_getPrefetchedData<
+                          PlaybookStage,
+                          $PlaybookStagesTable,
+                          StageTemplate
+                        >(
+                          currentTable: table,
+                          referencedTable: $$PlaybookStagesTableReferences
+                              ._stageTemplatesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$PlaybookStagesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).stageTemplatesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.stageId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (projectStageProgressesRefs)
+                        await $_getPrefetchedData<
+                          PlaybookStage,
+                          $PlaybookStagesTable,
+                          ProjectStageProgressesData
+                        >(
+                          currentTable: table,
+                          referencedTable: $$PlaybookStagesTableReferences
+                              ._projectStageProgressesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$PlaybookStagesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).projectStageProgressesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.stageId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$PlaybookStagesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PlaybookStagesTable,
+      PlaybookStage,
+      $$PlaybookStagesTableFilterComposer,
+      $$PlaybookStagesTableOrderingComposer,
+      $$PlaybookStagesTableAnnotationComposer,
+      $$PlaybookStagesTableCreateCompanionBuilder,
+      $$PlaybookStagesTableUpdateCompanionBuilder,
+      (PlaybookStage, $$PlaybookStagesTableReferences),
+      PlaybookStage,
+      PrefetchHooks Function({
+        bool playbookId,
+        bool stageTemplatesRefs,
+        bool projectStageProgressesRefs,
+      })
+    >;
+typedef $$StageTemplatesTableCreateCompanionBuilder =
+    StageTemplatesCompanion Function({
+      required String id,
+      required String stageId,
+      required String name,
+      required String filename,
+      required String filePath,
+      Value<String> fileType,
+      Value<String> fillStrategy,
+      Value<String?> fieldHints,
+      Value<DateTime> uploadedAt,
+      Value<int> rowid,
+    });
+typedef $$StageTemplatesTableUpdateCompanionBuilder =
+    StageTemplatesCompanion Function({
+      Value<String> id,
+      Value<String> stageId,
+      Value<String> name,
+      Value<String> filename,
+      Value<String> filePath,
+      Value<String> fileType,
+      Value<String> fillStrategy,
+      Value<String?> fieldHints,
+      Value<DateTime> uploadedAt,
+      Value<int> rowid,
+    });
+
+final class $$StageTemplatesTableReferences
+    extends BaseReferences<_$AppDatabase, $StageTemplatesTable, StageTemplate> {
+  $$StageTemplatesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $PlaybookStagesTable _stageIdTable(_$AppDatabase db) =>
+      db.playbookStages.createAlias(
+        $_aliasNameGenerator(db.stageTemplates.stageId, db.playbookStages.id),
+      );
+
+  $$PlaybookStagesTableProcessedTableManager get stageId {
+    final $_column = $_itemColumn<String>('stage_id')!;
+
+    final manager = $$PlaybookStagesTableTableManager(
+      $_db,
+      $_db.playbookStages,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_stageIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$StageTemplatesTableFilterComposer
+    extends Composer<_$AppDatabase, $StageTemplatesTable> {
+  $$StageTemplatesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get filename => $composableBuilder(
+    column: $table.filename,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get filePath => $composableBuilder(
+    column: $table.filePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fileType => $composableBuilder(
+    column: $table.fileType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fillStrategy => $composableBuilder(
+    column: $table.fillStrategy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fieldHints => $composableBuilder(
+    column: $table.fieldHints,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get uploadedAt => $composableBuilder(
+    column: $table.uploadedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$PlaybookStagesTableFilterComposer get stageId {
+    final $$PlaybookStagesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.stageId,
+      referencedTable: $db.playbookStages,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlaybookStagesTableFilterComposer(
+            $db: $db,
+            $table: $db.playbookStages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StageTemplatesTableOrderingComposer
+    extends Composer<_$AppDatabase, $StageTemplatesTable> {
+  $$StageTemplatesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get filename => $composableBuilder(
+    column: $table.filename,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get filePath => $composableBuilder(
+    column: $table.filePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fileType => $composableBuilder(
+    column: $table.fileType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fillStrategy => $composableBuilder(
+    column: $table.fillStrategy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fieldHints => $composableBuilder(
+    column: $table.fieldHints,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get uploadedAt => $composableBuilder(
+    column: $table.uploadedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$PlaybookStagesTableOrderingComposer get stageId {
+    final $$PlaybookStagesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.stageId,
+      referencedTable: $db.playbookStages,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlaybookStagesTableOrderingComposer(
+            $db: $db,
+            $table: $db.playbookStages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StageTemplatesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $StageTemplatesTable> {
+  $$StageTemplatesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get filename =>
+      $composableBuilder(column: $table.filename, builder: (column) => column);
+
+  GeneratedColumn<String> get filePath =>
+      $composableBuilder(column: $table.filePath, builder: (column) => column);
+
+  GeneratedColumn<String> get fileType =>
+      $composableBuilder(column: $table.fileType, builder: (column) => column);
+
+  GeneratedColumn<String> get fillStrategy => $composableBuilder(
+    column: $table.fillStrategy,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get fieldHints => $composableBuilder(
+    column: $table.fieldHints,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get uploadedAt => $composableBuilder(
+    column: $table.uploadedAt,
+    builder: (column) => column,
+  );
+
+  $$PlaybookStagesTableAnnotationComposer get stageId {
+    final $$PlaybookStagesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.stageId,
+      referencedTable: $db.playbookStages,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlaybookStagesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.playbookStages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StageTemplatesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $StageTemplatesTable,
+          StageTemplate,
+          $$StageTemplatesTableFilterComposer,
+          $$StageTemplatesTableOrderingComposer,
+          $$StageTemplatesTableAnnotationComposer,
+          $$StageTemplatesTableCreateCompanionBuilder,
+          $$StageTemplatesTableUpdateCompanionBuilder,
+          (StageTemplate, $$StageTemplatesTableReferences),
+          StageTemplate,
+          PrefetchHooks Function({bool stageId})
+        > {
+  $$StageTemplatesTableTableManager(
+    _$AppDatabase db,
+    $StageTemplatesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$StageTemplatesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$StageTemplatesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$StageTemplatesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> stageId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> filename = const Value.absent(),
+                Value<String> filePath = const Value.absent(),
+                Value<String> fileType = const Value.absent(),
+                Value<String> fillStrategy = const Value.absent(),
+                Value<String?> fieldHints = const Value.absent(),
+                Value<DateTime> uploadedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => StageTemplatesCompanion(
+                id: id,
+                stageId: stageId,
+                name: name,
+                filename: filename,
+                filePath: filePath,
+                fileType: fileType,
+                fillStrategy: fillStrategy,
+                fieldHints: fieldHints,
+                uploadedAt: uploadedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String stageId,
+                required String name,
+                required String filename,
+                required String filePath,
+                Value<String> fileType = const Value.absent(),
+                Value<String> fillStrategy = const Value.absent(),
+                Value<String?> fieldHints = const Value.absent(),
+                Value<DateTime> uploadedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => StageTemplatesCompanion.insert(
+                id: id,
+                stageId: stageId,
+                name: name,
+                filename: filename,
+                filePath: filePath,
+                fileType: fileType,
+                fillStrategy: fillStrategy,
+                fieldHints: fieldHints,
+                uploadedAt: uploadedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$StageTemplatesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({stageId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (stageId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.stageId,
+                                referencedTable: $$StageTemplatesTableReferences
+                                    ._stageIdTable(db),
+                                referencedColumn:
+                                    $$StageTemplatesTableReferences
+                                        ._stageIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$StageTemplatesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $StageTemplatesTable,
+      StageTemplate,
+      $$StageTemplatesTableFilterComposer,
+      $$StageTemplatesTableOrderingComposer,
+      $$StageTemplatesTableAnnotationComposer,
+      $$StageTemplatesTableCreateCompanionBuilder,
+      $$StageTemplatesTableUpdateCompanionBuilder,
+      (StageTemplate, $$StageTemplatesTableReferences),
+      StageTemplate,
+      PrefetchHooks Function({bool stageId})
+    >;
+typedef $$ProjectPlaybooksTableCreateCompanionBuilder =
+    ProjectPlaybooksCompanion Function({
+      required String id,
+      required String projectId,
+      required String playbookId,
+      Value<String?> currentStageId,
+      Value<DateTime> attachedAt,
+      Value<int> rowid,
+    });
+typedef $$ProjectPlaybooksTableUpdateCompanionBuilder =
+    ProjectPlaybooksCompanion Function({
+      Value<String> id,
+      Value<String> projectId,
+      Value<String> playbookId,
+      Value<String?> currentStageId,
+      Value<DateTime> attachedAt,
+      Value<int> rowid,
+    });
+
+final class $$ProjectPlaybooksTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $ProjectPlaybooksTable, ProjectPlaybook> {
+  $$ProjectPlaybooksTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ProjectsTable _projectIdTable(_$AppDatabase db) =>
+      db.projects.createAlias(
+        $_aliasNameGenerator(db.projectPlaybooks.projectId, db.projects.id),
+      );
+
+  $$ProjectsTableProcessedTableManager get projectId {
+    final $_column = $_itemColumn<String>('project_id')!;
+
+    final manager = $$ProjectsTableTableManager(
+      $_db,
+      $_db.projects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_projectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $PlaybooksTable _playbookIdTable(_$AppDatabase db) =>
+      db.playbooks.createAlias(
+        $_aliasNameGenerator(db.projectPlaybooks.playbookId, db.playbooks.id),
+      );
+
+  $$PlaybooksTableProcessedTableManager get playbookId {
+    final $_column = $_itemColumn<String>('playbook_id')!;
+
+    final manager = $$PlaybooksTableTableManager(
+      $_db,
+      $_db.playbooks,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_playbookIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $ProjectStageProgressesTable,
+    List<ProjectStageProgressesData>
+  >
+  _projectStageProgressesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.projectStageProgresses,
+        aliasName: $_aliasNameGenerator(
+          db.projectPlaybooks.id,
+          db.projectStageProgresses.projectPlaybookId,
+        ),
+      );
+
+  $$ProjectStageProgressesTableProcessedTableManager
+  get projectStageProgressesRefs {
+    final manager =
+        $$ProjectStageProgressesTableTableManager(
+          $_db,
+          $_db.projectStageProgresses,
+        ).filter(
+          (f) => f.projectPlaybookId.id.sqlEquals($_itemColumn<String>('id')!),
+        );
+
+    final cache = $_typedResult.readTableOrNull(
+      _projectStageProgressesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$ProjectPlaybooksTableFilterComposer
+    extends Composer<_$AppDatabase, $ProjectPlaybooksTable> {
+  $$ProjectPlaybooksTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get currentStageId => $composableBuilder(
+    column: $table.currentStageId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get attachedAt => $composableBuilder(
+    column: $table.attachedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ProjectsTableFilterComposer get projectId {
+    final $$ProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PlaybooksTableFilterComposer get playbookId {
+    final $$PlaybooksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.playbookId,
+      referencedTable: $db.playbooks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlaybooksTableFilterComposer(
+            $db: $db,
+            $table: $db.playbooks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> projectStageProgressesRefs(
+    Expression<bool> Function($$ProjectStageProgressesTableFilterComposer f) f,
+  ) {
+    final $$ProjectStageProgressesTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.projectStageProgresses,
+          getReferencedColumn: (t) => t.projectPlaybookId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ProjectStageProgressesTableFilterComposer(
+                $db: $db,
+                $table: $db.projectStageProgresses,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$ProjectPlaybooksTableOrderingComposer
+    extends Composer<_$AppDatabase, $ProjectPlaybooksTable> {
+  $$ProjectPlaybooksTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get currentStageId => $composableBuilder(
+    column: $table.currentStageId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get attachedAt => $composableBuilder(
+    column: $table.attachedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ProjectsTableOrderingComposer get projectId {
+    final $$ProjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PlaybooksTableOrderingComposer get playbookId {
+    final $$PlaybooksTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.playbookId,
+      referencedTable: $db.playbooks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlaybooksTableOrderingComposer(
+            $db: $db,
+            $table: $db.playbooks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ProjectPlaybooksTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ProjectPlaybooksTable> {
+  $$ProjectPlaybooksTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get currentStageId => $composableBuilder(
+    column: $table.currentStageId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get attachedAt => $composableBuilder(
+    column: $table.attachedAt,
+    builder: (column) => column,
+  );
+
+  $$ProjectsTableAnnotationComposer get projectId {
+    final $$ProjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PlaybooksTableAnnotationComposer get playbookId {
+    final $$PlaybooksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.playbookId,
+      referencedTable: $db.playbooks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlaybooksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.playbooks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> projectStageProgressesRefs<T extends Object>(
+    Expression<T> Function($$ProjectStageProgressesTableAnnotationComposer a) f,
+  ) {
+    final $$ProjectStageProgressesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.projectStageProgresses,
+          getReferencedColumn: (t) => t.projectPlaybookId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ProjectStageProgressesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.projectStageProgresses,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$ProjectPlaybooksTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ProjectPlaybooksTable,
+          ProjectPlaybook,
+          $$ProjectPlaybooksTableFilterComposer,
+          $$ProjectPlaybooksTableOrderingComposer,
+          $$ProjectPlaybooksTableAnnotationComposer,
+          $$ProjectPlaybooksTableCreateCompanionBuilder,
+          $$ProjectPlaybooksTableUpdateCompanionBuilder,
+          (ProjectPlaybook, $$ProjectPlaybooksTableReferences),
+          ProjectPlaybook,
+          PrefetchHooks Function({
+            bool projectId,
+            bool playbookId,
+            bool projectStageProgressesRefs,
+          })
+        > {
+  $$ProjectPlaybooksTableTableManager(
+    _$AppDatabase db,
+    $ProjectPlaybooksTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ProjectPlaybooksTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ProjectPlaybooksTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ProjectPlaybooksTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> projectId = const Value.absent(),
+                Value<String> playbookId = const Value.absent(),
+                Value<String?> currentStageId = const Value.absent(),
+                Value<DateTime> attachedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ProjectPlaybooksCompanion(
+                id: id,
+                projectId: projectId,
+                playbookId: playbookId,
+                currentStageId: currentStageId,
+                attachedAt: attachedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String projectId,
+                required String playbookId,
+                Value<String?> currentStageId = const Value.absent(),
+                Value<DateTime> attachedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ProjectPlaybooksCompanion.insert(
+                id: id,
+                projectId: projectId,
+                playbookId: playbookId,
+                currentStageId: currentStageId,
+                attachedAt: attachedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ProjectPlaybooksTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                projectId = false,
+                playbookId = false,
+                projectStageProgressesRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (projectStageProgressesRefs) db.projectStageProgresses,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (projectId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.projectId,
+                                    referencedTable:
+                                        $$ProjectPlaybooksTableReferences
+                                            ._projectIdTable(db),
+                                    referencedColumn:
+                                        $$ProjectPlaybooksTableReferences
+                                            ._projectIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (playbookId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.playbookId,
+                                    referencedTable:
+                                        $$ProjectPlaybooksTableReferences
+                                            ._playbookIdTable(db),
+                                    referencedColumn:
+                                        $$ProjectPlaybooksTableReferences
+                                            ._playbookIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (projectStageProgressesRefs)
+                        await $_getPrefetchedData<
+                          ProjectPlaybook,
+                          $ProjectPlaybooksTable,
+                          ProjectStageProgressesData
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProjectPlaybooksTableReferences
+                              ._projectStageProgressesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProjectPlaybooksTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).projectStageProgressesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.projectPlaybookId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$ProjectPlaybooksTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ProjectPlaybooksTable,
+      ProjectPlaybook,
+      $$ProjectPlaybooksTableFilterComposer,
+      $$ProjectPlaybooksTableOrderingComposer,
+      $$ProjectPlaybooksTableAnnotationComposer,
+      $$ProjectPlaybooksTableCreateCompanionBuilder,
+      $$ProjectPlaybooksTableUpdateCompanionBuilder,
+      (ProjectPlaybook, $$ProjectPlaybooksTableReferences),
+      ProjectPlaybook,
+      PrefetchHooks Function({
+        bool projectId,
+        bool playbookId,
+        bool projectStageProgressesRefs,
+      })
+    >;
+typedef $$ProjectStageProgressesTableCreateCompanionBuilder =
+    ProjectStageProgressesCompanion Function({
+      required String id,
+      required String projectPlaybookId,
+      required String stageId,
+      Value<String> status,
+      Value<bool> gateMet,
+      Value<String?> approvedBy,
+      Value<DateTime?> approvedAt,
+      Value<String?> approvalNotes,
+      Value<String?> evidenceFilename,
+      Value<String?> evidenceFilePath,
+      Value<DateTime?> evidenceUploadedAt,
+      Value<String?> checklist,
+      Value<String?> generatedDocPath,
+      Value<DateTime?> generatedAt,
+      Value<String?> journalEntryId,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$ProjectStageProgressesTableUpdateCompanionBuilder =
+    ProjectStageProgressesCompanion Function({
+      Value<String> id,
+      Value<String> projectPlaybookId,
+      Value<String> stageId,
+      Value<String> status,
+      Value<bool> gateMet,
+      Value<String?> approvedBy,
+      Value<DateTime?> approvedAt,
+      Value<String?> approvalNotes,
+      Value<String?> evidenceFilename,
+      Value<String?> evidenceFilePath,
+      Value<DateTime?> evidenceUploadedAt,
+      Value<String?> checklist,
+      Value<String?> generatedDocPath,
+      Value<DateTime?> generatedAt,
+      Value<String?> journalEntryId,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$ProjectStageProgressesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ProjectStageProgressesTable,
+          ProjectStageProgressesData
+        > {
+  $$ProjectStageProgressesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ProjectPlaybooksTable _projectPlaybookIdTable(_$AppDatabase db) =>
+      db.projectPlaybooks.createAlias(
+        $_aliasNameGenerator(
+          db.projectStageProgresses.projectPlaybookId,
+          db.projectPlaybooks.id,
+        ),
+      );
+
+  $$ProjectPlaybooksTableProcessedTableManager get projectPlaybookId {
+    final $_column = $_itemColumn<String>('project_playbook_id')!;
+
+    final manager = $$ProjectPlaybooksTableTableManager(
+      $_db,
+      $_db.projectPlaybooks,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_projectPlaybookIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $PlaybookStagesTable _stageIdTable(_$AppDatabase db) =>
+      db.playbookStages.createAlias(
+        $_aliasNameGenerator(
+          db.projectStageProgresses.stageId,
+          db.playbookStages.id,
+        ),
+      );
+
+  $$PlaybookStagesTableProcessedTableManager get stageId {
+    final $_column = $_itemColumn<String>('stage_id')!;
+
+    final manager = $$PlaybookStagesTableTableManager(
+      $_db,
+      $_db.playbookStages,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_stageIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ProjectStageProgressesTableFilterComposer
+    extends Composer<_$AppDatabase, $ProjectStageProgressesTable> {
+  $$ProjectStageProgressesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get gateMet => $composableBuilder(
+    column: $table.gateMet,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get approvedBy => $composableBuilder(
+    column: $table.approvedBy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get approvedAt => $composableBuilder(
+    column: $table.approvedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get approvalNotes => $composableBuilder(
+    column: $table.approvalNotes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get evidenceFilename => $composableBuilder(
+    column: $table.evidenceFilename,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get evidenceFilePath => $composableBuilder(
+    column: $table.evidenceFilePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get evidenceUploadedAt => $composableBuilder(
+    column: $table.evidenceUploadedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get checklist => $composableBuilder(
+    column: $table.checklist,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get generatedDocPath => $composableBuilder(
+    column: $table.generatedDocPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get generatedAt => $composableBuilder(
+    column: $table.generatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get journalEntryId => $composableBuilder(
+    column: $table.journalEntryId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ProjectPlaybooksTableFilterComposer get projectPlaybookId {
+    final $$ProjectPlaybooksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectPlaybookId,
+      referencedTable: $db.projectPlaybooks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectPlaybooksTableFilterComposer(
+            $db: $db,
+            $table: $db.projectPlaybooks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PlaybookStagesTableFilterComposer get stageId {
+    final $$PlaybookStagesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.stageId,
+      referencedTable: $db.playbookStages,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlaybookStagesTableFilterComposer(
+            $db: $db,
+            $table: $db.playbookStages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ProjectStageProgressesTableOrderingComposer
+    extends Composer<_$AppDatabase, $ProjectStageProgressesTable> {
+  $$ProjectStageProgressesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get gateMet => $composableBuilder(
+    column: $table.gateMet,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get approvedBy => $composableBuilder(
+    column: $table.approvedBy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get approvedAt => $composableBuilder(
+    column: $table.approvedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get approvalNotes => $composableBuilder(
+    column: $table.approvalNotes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get evidenceFilename => $composableBuilder(
+    column: $table.evidenceFilename,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get evidenceFilePath => $composableBuilder(
+    column: $table.evidenceFilePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get evidenceUploadedAt => $composableBuilder(
+    column: $table.evidenceUploadedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get checklist => $composableBuilder(
+    column: $table.checklist,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get generatedDocPath => $composableBuilder(
+    column: $table.generatedDocPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get generatedAt => $composableBuilder(
+    column: $table.generatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get journalEntryId => $composableBuilder(
+    column: $table.journalEntryId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ProjectPlaybooksTableOrderingComposer get projectPlaybookId {
+    final $$ProjectPlaybooksTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectPlaybookId,
+      referencedTable: $db.projectPlaybooks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectPlaybooksTableOrderingComposer(
+            $db: $db,
+            $table: $db.projectPlaybooks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PlaybookStagesTableOrderingComposer get stageId {
+    final $$PlaybookStagesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.stageId,
+      referencedTable: $db.playbookStages,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlaybookStagesTableOrderingComposer(
+            $db: $db,
+            $table: $db.playbookStages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ProjectStageProgressesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ProjectStageProgressesTable> {
+  $$ProjectStageProgressesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<bool> get gateMet =>
+      $composableBuilder(column: $table.gateMet, builder: (column) => column);
+
+  GeneratedColumn<String> get approvedBy => $composableBuilder(
+    column: $table.approvedBy,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get approvedAt => $composableBuilder(
+    column: $table.approvedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get approvalNotes => $composableBuilder(
+    column: $table.approvalNotes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get evidenceFilename => $composableBuilder(
+    column: $table.evidenceFilename,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get evidenceFilePath => $composableBuilder(
+    column: $table.evidenceFilePath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get evidenceUploadedAt => $composableBuilder(
+    column: $table.evidenceUploadedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get checklist =>
+      $composableBuilder(column: $table.checklist, builder: (column) => column);
+
+  GeneratedColumn<String> get generatedDocPath => $composableBuilder(
+    column: $table.generatedDocPath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get generatedAt => $composableBuilder(
+    column: $table.generatedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get journalEntryId => $composableBuilder(
+    column: $table.journalEntryId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$ProjectPlaybooksTableAnnotationComposer get projectPlaybookId {
+    final $$ProjectPlaybooksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectPlaybookId,
+      referencedTable: $db.projectPlaybooks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectPlaybooksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.projectPlaybooks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PlaybookStagesTableAnnotationComposer get stageId {
+    final $$PlaybookStagesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.stageId,
+      referencedTable: $db.playbookStages,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlaybookStagesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.playbookStages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ProjectStageProgressesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ProjectStageProgressesTable,
+          ProjectStageProgressesData,
+          $$ProjectStageProgressesTableFilterComposer,
+          $$ProjectStageProgressesTableOrderingComposer,
+          $$ProjectStageProgressesTableAnnotationComposer,
+          $$ProjectStageProgressesTableCreateCompanionBuilder,
+          $$ProjectStageProgressesTableUpdateCompanionBuilder,
+          (ProjectStageProgressesData, $$ProjectStageProgressesTableReferences),
+          ProjectStageProgressesData,
+          PrefetchHooks Function({bool projectPlaybookId, bool stageId})
+        > {
+  $$ProjectStageProgressesTableTableManager(
+    _$AppDatabase db,
+    $ProjectStageProgressesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ProjectStageProgressesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$ProjectStageProgressesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ProjectStageProgressesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> projectPlaybookId = const Value.absent(),
+                Value<String> stageId = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<bool> gateMet = const Value.absent(),
+                Value<String?> approvedBy = const Value.absent(),
+                Value<DateTime?> approvedAt = const Value.absent(),
+                Value<String?> approvalNotes = const Value.absent(),
+                Value<String?> evidenceFilename = const Value.absent(),
+                Value<String?> evidenceFilePath = const Value.absent(),
+                Value<DateTime?> evidenceUploadedAt = const Value.absent(),
+                Value<String?> checklist = const Value.absent(),
+                Value<String?> generatedDocPath = const Value.absent(),
+                Value<DateTime?> generatedAt = const Value.absent(),
+                Value<String?> journalEntryId = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ProjectStageProgressesCompanion(
+                id: id,
+                projectPlaybookId: projectPlaybookId,
+                stageId: stageId,
+                status: status,
+                gateMet: gateMet,
+                approvedBy: approvedBy,
+                approvedAt: approvedAt,
+                approvalNotes: approvalNotes,
+                evidenceFilename: evidenceFilename,
+                evidenceFilePath: evidenceFilePath,
+                evidenceUploadedAt: evidenceUploadedAt,
+                checklist: checklist,
+                generatedDocPath: generatedDocPath,
+                generatedAt: generatedAt,
+                journalEntryId: journalEntryId,
+                notes: notes,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String projectPlaybookId,
+                required String stageId,
+                Value<String> status = const Value.absent(),
+                Value<bool> gateMet = const Value.absent(),
+                Value<String?> approvedBy = const Value.absent(),
+                Value<DateTime?> approvedAt = const Value.absent(),
+                Value<String?> approvalNotes = const Value.absent(),
+                Value<String?> evidenceFilename = const Value.absent(),
+                Value<String?> evidenceFilePath = const Value.absent(),
+                Value<DateTime?> evidenceUploadedAt = const Value.absent(),
+                Value<String?> checklist = const Value.absent(),
+                Value<String?> generatedDocPath = const Value.absent(),
+                Value<DateTime?> generatedAt = const Value.absent(),
+                Value<String?> journalEntryId = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ProjectStageProgressesCompanion.insert(
+                id: id,
+                projectPlaybookId: projectPlaybookId,
+                stageId: stageId,
+                status: status,
+                gateMet: gateMet,
+                approvedBy: approvedBy,
+                approvedAt: approvedAt,
+                approvalNotes: approvalNotes,
+                evidenceFilename: evidenceFilename,
+                evidenceFilePath: evidenceFilePath,
+                evidenceUploadedAt: evidenceUploadedAt,
+                checklist: checklist,
+                generatedDocPath: generatedDocPath,
+                generatedAt: generatedAt,
+                journalEntryId: journalEntryId,
+                notes: notes,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ProjectStageProgressesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({projectPlaybookId = false, stageId = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (projectPlaybookId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.projectPlaybookId,
+                                    referencedTable:
+                                        $$ProjectStageProgressesTableReferences
+                                            ._projectPlaybookIdTable(db),
+                                    referencedColumn:
+                                        $$ProjectStageProgressesTableReferences
+                                            ._projectPlaybookIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (stageId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.stageId,
+                                    referencedTable:
+                                        $$ProjectStageProgressesTableReferences
+                                            ._stageIdTable(db),
+                                    referencedColumn:
+                                        $$ProjectStageProgressesTableReferences
+                                            ._stageIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$ProjectStageProgressesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ProjectStageProgressesTable,
+      ProjectStageProgressesData,
+      $$ProjectStageProgressesTableFilterComposer,
+      $$ProjectStageProgressesTableOrderingComposer,
+      $$ProjectStageProgressesTableAnnotationComposer,
+      $$ProjectStageProgressesTableCreateCompanionBuilder,
+      $$ProjectStageProgressesTableUpdateCompanionBuilder,
+      (ProjectStageProgressesData, $$ProjectStageProgressesTableReferences),
+      ProjectStageProgressesData,
+      PrefetchHooks Function({bool projectPlaybookId, bool stageId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -24661,6 +32628,8 @@ class $AppDatabaseManager {
       $$StakeholderProfilesTableTableManager(_db, _db.stakeholderProfiles);
   $$ColleagueProfilesTableTableManager get colleagueProfiles =>
       $$ColleagueProfilesTableTableManager(_db, _db.colleagueProfiles);
+  $$ActionCategoriesTableTableManager get actionCategories =>
+      $$ActionCategoriesTableTableManager(_db, _db.actionCategories);
   $$ProjectActionsTableTableManager get projectActions =>
       $$ProjectActionsTableTableManager(_db, _db.projectActions);
   $$InboxItemsTableTableManager get inboxItems =>
@@ -24677,6 +32646,21 @@ class $AppDatabaseManager {
       $$JournalEntriesTableTableManager(_db, _db.journalEntries);
   $$JournalEntryLinksTableTableManager get journalEntryLinks =>
       $$JournalEntryLinksTableTableManager(_db, _db.journalEntryLinks);
+  $$OrganisationsTableTableManager get organisations =>
+      $$OrganisationsTableTableManager(_db, _db.organisations);
+  $$PlaybooksTableTableManager get playbooks =>
+      $$PlaybooksTableTableManager(_db, _db.playbooks);
+  $$PlaybookStagesTableTableManager get playbookStages =>
+      $$PlaybookStagesTableTableManager(_db, _db.playbookStages);
+  $$StageTemplatesTableTableManager get stageTemplates =>
+      $$StageTemplatesTableTableManager(_db, _db.stageTemplates);
+  $$ProjectPlaybooksTableTableManager get projectPlaybooks =>
+      $$ProjectPlaybooksTableTableManager(_db, _db.projectPlaybooks);
+  $$ProjectStageProgressesTableTableManager get projectStageProgresses =>
+      $$ProjectStageProgressesTableTableManager(
+        _db,
+        _db.projectStageProgresses,
+      );
 }
 
 mixin _$ProjectDaoMixin on DatabaseAccessor<AppDatabase> {
@@ -24789,6 +32773,25 @@ class PeopleDaoManager {
       $$ColleagueProfilesTableTableManager(
         _db.attachedDatabase,
         _db.colleagueProfiles,
+      );
+}
+
+mixin _$ActionCategoriesDaoMixin on DatabaseAccessor<AppDatabase> {
+  $ProjectsTable get projects => attachedDatabase.projects;
+  $ActionCategoriesTable get actionCategories =>
+      attachedDatabase.actionCategories;
+  ActionCategoriesDaoManager get managers => ActionCategoriesDaoManager(this);
+}
+
+class ActionCategoriesDaoManager {
+  final _$ActionCategoriesDaoMixin _db;
+  ActionCategoriesDaoManager(this._db);
+  $$ProjectsTableTableManager get projects =>
+      $$ProjectsTableTableManager(_db.attachedDatabase, _db.projects);
+  $$ActionCategoriesTableTableManager get actionCategories =>
+      $$ActionCategoriesTableTableManager(
+        _db.attachedDatabase,
+        _db.actionCategories,
       );
 }
 
@@ -24922,5 +32925,49 @@ class WorkstreamsDaoManager {
       $$WorkstreamLinksTableTableManager(
         _db.attachedDatabase,
         _db.workstreamLinks,
+      );
+}
+
+mixin _$PlaybookDaoMixin on DatabaseAccessor<AppDatabase> {
+  $OrganisationsTable get organisations => attachedDatabase.organisations;
+  $PlaybooksTable get playbooks => attachedDatabase.playbooks;
+  $PlaybookStagesTable get playbookStages => attachedDatabase.playbookStages;
+  $StageTemplatesTable get stageTemplates => attachedDatabase.stageTemplates;
+  $ProjectsTable get projects => attachedDatabase.projects;
+  $ProjectPlaybooksTable get projectPlaybooks =>
+      attachedDatabase.projectPlaybooks;
+  $ProjectStageProgressesTable get projectStageProgresses =>
+      attachedDatabase.projectStageProgresses;
+  PlaybookDaoManager get managers => PlaybookDaoManager(this);
+}
+
+class PlaybookDaoManager {
+  final _$PlaybookDaoMixin _db;
+  PlaybookDaoManager(this._db);
+  $$OrganisationsTableTableManager get organisations =>
+      $$OrganisationsTableTableManager(_db.attachedDatabase, _db.organisations);
+  $$PlaybooksTableTableManager get playbooks =>
+      $$PlaybooksTableTableManager(_db.attachedDatabase, _db.playbooks);
+  $$PlaybookStagesTableTableManager get playbookStages =>
+      $$PlaybookStagesTableTableManager(
+        _db.attachedDatabase,
+        _db.playbookStages,
+      );
+  $$StageTemplatesTableTableManager get stageTemplates =>
+      $$StageTemplatesTableTableManager(
+        _db.attachedDatabase,
+        _db.stageTemplates,
+      );
+  $$ProjectsTableTableManager get projects =>
+      $$ProjectsTableTableManager(_db.attachedDatabase, _db.projects);
+  $$ProjectPlaybooksTableTableManager get projectPlaybooks =>
+      $$ProjectPlaybooksTableTableManager(
+        _db.attachedDatabase,
+        _db.projectPlaybooks,
+      );
+  $$ProjectStageProgressesTableTableManager get projectStageProgresses =>
+      $$ProjectStageProgressesTableTableManager(
+        _db.attachedDatabase,
+        _db.projectStageProgresses,
       );
 }

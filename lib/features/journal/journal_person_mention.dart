@@ -18,6 +18,7 @@ class JournalPersonMention extends StatelessWidget {
   final String query;
   final int selectedIndex;
   final void Function(Person) onSelect;
+  final VoidCallback? onAddNew; // shown when query is non-empty
 
   const JournalPersonMention({
     super.key,
@@ -25,13 +26,18 @@ class JournalPersonMention extends StatelessWidget {
     required this.query,
     required this.selectedIndex,
     required this.onSelect,
+    this.onAddNew,
   });
+
+  bool get _showAddNew => query.isNotEmpty && onAddNew != null;
 
   @override
   Widget build(BuildContext context) {
     final items = filteredPersons(persons, query);
-    if (items.isEmpty) return const SizedBox.shrink();
-    final sel = selectedIndex.clamp(0, items.length - 1);
+    final showAdd = _showAddNew;
+    if (items.isEmpty && !showAdd) return const SizedBox.shrink();
+    final total = items.length + (showAdd ? 1 : 0);
+    final sel = selectedIndex.clamp(0, total - 1);
 
     return Container(
       constraints: const BoxConstraints(maxWidth: 240, maxHeight: 220),
@@ -76,66 +82,117 @@ class JournalPersonMention extends StatelessWidget {
             child: ListView(
               shrinkWrap: true,
               padding: EdgeInsets.zero,
-              children: items.asMap().entries.map((e) {
-                final i = e.key;
-                final p = e.value;
-                final isSelected = i == sel;
-                return InkWell(
-                  onTap: () => onSelect(p),
-                  child: Container(
-                    color: isSelected ? KColors.amberDim : Colors.transparent,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 24,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            color: isSelected ? KColors.amber : KColors.amberDim,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Center(
-                            child: Text(
-                              p.name.isNotEmpty ? p.name[0].toUpperCase() : '?',
-                              style: TextStyle(
-                                color: isSelected ? KColors.bg : KColors.amber,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
+              children: [
+                ...items.asMap().entries.map((e) {
+                  final i = e.key;
+                  final p = e.value;
+                  final isSelected = i == sel;
+                  return InkWell(
+                    onTap: () => onSelect(p),
+                    child: Container(
+                      color: isSelected ? KColors.amberDim : Colors.transparent,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: isSelected ? KColors.amber : KColors.amberDim,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Center(
+                              child: Text(
+                                p.name.isNotEmpty ? p.name[0].toUpperCase() : '?',
+                                style: TextStyle(
+                                  color: isSelected ? KColors.bg : KColors.amber,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                p.name,
-                                style: TextStyle(
-                                  color: isSelected ? KColors.amber : KColors.text,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              if (p.role != null)
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
                                 Text(
-                                  p.role!,
-                                  style: const TextStyle(
-                                    color: KColors.textDim,
-                                    fontSize: 10,
+                                  p.name,
+                                  style: TextStyle(
+                                    color: isSelected ? KColors.amber : KColors.text,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                            ],
+                                if (p.role != null)
+                                  Text(
+                                    p.role!,
+                                    style: const TextStyle(
+                                      color: KColors.textDim,
+                                      fontSize: 10,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+                // Add new person option
+                if (showAdd)
+                  InkWell(
+                    onTap: onAddNew,
+                    child: Container(
+                      color: sel == items.length
+                          ? KColors.phosDim
+                          : Colors.transparent,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: sel == items.length
+                                  ? KColors.phosphor
+                                  : KColors.surface2,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Center(
+                              child: Icon(
+                                Icons.person_add_outlined,
+                                size: 13,
+                                color: sel == items.length
+                                    ? KColors.bg
+                                    : KColors.textDim,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Add "$query" to People',
+                              style: TextStyle(
+                                color: sel == items.length
+                                    ? KColors.phosphor
+                                    : KColors.textDim,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                );
-              }).toList(),
+              ],
             ),
           ),
         ],

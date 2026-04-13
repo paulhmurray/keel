@@ -95,17 +95,21 @@ Color _statusDot(String status) {
 }
 
 // ---------------------------------------------------------------------------
-// Event dot colours (matching existing timeline)
+// Event dot colours — category overrides type default
 // ---------------------------------------------------------------------------
 
-Color _eventColor(TimelineEventType t) {
-  switch (t) {
+Color _eventColor(TimelineEvent ev) {
+  if (ev.categoryColor != null) return ev.categoryColor!;
+  switch (ev.type) {
     case TimelineEventType.action:     return KColors.amber;
     case TimelineEventType.decision:   return KColors.blue;
     case TimelineEventType.issue:      return KColors.red;
     case TimelineEventType.dependency: return KColors.phosphor;
   }
 }
+
+// Colour used for linked-action dotted lines
+const _kLinkColor = Color(0xFF00D4FF);
 
 // ---------------------------------------------------------------------------
 // GanttChart widget
@@ -137,13 +141,28 @@ class _DotHit {
 
 class _GanttChartState extends State<GanttChart> {
   final ScrollController _hScroll = ScrollController();
-  // Populated by _computeDotPositions; used by tap handler
   List<_DotHit> _dotHits = [];
+  bool _scrolledToToday = false;
 
   @override
   void dispose() {
     _hScroll.dispose();
     super.dispose();
+  }
+
+  void _scrollToToday(DateTime winStart) {
+    if (_scrolledToToday) return;
+    _scrolledToToday = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_hScroll.hasClients) return;
+      final today = DateTime.now();
+      final todayNorm = DateTime(today.year, today.month, today.day);
+      final daysFromStart = todayNorm.difference(winStart).inDays;
+      final todayX = daysFromStart * _kPxPerDay;
+      // Show today with ~120px of left context
+      final target = (todayX - 120).clamp(0.0, _hScroll.position.maxScrollExtent);
+      _hScroll.jumpTo(target);
+    });
   }
 
   List<_DotHit> _computeDotPositions({
@@ -250,6 +269,8 @@ class _GanttChartState extends State<GanttChart> {
       winStart: winStart,
       pxPerDay: _kPxPerDay,
     );
+
+    _scrollToToday(winStart);
 
     final rightCanvas = SizedBox(
       width: canvasW,
@@ -652,27 +673,23 @@ class _RightPainter extends CustomPainter {
           ..color = const Color(0xFF1C2A38)
           ..strokeWidth = 1.0);
 
-    // Draw event dots
+    // Draw dots — collect positions for linked-line rendering
     final placed = <double>[];
+    final dotPositions = <String, Offset>{}; // action id -> dot centre
+
     for (final ev in events) {
       if (ev.date == null) continue;
       final x = _xFor(ev.date!);
       if (x < 0 || x > size.width) continue;
 
       final isPast = ev.date!.isBefore(todayNorm);
-      final color = isPast
-          ? KColors.red
-          : _eventColor(ev.type);
+      final color = isPast ? KColors.red : _eventColor(ev);
 
-      // Stagger vertically to reduce overlap
-      double dotY = axisY;
       final nearBy = placed.where((px) => (px - x).abs() < 10).length;
-      if (nearBy.isEven) {
-        dotY = axisY - 8;
-      } else {
-        dotY = axisY + 8;
-      }
+      final dotY = nearBy.isEven ? axisY - 8 : axisY + 8;
       placed.add(x);
+
+      if (ev.id != null) dotPositions[ev.id!] = Offset(x, dotY);
 
       canvas.drawCircle(Offset(x, dotY), 5,
           Paint()..color = color.withValues(alpha: isPast ? 0.5 : 1.0));
@@ -681,6 +698,45 @@ class _RightPainter extends CustomPainter {
             ..color = color.withValues(alpha: 0.4)
             ..style = PaintingStyle.stroke
             ..strokeWidth = 1);
+    }
+
+    // Draw dotted lines between linked actions
+    final linkPaint = Paint()
+      ..color = _kLinkColor.withValues(alpha: 0.7)
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+
+    for (final ev in events) {
+      if (ev.id == null || ev.linkedActionId == null) continue;
+      final from = dotPositions[ev.id!];
+      final to = dotPositions[ev.linkedActionId!];
+      if (from == null || to == null) continue;
+      _drawDashedLine(canvas, from, to, linkPaint);
+    }
+  }
+
+  void _drawDashedLine(Canvas canvas, Offset from, Offset to, Paint paint) {
+    const dashLen = 5.0;
+    const gapLen = 3.0;
+    final dx = to.dx - from.dx;
+    final dy = to.dy - from.dy;
+    final dist = math.sqrt(dx * dx + dy * dy);
+    if (dist == 0) return;
+    final ux = dx / dist;
+    final uy = dy / dist;
+    double traveled = 0;
+    bool drawing = true;
+    while (traveled < dist) {
+      final seg = math.min(traveled + (drawing ? dashLen : gapLen), dist);
+      if (drawing) {
+        canvas.drawLine(
+          Offset(from.dx + ux * traveled, from.dy + uy * traveled),
+          Offset(from.dx + ux * seg, from.dy + uy * seg),
+          paint,
+        );
+      }
+      traveled = seg;
+      drawing = !drawing;
     }
   }
 

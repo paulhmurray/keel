@@ -7,6 +7,7 @@ import '../../shared/theme/keel_colors.dart';
 
 import '../../core/database/database.dart';
 import '../../providers/project_provider.dart';
+import '../../providers/settings_provider.dart';
 import '../../shared/widgets/dropdown_field.dart';
 import '../../shared/utils/date_utils.dart' as du;
 
@@ -245,10 +246,44 @@ class _PersonCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      person.name,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w600, fontSize: 14),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            person.name,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w600, fontSize: 14),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Builder(builder: (ctx) {
+                          final myName = ctx
+                              .read<SettingsProvider>()
+                              .settings
+                              .myName;
+                          if (myName.isEmpty || person.name != myName) {
+                            return const SizedBox.shrink();
+                          }
+                          return Container(
+                            margin: const EdgeInsets.only(left: 8),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: KColors.phosDim,
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                            child: const Text(
+                              'YOU',
+                              style: TextStyle(
+                                color: KColors.phosphor,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          );
+                        }),
+                      ],
                     ),
                     if (person.role != null && person.role!.isNotEmpty)
                       Text(

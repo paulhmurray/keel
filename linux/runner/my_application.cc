@@ -58,6 +58,17 @@ static void my_application_activate(GApplication* application) {
   fl_dart_project_set_dart_entrypoint_arguments(
       project, self->dart_entrypoint_arguments);
 
+  // Set window icon (taskbar, Alt+Tab) — bundled alongside the binary
+  g_autoptr(GError) icon_error = nullptr;
+  gchar* icon_path = g_build_filename(
+      fl_dart_project_get_assets_path(project), "..", "keel.png", nullptr);
+  GdkPixbuf* icon = gdk_pixbuf_new_from_file(icon_path, &icon_error);
+  g_free(icon_path);
+  if (icon != nullptr) {
+    gtk_window_set_icon(window, icon);
+    g_object_unref(icon);
+  }
+
   FlView* view = fl_view_new(project);
   GdkRGBA background_color;
   // Background defaults to black, override it here if necessary, e.g. #00000000

@@ -19,15 +19,20 @@ class DropdownField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Ensure the current value is always present in the list to avoid the
+    // "exactly one item" Flutter assertion when the DB holds a legacy value.
+    final effectiveItems = items.contains(value)
+        ? items
+        : [value, ...items];
     return DropdownButtonFormField<String>(
       value: value,
       decoration: InputDecoration(labelText: label),
       dropdownColor: KColors.surface2,
-      items: items
+      items: effectiveItems
           .map((s) => DropdownMenuItem(
                 value: s,
                 child: Text(
-                  s[0].toUpperCase() + s.substring(1),
+                  s.isNotEmpty ? s[0].toUpperCase() + s.substring(1) : s,
                   style: const TextStyle(fontSize: 13),
                 ),
               ))

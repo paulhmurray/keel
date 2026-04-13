@@ -49,7 +49,10 @@ Color _entryTypeColor(String type) {
 // ---------------------------------------------------------------------------
 
 class ContextView extends StatefulWidget {
-  const ContextView({super.key});
+  final int? initialTab;
+  final bool triggerNew;
+
+  const ContextView({super.key, this.initialTab, this.triggerNew = false});
 
   @override
   State<ContextView> createState() => _ContextViewState();
@@ -62,7 +65,11 @@ class _ContextViewState extends State<ContextView>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: widget.initialTab ?? 0,
+    );
   }
 
   @override
@@ -116,9 +123,21 @@ class _ContextViewState extends State<ContextView>
           child: TabBarView(
             controller: _tabController,
             children: [
-              _EntriesTab(projectId: projectId, db: db),
-              _DocumentsTab(projectId: projectId, db: db),
-              _GlossaryTab(projectId: projectId, db: db),
+              _EntriesTab(
+                projectId: projectId,
+                db: db,
+                triggerNew: widget.initialTab == 0 && widget.triggerNew,
+              ),
+              _DocumentsTab(
+                projectId: projectId,
+                db: db,
+                triggerNew: widget.initialTab == 1 && widget.triggerNew,
+              ),
+              _GlossaryTab(
+                projectId: projectId,
+                db: db,
+                triggerNew: widget.initialTab == 2 && widget.triggerNew,
+              ),
             ],
           ),
         ),
@@ -134,8 +153,13 @@ class _ContextViewState extends State<ContextView>
 class _EntriesTab extends StatefulWidget {
   final String projectId;
   final AppDatabase db;
+  final bool triggerNew;
 
-  const _EntriesTab({required this.projectId, required this.db});
+  const _EntriesTab({
+    required this.projectId,
+    required this.db,
+    this.triggerNew = false,
+  });
 
   @override
   State<_EntriesTab> createState() => _EntriesTabState();
@@ -143,6 +167,24 @@ class _EntriesTab extends StatefulWidget {
 
 class _EntriesTabState extends State<_EntriesTab> {
   final _quickObsCtrl = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.triggerNew) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (_) => _EntryFormDialog(
+              projectId: widget.projectId,
+              db: widget.db,
+            ),
+          );
+        }
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -562,11 +604,39 @@ class _EntryFormDialogState extends State<_EntryFormDialog> {
 // Documents Tab
 // ---------------------------------------------------------------------------
 
-class _DocumentsTab extends StatelessWidget {
+class _DocumentsTab extends StatefulWidget {
   final String projectId;
   final AppDatabase db;
+  final bool triggerNew;
 
-  const _DocumentsTab({required this.projectId, required this.db});
+  const _DocumentsTab({
+    required this.projectId,
+    required this.db,
+    this.triggerNew = false,
+  });
+
+  @override
+  State<_DocumentsTab> createState() => _DocumentsTabState();
+}
+
+class _DocumentsTabState extends State<_DocumentsTab> {
+  @override
+  void initState() {
+    super.initState();
+    if (widget.triggerNew) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (_) => _DocumentUploadDialog(
+              projectId: widget.projectId,
+              db: widget.db,
+            ),
+          );
+        }
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -580,8 +650,8 @@ class _DocumentsTab extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: () => showDialog(
                   context: context,
-                  builder: (_) =>
-                      _DocumentUploadDialog(projectId: projectId, db: db),
+                  builder: (_) => _DocumentUploadDialog(
+                      projectId: widget.projectId, db: widget.db),
                 ),
                 icon: const Icon(Icons.upload_file, size: 16),
                 label: const Text('Upload Document'),
@@ -591,7 +661,8 @@ class _DocumentsTab extends StatelessWidget {
           const SizedBox(height: 12),
           Expanded(
             child: StreamBuilder<List<Document>>(
-              stream: db.contextDao.watchDocumentsForProject(projectId),
+              stream: widget.db.contextDao
+                  .watchDocumentsForProject(widget.projectId),
               builder: (context, snap) {
                 if (!snap.hasData) {
                   return const Center(child: CircularProgressIndicator());
@@ -612,7 +683,9 @@ class _DocumentsTab extends StatelessWidget {
                   itemBuilder: (ctx, i) {
                     final d = items[i];
                     return _DocumentCard(
-                        document: d, db: db, projectId: projectId);
+                        document: d,
+                        db: widget.db,
+                        projectId: widget.projectId);
                   },
                 );
               },
@@ -824,7 +897,7 @@ class _DocumentUploadDialogState extends State<_DocumentUploadDialog> {
   Future<void> _pickFile() async {
     const typeGroup = XTypeGroup(
       label: 'Documents',
-      extensions: ['txt', 'md', 'pdf', 'docx'],
+      extensions: ['txt', 'md', 'pdf', 'docx', 'pptx', 'xlsx'],
     );
     final file = await openFile(acceptedTypeGroups: [typeGroup]);
     if (file == null) return;
@@ -1412,31 +1485,51 @@ class _DocumentDetailDialogState extends State<_DocumentDetailDialog> {
 // Glossary tab
 // ---------------------------------------------------------------------------
 
-class _GlossaryTab extends StatelessWidget {
+class _GlossaryTab extends StatefulWidget {
   final String projectId;
   final AppDatabase db;
+  final bool triggerNew;
 
-  const _GlossaryTab({required this.projectId, required this.db});
+  const _GlossaryTab({
+    required this.projectId,
+    required this.db,
+    this.triggerNew = false,
+  });
+
+  @override
+  State<_GlossaryTab> createState() => _GlossaryTabState();
+}
+
+class _GlossaryTabState extends State<_GlossaryTab> {
+  @override
+  void initState() {
+    super.initState();
+    if (widget.triggerNew) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _openForm(context);
+      });
+    }
+  }
 
   void _openForm(BuildContext context, {GlossaryEntry? entry}) {
     showDialog(
       context: context,
       builder: (_) => GlossaryFormDialog(
-        projectId: projectId,
-        db: db,
+        projectId: widget.projectId,
+        db: widget.db,
         entry: entry,
       ),
     );
   }
 
   Future<void> _delete(GlossaryEntry entry) async {
-    await db.glossaryDao.deleteEntry(entry.id);
+    await widget.db.glossaryDao.deleteEntry(entry.id);
   }
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<GlossaryEntry>>(
-      stream: db.glossaryDao.watchForProject(projectId),
+      stream: widget.db.glossaryDao.watchForProject(widget.projectId),
       builder: (context, snap) {
         final entries = snap.data ?? [];
         final systems = entries.where((e) => e.type == 'system').toList();

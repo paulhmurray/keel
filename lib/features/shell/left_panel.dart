@@ -1,9 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/database/database.dart';
 import '../../providers/project_provider.dart';
 import '../../shared/theme/keel_colors.dart';
+import '../../shared/widgets/update_banner.dart';
 import '../../shared/widgets/rag_badge.dart';
 import '../../shared/widgets/status_chip.dart';
 import '../../shared/utils/date_utils.dart' as du;
@@ -13,6 +16,7 @@ class LeftPanel extends StatelessWidget {
   final VoidCallback? onNavigateToDecisions;
   final VoidCallback? onNavigateToActions;
   final VoidCallback? onNavigateToJournal;
+  final VoidCallback? onNavigateToPlaybook;
 
   const LeftPanel({
     super.key,
@@ -20,6 +24,7 @@ class LeftPanel extends StatelessWidget {
     this.onNavigateToDecisions,
     this.onNavigateToActions,
     this.onNavigateToJournal,
+    this.onNavigateToPlaybook,
   });
 
   @override
@@ -70,11 +75,14 @@ class LeftPanel extends StatelessWidget {
                         ),
                         _SectionHeader(label: 'Recent Journal', icon: Icons.menu_book_outlined),
                         _RecentJournalSection(projectId: projectId, db: db, onTap: onNavigateToJournal),
+                        _SectionHeader(label: 'Playbook Stage', icon: Icons.account_tree_outlined),
+                        _PlaybookStageSection(projectId: projectId, db: db, onTap: onNavigateToPlaybook),
                         const SizedBox(height: 8),
                       ],
                     ),
                   ),
           ),
+          const StandardUpdateNotice(),
         ],
       ),
     );
@@ -413,5 +421,130 @@ class _RecentJournalSection extends StatelessWidget {
       const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
       return '${dt.day} ${m[dt.month-1]}';
     } catch (_) { return iso; }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Playbook stage section
+// ---------------------------------------------------------------------------
+
+class _PlaybookStageSection extends StatelessWidget {
+  final String projectId;
+  final AppDatabase db;
+  final VoidCallback? onTap;
+
+  const _PlaybookStageSection({
+    required this.projectId,
+    required this.db,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<ProjectPlaybook?>(
+      stream: db.playbookDao.watchProjectPlaybook(projectId),
+      builder: (context, ppSnap) {
+        if (!ppSnap.hasData || ppSnap.data == null) {
+          return const _PulseEmpty(message: 'No playbook attached');
+        }
+        final pp = ppSnap.data!;
+        return StreamBuilder<List<PlaybookStage>>(
+          stream: db.playbookDao.watchStagesForPlaybook(pp.playbookId),
+          builder: (context, stagesSnap) {
+            return StreamBuilder<List<ProjectStageProgressesData>>(
+              stream: db.playbookDao.watchProgressForProjectPlaybook(pp.id),
+              builder: (context, progressSnap) {
+                final stages = stagesSnap.data ?? [];
+                final progressList = progressSnap.data ?? [];
+                final progressMap = {
+                  for (final p in progressList) p.stageId: p,
+                };
+
+                // Find current stage: first non-complete
+                PlaybookStage? current;
+                ProjectStageProgressesData? currentProgress;
+                for (final s in stages) {
+                  final prog = progressMap[s.id];
+                  if (prog == null || prog.status != 'complete') {
+                    current = s;
+                    currentProgress = prog;
+                    break;
+                  }
+                }
+
+                if (current == null) {
+                  return _PulseItem(
+                    label: 'All stages complete',
+                    barColor: KColors.phosphor,
+                    onTap: onTap,
+                  );
+                }
+
+                final status = currentProgress?.status ?? 'not_started';
+                final barColor = switch (status) {
+                  'in_progress' => KColors.amber,
+                  'blocked' => KColors.red,
+                  'pending_approval' => KColors.blue,
+                  _ => KColors.textDim,
+                };
+
+                final checkedCount = _checkedCount(currentProgress?.checklist);
+                final totalCount = _totalCount(currentProgress?.checklist);
+                final stageIdx =
+                    stages.indexWhere((s) => s.id == current!.id) + 1;
+
+                return _PulseItem(
+                  label: 'Stage $stageIdx: ${current.name}',
+                  barColor: barColor,
+                  trailing: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _statusLabel(status),
+                        style: TextStyle(color: barColor, fontSize: 9),
+                      ),
+                      if (totalCount > 0)
+                        Text(
+                          '$checkedCount of $totalCount checklist done',
+                          style: const TextStyle(
+                              color: KColors.textMuted, fontSize: 9),
+                        ),
+                    ],
+                  ),
+                  onTap: onTap,
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  static String _statusLabel(String s) => switch (s) {
+        'in_progress' => 'In progress',
+        'blocked' => 'Blocked',
+        'pending_approval' => 'Pending approval',
+        'complete' => 'Complete',
+        _ => 'Not started',
+      };
+
+  static int _checkedCount(String? json) {
+    if (json == null) return 0;
+    try {
+      final items = jsonDecode(json) as List<dynamic>;
+      return items.where((e) => (e as Map)['checked'] == true).length;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  static int _totalCount(String? json) {
+    if (json == null) return 0;
+    try {
+      return (jsonDecode(json) as List<dynamic>).length;
+    } catch (_) {
+      return 0;
+    }
   }
 }

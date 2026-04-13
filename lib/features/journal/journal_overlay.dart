@@ -68,6 +68,27 @@ class _JournalOverlayState extends State<JournalOverlay> {
     if (mounted) setState(() => _persons = persons);
   }
 
+  Future<Person?> _createPerson(String name) async {
+    if (!mounted) return null;
+    final result = await showDialog<Person>(
+      context: context,
+      builder: (_) => _QuickPersonDialog(name: name),
+    );
+    if (result != null) {
+      await widget.db.peopleDao.upsertPerson(PersonsCompanion(
+        id: Value(result.id),
+        projectId: Value(widget.projectId),
+        name: Value(result.name),
+        role: Value(result.role),
+        organisation: Value(result.organisation),
+        createdAt: Value(result.createdAt),
+        updatedAt: Value(result.updatedAt),
+      ));
+      await _loadPersons();
+    }
+    return result;
+  }
+
   String get _entryDate {
     if (widget.existingEntry != null) return widget.existingEntry!.entryDate;
     final now = DateTime.now();
@@ -288,6 +309,9 @@ class _JournalOverlayState extends State<JournalOverlay> {
             entryDate: _formatDisplayDate(_entryDate),
             persons: _persons,
             onSave: _saveAndParse,
+            onCreatePerson: _createPerson,
+            vimMode: widget.settings.journalVimMode,
+            vimEscapeSequence: widget.settings.vimEscapeSequence,
           ),
         );
 
@@ -375,5 +399,112 @@ class _JournalOverlayState extends State<JournalOverlay> {
           ],
         );
     }
+  }
+}
+
+class _QuickPersonDialog extends StatefulWidget {
+  final String name;
+  const _QuickPersonDialog({required this.name});
+
+  @override
+  State<_QuickPersonDialog> createState() => _QuickPersonDialogState();
+}
+
+class _QuickPersonDialogState extends State<_QuickPersonDialog> {
+  late TextEditingController _nameCtrl;
+  final _roleCtrl = TextEditingController();
+  final _orgCtrl = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtrl = TextEditingController(text: widget.name);
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _roleCtrl.dispose();
+    _orgCtrl.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final name = _nameCtrl.text.trim();
+    if (name.isEmpty) return;
+    final now = DateTime.now();
+    final person = Person(
+      id: const Uuid().v4(),
+      projectId: '',
+      name: name,
+      email: null,
+      role: _roleCtrl.text.trim().isEmpty ? null : _roleCtrl.text.trim(),
+      organisation:
+          _orgCtrl.text.trim().isEmpty ? null : _orgCtrl.text.trim(),
+      phone: null,
+      teamsHandle: null,
+      personType: 'stakeholder',
+      createdAt: now,
+      updatedAt: now,
+    );
+    Navigator.of(context).pop(person);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: KColors.surface,
+      title: const Text('Add Person',
+          style: TextStyle(color: KColors.text, fontSize: 14)),
+      content: SizedBox(
+        width: 320,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _nameCtrl,
+              autofocus: true,
+              style: const TextStyle(color: KColors.text, fontSize: 13),
+              decoration: const InputDecoration(
+                labelText: 'Name',
+                labelStyle: TextStyle(color: KColors.textDim, fontSize: 12),
+              ),
+              onSubmitted: (_) => _submit(),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _roleCtrl,
+              style: const TextStyle(color: KColors.text, fontSize: 13),
+              decoration: const InputDecoration(
+                labelText: 'Role (optional)',
+                labelStyle: TextStyle(color: KColors.textDim, fontSize: 12),
+              ),
+              onSubmitted: (_) => _submit(),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _orgCtrl,
+              style: const TextStyle(color: KColors.text, fontSize: 13),
+              decoration: const InputDecoration(
+                labelText: 'Organisation (optional)',
+                labelStyle: TextStyle(color: KColors.textDim, fontSize: 12),
+              ),
+              onSubmitted: (_) => _submit(),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel',
+              style: TextStyle(color: KColors.textDim, fontSize: 12)),
+        ),
+        ElevatedButton(
+          onPressed: _submit,
+          child: const Text('Add'),
+        ),
+      ],
+    );
   }
 }
