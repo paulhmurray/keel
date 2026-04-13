@@ -82,15 +82,22 @@ func main() {
 	})
 
 	// Version endpoint — no auth required
+	// Set KEEL_LATEST_VERSION and KEEL_RELEASE_NOTES via fly secrets to update
+	// without redeploying. Download URLs point to GitHub Releases.
 	router.GET("/version/latest", func(c *gin.Context) {
+		version := os.Getenv("KEEL_LATEST_VERSION")
+		if version == "" {
+			version = "1.0.0"
+		}
+		releaseNotes := os.Getenv("KEEL_RELEASE_NOTES")
+		baseURL := "https://github.com/paulhmurray/keel/releases/download/v" + version
 		c.JSON(http.StatusOK, gin.H{
-			"version":      "1.0.0",
-			"release_date": "2026-04-12",
-			"release_notes": "",
+			"version":       version,
+			"release_notes": releaseNotes,
 			"download_url": gin.H{
-				"linux":   "https://releases.keel-app.dev/v1.0.0/keel-linux-x86_64.AppImage",
-				"windows": "https://releases.keel-app.dev/v1.0.0/keel-windows-x64-setup.exe",
-				"macos":   "https://releases.keel-app.dev/v1.0.0/keel-macos-universal.dmg",
+				"linux":   baseURL + "/keel-linux.tar.gz",
+				"windows": baseURL + "/keel-windows.zip",
+				"macos":   baseURL + "/keel-macos.zip",
 			},
 			"minimum_version": "1.0.0",
 			"critical":        false,
