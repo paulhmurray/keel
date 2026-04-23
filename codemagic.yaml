@@ -79,11 +79,23 @@ workflows:
           APP=$(find build/macos/Build/Products/Release -name "*.app" -maxdepth 1 | head -1)
           ditto -c -k --keepParent "$APP" keel-macos.zip
 
+      - name: Upload to GitHub Release
+        script: |
+          REPO="paulhmurray/keel"
+          TAG="$FCI_TAG"
+          RELEASE_ID=$(curl -sf \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/$REPO/releases/tags/$TAG" \
+            | jq -r .id)
+
+          for FILE in keel-macos.dmg keel-macos.zip; do
+            curl -sf -X POST \
+              -H "Authorization: token $GITHUB_TOKEN" \
+              -H "Content-Type: application/octet-stream" \
+              --data-binary @"$FILE" \
+              "https://uploads.github.com/repos/$REPO/releases/$RELEASE_ID/assets?name=$FILE"
+          done
+
     artifacts:
       - keel-macos.dmg
       - keel-macos.zip
-
-    publishing:
-      github_releases:
-        prerelease: false
-        draft: false
