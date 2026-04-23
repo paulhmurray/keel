@@ -930,15 +930,33 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(prioritisationSources);
           }
           if (from < 13) {
-            await m.addColumn(timelineActivities, timelineActivities.status);
+            // Guard: if upgrading from <12, createTable(timelineActivities)
+            // already ran with the current schema which includes status.
+            try {
+              await m.addColumn(timelineActivities, timelineActivities.status);
+            } catch (_) {}
           }
           if (from < 14) {
-            await m.addColumn(stakeholderRoles, stakeholderRoles.functionalArea);
-            await m.addColumn(stakeholderRoles, stakeholderRoles.integrationRelevance);
-            await m.addColumn(stakeholderRoles, stakeholderRoles.priority);
-            await m.addColumn(stakeholderRoles, stakeholderRoles.engagementStatus);
-            await m.addColumn(stakeholderRoles, stakeholderRoles.gapFlag);
-            await m.addColumn(stakeholderRoles, stakeholderRoles.gapDescription);
+            // Guard: same issue — stakeholderRoles created at v10 with
+            // current schema already includes these columns.
+            try {
+              await m.addColumn(stakeholderRoles, stakeholderRoles.functionalArea);
+            } catch (_) {}
+            try {
+              await m.addColumn(stakeholderRoles, stakeholderRoles.integrationRelevance);
+            } catch (_) {}
+            try {
+              await m.addColumn(stakeholderRoles, stakeholderRoles.priority);
+            } catch (_) {}
+            try {
+              await m.addColumn(stakeholderRoles, stakeholderRoles.engagementStatus);
+            } catch (_) {}
+            try {
+              await m.addColumn(stakeholderRoles, stakeholderRoles.gapFlag);
+            } catch (_) {}
+            try {
+              await m.addColumn(stakeholderRoles, stakeholderRoles.gapDescription);
+            } catch (_) {}
           }
           if (from < 15) {
             await m.createTable(statusSnapshots);
