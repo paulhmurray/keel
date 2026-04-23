@@ -32,6 +32,7 @@ class SyncProvider extends ChangeNotifier {
   String? _lastError;
   DateTime? _lastSyncAt;
   DateTime? _lastLocalChangeAt;
+  bool _importing = false; // suppresses markLocalChange during pull
 
   // Persisted settings (loaded/saved by caller via SettingsProvider)
   String serverUrl = 'https://sync.keel-app.dev';
@@ -57,6 +58,7 @@ class SyncProvider extends ChangeNotifier {
   }
 
   void markLocalChange() {
+    if (_importing) return; // don't flag pull-imported data as a local change
     _lastLocalChangeAt = DateTime.now();
     notifyListeners();
     _saveTimestamps();
@@ -206,8 +208,15 @@ class SyncProvider extends ChangeNotifier {
       final jsonStr =
           await EncryptionService.decrypt(key, result.encryptedBase64);
 
-      await JsonImporter.importFromString(jsonStr, db);
+      _importing = true;
+      try {
+        await JsonImporter.importFromString(jsonStr, db);
+      } finally {
+        _importing = false;
+      }
       _lastSyncAt = result.updatedAt;
+      // Align local-change timestamp so pull doesn't look like pending changes
+      _lastLocalChangeAt = _lastSyncAt;
       _saveTimestamps();
       _setStatus(SyncStatus.success);
     } on SyncApiException catch (e) {

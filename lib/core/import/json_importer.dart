@@ -52,6 +52,12 @@ class JsonImporter {
     // Project
     final projectData = data['project'] as Map<String, dynamic>;
     final projectId = projectData['id'] as String;
+
+    // Clear all synced tables for this project before importing.
+    // This ensures deletions made on the source device are reflected here —
+    // upsert-only would leave deleted records in place.
+    await _clearSyncedTables(db, projectId);
+
     await db.projectDao.upsertProject(ProjectsCompanion(
       id: Value(projectId),
       name: Value(projectData['name'] as String),
@@ -455,5 +461,64 @@ class JsonImporter {
       journalEntries: journalCount,
       contextEntries: contextCount,
     );
+  }
+
+  /// Deletes all rows for [projectId] from every table that the JSON export
+  /// covers. Called before re-importing so that records deleted on the source
+  /// device are removed here too (upsert-only would leave them in place).
+  static Future<void> _clearSyncedTables(
+      AppDatabase db, String projectId) async {
+    final id = projectId;
+    await (db.delete(db.programmeOverviews)
+          ..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.workstreams)..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.governanceCadences)
+          ..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.risks)..where((t) => t.projectId.equals(id))).go();
+    await (db.delete(db.assumptions)..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.issues)..where((t) => t.projectId.equals(id))).go();
+    await (db.delete(db.programDependencies)
+          ..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.decisions)..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.projectActions)..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.contextEntries)..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.documents)..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.statusReports)..where((t) => t.projectId.equals(id)))
+        .go();
+    // Journal links are keyed by entry_id, not project_id — delete them first
+    final journalEntryIds = await (db.select(db.journalEntries)
+          ..where((t) => t.projectId.equals(id)))
+        .map((e) => e.id)
+        .get();
+    for (final eid in journalEntryIds) {
+      await (db.delete(db.journalEntryLinks)
+            ..where((t) => t.entryId.equals(eid)))
+          .go();
+    }
+    await (db.delete(db.journalEntries)..where((t) => t.projectId.equals(id)))
+        .go();
+    // People — profiles first (FK to persons), then persons
+    final personIds = await (db.select(db.persons)
+          ..where((t) => t.projectId.equals(id)))
+        .map((p) => p.id)
+        .get();
+    for (final pid in personIds) {
+      await (db.delete(db.stakeholderProfiles)
+            ..where((t) => t.personId.equals(pid)))
+          .go();
+      await (db.delete(db.colleagueProfiles)
+            ..where((t) => t.personId.equals(pid)))
+          .go();
+    }
+    await (db.delete(db.persons)..where((t) => t.projectId.equals(id))).go();
   }
 }
