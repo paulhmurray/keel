@@ -99,6 +99,30 @@ class JsonImporter {
           sortOrder: Value(wm['sort_order'] as int? ?? 0),
         ));
       }
+      for (final l in (progData['workstream_links'] as List? ?? [])) {
+        final lm = l as Map<String, dynamic>;
+        await db.workstreamsDao.upsertLink(WorkstreamLinksCompanion(
+          id: Value(lm['id'] as String),
+          projectId: Value(projectId),
+          fromId: Value(lm['from_id'] as String),
+          toId: Value(lm['to_id'] as String),
+        ));
+      }
+      for (final a in (progData['workstream_activities'] as List? ?? [])) {
+        final am = a as Map<String, dynamic>;
+        await db.workstreamActivitiesDao.upsert(WorkstreamActivitiesCompanion(
+          id: Value(am['id'] as String),
+          projectId: Value(projectId),
+          workstreamId: Value(am['workstream_id'] as String),
+          name: Value(am['name'] as String),
+          startDate: Value(am['start_date'] as String),
+          endDate: Value(am['end_date'] as String),
+          ownerId: Value(am['owner_id'] as String?),
+          status: Value(am['status'] as String? ?? 'not_started'),
+          notes: Value(am['notes'] as String?),
+          sortOrder: Value(am['sort_order'] as int? ?? 0),
+        ));
+      }
       for (final g in (progData['governance'] as List? ?? [])) {
         final gm = g as Map<String, dynamic>;
         await db.programmeDao.upsertGovernance(GovernanceCadencesCompanion(
@@ -252,6 +276,67 @@ class JsonImporter {
           directReport: Value(cm['direct_report'] as bool? ?? false),
         ));
       }
+      for (final r in (peopleData['stakeholder_roles'] as List? ?? [])) {
+        final rm = r as Map<String, dynamic>;
+        await db.stakeholderRoleDao.upsert(StakeholderRolesCompanion(
+          id: Value(rm['id'] as String),
+          projectId: Value(projectId),
+          roleName: Value(rm['role_name'] as String),
+          roleType: Value(rm['role_type'] as String),
+          personId: Value(rm['person_id'] as String?),
+          isScaffold: Value(rm['is_scaffold'] as bool? ?? true),
+          isApplicable: Value(rm['is_applicable'] as bool? ?? true),
+          sortOrder: Value(rm['sort_order'] as int? ?? 0),
+          notes: Value(rm['notes'] as String?),
+          functionalArea: Value(rm['functional_area'] as String?),
+          integrationRelevance: Value(rm['integration_relevance'] as String?),
+          priority: Value(rm['priority'] as String?),
+          engagementStatus: Value(rm['engagement_status'] as String?),
+          gapFlag: Value(rm['gap_flag'] as bool? ?? false),
+          gapDescription: Value(rm['gap_description'] as String?),
+        ));
+      }
+      for (final r in (peopleData['team_roles'] as List? ?? [])) {
+        final rm = r as Map<String, dynamic>;
+        await db.teamRoleDao.upsert(TeamRolesCompanion(
+          id: Value(rm['id'] as String),
+          projectId: Value(projectId),
+          roleName: Value(rm['role_name'] as String),
+          teamGroup: Value(rm['team_group'] as String),
+          personId: Value(rm['person_id'] as String?),
+          isScaffold: Value(rm['is_scaffold'] as bool? ?? true),
+          isApplicable: Value(rm['is_applicable'] as bool? ?? true),
+          sortOrder: Value(rm['sort_order'] as int? ?? 0),
+          notes: Value(rm['notes'] as String?),
+        ));
+      }
+      for (final m in (peopleData['milestones'] as List? ?? [])) {
+        final mm = m as Map<String, dynamic>;
+        await db.milestonesDao.upsert(MilestonesCompanion(
+          id: Value(mm['id'] as String),
+          projectId: Value(projectId),
+          name: Value(mm['name'] as String),
+          date: Value(mm['date'] as String),
+          ownerId: Value(mm['owner_id'] as String?),
+          status: Value(mm['status'] as String? ?? 'upcoming'),
+          isHardDeadline: Value(mm['is_hard_deadline'] as bool? ?? false),
+          notes: Value(mm['notes'] as String?),
+          workstreamId: Value(mm['workstream_id'] as String?),
+        ));
+      }
+    }
+
+    // Action categories (must come before actions due to categoryId FK)
+    for (final c in (data['action_categories'] as List? ?? [])) {
+      final cm = c as Map<String, dynamic>;
+      await db.actionCategoriesDao.upsert(ActionCategoriesCompanion(
+        id: Value(cm['id'] as String),
+        projectId: Value(projectId),
+        name: Value(cm['name'] as String),
+        color: Value(cm['color'] as String),
+        isPreset: Value(cm['is_preset'] as bool? ?? false),
+        sortOrder: Value(cm['sort_order'] as int? ?? 0),
+      ));
     }
 
     // Actions
@@ -269,6 +354,10 @@ class JsonImporter {
         priority: Value(am['priority'] as String? ?? 'medium'),
         source: Value(am['source'] as String? ?? 'manual'),
         sourceNote: Value(am['source_note'] as String?),
+        outcome: Value(am['outcome'] as String?),
+        categoryId: Value(am['category_id'] as String?),
+        recurrenceGroupId: Value(am['recurrence_group_id'] as String?),
+        linkedActionId: Value(am['linked_action_id'] as String?),
       ));
       actionCount++;
     }
@@ -287,6 +376,22 @@ class JsonImporter {
         source: Value(cm['source'] as String? ?? 'manual'),
       ));
       contextCount++;
+    }
+
+    // Glossary
+    for (final g in (data['glossary'] as List? ?? [])) {
+      final gm = g as Map<String, dynamic>;
+      await db.glossaryDao.upsert(GlossaryEntriesCompanion(
+        id: Value(gm['id'] as String),
+        projectId: Value(projectId),
+        type: Value(gm['type'] as String? ?? 'term'),
+        name: Value(gm['name'] as String),
+        acronym: Value(gm['acronym'] as String?),
+        description: Value(gm['description'] as String?),
+        owner: Value(gm['owner'] as String?),
+        environment: Value(gm['environment'] as String?),
+        status: Value(gm['status'] as String?),
+      ));
     }
 
     // Documents
@@ -449,6 +554,161 @@ class JsonImporter {
       ));
     }
 
+    // Status snapshots
+    for (final s in (data['status_snapshots'] as List? ?? [])) {
+      final sm = s as Map<String, dynamic>;
+      await db.statusSnapshotDao.insert(StatusSnapshotsCompanion(
+        id: Value(sm['id'] as String),
+        projectId: Value(projectId),
+        weekEnding: Value(DateTime.parse(sm['week_ending'] as String)),
+        programmeRag: Value(sm['programme_rag'] as String? ?? 'green'),
+        workstreamRag: Value(sm['workstream_rag'] as String? ?? '{}'),
+        overdueActionsCount: Value(sm['overdue_actions_count'] as int? ?? 0),
+        openActionsCount: Value(sm['open_actions_count'] as int? ?? 0),
+        pendingDecisionsCount:
+            Value(sm['pending_decisions_count'] as int? ?? 0),
+        openRisksCount: Value(sm['open_risks_count'] as int? ?? 0),
+      ));
+    }
+
+    // Charter
+    final charterData = data['charter'] as Map<String, dynamic>?;
+    if (charterData != null) {
+      await db.projectCharterDao.upsert(ProjectChartersCompanion(
+        id: Value(charterData['id'] as String),
+        projectId: Value(projectId),
+        vision: Value(charterData['vision'] as String?),
+        objectives: Value(charterData['objectives'] as String?),
+        scopeIn: Value(charterData['scope_in'] as String?),
+        scopeOut: Value(charterData['scope_out'] as String?),
+        deliveryApproach: Value(charterData['delivery_approach'] as String?),
+        successCriteria: Value(charterData['success_criteria'] as String?),
+        keyConstraints: Value(charterData['key_constraints'] as String?),
+        assumptions: Value(charterData['assumptions'] as String?),
+      ));
+    }
+
+    // Programme overview state (cached RAG/narrative)
+    final osData = data['overview_state'] as Map<String, dynamic>?;
+    if (osData != null) {
+      await db.programmeOverviewStateDao.upsert(ProgrammeOverviewStatesCompanion(
+        id: Value(osData['id'] as String),
+        projectId: Value(projectId),
+        cachedRag: Value(osData['cached_rag'] as String?),
+        cachedNarrative: Value(osData['cached_narrative'] as String?),
+        narrativeGeneratedAt: Value(osData['narrative_generated_at'] != null
+            ? DateTime.tryParse(osData['narrative_generated_at'] as String)
+            : null),
+        narrativeManualOverride:
+            Value(osData['narrative_manual_override'] as String?),
+        ragManualOverride: Value(osData['rag_manual_override'] as String?),
+      ));
+    }
+
+    // Timeline / Gantt
+    final timelineData = data['timeline'] as Map<String, dynamic>?;
+    if (timelineData != null) {
+      final headerData = timelineData['header'] as Map<String, dynamic>?;
+      if (headerData != null) {
+        await db.programmeGanttDao.upsertHeader(ProgrammeHeadersCompanion(
+          id: Value(headerData['id'] as String),
+          projectId: Value(projectId),
+          title: Value(headerData['title'] as String?),
+          subtitle: Value(headerData['subtitle'] as String?),
+          hardDeadline: Value(headerData['hard_deadline'] as String?),
+          inScope: Value(headerData['in_scope'] as String?),
+          outOfScope: Value(headerData['out_of_scope'] as String?),
+          monthLabels: Value(headerData['month_labels'] as String?),
+          month0Date: Value(headerData['month0_date'] as String?),
+        ));
+      }
+      final scopeData = timelineData['scope'] as Map<String, dynamic>?;
+      if (scopeData != null) {
+        await db.programmeGanttDao.upsertScope(ProjectScopesCompanion(
+          id: Value(scopeData['id'] as String),
+          projectId: Value(projectId),
+          inScopeItems: Value(scopeData['in_scope_items'] as String?),
+          outOfScope: Value(scopeData['out_of_scope'] as String?),
+        ));
+      }
+      for (final wp in (timelineData['work_packages'] as List? ?? [])) {
+        final wm = wp as Map<String, dynamic>;
+        await db.programmeGanttDao.upsertWorkPackage(TimelineWorkPackagesCompanion(
+          id: Value(wm['id'] as String),
+          projectId: Value(projectId),
+          name: Value(wm['name'] as String),
+          shortCode: Value(wm['short_code'] as String?),
+          description: Value(wm['description'] as String?),
+          colourTheme: Value(wm['colour_theme'] as String? ?? 'wp1'),
+          sortOrder: Value(wm['sort_order'] as int? ?? 0),
+          ragStatus: Value(wm['rag_status'] as String? ?? 'not_started'),
+        ));
+      }
+      for (final a in (timelineData['activities'] as List? ?? [])) {
+        final am = a as Map<String, dynamic>;
+        await db.programmeGanttDao.upsertActivity(TimelineActivitiesCompanion(
+          id: Value(am['id'] as String),
+          workPackageId: Value(am['work_package_id'] as String),
+          projectId: Value(projectId),
+          name: Value(am['name'] as String),
+          owner: Value(am['owner'] as String?),
+          ownerId: Value(am['owner_id'] as String?),
+          activityType:
+              Value(am['activity_type'] as String? ?? 'activity'),
+          startMonth: Value(am['start_month'] as int?),
+          endMonth: Value(am['end_month'] as int?),
+          startDate: Value(am['start_date'] as String?),
+          endDate: Value(am['end_date'] as String?),
+          status: Value(am['status'] as String? ?? 'not_started'),
+          isCritical: Value(am['is_critical'] as bool? ?? false),
+          isBaseline: Value(am['is_baseline'] as bool? ?? false),
+          baselineStart: Value(am['baseline_start'] as int?),
+          baselineEnd: Value(am['baseline_end'] as int?),
+          cellLabel: Value(am['cell_label'] as String?),
+          notes: Value(am['notes'] as String?),
+          sortOrder: Value(am['sort_order'] as int? ?? 0),
+        ));
+      }
+      for (final d in (timelineData['dependencies'] as List? ?? [])) {
+        final dm = d as Map<String, dynamic>;
+        await db.programmeGanttDao.upsertDependency(TimelineDependenciesCompanion(
+          id: Value(dm['id'] as String),
+          projectId: Value(projectId),
+          fromActivityId: Value(dm['from_activity_id'] as String),
+          toActivityId: Value(dm['to_activity_id'] as String),
+          dependencyType:
+              Value(dm['dependency_type'] as String? ?? 'finish_to_start'),
+          notes: Value(dm['notes'] as String?),
+        ));
+      }
+      for (final d in (timelineData['integration_domains'] as List? ?? [])) {
+        final dm = d as Map<String, dynamic>;
+        await db.programmeGanttDao.upsertDomain(IntegrationDomainsCompanion(
+          id: Value(dm['id'] as String),
+          projectId: Value(projectId),
+          priority: Value(dm['priority'] as String?),
+          domain: Value(dm['domain'] as String),
+          likelySystems: Value(dm['likely_systems'] as String?),
+          prioritySignal: Value(dm['priority_signal'] as String?),
+          status: Value(dm['status'] as String? ?? 'not_started'),
+          sortOrder: Value(dm['sort_order'] as int? ?? 0),
+        ));
+      }
+      for (final s in (timelineData['prioritisation_sources'] as List? ?? [])) {
+        final sm = s as Map<String, dynamic>;
+        await db.programmeGanttDao.upsertSource(PrioritisationSourcesCompanion(
+          id: Value(sm['id'] as String),
+          projectId: Value(projectId),
+          sourceName: Value(sm['source_name'] as String),
+          inputType: Value(sm['input_type'] as String?),
+          owner: Value(sm['owner'] as String?),
+          mechanism: Value(sm['mechanism'] as String?),
+          weight: Value(sm['weight'] as String?),
+          sortOrder: Value(sm['sort_order'] as int? ?? 0),
+        ));
+      }
+    }
+
     return ImportResult(
       projectName: projectData['name'] as String,
       risks: riskCount,
@@ -469,6 +729,35 @@ class JsonImporter {
   static Future<void> _clearSyncedTables(
       AppDatabase db, String projectId) async {
     final id = projectId;
+
+    // Timeline — activities/dependencies depend on work packages; clear first
+    await (db.delete(db.timelineDependencies)
+          ..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.timelineActivities)
+          ..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.timelineWorkPackages)
+          ..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.programmeHeaders)
+          ..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.projectScopes)..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.integrationDomains)
+          ..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.prioritisationSources)
+          ..where((t) => t.projectId.equals(id)))
+        .go();
+
+    // Workstream activities depend on workstreams; clear before workstreams
+    await (db.delete(db.workstreamActivities)
+          ..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.workstreamLinks)..where((t) => t.projectId.equals(id)))
+        .go();
     await (db.delete(db.programmeOverviews)
           ..where((t) => t.projectId.equals(id)))
         .go();
@@ -477,6 +766,8 @@ class JsonImporter {
     await (db.delete(db.governanceCadences)
           ..where((t) => t.projectId.equals(id)))
         .go();
+
+    // RAID
     await (db.delete(db.risks)..where((t) => t.projectId.equals(id))).go();
     await (db.delete(db.assumptions)..where((t) => t.projectId.equals(id)))
         .go();
@@ -484,16 +775,31 @@ class JsonImporter {
     await (db.delete(db.programDependencies)
           ..where((t) => t.projectId.equals(id)))
         .go();
+
     await (db.delete(db.decisions)..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.actionCategories)
+          ..where((t) => t.projectId.equals(id)))
         .go();
     await (db.delete(db.projectActions)..where((t) => t.projectId.equals(id)))
         .go();
     await (db.delete(db.contextEntries)..where((t) => t.projectId.equals(id)))
         .go();
+    await (db.delete(db.glossaryEntries)..where((t) => t.projectId.equals(id)))
+        .go();
     await (db.delete(db.documents)..where((t) => t.projectId.equals(id)))
         .go();
     await (db.delete(db.statusReports)..where((t) => t.projectId.equals(id)))
         .go();
+    await (db.delete(db.statusSnapshots)..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.projectCharters)
+          ..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.programmeOverviewStates)
+          ..where((t) => t.projectId.equals(id)))
+        .go();
+
     // Journal links are keyed by entry_id, not project_id — delete them first
     final journalEntryIds = await (db.select(db.journalEntries)
           ..where((t) => t.projectId.equals(id)))
@@ -506,7 +812,12 @@ class JsonImporter {
     }
     await (db.delete(db.journalEntries)..where((t) => t.projectId.equals(id)))
         .go();
-    // People — profiles first (FK to persons), then persons
+
+    // Milestones
+    await (db.delete(db.milestones)..where((t) => t.projectId.equals(id)))
+        .go();
+
+    // People — profiles/roles first (FK to persons), then persons
     final personIds = await (db.select(db.persons)
           ..where((t) => t.projectId.equals(id)))
         .map((p) => p.id)
@@ -519,6 +830,10 @@ class JsonImporter {
             ..where((t) => t.personId.equals(pid)))
           .go();
     }
+    await (db.delete(db.stakeholderRoles)
+          ..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.teamRoles)..where((t) => t.projectId.equals(id))).go();
     await (db.delete(db.persons)..where((t) => t.projectId.equals(id))).go();
   }
 }

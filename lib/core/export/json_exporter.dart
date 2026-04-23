@@ -37,6 +37,8 @@ class JsonExporter {
     if (project == null) throw Exception('Project not found');
     final overview = await db.programmeDao.getOverviewForProject(projectId);
     final workstreams = await db.programmeDao.getWorkstreamsForProject(projectId);
+    final workstreamLinks = await db.workstreamsDao.getLinksForProject(projectId);
+    final workstreamActivities = await db.workstreamActivitiesDao.getForProject(projectId);
     final governance = await db.programmeDao.getGovernanceForProject(projectId);
     final risks = await db.raidDao.getRisksForProject(projectId);
     final assumptions = await db.raidDao.getAssumptionsForProject(projectId);
@@ -46,11 +48,27 @@ class JsonExporter {
     final persons = await db.peopleDao.getPersonsForProject(projectId);
     final stakeholders = await db.peopleDao.getStakeholdersForProject(projectId);
     final colleagues = await db.peopleDao.getColleaguesForProject(projectId);
+    final stakeholderRoles = await db.stakeholderRoleDao.getForProject(projectId);
+    final teamRoles = await db.teamRoleDao.getForProject(projectId);
+    final milestones = await db.milestonesDao.getForProject(projectId);
+    final actionCategories = await db.actionCategoriesDao.getForProject(projectId);
     final actions = await db.actionsDao.getActionsForProject(projectId);
     final contextEntries = await db.contextDao.getEntriesForProject(projectId);
+    final glossaryEntries = await db.glossaryDao.getForProject(projectId);
     final documents = await db.contextDao.getDocumentsForProject(projectId);
     final reports = await db.reportsDao.getReportsForProject(projectId);
+    final statusSnapshots = await db.statusSnapshotDao.getForProject(projectId);
+    final charter = await db.projectCharterDao.getForProject(projectId);
+    final overviewState = await db.programmeOverviewStateDao.getForProject(projectId);
     final journalEntries = await db.journalDao.getEntriesForProject(projectId);
+    // Timeline / Gantt
+    final timelineWorkPackages = await db.programmeGanttDao.getWorkPackages(projectId);
+    final timelineActivities = await db.programmeGanttDao.getActivitiesForProject(projectId);
+    final timelineDependencies = await db.programmeGanttDao.getDependencies(projectId);
+    final programmeHeader = await db.programmeGanttDao.getHeader(projectId);
+    final projectScope = await db.programmeGanttDao.getScope(projectId);
+    final integrationDomains = await db.programmeGanttDao.getDomains(projectId);
+    final prioritisationSources = await db.programmeGanttDao.getSources(projectId);
     // gather journal links for all entries
     final journalLinks = <Map<String, dynamic>>[];
     for (final entry in journalEntries) {
@@ -104,6 +122,29 @@ class JsonExporter {
                   'end_date': w.endDate,
                   'notes': w.notes,
                   'sort_order': w.sortOrder,
+                })
+            .toList(),
+        'workstream_links': workstreamLinks
+            .map((l) => {
+                  'id': l.id,
+                  'from_id': l.fromId,
+                  'to_id': l.toId,
+                  'created_at': l.createdAt.toIso8601String(),
+                })
+            .toList(),
+        'workstream_activities': workstreamActivities
+            .map((a) => {
+                  'id': a.id,
+                  'workstream_id': a.workstreamId,
+                  'name': a.name,
+                  'start_date': a.startDate,
+                  'end_date': a.endDate,
+                  'owner_id': a.ownerId,
+                  'status': a.status,
+                  'notes': a.notes,
+                  'sort_order': a.sortOrder,
+                  'created_at': a.createdAt.toIso8601String(),
+                  'updated_at': a.updatedAt.toIso8601String(),
                 })
             .toList(),
         'governance': governance
@@ -234,7 +275,64 @@ class JsonExporter {
                   'direct_report': c.directReport,
                 })
             .toList(),
+        'stakeholder_roles': stakeholderRoles
+            .map((r) => {
+                  'id': r.id,
+                  'role_name': r.roleName,
+                  'role_type': r.roleType,
+                  'person_id': r.personId,
+                  'is_scaffold': r.isScaffold,
+                  'is_applicable': r.isApplicable,
+                  'sort_order': r.sortOrder,
+                  'notes': r.notes,
+                  'functional_area': r.functionalArea,
+                  'integration_relevance': r.integrationRelevance,
+                  'priority': r.priority,
+                  'engagement_status': r.engagementStatus,
+                  'gap_flag': r.gapFlag,
+                  'gap_description': r.gapDescription,
+                  'created_at': r.createdAt.toIso8601String(),
+                  'updated_at': r.updatedAt.toIso8601String(),
+                })
+            .toList(),
+        'team_roles': teamRoles
+            .map((r) => {
+                  'id': r.id,
+                  'role_name': r.roleName,
+                  'team_group': r.teamGroup,
+                  'person_id': r.personId,
+                  'is_scaffold': r.isScaffold,
+                  'is_applicable': r.isApplicable,
+                  'sort_order': r.sortOrder,
+                  'notes': r.notes,
+                  'created_at': r.createdAt.toIso8601String(),
+                  'updated_at': r.updatedAt.toIso8601String(),
+                })
+            .toList(),
+        'milestones': milestones
+            .map((m) => {
+                  'id': m.id,
+                  'name': m.name,
+                  'date': m.date,
+                  'owner_id': m.ownerId,
+                  'status': m.status,
+                  'is_hard_deadline': m.isHardDeadline,
+                  'notes': m.notes,
+                  'workstream_id': m.workstreamId,
+                  'created_at': m.createdAt.toIso8601String(),
+                  'updated_at': m.updatedAt.toIso8601String(),
+                })
+            .toList(),
       },
+      'action_categories': actionCategories
+          .map((c) => {
+                'id': c.id,
+                'name': c.name,
+                'color': c.color,
+                'is_preset': c.isPreset,
+                'sort_order': c.sortOrder,
+              })
+          .toList(),
       'actions': actions
           .map((a) => {
                 'id': a.id,
@@ -246,6 +344,10 @@ class JsonExporter {
                 'priority': a.priority,
                 'source': a.source,
                 'source_note': a.sourceNote,
+                'outcome': a.outcome,
+                'category_id': a.categoryId,
+                'recurrence_group_id': a.recurrenceGroupId,
+                'linked_action_id': a.linkedActionId,
                 'created_at': a.createdAt.toIso8601String(),
                 'updated_at': a.updatedAt.toIso8601String(),
               })
@@ -260,6 +362,20 @@ class JsonExporter {
                 'source': c.source,
                 'created_at': c.createdAt.toIso8601String(),
                 'updated_at': c.updatedAt.toIso8601String(),
+              })
+          .toList(),
+      'glossary': glossaryEntries
+          .map((g) => {
+                'id': g.id,
+                'type': g.type,
+                'name': g.name,
+                'acronym': g.acronym,
+                'description': g.description,
+                'owner': g.owner,
+                'environment': g.environment,
+                'status': g.status,
+                'created_at': g.createdAt.toIso8601String(),
+                'updated_at': g.updatedAt.toIso8601String(),
               })
           .toList(),
       'documents': documents
@@ -304,6 +420,145 @@ class JsonExporter {
                 'updated_at': r.updatedAt.toIso8601String(),
               })
           .toList(),
+      'status_snapshots': statusSnapshots
+          .map((s) => {
+                'id': s.id,
+                'week_ending': s.weekEnding.toIso8601String(),
+                'programme_rag': s.programmeRag,
+                'workstream_rag': s.workstreamRag,
+                'overdue_actions_count': s.overdueActionsCount,
+                'open_actions_count': s.openActionsCount,
+                'pending_decisions_count': s.pendingDecisionsCount,
+                'open_risks_count': s.openRisksCount,
+                'created_at': s.createdAt.toIso8601String(),
+              })
+          .toList(),
+      'charter': charter == null
+          ? null
+          : {
+              'id': charter.id,
+              'vision': charter.vision,
+              'objectives': charter.objectives,
+              'scope_in': charter.scopeIn,
+              'scope_out': charter.scopeOut,
+              'delivery_approach': charter.deliveryApproach,
+              'success_criteria': charter.successCriteria,
+              'key_constraints': charter.keyConstraints,
+              'assumptions': charter.assumptions,
+              'created_at': charter.createdAt.toIso8601String(),
+              'updated_at': charter.updatedAt.toIso8601String(),
+            },
+      'overview_state': overviewState == null
+          ? null
+          : {
+              'id': overviewState.id,
+              'cached_rag': overviewState.cachedRag,
+              'cached_narrative': overviewState.cachedNarrative,
+              'narrative_generated_at':
+                  overviewState.narrativeGeneratedAt?.toIso8601String(),
+              'narrative_manual_override': overviewState.narrativeManualOverride,
+              'rag_manual_override': overviewState.ragManualOverride,
+              'created_at': overviewState.createdAt.toIso8601String(),
+              'updated_at': overviewState.updatedAt.toIso8601String(),
+            },
+      'timeline': {
+        'header': programmeHeader == null
+            ? null
+            : {
+                'id': programmeHeader.id,
+                'title': programmeHeader.title,
+                'subtitle': programmeHeader.subtitle,
+                'hard_deadline': programmeHeader.hardDeadline,
+                'in_scope': programmeHeader.inScope,
+                'out_of_scope': programmeHeader.outOfScope,
+                'month_labels': programmeHeader.monthLabels,
+                'month0_date': programmeHeader.month0Date,
+                'created_at': programmeHeader.createdAt.toIso8601String(),
+                'updated_at': programmeHeader.updatedAt.toIso8601String(),
+              },
+        'scope': projectScope == null
+            ? null
+            : {
+                'id': projectScope.id,
+                'in_scope_items': projectScope.inScopeItems,
+                'out_of_scope': projectScope.outOfScope,
+                'created_at': projectScope.createdAt.toIso8601String(),
+                'updated_at': projectScope.updatedAt.toIso8601String(),
+              },
+        'work_packages': timelineWorkPackages
+            .map((wp) => {
+                  'id': wp.id,
+                  'name': wp.name,
+                  'short_code': wp.shortCode,
+                  'description': wp.description,
+                  'colour_theme': wp.colourTheme,
+                  'sort_order': wp.sortOrder,
+                  'rag_status': wp.ragStatus,
+                  'created_at': wp.createdAt.toIso8601String(),
+                  'updated_at': wp.updatedAt.toIso8601String(),
+                })
+            .toList(),
+        'activities': timelineActivities
+            .map((a) => {
+                  'id': a.id,
+                  'work_package_id': a.workPackageId,
+                  'name': a.name,
+                  'owner': a.owner,
+                  'owner_id': a.ownerId,
+                  'activity_type': a.activityType,
+                  'start_month': a.startMonth,
+                  'end_month': a.endMonth,
+                  'start_date': a.startDate,
+                  'end_date': a.endDate,
+                  'status': a.status,
+                  'is_critical': a.isCritical,
+                  'is_baseline': a.isBaseline,
+                  'baseline_start': a.baselineStart,
+                  'baseline_end': a.baselineEnd,
+                  'cell_label': a.cellLabel,
+                  'notes': a.notes,
+                  'sort_order': a.sortOrder,
+                  'created_at': a.createdAt.toIso8601String(),
+                  'updated_at': a.updatedAt.toIso8601String(),
+                })
+            .toList(),
+        'dependencies': timelineDependencies
+            .map((d) => {
+                  'id': d.id,
+                  'from_activity_id': d.fromActivityId,
+                  'to_activity_id': d.toActivityId,
+                  'dependency_type': d.dependencyType,
+                  'notes': d.notes,
+                  'created_at': d.createdAt.toIso8601String(),
+                })
+            .toList(),
+        'integration_domains': integrationDomains
+            .map((d) => {
+                  'id': d.id,
+                  'priority': d.priority,
+                  'domain': d.domain,
+                  'likely_systems': d.likelySystems,
+                  'priority_signal': d.prioritySignal,
+                  'status': d.status,
+                  'sort_order': d.sortOrder,
+                  'created_at': d.createdAt.toIso8601String(),
+                  'updated_at': d.updatedAt.toIso8601String(),
+                })
+            .toList(),
+        'prioritisation_sources': prioritisationSources
+            .map((s) => {
+                  'id': s.id,
+                  'source_name': s.sourceName,
+                  'input_type': s.inputType,
+                  'owner': s.owner,
+                  'mechanism': s.mechanism,
+                  'weight': s.weight,
+                  'sort_order': s.sortOrder,
+                  'created_at': s.createdAt.toIso8601String(),
+                  'updated_at': s.updatedAt.toIso8601String(),
+                })
+            .toList(),
+      },
     };
 
     // Playbook — optional; only exported when a playbook is attached
