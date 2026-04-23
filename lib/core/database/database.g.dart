@@ -7748,6 +7748,3021 @@ class StakeholderProfilesCompanion extends UpdateCompanion<StakeholderProfile> {
   }
 }
 
+class $StakeholderRolesTable extends StakeholderRoles
+    with TableInfo<$StakeholderRolesTable, StakeholderRole> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $StakeholderRolesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES projects (id)',
+    ),
+  );
+  static const VerificationMeta _roleNameMeta = const VerificationMeta(
+    'roleName',
+  );
+  @override
+  late final GeneratedColumn<String> roleName = GeneratedColumn<String>(
+    'role_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _roleTypeMeta = const VerificationMeta(
+    'roleType',
+  );
+  @override
+  late final GeneratedColumn<String> roleType = GeneratedColumn<String>(
+    'role_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _personIdMeta = const VerificationMeta(
+    'personId',
+  );
+  @override
+  late final GeneratedColumn<String> personId = GeneratedColumn<String>(
+    'person_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isScaffoldMeta = const VerificationMeta(
+    'isScaffold',
+  );
+  @override
+  late final GeneratedColumn<bool> isScaffold = GeneratedColumn<bool>(
+    'is_scaffold',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_scaffold" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _isApplicableMeta = const VerificationMeta(
+    'isApplicable',
+  );
+  @override
+  late final GeneratedColumn<bool> isApplicable = GeneratedColumn<bool>(
+    'is_applicable',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_applicable" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _functionalAreaMeta = const VerificationMeta(
+    'functionalArea',
+  );
+  @override
+  late final GeneratedColumn<String> functionalArea = GeneratedColumn<String>(
+    'functional_area',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _integrationRelevanceMeta =
+      const VerificationMeta('integrationRelevance');
+  @override
+  late final GeneratedColumn<String> integrationRelevance =
+      GeneratedColumn<String>(
+        'integration_relevance',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _priorityMeta = const VerificationMeta(
+    'priority',
+  );
+  @override
+  late final GeneratedColumn<String> priority = GeneratedColumn<String>(
+    'priority',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _engagementStatusMeta = const VerificationMeta(
+    'engagementStatus',
+  );
+  @override
+  late final GeneratedColumn<String> engagementStatus = GeneratedColumn<String>(
+    'engagement_status',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _gapFlagMeta = const VerificationMeta(
+    'gapFlag',
+  );
+  @override
+  late final GeneratedColumn<bool> gapFlag = GeneratedColumn<bool>(
+    'gap_flag',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("gap_flag" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _gapDescriptionMeta = const VerificationMeta(
+    'gapDescription',
+  );
+  @override
+  late final GeneratedColumn<String> gapDescription = GeneratedColumn<String>(
+    'gap_description',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    projectId,
+    roleName,
+    roleType,
+    personId,
+    isScaffold,
+    isApplicable,
+    sortOrder,
+    notes,
+    functionalArea,
+    integrationRelevance,
+    priority,
+    engagementStatus,
+    gapFlag,
+    gapDescription,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'stakeholder_roles';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<StakeholderRole> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_projectIdMeta);
+    }
+    if (data.containsKey('role_name')) {
+      context.handle(
+        _roleNameMeta,
+        roleName.isAcceptableOrUnknown(data['role_name']!, _roleNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_roleNameMeta);
+    }
+    if (data.containsKey('role_type')) {
+      context.handle(
+        _roleTypeMeta,
+        roleType.isAcceptableOrUnknown(data['role_type']!, _roleTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_roleTypeMeta);
+    }
+    if (data.containsKey('person_id')) {
+      context.handle(
+        _personIdMeta,
+        personId.isAcceptableOrUnknown(data['person_id']!, _personIdMeta),
+      );
+    }
+    if (data.containsKey('is_scaffold')) {
+      context.handle(
+        _isScaffoldMeta,
+        isScaffold.isAcceptableOrUnknown(data['is_scaffold']!, _isScaffoldMeta),
+      );
+    }
+    if (data.containsKey('is_applicable')) {
+      context.handle(
+        _isApplicableMeta,
+        isApplicable.isAcceptableOrUnknown(
+          data['is_applicable']!,
+          _isApplicableMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('functional_area')) {
+      context.handle(
+        _functionalAreaMeta,
+        functionalArea.isAcceptableOrUnknown(
+          data['functional_area']!,
+          _functionalAreaMeta,
+        ),
+      );
+    }
+    if (data.containsKey('integration_relevance')) {
+      context.handle(
+        _integrationRelevanceMeta,
+        integrationRelevance.isAcceptableOrUnknown(
+          data['integration_relevance']!,
+          _integrationRelevanceMeta,
+        ),
+      );
+    }
+    if (data.containsKey('priority')) {
+      context.handle(
+        _priorityMeta,
+        priority.isAcceptableOrUnknown(data['priority']!, _priorityMeta),
+      );
+    }
+    if (data.containsKey('engagement_status')) {
+      context.handle(
+        _engagementStatusMeta,
+        engagementStatus.isAcceptableOrUnknown(
+          data['engagement_status']!,
+          _engagementStatusMeta,
+        ),
+      );
+    }
+    if (data.containsKey('gap_flag')) {
+      context.handle(
+        _gapFlagMeta,
+        gapFlag.isAcceptableOrUnknown(data['gap_flag']!, _gapFlagMeta),
+      );
+    }
+    if (data.containsKey('gap_description')) {
+      context.handle(
+        _gapDescriptionMeta,
+        gapDescription.isAcceptableOrUnknown(
+          data['gap_description']!,
+          _gapDescriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  StakeholderRole map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return StakeholderRole(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      )!,
+      roleName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}role_name'],
+      )!,
+      roleType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}role_type'],
+      )!,
+      personId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}person_id'],
+      ),
+      isScaffold: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_scaffold'],
+      )!,
+      isApplicable: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_applicable'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      functionalArea: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}functional_area'],
+      ),
+      integrationRelevance: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}integration_relevance'],
+      ),
+      priority: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}priority'],
+      ),
+      engagementStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}engagement_status'],
+      ),
+      gapFlag: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}gap_flag'],
+      )!,
+      gapDescription: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}gap_description'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $StakeholderRolesTable createAlias(String alias) {
+    return $StakeholderRolesTable(attachedDatabase, alias);
+  }
+}
+
+class StakeholderRole extends DataClass implements Insertable<StakeholderRole> {
+  final String id;
+  final String projectId;
+  final String roleName;
+  final String roleType;
+  final String? personId;
+  final bool isScaffold;
+  final bool isApplicable;
+  final int sortOrder;
+  final String? notes;
+  final String? functionalArea;
+  final String? integrationRelevance;
+  final String? priority;
+  final String? engagementStatus;
+  final bool gapFlag;
+  final String? gapDescription;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const StakeholderRole({
+    required this.id,
+    required this.projectId,
+    required this.roleName,
+    required this.roleType,
+    this.personId,
+    required this.isScaffold,
+    required this.isApplicable,
+    required this.sortOrder,
+    this.notes,
+    this.functionalArea,
+    this.integrationRelevance,
+    this.priority,
+    this.engagementStatus,
+    required this.gapFlag,
+    this.gapDescription,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['project_id'] = Variable<String>(projectId);
+    map['role_name'] = Variable<String>(roleName);
+    map['role_type'] = Variable<String>(roleType);
+    if (!nullToAbsent || personId != null) {
+      map['person_id'] = Variable<String>(personId);
+    }
+    map['is_scaffold'] = Variable<bool>(isScaffold);
+    map['is_applicable'] = Variable<bool>(isApplicable);
+    map['sort_order'] = Variable<int>(sortOrder);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    if (!nullToAbsent || functionalArea != null) {
+      map['functional_area'] = Variable<String>(functionalArea);
+    }
+    if (!nullToAbsent || integrationRelevance != null) {
+      map['integration_relevance'] = Variable<String>(integrationRelevance);
+    }
+    if (!nullToAbsent || priority != null) {
+      map['priority'] = Variable<String>(priority);
+    }
+    if (!nullToAbsent || engagementStatus != null) {
+      map['engagement_status'] = Variable<String>(engagementStatus);
+    }
+    map['gap_flag'] = Variable<bool>(gapFlag);
+    if (!nullToAbsent || gapDescription != null) {
+      map['gap_description'] = Variable<String>(gapDescription);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  StakeholderRolesCompanion toCompanion(bool nullToAbsent) {
+    return StakeholderRolesCompanion(
+      id: Value(id),
+      projectId: Value(projectId),
+      roleName: Value(roleName),
+      roleType: Value(roleType),
+      personId: personId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(personId),
+      isScaffold: Value(isScaffold),
+      isApplicable: Value(isApplicable),
+      sortOrder: Value(sortOrder),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      functionalArea: functionalArea == null && nullToAbsent
+          ? const Value.absent()
+          : Value(functionalArea),
+      integrationRelevance: integrationRelevance == null && nullToAbsent
+          ? const Value.absent()
+          : Value(integrationRelevance),
+      priority: priority == null && nullToAbsent
+          ? const Value.absent()
+          : Value(priority),
+      engagementStatus: engagementStatus == null && nullToAbsent
+          ? const Value.absent()
+          : Value(engagementStatus),
+      gapFlag: Value(gapFlag),
+      gapDescription: gapDescription == null && nullToAbsent
+          ? const Value.absent()
+          : Value(gapDescription),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory StakeholderRole.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return StakeholderRole(
+      id: serializer.fromJson<String>(json['id']),
+      projectId: serializer.fromJson<String>(json['projectId']),
+      roleName: serializer.fromJson<String>(json['roleName']),
+      roleType: serializer.fromJson<String>(json['roleType']),
+      personId: serializer.fromJson<String?>(json['personId']),
+      isScaffold: serializer.fromJson<bool>(json['isScaffold']),
+      isApplicable: serializer.fromJson<bool>(json['isApplicable']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      functionalArea: serializer.fromJson<String?>(json['functionalArea']),
+      integrationRelevance: serializer.fromJson<String?>(
+        json['integrationRelevance'],
+      ),
+      priority: serializer.fromJson<String?>(json['priority']),
+      engagementStatus: serializer.fromJson<String?>(json['engagementStatus']),
+      gapFlag: serializer.fromJson<bool>(json['gapFlag']),
+      gapDescription: serializer.fromJson<String?>(json['gapDescription']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'projectId': serializer.toJson<String>(projectId),
+      'roleName': serializer.toJson<String>(roleName),
+      'roleType': serializer.toJson<String>(roleType),
+      'personId': serializer.toJson<String?>(personId),
+      'isScaffold': serializer.toJson<bool>(isScaffold),
+      'isApplicable': serializer.toJson<bool>(isApplicable),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+      'notes': serializer.toJson<String?>(notes),
+      'functionalArea': serializer.toJson<String?>(functionalArea),
+      'integrationRelevance': serializer.toJson<String?>(integrationRelevance),
+      'priority': serializer.toJson<String?>(priority),
+      'engagementStatus': serializer.toJson<String?>(engagementStatus),
+      'gapFlag': serializer.toJson<bool>(gapFlag),
+      'gapDescription': serializer.toJson<String?>(gapDescription),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  StakeholderRole copyWith({
+    String? id,
+    String? projectId,
+    String? roleName,
+    String? roleType,
+    Value<String?> personId = const Value.absent(),
+    bool? isScaffold,
+    bool? isApplicable,
+    int? sortOrder,
+    Value<String?> notes = const Value.absent(),
+    Value<String?> functionalArea = const Value.absent(),
+    Value<String?> integrationRelevance = const Value.absent(),
+    Value<String?> priority = const Value.absent(),
+    Value<String?> engagementStatus = const Value.absent(),
+    bool? gapFlag,
+    Value<String?> gapDescription = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => StakeholderRole(
+    id: id ?? this.id,
+    projectId: projectId ?? this.projectId,
+    roleName: roleName ?? this.roleName,
+    roleType: roleType ?? this.roleType,
+    personId: personId.present ? personId.value : this.personId,
+    isScaffold: isScaffold ?? this.isScaffold,
+    isApplicable: isApplicable ?? this.isApplicable,
+    sortOrder: sortOrder ?? this.sortOrder,
+    notes: notes.present ? notes.value : this.notes,
+    functionalArea: functionalArea.present
+        ? functionalArea.value
+        : this.functionalArea,
+    integrationRelevance: integrationRelevance.present
+        ? integrationRelevance.value
+        : this.integrationRelevance,
+    priority: priority.present ? priority.value : this.priority,
+    engagementStatus: engagementStatus.present
+        ? engagementStatus.value
+        : this.engagementStatus,
+    gapFlag: gapFlag ?? this.gapFlag,
+    gapDescription: gapDescription.present
+        ? gapDescription.value
+        : this.gapDescription,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  StakeholderRole copyWithCompanion(StakeholderRolesCompanion data) {
+    return StakeholderRole(
+      id: data.id.present ? data.id.value : this.id,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      roleName: data.roleName.present ? data.roleName.value : this.roleName,
+      roleType: data.roleType.present ? data.roleType.value : this.roleType,
+      personId: data.personId.present ? data.personId.value : this.personId,
+      isScaffold: data.isScaffold.present
+          ? data.isScaffold.value
+          : this.isScaffold,
+      isApplicable: data.isApplicable.present
+          ? data.isApplicable.value
+          : this.isApplicable,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      functionalArea: data.functionalArea.present
+          ? data.functionalArea.value
+          : this.functionalArea,
+      integrationRelevance: data.integrationRelevance.present
+          ? data.integrationRelevance.value
+          : this.integrationRelevance,
+      priority: data.priority.present ? data.priority.value : this.priority,
+      engagementStatus: data.engagementStatus.present
+          ? data.engagementStatus.value
+          : this.engagementStatus,
+      gapFlag: data.gapFlag.present ? data.gapFlag.value : this.gapFlag,
+      gapDescription: data.gapDescription.present
+          ? data.gapDescription.value
+          : this.gapDescription,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StakeholderRole(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('roleName: $roleName, ')
+          ..write('roleType: $roleType, ')
+          ..write('personId: $personId, ')
+          ..write('isScaffold: $isScaffold, ')
+          ..write('isApplicable: $isApplicable, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('notes: $notes, ')
+          ..write('functionalArea: $functionalArea, ')
+          ..write('integrationRelevance: $integrationRelevance, ')
+          ..write('priority: $priority, ')
+          ..write('engagementStatus: $engagementStatus, ')
+          ..write('gapFlag: $gapFlag, ')
+          ..write('gapDescription: $gapDescription, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    projectId,
+    roleName,
+    roleType,
+    personId,
+    isScaffold,
+    isApplicable,
+    sortOrder,
+    notes,
+    functionalArea,
+    integrationRelevance,
+    priority,
+    engagementStatus,
+    gapFlag,
+    gapDescription,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is StakeholderRole &&
+          other.id == this.id &&
+          other.projectId == this.projectId &&
+          other.roleName == this.roleName &&
+          other.roleType == this.roleType &&
+          other.personId == this.personId &&
+          other.isScaffold == this.isScaffold &&
+          other.isApplicable == this.isApplicable &&
+          other.sortOrder == this.sortOrder &&
+          other.notes == this.notes &&
+          other.functionalArea == this.functionalArea &&
+          other.integrationRelevance == this.integrationRelevance &&
+          other.priority == this.priority &&
+          other.engagementStatus == this.engagementStatus &&
+          other.gapFlag == this.gapFlag &&
+          other.gapDescription == this.gapDescription &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class StakeholderRolesCompanion extends UpdateCompanion<StakeholderRole> {
+  final Value<String> id;
+  final Value<String> projectId;
+  final Value<String> roleName;
+  final Value<String> roleType;
+  final Value<String?> personId;
+  final Value<bool> isScaffold;
+  final Value<bool> isApplicable;
+  final Value<int> sortOrder;
+  final Value<String?> notes;
+  final Value<String?> functionalArea;
+  final Value<String?> integrationRelevance;
+  final Value<String?> priority;
+  final Value<String?> engagementStatus;
+  final Value<bool> gapFlag;
+  final Value<String?> gapDescription;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const StakeholderRolesCompanion({
+    this.id = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.roleName = const Value.absent(),
+    this.roleType = const Value.absent(),
+    this.personId = const Value.absent(),
+    this.isScaffold = const Value.absent(),
+    this.isApplicable = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.functionalArea = const Value.absent(),
+    this.integrationRelevance = const Value.absent(),
+    this.priority = const Value.absent(),
+    this.engagementStatus = const Value.absent(),
+    this.gapFlag = const Value.absent(),
+    this.gapDescription = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  StakeholderRolesCompanion.insert({
+    required String id,
+    required String projectId,
+    required String roleName,
+    required String roleType,
+    this.personId = const Value.absent(),
+    this.isScaffold = const Value.absent(),
+    this.isApplicable = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.functionalArea = const Value.absent(),
+    this.integrationRelevance = const Value.absent(),
+    this.priority = const Value.absent(),
+    this.engagementStatus = const Value.absent(),
+    this.gapFlag = const Value.absent(),
+    this.gapDescription = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       projectId = Value(projectId),
+       roleName = Value(roleName),
+       roleType = Value(roleType);
+  static Insertable<StakeholderRole> custom({
+    Expression<String>? id,
+    Expression<String>? projectId,
+    Expression<String>? roleName,
+    Expression<String>? roleType,
+    Expression<String>? personId,
+    Expression<bool>? isScaffold,
+    Expression<bool>? isApplicable,
+    Expression<int>? sortOrder,
+    Expression<String>? notes,
+    Expression<String>? functionalArea,
+    Expression<String>? integrationRelevance,
+    Expression<String>? priority,
+    Expression<String>? engagementStatus,
+    Expression<bool>? gapFlag,
+    Expression<String>? gapDescription,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (projectId != null) 'project_id': projectId,
+      if (roleName != null) 'role_name': roleName,
+      if (roleType != null) 'role_type': roleType,
+      if (personId != null) 'person_id': personId,
+      if (isScaffold != null) 'is_scaffold': isScaffold,
+      if (isApplicable != null) 'is_applicable': isApplicable,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (notes != null) 'notes': notes,
+      if (functionalArea != null) 'functional_area': functionalArea,
+      if (integrationRelevance != null)
+        'integration_relevance': integrationRelevance,
+      if (priority != null) 'priority': priority,
+      if (engagementStatus != null) 'engagement_status': engagementStatus,
+      if (gapFlag != null) 'gap_flag': gapFlag,
+      if (gapDescription != null) 'gap_description': gapDescription,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  StakeholderRolesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? projectId,
+    Value<String>? roleName,
+    Value<String>? roleType,
+    Value<String?>? personId,
+    Value<bool>? isScaffold,
+    Value<bool>? isApplicable,
+    Value<int>? sortOrder,
+    Value<String?>? notes,
+    Value<String?>? functionalArea,
+    Value<String?>? integrationRelevance,
+    Value<String?>? priority,
+    Value<String?>? engagementStatus,
+    Value<bool>? gapFlag,
+    Value<String?>? gapDescription,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return StakeholderRolesCompanion(
+      id: id ?? this.id,
+      projectId: projectId ?? this.projectId,
+      roleName: roleName ?? this.roleName,
+      roleType: roleType ?? this.roleType,
+      personId: personId ?? this.personId,
+      isScaffold: isScaffold ?? this.isScaffold,
+      isApplicable: isApplicable ?? this.isApplicable,
+      sortOrder: sortOrder ?? this.sortOrder,
+      notes: notes ?? this.notes,
+      functionalArea: functionalArea ?? this.functionalArea,
+      integrationRelevance: integrationRelevance ?? this.integrationRelevance,
+      priority: priority ?? this.priority,
+      engagementStatus: engagementStatus ?? this.engagementStatus,
+      gapFlag: gapFlag ?? this.gapFlag,
+      gapDescription: gapDescription ?? this.gapDescription,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (roleName.present) {
+      map['role_name'] = Variable<String>(roleName.value);
+    }
+    if (roleType.present) {
+      map['role_type'] = Variable<String>(roleType.value);
+    }
+    if (personId.present) {
+      map['person_id'] = Variable<String>(personId.value);
+    }
+    if (isScaffold.present) {
+      map['is_scaffold'] = Variable<bool>(isScaffold.value);
+    }
+    if (isApplicable.present) {
+      map['is_applicable'] = Variable<bool>(isApplicable.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (functionalArea.present) {
+      map['functional_area'] = Variable<String>(functionalArea.value);
+    }
+    if (integrationRelevance.present) {
+      map['integration_relevance'] = Variable<String>(
+        integrationRelevance.value,
+      );
+    }
+    if (priority.present) {
+      map['priority'] = Variable<String>(priority.value);
+    }
+    if (engagementStatus.present) {
+      map['engagement_status'] = Variable<String>(engagementStatus.value);
+    }
+    if (gapFlag.present) {
+      map['gap_flag'] = Variable<bool>(gapFlag.value);
+    }
+    if (gapDescription.present) {
+      map['gap_description'] = Variable<String>(gapDescription.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StakeholderRolesCompanion(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('roleName: $roleName, ')
+          ..write('roleType: $roleType, ')
+          ..write('personId: $personId, ')
+          ..write('isScaffold: $isScaffold, ')
+          ..write('isApplicable: $isApplicable, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('notes: $notes, ')
+          ..write('functionalArea: $functionalArea, ')
+          ..write('integrationRelevance: $integrationRelevance, ')
+          ..write('priority: $priority, ')
+          ..write('engagementStatus: $engagementStatus, ')
+          ..write('gapFlag: $gapFlag, ')
+          ..write('gapDescription: $gapDescription, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $TeamRolesTable extends TeamRoles
+    with TableInfo<$TeamRolesTable, TeamRole> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TeamRolesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES projects (id)',
+    ),
+  );
+  static const VerificationMeta _roleNameMeta = const VerificationMeta(
+    'roleName',
+  );
+  @override
+  late final GeneratedColumn<String> roleName = GeneratedColumn<String>(
+    'role_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _teamGroupMeta = const VerificationMeta(
+    'teamGroup',
+  );
+  @override
+  late final GeneratedColumn<String> teamGroup = GeneratedColumn<String>(
+    'team_group',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _personIdMeta = const VerificationMeta(
+    'personId',
+  );
+  @override
+  late final GeneratedColumn<String> personId = GeneratedColumn<String>(
+    'person_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isScaffoldMeta = const VerificationMeta(
+    'isScaffold',
+  );
+  @override
+  late final GeneratedColumn<bool> isScaffold = GeneratedColumn<bool>(
+    'is_scaffold',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_scaffold" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _isApplicableMeta = const VerificationMeta(
+    'isApplicable',
+  );
+  @override
+  late final GeneratedColumn<bool> isApplicable = GeneratedColumn<bool>(
+    'is_applicable',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_applicable" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    projectId,
+    roleName,
+    teamGroup,
+    personId,
+    isScaffold,
+    isApplicable,
+    sortOrder,
+    notes,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'team_roles';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TeamRole> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_projectIdMeta);
+    }
+    if (data.containsKey('role_name')) {
+      context.handle(
+        _roleNameMeta,
+        roleName.isAcceptableOrUnknown(data['role_name']!, _roleNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_roleNameMeta);
+    }
+    if (data.containsKey('team_group')) {
+      context.handle(
+        _teamGroupMeta,
+        teamGroup.isAcceptableOrUnknown(data['team_group']!, _teamGroupMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_teamGroupMeta);
+    }
+    if (data.containsKey('person_id')) {
+      context.handle(
+        _personIdMeta,
+        personId.isAcceptableOrUnknown(data['person_id']!, _personIdMeta),
+      );
+    }
+    if (data.containsKey('is_scaffold')) {
+      context.handle(
+        _isScaffoldMeta,
+        isScaffold.isAcceptableOrUnknown(data['is_scaffold']!, _isScaffoldMeta),
+      );
+    }
+    if (data.containsKey('is_applicable')) {
+      context.handle(
+        _isApplicableMeta,
+        isApplicable.isAcceptableOrUnknown(
+          data['is_applicable']!,
+          _isApplicableMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TeamRole map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TeamRole(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      )!,
+      roleName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}role_name'],
+      )!,
+      teamGroup: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}team_group'],
+      )!,
+      personId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}person_id'],
+      ),
+      isScaffold: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_scaffold'],
+      )!,
+      isApplicable: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_applicable'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $TeamRolesTable createAlias(String alias) {
+    return $TeamRolesTable(attachedDatabase, alias);
+  }
+}
+
+class TeamRole extends DataClass implements Insertable<TeamRole> {
+  final String id;
+  final String projectId;
+  final String roleName;
+  final String teamGroup;
+  final String? personId;
+  final bool isScaffold;
+  final bool isApplicable;
+  final int sortOrder;
+  final String? notes;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const TeamRole({
+    required this.id,
+    required this.projectId,
+    required this.roleName,
+    required this.teamGroup,
+    this.personId,
+    required this.isScaffold,
+    required this.isApplicable,
+    required this.sortOrder,
+    this.notes,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['project_id'] = Variable<String>(projectId);
+    map['role_name'] = Variable<String>(roleName);
+    map['team_group'] = Variable<String>(teamGroup);
+    if (!nullToAbsent || personId != null) {
+      map['person_id'] = Variable<String>(personId);
+    }
+    map['is_scaffold'] = Variable<bool>(isScaffold);
+    map['is_applicable'] = Variable<bool>(isApplicable);
+    map['sort_order'] = Variable<int>(sortOrder);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  TeamRolesCompanion toCompanion(bool nullToAbsent) {
+    return TeamRolesCompanion(
+      id: Value(id),
+      projectId: Value(projectId),
+      roleName: Value(roleName),
+      teamGroup: Value(teamGroup),
+      personId: personId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(personId),
+      isScaffold: Value(isScaffold),
+      isApplicable: Value(isApplicable),
+      sortOrder: Value(sortOrder),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory TeamRole.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TeamRole(
+      id: serializer.fromJson<String>(json['id']),
+      projectId: serializer.fromJson<String>(json['projectId']),
+      roleName: serializer.fromJson<String>(json['roleName']),
+      teamGroup: serializer.fromJson<String>(json['teamGroup']),
+      personId: serializer.fromJson<String?>(json['personId']),
+      isScaffold: serializer.fromJson<bool>(json['isScaffold']),
+      isApplicable: serializer.fromJson<bool>(json['isApplicable']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'projectId': serializer.toJson<String>(projectId),
+      'roleName': serializer.toJson<String>(roleName),
+      'teamGroup': serializer.toJson<String>(teamGroup),
+      'personId': serializer.toJson<String?>(personId),
+      'isScaffold': serializer.toJson<bool>(isScaffold),
+      'isApplicable': serializer.toJson<bool>(isApplicable),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+      'notes': serializer.toJson<String?>(notes),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  TeamRole copyWith({
+    String? id,
+    String? projectId,
+    String? roleName,
+    String? teamGroup,
+    Value<String?> personId = const Value.absent(),
+    bool? isScaffold,
+    bool? isApplicable,
+    int? sortOrder,
+    Value<String?> notes = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => TeamRole(
+    id: id ?? this.id,
+    projectId: projectId ?? this.projectId,
+    roleName: roleName ?? this.roleName,
+    teamGroup: teamGroup ?? this.teamGroup,
+    personId: personId.present ? personId.value : this.personId,
+    isScaffold: isScaffold ?? this.isScaffold,
+    isApplicable: isApplicable ?? this.isApplicable,
+    sortOrder: sortOrder ?? this.sortOrder,
+    notes: notes.present ? notes.value : this.notes,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  TeamRole copyWithCompanion(TeamRolesCompanion data) {
+    return TeamRole(
+      id: data.id.present ? data.id.value : this.id,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      roleName: data.roleName.present ? data.roleName.value : this.roleName,
+      teamGroup: data.teamGroup.present ? data.teamGroup.value : this.teamGroup,
+      personId: data.personId.present ? data.personId.value : this.personId,
+      isScaffold: data.isScaffold.present
+          ? data.isScaffold.value
+          : this.isScaffold,
+      isApplicable: data.isApplicable.present
+          ? data.isApplicable.value
+          : this.isApplicable,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TeamRole(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('roleName: $roleName, ')
+          ..write('teamGroup: $teamGroup, ')
+          ..write('personId: $personId, ')
+          ..write('isScaffold: $isScaffold, ')
+          ..write('isApplicable: $isApplicable, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    projectId,
+    roleName,
+    teamGroup,
+    personId,
+    isScaffold,
+    isApplicable,
+    sortOrder,
+    notes,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TeamRole &&
+          other.id == this.id &&
+          other.projectId == this.projectId &&
+          other.roleName == this.roleName &&
+          other.teamGroup == this.teamGroup &&
+          other.personId == this.personId &&
+          other.isScaffold == this.isScaffold &&
+          other.isApplicable == this.isApplicable &&
+          other.sortOrder == this.sortOrder &&
+          other.notes == this.notes &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class TeamRolesCompanion extends UpdateCompanion<TeamRole> {
+  final Value<String> id;
+  final Value<String> projectId;
+  final Value<String> roleName;
+  final Value<String> teamGroup;
+  final Value<String?> personId;
+  final Value<bool> isScaffold;
+  final Value<bool> isApplicable;
+  final Value<int> sortOrder;
+  final Value<String?> notes;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const TeamRolesCompanion({
+    this.id = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.roleName = const Value.absent(),
+    this.teamGroup = const Value.absent(),
+    this.personId = const Value.absent(),
+    this.isScaffold = const Value.absent(),
+    this.isApplicable = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  TeamRolesCompanion.insert({
+    required String id,
+    required String projectId,
+    required String roleName,
+    required String teamGroup,
+    this.personId = const Value.absent(),
+    this.isScaffold = const Value.absent(),
+    this.isApplicable = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       projectId = Value(projectId),
+       roleName = Value(roleName),
+       teamGroup = Value(teamGroup);
+  static Insertable<TeamRole> custom({
+    Expression<String>? id,
+    Expression<String>? projectId,
+    Expression<String>? roleName,
+    Expression<String>? teamGroup,
+    Expression<String>? personId,
+    Expression<bool>? isScaffold,
+    Expression<bool>? isApplicable,
+    Expression<int>? sortOrder,
+    Expression<String>? notes,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (projectId != null) 'project_id': projectId,
+      if (roleName != null) 'role_name': roleName,
+      if (teamGroup != null) 'team_group': teamGroup,
+      if (personId != null) 'person_id': personId,
+      if (isScaffold != null) 'is_scaffold': isScaffold,
+      if (isApplicable != null) 'is_applicable': isApplicable,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (notes != null) 'notes': notes,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  TeamRolesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? projectId,
+    Value<String>? roleName,
+    Value<String>? teamGroup,
+    Value<String?>? personId,
+    Value<bool>? isScaffold,
+    Value<bool>? isApplicable,
+    Value<int>? sortOrder,
+    Value<String?>? notes,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return TeamRolesCompanion(
+      id: id ?? this.id,
+      projectId: projectId ?? this.projectId,
+      roleName: roleName ?? this.roleName,
+      teamGroup: teamGroup ?? this.teamGroup,
+      personId: personId ?? this.personId,
+      isScaffold: isScaffold ?? this.isScaffold,
+      isApplicable: isApplicable ?? this.isApplicable,
+      sortOrder: sortOrder ?? this.sortOrder,
+      notes: notes ?? this.notes,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (roleName.present) {
+      map['role_name'] = Variable<String>(roleName.value);
+    }
+    if (teamGroup.present) {
+      map['team_group'] = Variable<String>(teamGroup.value);
+    }
+    if (personId.present) {
+      map['person_id'] = Variable<String>(personId.value);
+    }
+    if (isScaffold.present) {
+      map['is_scaffold'] = Variable<bool>(isScaffold.value);
+    }
+    if (isApplicable.present) {
+      map['is_applicable'] = Variable<bool>(isApplicable.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TeamRolesCompanion(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('roleName: $roleName, ')
+          ..write('teamGroup: $teamGroup, ')
+          ..write('personId: $personId, ')
+          ..write('isScaffold: $isScaffold, ')
+          ..write('isApplicable: $isApplicable, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $MilestonesTable extends Milestones
+    with TableInfo<$MilestonesTable, Milestone> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MilestonesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES projects (id)',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dateMeta = const VerificationMeta('date');
+  @override
+  late final GeneratedColumn<String> date = GeneratedColumn<String>(
+    'date',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('upcoming'),
+  );
+  static const VerificationMeta _isHardDeadlineMeta = const VerificationMeta(
+    'isHardDeadline',
+  );
+  @override
+  late final GeneratedColumn<bool> isHardDeadline = GeneratedColumn<bool>(
+    'is_hard_deadline',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_hard_deadline" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _workstreamIdMeta = const VerificationMeta(
+    'workstreamId',
+  );
+  @override
+  late final GeneratedColumn<String> workstreamId = GeneratedColumn<String>(
+    'workstream_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    projectId,
+    name,
+    date,
+    ownerId,
+    status,
+    isHardDeadline,
+    notes,
+    workstreamId,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'milestones';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Milestone> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_projectIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('date')) {
+      context.handle(
+        _dateMeta,
+        date.isAcceptableOrUnknown(data['date']!, _dateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dateMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('is_hard_deadline')) {
+      context.handle(
+        _isHardDeadlineMeta,
+        isHardDeadline.isAcceptableOrUnknown(
+          data['is_hard_deadline']!,
+          _isHardDeadlineMeta,
+        ),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('workstream_id')) {
+      context.handle(
+        _workstreamIdMeta,
+        workstreamId.isAcceptableOrUnknown(
+          data['workstream_id']!,
+          _workstreamIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Milestone map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Milestone(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      date: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}date'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      ),
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      isHardDeadline: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_hard_deadline'],
+      )!,
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      workstreamId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workstream_id'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $MilestonesTable createAlias(String alias) {
+    return $MilestonesTable(attachedDatabase, alias);
+  }
+}
+
+class Milestone extends DataClass implements Insertable<Milestone> {
+  final String id;
+  final String projectId;
+  final String name;
+  final String date;
+  final String? ownerId;
+  final String status;
+  final bool isHardDeadline;
+  final String? notes;
+  final String? workstreamId;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const Milestone({
+    required this.id,
+    required this.projectId,
+    required this.name,
+    required this.date,
+    this.ownerId,
+    required this.status,
+    required this.isHardDeadline,
+    this.notes,
+    this.workstreamId,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['project_id'] = Variable<String>(projectId);
+    map['name'] = Variable<String>(name);
+    map['date'] = Variable<String>(date);
+    if (!nullToAbsent || ownerId != null) {
+      map['owner_id'] = Variable<String>(ownerId);
+    }
+    map['status'] = Variable<String>(status);
+    map['is_hard_deadline'] = Variable<bool>(isHardDeadline);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    if (!nullToAbsent || workstreamId != null) {
+      map['workstream_id'] = Variable<String>(workstreamId);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  MilestonesCompanion toCompanion(bool nullToAbsent) {
+    return MilestonesCompanion(
+      id: Value(id),
+      projectId: Value(projectId),
+      name: Value(name),
+      date: Value(date),
+      ownerId: ownerId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ownerId),
+      status: Value(status),
+      isHardDeadline: Value(isHardDeadline),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      workstreamId: workstreamId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(workstreamId),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory Milestone.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Milestone(
+      id: serializer.fromJson<String>(json['id']),
+      projectId: serializer.fromJson<String>(json['projectId']),
+      name: serializer.fromJson<String>(json['name']),
+      date: serializer.fromJson<String>(json['date']),
+      ownerId: serializer.fromJson<String?>(json['ownerId']),
+      status: serializer.fromJson<String>(json['status']),
+      isHardDeadline: serializer.fromJson<bool>(json['isHardDeadline']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      workstreamId: serializer.fromJson<String?>(json['workstreamId']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'projectId': serializer.toJson<String>(projectId),
+      'name': serializer.toJson<String>(name),
+      'date': serializer.toJson<String>(date),
+      'ownerId': serializer.toJson<String?>(ownerId),
+      'status': serializer.toJson<String>(status),
+      'isHardDeadline': serializer.toJson<bool>(isHardDeadline),
+      'notes': serializer.toJson<String?>(notes),
+      'workstreamId': serializer.toJson<String?>(workstreamId),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  Milestone copyWith({
+    String? id,
+    String? projectId,
+    String? name,
+    String? date,
+    Value<String?> ownerId = const Value.absent(),
+    String? status,
+    bool? isHardDeadline,
+    Value<String?> notes = const Value.absent(),
+    Value<String?> workstreamId = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => Milestone(
+    id: id ?? this.id,
+    projectId: projectId ?? this.projectId,
+    name: name ?? this.name,
+    date: date ?? this.date,
+    ownerId: ownerId.present ? ownerId.value : this.ownerId,
+    status: status ?? this.status,
+    isHardDeadline: isHardDeadline ?? this.isHardDeadline,
+    notes: notes.present ? notes.value : this.notes,
+    workstreamId: workstreamId.present ? workstreamId.value : this.workstreamId,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  Milestone copyWithCompanion(MilestonesCompanion data) {
+    return Milestone(
+      id: data.id.present ? data.id.value : this.id,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      name: data.name.present ? data.name.value : this.name,
+      date: data.date.present ? data.date.value : this.date,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      status: data.status.present ? data.status.value : this.status,
+      isHardDeadline: data.isHardDeadline.present
+          ? data.isHardDeadline.value
+          : this.isHardDeadline,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      workstreamId: data.workstreamId.present
+          ? data.workstreamId.value
+          : this.workstreamId,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Milestone(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('name: $name, ')
+          ..write('date: $date, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('status: $status, ')
+          ..write('isHardDeadline: $isHardDeadline, ')
+          ..write('notes: $notes, ')
+          ..write('workstreamId: $workstreamId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    projectId,
+    name,
+    date,
+    ownerId,
+    status,
+    isHardDeadline,
+    notes,
+    workstreamId,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Milestone &&
+          other.id == this.id &&
+          other.projectId == this.projectId &&
+          other.name == this.name &&
+          other.date == this.date &&
+          other.ownerId == this.ownerId &&
+          other.status == this.status &&
+          other.isHardDeadline == this.isHardDeadline &&
+          other.notes == this.notes &&
+          other.workstreamId == this.workstreamId &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class MilestonesCompanion extends UpdateCompanion<Milestone> {
+  final Value<String> id;
+  final Value<String> projectId;
+  final Value<String> name;
+  final Value<String> date;
+  final Value<String?> ownerId;
+  final Value<String> status;
+  final Value<bool> isHardDeadline;
+  final Value<String?> notes;
+  final Value<String?> workstreamId;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const MilestonesCompanion({
+    this.id = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.date = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.status = const Value.absent(),
+    this.isHardDeadline = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.workstreamId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MilestonesCompanion.insert({
+    required String id,
+    required String projectId,
+    required String name,
+    required String date,
+    this.ownerId = const Value.absent(),
+    this.status = const Value.absent(),
+    this.isHardDeadline = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.workstreamId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       projectId = Value(projectId),
+       name = Value(name),
+       date = Value(date);
+  static Insertable<Milestone> custom({
+    Expression<String>? id,
+    Expression<String>? projectId,
+    Expression<String>? name,
+    Expression<String>? date,
+    Expression<String>? ownerId,
+    Expression<String>? status,
+    Expression<bool>? isHardDeadline,
+    Expression<String>? notes,
+    Expression<String>? workstreamId,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (projectId != null) 'project_id': projectId,
+      if (name != null) 'name': name,
+      if (date != null) 'date': date,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (status != null) 'status': status,
+      if (isHardDeadline != null) 'is_hard_deadline': isHardDeadline,
+      if (notes != null) 'notes': notes,
+      if (workstreamId != null) 'workstream_id': workstreamId,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MilestonesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? projectId,
+    Value<String>? name,
+    Value<String>? date,
+    Value<String?>? ownerId,
+    Value<String>? status,
+    Value<bool>? isHardDeadline,
+    Value<String?>? notes,
+    Value<String?>? workstreamId,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return MilestonesCompanion(
+      id: id ?? this.id,
+      projectId: projectId ?? this.projectId,
+      name: name ?? this.name,
+      date: date ?? this.date,
+      ownerId: ownerId ?? this.ownerId,
+      status: status ?? this.status,
+      isHardDeadline: isHardDeadline ?? this.isHardDeadline,
+      notes: notes ?? this.notes,
+      workstreamId: workstreamId ?? this.workstreamId,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (date.present) {
+      map['date'] = Variable<String>(date.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (isHardDeadline.present) {
+      map['is_hard_deadline'] = Variable<bool>(isHardDeadline.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (workstreamId.present) {
+      map['workstream_id'] = Variable<String>(workstreamId.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MilestonesCompanion(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('name: $name, ')
+          ..write('date: $date, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('status: $status, ')
+          ..write('isHardDeadline: $isHardDeadline, ')
+          ..write('notes: $notes, ')
+          ..write('workstreamId: $workstreamId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $WorkstreamActivitiesTable extends WorkstreamActivities
+    with TableInfo<$WorkstreamActivitiesTable, WorkstreamActivity> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WorkstreamActivitiesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _workstreamIdMeta = const VerificationMeta(
+    'workstreamId',
+  );
+  @override
+  late final GeneratedColumn<String> workstreamId = GeneratedColumn<String>(
+    'workstream_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES workstreams (id)',
+    ),
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES projects (id)',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startDateMeta = const VerificationMeta(
+    'startDate',
+  );
+  @override
+  late final GeneratedColumn<String> startDate = GeneratedColumn<String>(
+    'start_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endDateMeta = const VerificationMeta(
+    'endDate',
+  );
+  @override
+  late final GeneratedColumn<String> endDate = GeneratedColumn<String>(
+    'end_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('not_started'),
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    workstreamId,
+    projectId,
+    name,
+    startDate,
+    endDate,
+    ownerId,
+    status,
+    notes,
+    sortOrder,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'workstream_activities';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WorkstreamActivity> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('workstream_id')) {
+      context.handle(
+        _workstreamIdMeta,
+        workstreamId.isAcceptableOrUnknown(
+          data['workstream_id']!,
+          _workstreamIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_workstreamIdMeta);
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_projectIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('start_date')) {
+      context.handle(
+        _startDateMeta,
+        startDate.isAcceptableOrUnknown(data['start_date']!, _startDateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startDateMeta);
+    }
+    if (data.containsKey('end_date')) {
+      context.handle(
+        _endDateMeta,
+        endDate.isAcceptableOrUnknown(data['end_date']!, _endDateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_endDateMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  WorkstreamActivity map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WorkstreamActivity(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      workstreamId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workstream_id'],
+      )!,
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      startDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}start_date'],
+      )!,
+      endDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}end_date'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      ),
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $WorkstreamActivitiesTable createAlias(String alias) {
+    return $WorkstreamActivitiesTable(attachedDatabase, alias);
+  }
+}
+
+class WorkstreamActivity extends DataClass
+    implements Insertable<WorkstreamActivity> {
+  final String id;
+  final String workstreamId;
+  final String projectId;
+  final String name;
+  final String startDate;
+  final String endDate;
+  final String? ownerId;
+  final String status;
+  final String? notes;
+  final int sortOrder;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const WorkstreamActivity({
+    required this.id,
+    required this.workstreamId,
+    required this.projectId,
+    required this.name,
+    required this.startDate,
+    required this.endDate,
+    this.ownerId,
+    required this.status,
+    this.notes,
+    required this.sortOrder,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['workstream_id'] = Variable<String>(workstreamId);
+    map['project_id'] = Variable<String>(projectId);
+    map['name'] = Variable<String>(name);
+    map['start_date'] = Variable<String>(startDate);
+    map['end_date'] = Variable<String>(endDate);
+    if (!nullToAbsent || ownerId != null) {
+      map['owner_id'] = Variable<String>(ownerId);
+    }
+    map['status'] = Variable<String>(status);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['sort_order'] = Variable<int>(sortOrder);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  WorkstreamActivitiesCompanion toCompanion(bool nullToAbsent) {
+    return WorkstreamActivitiesCompanion(
+      id: Value(id),
+      workstreamId: Value(workstreamId),
+      projectId: Value(projectId),
+      name: Value(name),
+      startDate: Value(startDate),
+      endDate: Value(endDate),
+      ownerId: ownerId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ownerId),
+      status: Value(status),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      sortOrder: Value(sortOrder),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory WorkstreamActivity.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WorkstreamActivity(
+      id: serializer.fromJson<String>(json['id']),
+      workstreamId: serializer.fromJson<String>(json['workstreamId']),
+      projectId: serializer.fromJson<String>(json['projectId']),
+      name: serializer.fromJson<String>(json['name']),
+      startDate: serializer.fromJson<String>(json['startDate']),
+      endDate: serializer.fromJson<String>(json['endDate']),
+      ownerId: serializer.fromJson<String?>(json['ownerId']),
+      status: serializer.fromJson<String>(json['status']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'workstreamId': serializer.toJson<String>(workstreamId),
+      'projectId': serializer.toJson<String>(projectId),
+      'name': serializer.toJson<String>(name),
+      'startDate': serializer.toJson<String>(startDate),
+      'endDate': serializer.toJson<String>(endDate),
+      'ownerId': serializer.toJson<String?>(ownerId),
+      'status': serializer.toJson<String>(status),
+      'notes': serializer.toJson<String?>(notes),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  WorkstreamActivity copyWith({
+    String? id,
+    String? workstreamId,
+    String? projectId,
+    String? name,
+    String? startDate,
+    String? endDate,
+    Value<String?> ownerId = const Value.absent(),
+    String? status,
+    Value<String?> notes = const Value.absent(),
+    int? sortOrder,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => WorkstreamActivity(
+    id: id ?? this.id,
+    workstreamId: workstreamId ?? this.workstreamId,
+    projectId: projectId ?? this.projectId,
+    name: name ?? this.name,
+    startDate: startDate ?? this.startDate,
+    endDate: endDate ?? this.endDate,
+    ownerId: ownerId.present ? ownerId.value : this.ownerId,
+    status: status ?? this.status,
+    notes: notes.present ? notes.value : this.notes,
+    sortOrder: sortOrder ?? this.sortOrder,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  WorkstreamActivity copyWithCompanion(WorkstreamActivitiesCompanion data) {
+    return WorkstreamActivity(
+      id: data.id.present ? data.id.value : this.id,
+      workstreamId: data.workstreamId.present
+          ? data.workstreamId.value
+          : this.workstreamId,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      name: data.name.present ? data.name.value : this.name,
+      startDate: data.startDate.present ? data.startDate.value : this.startDate,
+      endDate: data.endDate.present ? data.endDate.value : this.endDate,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      status: data.status.present ? data.status.value : this.status,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkstreamActivity(')
+          ..write('id: $id, ')
+          ..write('workstreamId: $workstreamId, ')
+          ..write('projectId: $projectId, ')
+          ..write('name: $name, ')
+          ..write('startDate: $startDate, ')
+          ..write('endDate: $endDate, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('status: $status, ')
+          ..write('notes: $notes, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    workstreamId,
+    projectId,
+    name,
+    startDate,
+    endDate,
+    ownerId,
+    status,
+    notes,
+    sortOrder,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WorkstreamActivity &&
+          other.id == this.id &&
+          other.workstreamId == this.workstreamId &&
+          other.projectId == this.projectId &&
+          other.name == this.name &&
+          other.startDate == this.startDate &&
+          other.endDate == this.endDate &&
+          other.ownerId == this.ownerId &&
+          other.status == this.status &&
+          other.notes == this.notes &&
+          other.sortOrder == this.sortOrder &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class WorkstreamActivitiesCompanion
+    extends UpdateCompanion<WorkstreamActivity> {
+  final Value<String> id;
+  final Value<String> workstreamId;
+  final Value<String> projectId;
+  final Value<String> name;
+  final Value<String> startDate;
+  final Value<String> endDate;
+  final Value<String?> ownerId;
+  final Value<String> status;
+  final Value<String?> notes;
+  final Value<int> sortOrder;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const WorkstreamActivitiesCompanion({
+    this.id = const Value.absent(),
+    this.workstreamId = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.startDate = const Value.absent(),
+    this.endDate = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.status = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WorkstreamActivitiesCompanion.insert({
+    required String id,
+    required String workstreamId,
+    required String projectId,
+    required String name,
+    required String startDate,
+    required String endDate,
+    this.ownerId = const Value.absent(),
+    this.status = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       workstreamId = Value(workstreamId),
+       projectId = Value(projectId),
+       name = Value(name),
+       startDate = Value(startDate),
+       endDate = Value(endDate);
+  static Insertable<WorkstreamActivity> custom({
+    Expression<String>? id,
+    Expression<String>? workstreamId,
+    Expression<String>? projectId,
+    Expression<String>? name,
+    Expression<String>? startDate,
+    Expression<String>? endDate,
+    Expression<String>? ownerId,
+    Expression<String>? status,
+    Expression<String>? notes,
+    Expression<int>? sortOrder,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (workstreamId != null) 'workstream_id': workstreamId,
+      if (projectId != null) 'project_id': projectId,
+      if (name != null) 'name': name,
+      if (startDate != null) 'start_date': startDate,
+      if (endDate != null) 'end_date': endDate,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (status != null) 'status': status,
+      if (notes != null) 'notes': notes,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WorkstreamActivitiesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? workstreamId,
+    Value<String>? projectId,
+    Value<String>? name,
+    Value<String>? startDate,
+    Value<String>? endDate,
+    Value<String?>? ownerId,
+    Value<String>? status,
+    Value<String?>? notes,
+    Value<int>? sortOrder,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return WorkstreamActivitiesCompanion(
+      id: id ?? this.id,
+      workstreamId: workstreamId ?? this.workstreamId,
+      projectId: projectId ?? this.projectId,
+      name: name ?? this.name,
+      startDate: startDate ?? this.startDate,
+      endDate: endDate ?? this.endDate,
+      ownerId: ownerId ?? this.ownerId,
+      status: status ?? this.status,
+      notes: notes ?? this.notes,
+      sortOrder: sortOrder ?? this.sortOrder,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (workstreamId.present) {
+      map['workstream_id'] = Variable<String>(workstreamId.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (startDate.present) {
+      map['start_date'] = Variable<String>(startDate.value);
+    }
+    if (endDate.present) {
+      map['end_date'] = Variable<String>(endDate.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkstreamActivitiesCompanion(')
+          ..write('id: $id, ')
+          ..write('workstreamId: $workstreamId, ')
+          ..write('projectId: $projectId, ')
+          ..write('name: $name, ')
+          ..write('startDate: $startDate, ')
+          ..write('endDate: $endDate, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('status: $status, ')
+          ..write('notes: $notes, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ColleagueProfilesTable extends ColleagueProfiles
     with TableInfo<$ColleagueProfilesTable, ColleagueProfile> {
   @override
@@ -17383,6 +20398,6581 @@ class ProjectStageProgressesCompanion
   }
 }
 
+class $TimelineWorkPackagesTable extends TimelineWorkPackages
+    with TableInfo<$TimelineWorkPackagesTable, TimelineWorkPackage> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TimelineWorkPackagesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES projects (id)',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _shortCodeMeta = const VerificationMeta(
+    'shortCode',
+  );
+  @override
+  late final GeneratedColumn<String> shortCode = GeneratedColumn<String>(
+    'short_code',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _colourThemeMeta = const VerificationMeta(
+    'colourTheme',
+  );
+  @override
+  late final GeneratedColumn<String> colourTheme = GeneratedColumn<String>(
+    'colour_theme',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('wp1'),
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _ragStatusMeta = const VerificationMeta(
+    'ragStatus',
+  );
+  @override
+  late final GeneratedColumn<String> ragStatus = GeneratedColumn<String>(
+    'rag_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('not_started'),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    projectId,
+    name,
+    shortCode,
+    description,
+    colourTheme,
+    sortOrder,
+    ragStatus,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'timeline_work_packages';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TimelineWorkPackage> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_projectIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('short_code')) {
+      context.handle(
+        _shortCodeMeta,
+        shortCode.isAcceptableOrUnknown(data['short_code']!, _shortCodeMeta),
+      );
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('colour_theme')) {
+      context.handle(
+        _colourThemeMeta,
+        colourTheme.isAcceptableOrUnknown(
+          data['colour_theme']!,
+          _colourThemeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
+    if (data.containsKey('rag_status')) {
+      context.handle(
+        _ragStatusMeta,
+        ragStatus.isAcceptableOrUnknown(data['rag_status']!, _ragStatusMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TimelineWorkPackage map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TimelineWorkPackage(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      shortCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}short_code'],
+      ),
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      ),
+      colourTheme: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}colour_theme'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+      ragStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}rag_status'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $TimelineWorkPackagesTable createAlias(String alias) {
+    return $TimelineWorkPackagesTable(attachedDatabase, alias);
+  }
+}
+
+class TimelineWorkPackage extends DataClass
+    implements Insertable<TimelineWorkPackage> {
+  final String id;
+  final String projectId;
+  final String name;
+  final String? shortCode;
+  final String? description;
+  final String colourTheme;
+  final int sortOrder;
+  final String ragStatus;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const TimelineWorkPackage({
+    required this.id,
+    required this.projectId,
+    required this.name,
+    this.shortCode,
+    this.description,
+    required this.colourTheme,
+    required this.sortOrder,
+    required this.ragStatus,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['project_id'] = Variable<String>(projectId);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || shortCode != null) {
+      map['short_code'] = Variable<String>(shortCode);
+    }
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    map['colour_theme'] = Variable<String>(colourTheme);
+    map['sort_order'] = Variable<int>(sortOrder);
+    map['rag_status'] = Variable<String>(ragStatus);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  TimelineWorkPackagesCompanion toCompanion(bool nullToAbsent) {
+    return TimelineWorkPackagesCompanion(
+      id: Value(id),
+      projectId: Value(projectId),
+      name: Value(name),
+      shortCode: shortCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(shortCode),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
+      colourTheme: Value(colourTheme),
+      sortOrder: Value(sortOrder),
+      ragStatus: Value(ragStatus),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory TimelineWorkPackage.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TimelineWorkPackage(
+      id: serializer.fromJson<String>(json['id']),
+      projectId: serializer.fromJson<String>(json['projectId']),
+      name: serializer.fromJson<String>(json['name']),
+      shortCode: serializer.fromJson<String?>(json['shortCode']),
+      description: serializer.fromJson<String?>(json['description']),
+      colourTheme: serializer.fromJson<String>(json['colourTheme']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      ragStatus: serializer.fromJson<String>(json['ragStatus']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'projectId': serializer.toJson<String>(projectId),
+      'name': serializer.toJson<String>(name),
+      'shortCode': serializer.toJson<String?>(shortCode),
+      'description': serializer.toJson<String?>(description),
+      'colourTheme': serializer.toJson<String>(colourTheme),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+      'ragStatus': serializer.toJson<String>(ragStatus),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  TimelineWorkPackage copyWith({
+    String? id,
+    String? projectId,
+    String? name,
+    Value<String?> shortCode = const Value.absent(),
+    Value<String?> description = const Value.absent(),
+    String? colourTheme,
+    int? sortOrder,
+    String? ragStatus,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => TimelineWorkPackage(
+    id: id ?? this.id,
+    projectId: projectId ?? this.projectId,
+    name: name ?? this.name,
+    shortCode: shortCode.present ? shortCode.value : this.shortCode,
+    description: description.present ? description.value : this.description,
+    colourTheme: colourTheme ?? this.colourTheme,
+    sortOrder: sortOrder ?? this.sortOrder,
+    ragStatus: ragStatus ?? this.ragStatus,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  TimelineWorkPackage copyWithCompanion(TimelineWorkPackagesCompanion data) {
+    return TimelineWorkPackage(
+      id: data.id.present ? data.id.value : this.id,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      name: data.name.present ? data.name.value : this.name,
+      shortCode: data.shortCode.present ? data.shortCode.value : this.shortCode,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+      colourTheme: data.colourTheme.present
+          ? data.colourTheme.value
+          : this.colourTheme,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      ragStatus: data.ragStatus.present ? data.ragStatus.value : this.ragStatus,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TimelineWorkPackage(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('name: $name, ')
+          ..write('shortCode: $shortCode, ')
+          ..write('description: $description, ')
+          ..write('colourTheme: $colourTheme, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('ragStatus: $ragStatus, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    projectId,
+    name,
+    shortCode,
+    description,
+    colourTheme,
+    sortOrder,
+    ragStatus,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TimelineWorkPackage &&
+          other.id == this.id &&
+          other.projectId == this.projectId &&
+          other.name == this.name &&
+          other.shortCode == this.shortCode &&
+          other.description == this.description &&
+          other.colourTheme == this.colourTheme &&
+          other.sortOrder == this.sortOrder &&
+          other.ragStatus == this.ragStatus &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class TimelineWorkPackagesCompanion
+    extends UpdateCompanion<TimelineWorkPackage> {
+  final Value<String> id;
+  final Value<String> projectId;
+  final Value<String> name;
+  final Value<String?> shortCode;
+  final Value<String?> description;
+  final Value<String> colourTheme;
+  final Value<int> sortOrder;
+  final Value<String> ragStatus;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const TimelineWorkPackagesCompanion({
+    this.id = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.shortCode = const Value.absent(),
+    this.description = const Value.absent(),
+    this.colourTheme = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.ragStatus = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  TimelineWorkPackagesCompanion.insert({
+    required String id,
+    required String projectId,
+    required String name,
+    this.shortCode = const Value.absent(),
+    this.description = const Value.absent(),
+    this.colourTheme = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.ragStatus = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       projectId = Value(projectId),
+       name = Value(name);
+  static Insertable<TimelineWorkPackage> custom({
+    Expression<String>? id,
+    Expression<String>? projectId,
+    Expression<String>? name,
+    Expression<String>? shortCode,
+    Expression<String>? description,
+    Expression<String>? colourTheme,
+    Expression<int>? sortOrder,
+    Expression<String>? ragStatus,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (projectId != null) 'project_id': projectId,
+      if (name != null) 'name': name,
+      if (shortCode != null) 'short_code': shortCode,
+      if (description != null) 'description': description,
+      if (colourTheme != null) 'colour_theme': colourTheme,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (ragStatus != null) 'rag_status': ragStatus,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  TimelineWorkPackagesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? projectId,
+    Value<String>? name,
+    Value<String?>? shortCode,
+    Value<String?>? description,
+    Value<String>? colourTheme,
+    Value<int>? sortOrder,
+    Value<String>? ragStatus,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return TimelineWorkPackagesCompanion(
+      id: id ?? this.id,
+      projectId: projectId ?? this.projectId,
+      name: name ?? this.name,
+      shortCode: shortCode ?? this.shortCode,
+      description: description ?? this.description,
+      colourTheme: colourTheme ?? this.colourTheme,
+      sortOrder: sortOrder ?? this.sortOrder,
+      ragStatus: ragStatus ?? this.ragStatus,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (shortCode.present) {
+      map['short_code'] = Variable<String>(shortCode.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (colourTheme.present) {
+      map['colour_theme'] = Variable<String>(colourTheme.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (ragStatus.present) {
+      map['rag_status'] = Variable<String>(ragStatus.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TimelineWorkPackagesCompanion(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('name: $name, ')
+          ..write('shortCode: $shortCode, ')
+          ..write('description: $description, ')
+          ..write('colourTheme: $colourTheme, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('ragStatus: $ragStatus, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $TimelineActivitiesTable extends TimelineActivities
+    with TableInfo<$TimelineActivitiesTable, TimelineActivity> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TimelineActivitiesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _workPackageIdMeta = const VerificationMeta(
+    'workPackageId',
+  );
+  @override
+  late final GeneratedColumn<String> workPackageId = GeneratedColumn<String>(
+    'work_package_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES timeline_work_packages (id)',
+    ),
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES projects (id)',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerMeta = const VerificationMeta('owner');
+  @override
+  late final GeneratedColumn<String> owner = GeneratedColumn<String>(
+    'owner',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _activityTypeMeta = const VerificationMeta(
+    'activityType',
+  );
+  @override
+  late final GeneratedColumn<String> activityType = GeneratedColumn<String>(
+    'activity_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('activity'),
+  );
+  static const VerificationMeta _startMonthMeta = const VerificationMeta(
+    'startMonth',
+  );
+  @override
+  late final GeneratedColumn<int> startMonth = GeneratedColumn<int>(
+    'start_month',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _endMonthMeta = const VerificationMeta(
+    'endMonth',
+  );
+  @override
+  late final GeneratedColumn<int> endMonth = GeneratedColumn<int>(
+    'end_month',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _startDateMeta = const VerificationMeta(
+    'startDate',
+  );
+  @override
+  late final GeneratedColumn<String> startDate = GeneratedColumn<String>(
+    'start_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _endDateMeta = const VerificationMeta(
+    'endDate',
+  );
+  @override
+  late final GeneratedColumn<String> endDate = GeneratedColumn<String>(
+    'end_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('not_started'),
+  );
+  static const VerificationMeta _isCriticalMeta = const VerificationMeta(
+    'isCritical',
+  );
+  @override
+  late final GeneratedColumn<bool> isCritical = GeneratedColumn<bool>(
+    'is_critical',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_critical" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _isBaselineMeta = const VerificationMeta(
+    'isBaseline',
+  );
+  @override
+  late final GeneratedColumn<bool> isBaseline = GeneratedColumn<bool>(
+    'is_baseline',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_baseline" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _baselineStartMeta = const VerificationMeta(
+    'baselineStart',
+  );
+  @override
+  late final GeneratedColumn<int> baselineStart = GeneratedColumn<int>(
+    'baseline_start',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _baselineEndMeta = const VerificationMeta(
+    'baselineEnd',
+  );
+  @override
+  late final GeneratedColumn<int> baselineEnd = GeneratedColumn<int>(
+    'baseline_end',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _cellLabelMeta = const VerificationMeta(
+    'cellLabel',
+  );
+  @override
+  late final GeneratedColumn<String> cellLabel = GeneratedColumn<String>(
+    'cell_label',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    workPackageId,
+    projectId,
+    name,
+    owner,
+    ownerId,
+    activityType,
+    startMonth,
+    endMonth,
+    startDate,
+    endDate,
+    status,
+    isCritical,
+    isBaseline,
+    baselineStart,
+    baselineEnd,
+    cellLabel,
+    notes,
+    sortOrder,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'timeline_activities';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TimelineActivity> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('work_package_id')) {
+      context.handle(
+        _workPackageIdMeta,
+        workPackageId.isAcceptableOrUnknown(
+          data['work_package_id']!,
+          _workPackageIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_workPackageIdMeta);
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_projectIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('owner')) {
+      context.handle(
+        _ownerMeta,
+        owner.isAcceptableOrUnknown(data['owner']!, _ownerMeta),
+      );
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    }
+    if (data.containsKey('activity_type')) {
+      context.handle(
+        _activityTypeMeta,
+        activityType.isAcceptableOrUnknown(
+          data['activity_type']!,
+          _activityTypeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('start_month')) {
+      context.handle(
+        _startMonthMeta,
+        startMonth.isAcceptableOrUnknown(data['start_month']!, _startMonthMeta),
+      );
+    }
+    if (data.containsKey('end_month')) {
+      context.handle(
+        _endMonthMeta,
+        endMonth.isAcceptableOrUnknown(data['end_month']!, _endMonthMeta),
+      );
+    }
+    if (data.containsKey('start_date')) {
+      context.handle(
+        _startDateMeta,
+        startDate.isAcceptableOrUnknown(data['start_date']!, _startDateMeta),
+      );
+    }
+    if (data.containsKey('end_date')) {
+      context.handle(
+        _endDateMeta,
+        endDate.isAcceptableOrUnknown(data['end_date']!, _endDateMeta),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('is_critical')) {
+      context.handle(
+        _isCriticalMeta,
+        isCritical.isAcceptableOrUnknown(data['is_critical']!, _isCriticalMeta),
+      );
+    }
+    if (data.containsKey('is_baseline')) {
+      context.handle(
+        _isBaselineMeta,
+        isBaseline.isAcceptableOrUnknown(data['is_baseline']!, _isBaselineMeta),
+      );
+    }
+    if (data.containsKey('baseline_start')) {
+      context.handle(
+        _baselineStartMeta,
+        baselineStart.isAcceptableOrUnknown(
+          data['baseline_start']!,
+          _baselineStartMeta,
+        ),
+      );
+    }
+    if (data.containsKey('baseline_end')) {
+      context.handle(
+        _baselineEndMeta,
+        baselineEnd.isAcceptableOrUnknown(
+          data['baseline_end']!,
+          _baselineEndMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cell_label')) {
+      context.handle(
+        _cellLabelMeta,
+        cellLabel.isAcceptableOrUnknown(data['cell_label']!, _cellLabelMeta),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TimelineActivity map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TimelineActivity(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      workPackageId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}work_package_id'],
+      )!,
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      owner: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner'],
+      ),
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      ),
+      activityType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}activity_type'],
+      )!,
+      startMonth: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}start_month'],
+      ),
+      endMonth: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}end_month'],
+      ),
+      startDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}start_date'],
+      ),
+      endDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}end_date'],
+      ),
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      isCritical: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_critical'],
+      )!,
+      isBaseline: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_baseline'],
+      )!,
+      baselineStart: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}baseline_start'],
+      ),
+      baselineEnd: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}baseline_end'],
+      ),
+      cellLabel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cell_label'],
+      ),
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $TimelineActivitiesTable createAlias(String alias) {
+    return $TimelineActivitiesTable(attachedDatabase, alias);
+  }
+}
+
+class TimelineActivity extends DataClass
+    implements Insertable<TimelineActivity> {
+  final String id;
+  final String workPackageId;
+  final String projectId;
+  final String name;
+  final String? owner;
+  final String? ownerId;
+  final String activityType;
+  final int? startMonth;
+  final int? endMonth;
+  final String? startDate;
+  final String? endDate;
+  final String status;
+  final bool isCritical;
+  final bool isBaseline;
+  final int? baselineStart;
+  final int? baselineEnd;
+  final String? cellLabel;
+  final String? notes;
+  final int sortOrder;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const TimelineActivity({
+    required this.id,
+    required this.workPackageId,
+    required this.projectId,
+    required this.name,
+    this.owner,
+    this.ownerId,
+    required this.activityType,
+    this.startMonth,
+    this.endMonth,
+    this.startDate,
+    this.endDate,
+    required this.status,
+    required this.isCritical,
+    required this.isBaseline,
+    this.baselineStart,
+    this.baselineEnd,
+    this.cellLabel,
+    this.notes,
+    required this.sortOrder,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['work_package_id'] = Variable<String>(workPackageId);
+    map['project_id'] = Variable<String>(projectId);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || owner != null) {
+      map['owner'] = Variable<String>(owner);
+    }
+    if (!nullToAbsent || ownerId != null) {
+      map['owner_id'] = Variable<String>(ownerId);
+    }
+    map['activity_type'] = Variable<String>(activityType);
+    if (!nullToAbsent || startMonth != null) {
+      map['start_month'] = Variable<int>(startMonth);
+    }
+    if (!nullToAbsent || endMonth != null) {
+      map['end_month'] = Variable<int>(endMonth);
+    }
+    if (!nullToAbsent || startDate != null) {
+      map['start_date'] = Variable<String>(startDate);
+    }
+    if (!nullToAbsent || endDate != null) {
+      map['end_date'] = Variable<String>(endDate);
+    }
+    map['status'] = Variable<String>(status);
+    map['is_critical'] = Variable<bool>(isCritical);
+    map['is_baseline'] = Variable<bool>(isBaseline);
+    if (!nullToAbsent || baselineStart != null) {
+      map['baseline_start'] = Variable<int>(baselineStart);
+    }
+    if (!nullToAbsent || baselineEnd != null) {
+      map['baseline_end'] = Variable<int>(baselineEnd);
+    }
+    if (!nullToAbsent || cellLabel != null) {
+      map['cell_label'] = Variable<String>(cellLabel);
+    }
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['sort_order'] = Variable<int>(sortOrder);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  TimelineActivitiesCompanion toCompanion(bool nullToAbsent) {
+    return TimelineActivitiesCompanion(
+      id: Value(id),
+      workPackageId: Value(workPackageId),
+      projectId: Value(projectId),
+      name: Value(name),
+      owner: owner == null && nullToAbsent
+          ? const Value.absent()
+          : Value(owner),
+      ownerId: ownerId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ownerId),
+      activityType: Value(activityType),
+      startMonth: startMonth == null && nullToAbsent
+          ? const Value.absent()
+          : Value(startMonth),
+      endMonth: endMonth == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endMonth),
+      startDate: startDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(startDate),
+      endDate: endDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endDate),
+      status: Value(status),
+      isCritical: Value(isCritical),
+      isBaseline: Value(isBaseline),
+      baselineStart: baselineStart == null && nullToAbsent
+          ? const Value.absent()
+          : Value(baselineStart),
+      baselineEnd: baselineEnd == null && nullToAbsent
+          ? const Value.absent()
+          : Value(baselineEnd),
+      cellLabel: cellLabel == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cellLabel),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      sortOrder: Value(sortOrder),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory TimelineActivity.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TimelineActivity(
+      id: serializer.fromJson<String>(json['id']),
+      workPackageId: serializer.fromJson<String>(json['workPackageId']),
+      projectId: serializer.fromJson<String>(json['projectId']),
+      name: serializer.fromJson<String>(json['name']),
+      owner: serializer.fromJson<String?>(json['owner']),
+      ownerId: serializer.fromJson<String?>(json['ownerId']),
+      activityType: serializer.fromJson<String>(json['activityType']),
+      startMonth: serializer.fromJson<int?>(json['startMonth']),
+      endMonth: serializer.fromJson<int?>(json['endMonth']),
+      startDate: serializer.fromJson<String?>(json['startDate']),
+      endDate: serializer.fromJson<String?>(json['endDate']),
+      status: serializer.fromJson<String>(json['status']),
+      isCritical: serializer.fromJson<bool>(json['isCritical']),
+      isBaseline: serializer.fromJson<bool>(json['isBaseline']),
+      baselineStart: serializer.fromJson<int?>(json['baselineStart']),
+      baselineEnd: serializer.fromJson<int?>(json['baselineEnd']),
+      cellLabel: serializer.fromJson<String?>(json['cellLabel']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'workPackageId': serializer.toJson<String>(workPackageId),
+      'projectId': serializer.toJson<String>(projectId),
+      'name': serializer.toJson<String>(name),
+      'owner': serializer.toJson<String?>(owner),
+      'ownerId': serializer.toJson<String?>(ownerId),
+      'activityType': serializer.toJson<String>(activityType),
+      'startMonth': serializer.toJson<int?>(startMonth),
+      'endMonth': serializer.toJson<int?>(endMonth),
+      'startDate': serializer.toJson<String?>(startDate),
+      'endDate': serializer.toJson<String?>(endDate),
+      'status': serializer.toJson<String>(status),
+      'isCritical': serializer.toJson<bool>(isCritical),
+      'isBaseline': serializer.toJson<bool>(isBaseline),
+      'baselineStart': serializer.toJson<int?>(baselineStart),
+      'baselineEnd': serializer.toJson<int?>(baselineEnd),
+      'cellLabel': serializer.toJson<String?>(cellLabel),
+      'notes': serializer.toJson<String?>(notes),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  TimelineActivity copyWith({
+    String? id,
+    String? workPackageId,
+    String? projectId,
+    String? name,
+    Value<String?> owner = const Value.absent(),
+    Value<String?> ownerId = const Value.absent(),
+    String? activityType,
+    Value<int?> startMonth = const Value.absent(),
+    Value<int?> endMonth = const Value.absent(),
+    Value<String?> startDate = const Value.absent(),
+    Value<String?> endDate = const Value.absent(),
+    String? status,
+    bool? isCritical,
+    bool? isBaseline,
+    Value<int?> baselineStart = const Value.absent(),
+    Value<int?> baselineEnd = const Value.absent(),
+    Value<String?> cellLabel = const Value.absent(),
+    Value<String?> notes = const Value.absent(),
+    int? sortOrder,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => TimelineActivity(
+    id: id ?? this.id,
+    workPackageId: workPackageId ?? this.workPackageId,
+    projectId: projectId ?? this.projectId,
+    name: name ?? this.name,
+    owner: owner.present ? owner.value : this.owner,
+    ownerId: ownerId.present ? ownerId.value : this.ownerId,
+    activityType: activityType ?? this.activityType,
+    startMonth: startMonth.present ? startMonth.value : this.startMonth,
+    endMonth: endMonth.present ? endMonth.value : this.endMonth,
+    startDate: startDate.present ? startDate.value : this.startDate,
+    endDate: endDate.present ? endDate.value : this.endDate,
+    status: status ?? this.status,
+    isCritical: isCritical ?? this.isCritical,
+    isBaseline: isBaseline ?? this.isBaseline,
+    baselineStart: baselineStart.present
+        ? baselineStart.value
+        : this.baselineStart,
+    baselineEnd: baselineEnd.present ? baselineEnd.value : this.baselineEnd,
+    cellLabel: cellLabel.present ? cellLabel.value : this.cellLabel,
+    notes: notes.present ? notes.value : this.notes,
+    sortOrder: sortOrder ?? this.sortOrder,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  TimelineActivity copyWithCompanion(TimelineActivitiesCompanion data) {
+    return TimelineActivity(
+      id: data.id.present ? data.id.value : this.id,
+      workPackageId: data.workPackageId.present
+          ? data.workPackageId.value
+          : this.workPackageId,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      name: data.name.present ? data.name.value : this.name,
+      owner: data.owner.present ? data.owner.value : this.owner,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      activityType: data.activityType.present
+          ? data.activityType.value
+          : this.activityType,
+      startMonth: data.startMonth.present
+          ? data.startMonth.value
+          : this.startMonth,
+      endMonth: data.endMonth.present ? data.endMonth.value : this.endMonth,
+      startDate: data.startDate.present ? data.startDate.value : this.startDate,
+      endDate: data.endDate.present ? data.endDate.value : this.endDate,
+      status: data.status.present ? data.status.value : this.status,
+      isCritical: data.isCritical.present
+          ? data.isCritical.value
+          : this.isCritical,
+      isBaseline: data.isBaseline.present
+          ? data.isBaseline.value
+          : this.isBaseline,
+      baselineStart: data.baselineStart.present
+          ? data.baselineStart.value
+          : this.baselineStart,
+      baselineEnd: data.baselineEnd.present
+          ? data.baselineEnd.value
+          : this.baselineEnd,
+      cellLabel: data.cellLabel.present ? data.cellLabel.value : this.cellLabel,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TimelineActivity(')
+          ..write('id: $id, ')
+          ..write('workPackageId: $workPackageId, ')
+          ..write('projectId: $projectId, ')
+          ..write('name: $name, ')
+          ..write('owner: $owner, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('activityType: $activityType, ')
+          ..write('startMonth: $startMonth, ')
+          ..write('endMonth: $endMonth, ')
+          ..write('startDate: $startDate, ')
+          ..write('endDate: $endDate, ')
+          ..write('status: $status, ')
+          ..write('isCritical: $isCritical, ')
+          ..write('isBaseline: $isBaseline, ')
+          ..write('baselineStart: $baselineStart, ')
+          ..write('baselineEnd: $baselineEnd, ')
+          ..write('cellLabel: $cellLabel, ')
+          ..write('notes: $notes, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hashAll([
+    id,
+    workPackageId,
+    projectId,
+    name,
+    owner,
+    ownerId,
+    activityType,
+    startMonth,
+    endMonth,
+    startDate,
+    endDate,
+    status,
+    isCritical,
+    isBaseline,
+    baselineStart,
+    baselineEnd,
+    cellLabel,
+    notes,
+    sortOrder,
+    createdAt,
+    updatedAt,
+  ]);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TimelineActivity &&
+          other.id == this.id &&
+          other.workPackageId == this.workPackageId &&
+          other.projectId == this.projectId &&
+          other.name == this.name &&
+          other.owner == this.owner &&
+          other.ownerId == this.ownerId &&
+          other.activityType == this.activityType &&
+          other.startMonth == this.startMonth &&
+          other.endMonth == this.endMonth &&
+          other.startDate == this.startDate &&
+          other.endDate == this.endDate &&
+          other.status == this.status &&
+          other.isCritical == this.isCritical &&
+          other.isBaseline == this.isBaseline &&
+          other.baselineStart == this.baselineStart &&
+          other.baselineEnd == this.baselineEnd &&
+          other.cellLabel == this.cellLabel &&
+          other.notes == this.notes &&
+          other.sortOrder == this.sortOrder &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class TimelineActivitiesCompanion extends UpdateCompanion<TimelineActivity> {
+  final Value<String> id;
+  final Value<String> workPackageId;
+  final Value<String> projectId;
+  final Value<String> name;
+  final Value<String?> owner;
+  final Value<String?> ownerId;
+  final Value<String> activityType;
+  final Value<int?> startMonth;
+  final Value<int?> endMonth;
+  final Value<String?> startDate;
+  final Value<String?> endDate;
+  final Value<String> status;
+  final Value<bool> isCritical;
+  final Value<bool> isBaseline;
+  final Value<int?> baselineStart;
+  final Value<int?> baselineEnd;
+  final Value<String?> cellLabel;
+  final Value<String?> notes;
+  final Value<int> sortOrder;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const TimelineActivitiesCompanion({
+    this.id = const Value.absent(),
+    this.workPackageId = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.owner = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.activityType = const Value.absent(),
+    this.startMonth = const Value.absent(),
+    this.endMonth = const Value.absent(),
+    this.startDate = const Value.absent(),
+    this.endDate = const Value.absent(),
+    this.status = const Value.absent(),
+    this.isCritical = const Value.absent(),
+    this.isBaseline = const Value.absent(),
+    this.baselineStart = const Value.absent(),
+    this.baselineEnd = const Value.absent(),
+    this.cellLabel = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  TimelineActivitiesCompanion.insert({
+    required String id,
+    required String workPackageId,
+    required String projectId,
+    required String name,
+    this.owner = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.activityType = const Value.absent(),
+    this.startMonth = const Value.absent(),
+    this.endMonth = const Value.absent(),
+    this.startDate = const Value.absent(),
+    this.endDate = const Value.absent(),
+    this.status = const Value.absent(),
+    this.isCritical = const Value.absent(),
+    this.isBaseline = const Value.absent(),
+    this.baselineStart = const Value.absent(),
+    this.baselineEnd = const Value.absent(),
+    this.cellLabel = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       workPackageId = Value(workPackageId),
+       projectId = Value(projectId),
+       name = Value(name);
+  static Insertable<TimelineActivity> custom({
+    Expression<String>? id,
+    Expression<String>? workPackageId,
+    Expression<String>? projectId,
+    Expression<String>? name,
+    Expression<String>? owner,
+    Expression<String>? ownerId,
+    Expression<String>? activityType,
+    Expression<int>? startMonth,
+    Expression<int>? endMonth,
+    Expression<String>? startDate,
+    Expression<String>? endDate,
+    Expression<String>? status,
+    Expression<bool>? isCritical,
+    Expression<bool>? isBaseline,
+    Expression<int>? baselineStart,
+    Expression<int>? baselineEnd,
+    Expression<String>? cellLabel,
+    Expression<String>? notes,
+    Expression<int>? sortOrder,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (workPackageId != null) 'work_package_id': workPackageId,
+      if (projectId != null) 'project_id': projectId,
+      if (name != null) 'name': name,
+      if (owner != null) 'owner': owner,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (activityType != null) 'activity_type': activityType,
+      if (startMonth != null) 'start_month': startMonth,
+      if (endMonth != null) 'end_month': endMonth,
+      if (startDate != null) 'start_date': startDate,
+      if (endDate != null) 'end_date': endDate,
+      if (status != null) 'status': status,
+      if (isCritical != null) 'is_critical': isCritical,
+      if (isBaseline != null) 'is_baseline': isBaseline,
+      if (baselineStart != null) 'baseline_start': baselineStart,
+      if (baselineEnd != null) 'baseline_end': baselineEnd,
+      if (cellLabel != null) 'cell_label': cellLabel,
+      if (notes != null) 'notes': notes,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  TimelineActivitiesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? workPackageId,
+    Value<String>? projectId,
+    Value<String>? name,
+    Value<String?>? owner,
+    Value<String?>? ownerId,
+    Value<String>? activityType,
+    Value<int?>? startMonth,
+    Value<int?>? endMonth,
+    Value<String?>? startDate,
+    Value<String?>? endDate,
+    Value<String>? status,
+    Value<bool>? isCritical,
+    Value<bool>? isBaseline,
+    Value<int?>? baselineStart,
+    Value<int?>? baselineEnd,
+    Value<String?>? cellLabel,
+    Value<String?>? notes,
+    Value<int>? sortOrder,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return TimelineActivitiesCompanion(
+      id: id ?? this.id,
+      workPackageId: workPackageId ?? this.workPackageId,
+      projectId: projectId ?? this.projectId,
+      name: name ?? this.name,
+      owner: owner ?? this.owner,
+      ownerId: ownerId ?? this.ownerId,
+      activityType: activityType ?? this.activityType,
+      startMonth: startMonth ?? this.startMonth,
+      endMonth: endMonth ?? this.endMonth,
+      startDate: startDate ?? this.startDate,
+      endDate: endDate ?? this.endDate,
+      status: status ?? this.status,
+      isCritical: isCritical ?? this.isCritical,
+      isBaseline: isBaseline ?? this.isBaseline,
+      baselineStart: baselineStart ?? this.baselineStart,
+      baselineEnd: baselineEnd ?? this.baselineEnd,
+      cellLabel: cellLabel ?? this.cellLabel,
+      notes: notes ?? this.notes,
+      sortOrder: sortOrder ?? this.sortOrder,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (workPackageId.present) {
+      map['work_package_id'] = Variable<String>(workPackageId.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (owner.present) {
+      map['owner'] = Variable<String>(owner.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (activityType.present) {
+      map['activity_type'] = Variable<String>(activityType.value);
+    }
+    if (startMonth.present) {
+      map['start_month'] = Variable<int>(startMonth.value);
+    }
+    if (endMonth.present) {
+      map['end_month'] = Variable<int>(endMonth.value);
+    }
+    if (startDate.present) {
+      map['start_date'] = Variable<String>(startDate.value);
+    }
+    if (endDate.present) {
+      map['end_date'] = Variable<String>(endDate.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (isCritical.present) {
+      map['is_critical'] = Variable<bool>(isCritical.value);
+    }
+    if (isBaseline.present) {
+      map['is_baseline'] = Variable<bool>(isBaseline.value);
+    }
+    if (baselineStart.present) {
+      map['baseline_start'] = Variable<int>(baselineStart.value);
+    }
+    if (baselineEnd.present) {
+      map['baseline_end'] = Variable<int>(baselineEnd.value);
+    }
+    if (cellLabel.present) {
+      map['cell_label'] = Variable<String>(cellLabel.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TimelineActivitiesCompanion(')
+          ..write('id: $id, ')
+          ..write('workPackageId: $workPackageId, ')
+          ..write('projectId: $projectId, ')
+          ..write('name: $name, ')
+          ..write('owner: $owner, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('activityType: $activityType, ')
+          ..write('startMonth: $startMonth, ')
+          ..write('endMonth: $endMonth, ')
+          ..write('startDate: $startDate, ')
+          ..write('endDate: $endDate, ')
+          ..write('status: $status, ')
+          ..write('isCritical: $isCritical, ')
+          ..write('isBaseline: $isBaseline, ')
+          ..write('baselineStart: $baselineStart, ')
+          ..write('baselineEnd: $baselineEnd, ')
+          ..write('cellLabel: $cellLabel, ')
+          ..write('notes: $notes, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $TimelineDependenciesTable extends TimelineDependencies
+    with TableInfo<$TimelineDependenciesTable, TimelineDependency> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TimelineDependenciesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES projects (id)',
+    ),
+  );
+  static const VerificationMeta _fromActivityIdMeta = const VerificationMeta(
+    'fromActivityId',
+  );
+  @override
+  late final GeneratedColumn<String> fromActivityId = GeneratedColumn<String>(
+    'from_activity_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _toActivityIdMeta = const VerificationMeta(
+    'toActivityId',
+  );
+  @override
+  late final GeneratedColumn<String> toActivityId = GeneratedColumn<String>(
+    'to_activity_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dependencyTypeMeta = const VerificationMeta(
+    'dependencyType',
+  );
+  @override
+  late final GeneratedColumn<String> dependencyType = GeneratedColumn<String>(
+    'dependency_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('finish_to_start'),
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    projectId,
+    fromActivityId,
+    toActivityId,
+    dependencyType,
+    notes,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'timeline_dependencies';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TimelineDependency> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_projectIdMeta);
+    }
+    if (data.containsKey('from_activity_id')) {
+      context.handle(
+        _fromActivityIdMeta,
+        fromActivityId.isAcceptableOrUnknown(
+          data['from_activity_id']!,
+          _fromActivityIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_fromActivityIdMeta);
+    }
+    if (data.containsKey('to_activity_id')) {
+      context.handle(
+        _toActivityIdMeta,
+        toActivityId.isAcceptableOrUnknown(
+          data['to_activity_id']!,
+          _toActivityIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_toActivityIdMeta);
+    }
+    if (data.containsKey('dependency_type')) {
+      context.handle(
+        _dependencyTypeMeta,
+        dependencyType.isAcceptableOrUnknown(
+          data['dependency_type']!,
+          _dependencyTypeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TimelineDependency map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TimelineDependency(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      )!,
+      fromActivityId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}from_activity_id'],
+      )!,
+      toActivityId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}to_activity_id'],
+      )!,
+      dependencyType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}dependency_type'],
+      )!,
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $TimelineDependenciesTable createAlias(String alias) {
+    return $TimelineDependenciesTable(attachedDatabase, alias);
+  }
+}
+
+class TimelineDependency extends DataClass
+    implements Insertable<TimelineDependency> {
+  final String id;
+  final String projectId;
+  final String fromActivityId;
+  final String toActivityId;
+  final String dependencyType;
+  final String? notes;
+  final DateTime createdAt;
+  const TimelineDependency({
+    required this.id,
+    required this.projectId,
+    required this.fromActivityId,
+    required this.toActivityId,
+    required this.dependencyType,
+    this.notes,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['project_id'] = Variable<String>(projectId);
+    map['from_activity_id'] = Variable<String>(fromActivityId);
+    map['to_activity_id'] = Variable<String>(toActivityId);
+    map['dependency_type'] = Variable<String>(dependencyType);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  TimelineDependenciesCompanion toCompanion(bool nullToAbsent) {
+    return TimelineDependenciesCompanion(
+      id: Value(id),
+      projectId: Value(projectId),
+      fromActivityId: Value(fromActivityId),
+      toActivityId: Value(toActivityId),
+      dependencyType: Value(dependencyType),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory TimelineDependency.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TimelineDependency(
+      id: serializer.fromJson<String>(json['id']),
+      projectId: serializer.fromJson<String>(json['projectId']),
+      fromActivityId: serializer.fromJson<String>(json['fromActivityId']),
+      toActivityId: serializer.fromJson<String>(json['toActivityId']),
+      dependencyType: serializer.fromJson<String>(json['dependencyType']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'projectId': serializer.toJson<String>(projectId),
+      'fromActivityId': serializer.toJson<String>(fromActivityId),
+      'toActivityId': serializer.toJson<String>(toActivityId),
+      'dependencyType': serializer.toJson<String>(dependencyType),
+      'notes': serializer.toJson<String?>(notes),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  TimelineDependency copyWith({
+    String? id,
+    String? projectId,
+    String? fromActivityId,
+    String? toActivityId,
+    String? dependencyType,
+    Value<String?> notes = const Value.absent(),
+    DateTime? createdAt,
+  }) => TimelineDependency(
+    id: id ?? this.id,
+    projectId: projectId ?? this.projectId,
+    fromActivityId: fromActivityId ?? this.fromActivityId,
+    toActivityId: toActivityId ?? this.toActivityId,
+    dependencyType: dependencyType ?? this.dependencyType,
+    notes: notes.present ? notes.value : this.notes,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  TimelineDependency copyWithCompanion(TimelineDependenciesCompanion data) {
+    return TimelineDependency(
+      id: data.id.present ? data.id.value : this.id,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      fromActivityId: data.fromActivityId.present
+          ? data.fromActivityId.value
+          : this.fromActivityId,
+      toActivityId: data.toActivityId.present
+          ? data.toActivityId.value
+          : this.toActivityId,
+      dependencyType: data.dependencyType.present
+          ? data.dependencyType.value
+          : this.dependencyType,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TimelineDependency(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('fromActivityId: $fromActivityId, ')
+          ..write('toActivityId: $toActivityId, ')
+          ..write('dependencyType: $dependencyType, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    projectId,
+    fromActivityId,
+    toActivityId,
+    dependencyType,
+    notes,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TimelineDependency &&
+          other.id == this.id &&
+          other.projectId == this.projectId &&
+          other.fromActivityId == this.fromActivityId &&
+          other.toActivityId == this.toActivityId &&
+          other.dependencyType == this.dependencyType &&
+          other.notes == this.notes &&
+          other.createdAt == this.createdAt);
+}
+
+class TimelineDependenciesCompanion
+    extends UpdateCompanion<TimelineDependency> {
+  final Value<String> id;
+  final Value<String> projectId;
+  final Value<String> fromActivityId;
+  final Value<String> toActivityId;
+  final Value<String> dependencyType;
+  final Value<String?> notes;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const TimelineDependenciesCompanion({
+    this.id = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.fromActivityId = const Value.absent(),
+    this.toActivityId = const Value.absent(),
+    this.dependencyType = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  TimelineDependenciesCompanion.insert({
+    required String id,
+    required String projectId,
+    required String fromActivityId,
+    required String toActivityId,
+    this.dependencyType = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       projectId = Value(projectId),
+       fromActivityId = Value(fromActivityId),
+       toActivityId = Value(toActivityId);
+  static Insertable<TimelineDependency> custom({
+    Expression<String>? id,
+    Expression<String>? projectId,
+    Expression<String>? fromActivityId,
+    Expression<String>? toActivityId,
+    Expression<String>? dependencyType,
+    Expression<String>? notes,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (projectId != null) 'project_id': projectId,
+      if (fromActivityId != null) 'from_activity_id': fromActivityId,
+      if (toActivityId != null) 'to_activity_id': toActivityId,
+      if (dependencyType != null) 'dependency_type': dependencyType,
+      if (notes != null) 'notes': notes,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  TimelineDependenciesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? projectId,
+    Value<String>? fromActivityId,
+    Value<String>? toActivityId,
+    Value<String>? dependencyType,
+    Value<String?>? notes,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return TimelineDependenciesCompanion(
+      id: id ?? this.id,
+      projectId: projectId ?? this.projectId,
+      fromActivityId: fromActivityId ?? this.fromActivityId,
+      toActivityId: toActivityId ?? this.toActivityId,
+      dependencyType: dependencyType ?? this.dependencyType,
+      notes: notes ?? this.notes,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (fromActivityId.present) {
+      map['from_activity_id'] = Variable<String>(fromActivityId.value);
+    }
+    if (toActivityId.present) {
+      map['to_activity_id'] = Variable<String>(toActivityId.value);
+    }
+    if (dependencyType.present) {
+      map['dependency_type'] = Variable<String>(dependencyType.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TimelineDependenciesCompanion(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('fromActivityId: $fromActivityId, ')
+          ..write('toActivityId: $toActivityId, ')
+          ..write('dependencyType: $dependencyType, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ProgrammeHeadersTable extends ProgrammeHeaders
+    with TableInfo<$ProgrammeHeadersTable, ProgrammeHeader> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ProgrammeHeadersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _subtitleMeta = const VerificationMeta(
+    'subtitle',
+  );
+  @override
+  late final GeneratedColumn<String> subtitle = GeneratedColumn<String>(
+    'subtitle',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _hardDeadlineMeta = const VerificationMeta(
+    'hardDeadline',
+  );
+  @override
+  late final GeneratedColumn<String> hardDeadline = GeneratedColumn<String>(
+    'hard_deadline',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _inScopeMeta = const VerificationMeta(
+    'inScope',
+  );
+  @override
+  late final GeneratedColumn<String> inScope = GeneratedColumn<String>(
+    'in_scope',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _outOfScopeMeta = const VerificationMeta(
+    'outOfScope',
+  );
+  @override
+  late final GeneratedColumn<String> outOfScope = GeneratedColumn<String>(
+    'out_of_scope',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _monthLabelsMeta = const VerificationMeta(
+    'monthLabels',
+  );
+  @override
+  late final GeneratedColumn<String> monthLabels = GeneratedColumn<String>(
+    'month_labels',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _month0DateMeta = const VerificationMeta(
+    'month0Date',
+  );
+  @override
+  late final GeneratedColumn<String> month0Date = GeneratedColumn<String>(
+    'month0_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    projectId,
+    title,
+    subtitle,
+    hardDeadline,
+    inScope,
+    outOfScope,
+    monthLabels,
+    month0Date,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'programme_headers';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ProgrammeHeader> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_projectIdMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    }
+    if (data.containsKey('subtitle')) {
+      context.handle(
+        _subtitleMeta,
+        subtitle.isAcceptableOrUnknown(data['subtitle']!, _subtitleMeta),
+      );
+    }
+    if (data.containsKey('hard_deadline')) {
+      context.handle(
+        _hardDeadlineMeta,
+        hardDeadline.isAcceptableOrUnknown(
+          data['hard_deadline']!,
+          _hardDeadlineMeta,
+        ),
+      );
+    }
+    if (data.containsKey('in_scope')) {
+      context.handle(
+        _inScopeMeta,
+        inScope.isAcceptableOrUnknown(data['in_scope']!, _inScopeMeta),
+      );
+    }
+    if (data.containsKey('out_of_scope')) {
+      context.handle(
+        _outOfScopeMeta,
+        outOfScope.isAcceptableOrUnknown(
+          data['out_of_scope']!,
+          _outOfScopeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('month_labels')) {
+      context.handle(
+        _monthLabelsMeta,
+        monthLabels.isAcceptableOrUnknown(
+          data['month_labels']!,
+          _monthLabelsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('month0_date')) {
+      context.handle(
+        _month0DateMeta,
+        month0Date.isAcceptableOrUnknown(data['month0_date']!, _month0DateMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ProgrammeHeader map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ProgrammeHeader(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      ),
+      subtitle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}subtitle'],
+      ),
+      hardDeadline: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}hard_deadline'],
+      ),
+      inScope: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}in_scope'],
+      ),
+      outOfScope: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}out_of_scope'],
+      ),
+      monthLabels: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}month_labels'],
+      ),
+      month0Date: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}month0_date'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ProgrammeHeadersTable createAlias(String alias) {
+    return $ProgrammeHeadersTable(attachedDatabase, alias);
+  }
+}
+
+class ProgrammeHeader extends DataClass implements Insertable<ProgrammeHeader> {
+  final String id;
+  final String projectId;
+  final String? title;
+  final String? subtitle;
+  final String? hardDeadline;
+  final String? inScope;
+  final String? outOfScope;
+  final String? monthLabels;
+  final String? month0Date;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const ProgrammeHeader({
+    required this.id,
+    required this.projectId,
+    this.title,
+    this.subtitle,
+    this.hardDeadline,
+    this.inScope,
+    this.outOfScope,
+    this.monthLabels,
+    this.month0Date,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['project_id'] = Variable<String>(projectId);
+    if (!nullToAbsent || title != null) {
+      map['title'] = Variable<String>(title);
+    }
+    if (!nullToAbsent || subtitle != null) {
+      map['subtitle'] = Variable<String>(subtitle);
+    }
+    if (!nullToAbsent || hardDeadline != null) {
+      map['hard_deadline'] = Variable<String>(hardDeadline);
+    }
+    if (!nullToAbsent || inScope != null) {
+      map['in_scope'] = Variable<String>(inScope);
+    }
+    if (!nullToAbsent || outOfScope != null) {
+      map['out_of_scope'] = Variable<String>(outOfScope);
+    }
+    if (!nullToAbsent || monthLabels != null) {
+      map['month_labels'] = Variable<String>(monthLabels);
+    }
+    if (!nullToAbsent || month0Date != null) {
+      map['month0_date'] = Variable<String>(month0Date);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  ProgrammeHeadersCompanion toCompanion(bool nullToAbsent) {
+    return ProgrammeHeadersCompanion(
+      id: Value(id),
+      projectId: Value(projectId),
+      title: title == null && nullToAbsent
+          ? const Value.absent()
+          : Value(title),
+      subtitle: subtitle == null && nullToAbsent
+          ? const Value.absent()
+          : Value(subtitle),
+      hardDeadline: hardDeadline == null && nullToAbsent
+          ? const Value.absent()
+          : Value(hardDeadline),
+      inScope: inScope == null && nullToAbsent
+          ? const Value.absent()
+          : Value(inScope),
+      outOfScope: outOfScope == null && nullToAbsent
+          ? const Value.absent()
+          : Value(outOfScope),
+      monthLabels: monthLabels == null && nullToAbsent
+          ? const Value.absent()
+          : Value(monthLabels),
+      month0Date: month0Date == null && nullToAbsent
+          ? const Value.absent()
+          : Value(month0Date),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory ProgrammeHeader.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ProgrammeHeader(
+      id: serializer.fromJson<String>(json['id']),
+      projectId: serializer.fromJson<String>(json['projectId']),
+      title: serializer.fromJson<String?>(json['title']),
+      subtitle: serializer.fromJson<String?>(json['subtitle']),
+      hardDeadline: serializer.fromJson<String?>(json['hardDeadline']),
+      inScope: serializer.fromJson<String?>(json['inScope']),
+      outOfScope: serializer.fromJson<String?>(json['outOfScope']),
+      monthLabels: serializer.fromJson<String?>(json['monthLabels']),
+      month0Date: serializer.fromJson<String?>(json['month0Date']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'projectId': serializer.toJson<String>(projectId),
+      'title': serializer.toJson<String?>(title),
+      'subtitle': serializer.toJson<String?>(subtitle),
+      'hardDeadline': serializer.toJson<String?>(hardDeadline),
+      'inScope': serializer.toJson<String?>(inScope),
+      'outOfScope': serializer.toJson<String?>(outOfScope),
+      'monthLabels': serializer.toJson<String?>(monthLabels),
+      'month0Date': serializer.toJson<String?>(month0Date),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  ProgrammeHeader copyWith({
+    String? id,
+    String? projectId,
+    Value<String?> title = const Value.absent(),
+    Value<String?> subtitle = const Value.absent(),
+    Value<String?> hardDeadline = const Value.absent(),
+    Value<String?> inScope = const Value.absent(),
+    Value<String?> outOfScope = const Value.absent(),
+    Value<String?> monthLabels = const Value.absent(),
+    Value<String?> month0Date = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => ProgrammeHeader(
+    id: id ?? this.id,
+    projectId: projectId ?? this.projectId,
+    title: title.present ? title.value : this.title,
+    subtitle: subtitle.present ? subtitle.value : this.subtitle,
+    hardDeadline: hardDeadline.present ? hardDeadline.value : this.hardDeadline,
+    inScope: inScope.present ? inScope.value : this.inScope,
+    outOfScope: outOfScope.present ? outOfScope.value : this.outOfScope,
+    monthLabels: monthLabels.present ? monthLabels.value : this.monthLabels,
+    month0Date: month0Date.present ? month0Date.value : this.month0Date,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  ProgrammeHeader copyWithCompanion(ProgrammeHeadersCompanion data) {
+    return ProgrammeHeader(
+      id: data.id.present ? data.id.value : this.id,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      title: data.title.present ? data.title.value : this.title,
+      subtitle: data.subtitle.present ? data.subtitle.value : this.subtitle,
+      hardDeadline: data.hardDeadline.present
+          ? data.hardDeadline.value
+          : this.hardDeadline,
+      inScope: data.inScope.present ? data.inScope.value : this.inScope,
+      outOfScope: data.outOfScope.present
+          ? data.outOfScope.value
+          : this.outOfScope,
+      monthLabels: data.monthLabels.present
+          ? data.monthLabels.value
+          : this.monthLabels,
+      month0Date: data.month0Date.present
+          ? data.month0Date.value
+          : this.month0Date,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProgrammeHeader(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('title: $title, ')
+          ..write('subtitle: $subtitle, ')
+          ..write('hardDeadline: $hardDeadline, ')
+          ..write('inScope: $inScope, ')
+          ..write('outOfScope: $outOfScope, ')
+          ..write('monthLabels: $monthLabels, ')
+          ..write('month0Date: $month0Date, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    projectId,
+    title,
+    subtitle,
+    hardDeadline,
+    inScope,
+    outOfScope,
+    monthLabels,
+    month0Date,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ProgrammeHeader &&
+          other.id == this.id &&
+          other.projectId == this.projectId &&
+          other.title == this.title &&
+          other.subtitle == this.subtitle &&
+          other.hardDeadline == this.hardDeadline &&
+          other.inScope == this.inScope &&
+          other.outOfScope == this.outOfScope &&
+          other.monthLabels == this.monthLabels &&
+          other.month0Date == this.month0Date &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class ProgrammeHeadersCompanion extends UpdateCompanion<ProgrammeHeader> {
+  final Value<String> id;
+  final Value<String> projectId;
+  final Value<String?> title;
+  final Value<String?> subtitle;
+  final Value<String?> hardDeadline;
+  final Value<String?> inScope;
+  final Value<String?> outOfScope;
+  final Value<String?> monthLabels;
+  final Value<String?> month0Date;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const ProgrammeHeadersCompanion({
+    this.id = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.title = const Value.absent(),
+    this.subtitle = const Value.absent(),
+    this.hardDeadline = const Value.absent(),
+    this.inScope = const Value.absent(),
+    this.outOfScope = const Value.absent(),
+    this.monthLabels = const Value.absent(),
+    this.month0Date = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ProgrammeHeadersCompanion.insert({
+    required String id,
+    required String projectId,
+    this.title = const Value.absent(),
+    this.subtitle = const Value.absent(),
+    this.hardDeadline = const Value.absent(),
+    this.inScope = const Value.absent(),
+    this.outOfScope = const Value.absent(),
+    this.monthLabels = const Value.absent(),
+    this.month0Date = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       projectId = Value(projectId);
+  static Insertable<ProgrammeHeader> custom({
+    Expression<String>? id,
+    Expression<String>? projectId,
+    Expression<String>? title,
+    Expression<String>? subtitle,
+    Expression<String>? hardDeadline,
+    Expression<String>? inScope,
+    Expression<String>? outOfScope,
+    Expression<String>? monthLabels,
+    Expression<String>? month0Date,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (projectId != null) 'project_id': projectId,
+      if (title != null) 'title': title,
+      if (subtitle != null) 'subtitle': subtitle,
+      if (hardDeadline != null) 'hard_deadline': hardDeadline,
+      if (inScope != null) 'in_scope': inScope,
+      if (outOfScope != null) 'out_of_scope': outOfScope,
+      if (monthLabels != null) 'month_labels': monthLabels,
+      if (month0Date != null) 'month0_date': month0Date,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ProgrammeHeadersCompanion copyWith({
+    Value<String>? id,
+    Value<String>? projectId,
+    Value<String?>? title,
+    Value<String?>? subtitle,
+    Value<String?>? hardDeadline,
+    Value<String?>? inScope,
+    Value<String?>? outOfScope,
+    Value<String?>? monthLabels,
+    Value<String?>? month0Date,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return ProgrammeHeadersCompanion(
+      id: id ?? this.id,
+      projectId: projectId ?? this.projectId,
+      title: title ?? this.title,
+      subtitle: subtitle ?? this.subtitle,
+      hardDeadline: hardDeadline ?? this.hardDeadline,
+      inScope: inScope ?? this.inScope,
+      outOfScope: outOfScope ?? this.outOfScope,
+      monthLabels: monthLabels ?? this.monthLabels,
+      month0Date: month0Date ?? this.month0Date,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (subtitle.present) {
+      map['subtitle'] = Variable<String>(subtitle.value);
+    }
+    if (hardDeadline.present) {
+      map['hard_deadline'] = Variable<String>(hardDeadline.value);
+    }
+    if (inScope.present) {
+      map['in_scope'] = Variable<String>(inScope.value);
+    }
+    if (outOfScope.present) {
+      map['out_of_scope'] = Variable<String>(outOfScope.value);
+    }
+    if (monthLabels.present) {
+      map['month_labels'] = Variable<String>(monthLabels.value);
+    }
+    if (month0Date.present) {
+      map['month0_date'] = Variable<String>(month0Date.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProgrammeHeadersCompanion(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('title: $title, ')
+          ..write('subtitle: $subtitle, ')
+          ..write('hardDeadline: $hardDeadline, ')
+          ..write('inScope: $inScope, ')
+          ..write('outOfScope: $outOfScope, ')
+          ..write('monthLabels: $monthLabels, ')
+          ..write('month0Date: $month0Date, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ProjectScopesTable extends ProjectScopes
+    with TableInfo<$ProjectScopesTable, ProjectScope> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ProjectScopesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES projects (id)',
+    ),
+  );
+  static const VerificationMeta _inScopeItemsMeta = const VerificationMeta(
+    'inScopeItems',
+  );
+  @override
+  late final GeneratedColumn<String> inScopeItems = GeneratedColumn<String>(
+    'in_scope_items',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _outOfScopeMeta = const VerificationMeta(
+    'outOfScope',
+  );
+  @override
+  late final GeneratedColumn<String> outOfScope = GeneratedColumn<String>(
+    'out_of_scope',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    projectId,
+    inScopeItems,
+    outOfScope,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'project_scopes';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ProjectScope> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_projectIdMeta);
+    }
+    if (data.containsKey('in_scope_items')) {
+      context.handle(
+        _inScopeItemsMeta,
+        inScopeItems.isAcceptableOrUnknown(
+          data['in_scope_items']!,
+          _inScopeItemsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('out_of_scope')) {
+      context.handle(
+        _outOfScopeMeta,
+        outOfScope.isAcceptableOrUnknown(
+          data['out_of_scope']!,
+          _outOfScopeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ProjectScope map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ProjectScope(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      )!,
+      inScopeItems: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}in_scope_items'],
+      ),
+      outOfScope: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}out_of_scope'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ProjectScopesTable createAlias(String alias) {
+    return $ProjectScopesTable(attachedDatabase, alias);
+  }
+}
+
+class ProjectScope extends DataClass implements Insertable<ProjectScope> {
+  final String id;
+  final String projectId;
+  final String? inScopeItems;
+  final String? outOfScope;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const ProjectScope({
+    required this.id,
+    required this.projectId,
+    this.inScopeItems,
+    this.outOfScope,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['project_id'] = Variable<String>(projectId);
+    if (!nullToAbsent || inScopeItems != null) {
+      map['in_scope_items'] = Variable<String>(inScopeItems);
+    }
+    if (!nullToAbsent || outOfScope != null) {
+      map['out_of_scope'] = Variable<String>(outOfScope);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  ProjectScopesCompanion toCompanion(bool nullToAbsent) {
+    return ProjectScopesCompanion(
+      id: Value(id),
+      projectId: Value(projectId),
+      inScopeItems: inScopeItems == null && nullToAbsent
+          ? const Value.absent()
+          : Value(inScopeItems),
+      outOfScope: outOfScope == null && nullToAbsent
+          ? const Value.absent()
+          : Value(outOfScope),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory ProjectScope.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ProjectScope(
+      id: serializer.fromJson<String>(json['id']),
+      projectId: serializer.fromJson<String>(json['projectId']),
+      inScopeItems: serializer.fromJson<String?>(json['inScopeItems']),
+      outOfScope: serializer.fromJson<String?>(json['outOfScope']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'projectId': serializer.toJson<String>(projectId),
+      'inScopeItems': serializer.toJson<String?>(inScopeItems),
+      'outOfScope': serializer.toJson<String?>(outOfScope),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  ProjectScope copyWith({
+    String? id,
+    String? projectId,
+    Value<String?> inScopeItems = const Value.absent(),
+    Value<String?> outOfScope = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => ProjectScope(
+    id: id ?? this.id,
+    projectId: projectId ?? this.projectId,
+    inScopeItems: inScopeItems.present ? inScopeItems.value : this.inScopeItems,
+    outOfScope: outOfScope.present ? outOfScope.value : this.outOfScope,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  ProjectScope copyWithCompanion(ProjectScopesCompanion data) {
+    return ProjectScope(
+      id: data.id.present ? data.id.value : this.id,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      inScopeItems: data.inScopeItems.present
+          ? data.inScopeItems.value
+          : this.inScopeItems,
+      outOfScope: data.outOfScope.present
+          ? data.outOfScope.value
+          : this.outOfScope,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProjectScope(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('inScopeItems: $inScopeItems, ')
+          ..write('outOfScope: $outOfScope, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    projectId,
+    inScopeItems,
+    outOfScope,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ProjectScope &&
+          other.id == this.id &&
+          other.projectId == this.projectId &&
+          other.inScopeItems == this.inScopeItems &&
+          other.outOfScope == this.outOfScope &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class ProjectScopesCompanion extends UpdateCompanion<ProjectScope> {
+  final Value<String> id;
+  final Value<String> projectId;
+  final Value<String?> inScopeItems;
+  final Value<String?> outOfScope;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const ProjectScopesCompanion({
+    this.id = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.inScopeItems = const Value.absent(),
+    this.outOfScope = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ProjectScopesCompanion.insert({
+    required String id,
+    required String projectId,
+    this.inScopeItems = const Value.absent(),
+    this.outOfScope = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       projectId = Value(projectId);
+  static Insertable<ProjectScope> custom({
+    Expression<String>? id,
+    Expression<String>? projectId,
+    Expression<String>? inScopeItems,
+    Expression<String>? outOfScope,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (projectId != null) 'project_id': projectId,
+      if (inScopeItems != null) 'in_scope_items': inScopeItems,
+      if (outOfScope != null) 'out_of_scope': outOfScope,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ProjectScopesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? projectId,
+    Value<String?>? inScopeItems,
+    Value<String?>? outOfScope,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return ProjectScopesCompanion(
+      id: id ?? this.id,
+      projectId: projectId ?? this.projectId,
+      inScopeItems: inScopeItems ?? this.inScopeItems,
+      outOfScope: outOfScope ?? this.outOfScope,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (inScopeItems.present) {
+      map['in_scope_items'] = Variable<String>(inScopeItems.value);
+    }
+    if (outOfScope.present) {
+      map['out_of_scope'] = Variable<String>(outOfScope.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProjectScopesCompanion(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('inScopeItems: $inScopeItems, ')
+          ..write('outOfScope: $outOfScope, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $IntegrationDomainsTable extends IntegrationDomains
+    with TableInfo<$IntegrationDomainsTable, IntegrationDomain> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $IntegrationDomainsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES projects (id)',
+    ),
+  );
+  static const VerificationMeta _priorityMeta = const VerificationMeta(
+    'priority',
+  );
+  @override
+  late final GeneratedColumn<String> priority = GeneratedColumn<String>(
+    'priority',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _domainMeta = const VerificationMeta('domain');
+  @override
+  late final GeneratedColumn<String> domain = GeneratedColumn<String>(
+    'domain',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _likelySystemsMeta = const VerificationMeta(
+    'likelySystems',
+  );
+  @override
+  late final GeneratedColumn<String> likelySystems = GeneratedColumn<String>(
+    'likely_systems',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _prioritySignalMeta = const VerificationMeta(
+    'prioritySignal',
+  );
+  @override
+  late final GeneratedColumn<String> prioritySignal = GeneratedColumn<String>(
+    'priority_signal',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('not_started'),
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    projectId,
+    priority,
+    domain,
+    likelySystems,
+    prioritySignal,
+    status,
+    sortOrder,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'integration_domains';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<IntegrationDomain> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_projectIdMeta);
+    }
+    if (data.containsKey('priority')) {
+      context.handle(
+        _priorityMeta,
+        priority.isAcceptableOrUnknown(data['priority']!, _priorityMeta),
+      );
+    }
+    if (data.containsKey('domain')) {
+      context.handle(
+        _domainMeta,
+        domain.isAcceptableOrUnknown(data['domain']!, _domainMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_domainMeta);
+    }
+    if (data.containsKey('likely_systems')) {
+      context.handle(
+        _likelySystemsMeta,
+        likelySystems.isAcceptableOrUnknown(
+          data['likely_systems']!,
+          _likelySystemsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('priority_signal')) {
+      context.handle(
+        _prioritySignalMeta,
+        prioritySignal.isAcceptableOrUnknown(
+          data['priority_signal']!,
+          _prioritySignalMeta,
+        ),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  IntegrationDomain map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return IntegrationDomain(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      )!,
+      priority: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}priority'],
+      ),
+      domain: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}domain'],
+      )!,
+      likelySystems: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}likely_systems'],
+      ),
+      prioritySignal: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}priority_signal'],
+      ),
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $IntegrationDomainsTable createAlias(String alias) {
+    return $IntegrationDomainsTable(attachedDatabase, alias);
+  }
+}
+
+class IntegrationDomain extends DataClass
+    implements Insertable<IntegrationDomain> {
+  final String id;
+  final String projectId;
+  final String? priority;
+  final String domain;
+  final String? likelySystems;
+  final String? prioritySignal;
+  final String status;
+  final int sortOrder;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const IntegrationDomain({
+    required this.id,
+    required this.projectId,
+    this.priority,
+    required this.domain,
+    this.likelySystems,
+    this.prioritySignal,
+    required this.status,
+    required this.sortOrder,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['project_id'] = Variable<String>(projectId);
+    if (!nullToAbsent || priority != null) {
+      map['priority'] = Variable<String>(priority);
+    }
+    map['domain'] = Variable<String>(domain);
+    if (!nullToAbsent || likelySystems != null) {
+      map['likely_systems'] = Variable<String>(likelySystems);
+    }
+    if (!nullToAbsent || prioritySignal != null) {
+      map['priority_signal'] = Variable<String>(prioritySignal);
+    }
+    map['status'] = Variable<String>(status);
+    map['sort_order'] = Variable<int>(sortOrder);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  IntegrationDomainsCompanion toCompanion(bool nullToAbsent) {
+    return IntegrationDomainsCompanion(
+      id: Value(id),
+      projectId: Value(projectId),
+      priority: priority == null && nullToAbsent
+          ? const Value.absent()
+          : Value(priority),
+      domain: Value(domain),
+      likelySystems: likelySystems == null && nullToAbsent
+          ? const Value.absent()
+          : Value(likelySystems),
+      prioritySignal: prioritySignal == null && nullToAbsent
+          ? const Value.absent()
+          : Value(prioritySignal),
+      status: Value(status),
+      sortOrder: Value(sortOrder),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory IntegrationDomain.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return IntegrationDomain(
+      id: serializer.fromJson<String>(json['id']),
+      projectId: serializer.fromJson<String>(json['projectId']),
+      priority: serializer.fromJson<String?>(json['priority']),
+      domain: serializer.fromJson<String>(json['domain']),
+      likelySystems: serializer.fromJson<String?>(json['likelySystems']),
+      prioritySignal: serializer.fromJson<String?>(json['prioritySignal']),
+      status: serializer.fromJson<String>(json['status']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'projectId': serializer.toJson<String>(projectId),
+      'priority': serializer.toJson<String?>(priority),
+      'domain': serializer.toJson<String>(domain),
+      'likelySystems': serializer.toJson<String?>(likelySystems),
+      'prioritySignal': serializer.toJson<String?>(prioritySignal),
+      'status': serializer.toJson<String>(status),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  IntegrationDomain copyWith({
+    String? id,
+    String? projectId,
+    Value<String?> priority = const Value.absent(),
+    String? domain,
+    Value<String?> likelySystems = const Value.absent(),
+    Value<String?> prioritySignal = const Value.absent(),
+    String? status,
+    int? sortOrder,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => IntegrationDomain(
+    id: id ?? this.id,
+    projectId: projectId ?? this.projectId,
+    priority: priority.present ? priority.value : this.priority,
+    domain: domain ?? this.domain,
+    likelySystems: likelySystems.present
+        ? likelySystems.value
+        : this.likelySystems,
+    prioritySignal: prioritySignal.present
+        ? prioritySignal.value
+        : this.prioritySignal,
+    status: status ?? this.status,
+    sortOrder: sortOrder ?? this.sortOrder,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  IntegrationDomain copyWithCompanion(IntegrationDomainsCompanion data) {
+    return IntegrationDomain(
+      id: data.id.present ? data.id.value : this.id,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      priority: data.priority.present ? data.priority.value : this.priority,
+      domain: data.domain.present ? data.domain.value : this.domain,
+      likelySystems: data.likelySystems.present
+          ? data.likelySystems.value
+          : this.likelySystems,
+      prioritySignal: data.prioritySignal.present
+          ? data.prioritySignal.value
+          : this.prioritySignal,
+      status: data.status.present ? data.status.value : this.status,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('IntegrationDomain(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('priority: $priority, ')
+          ..write('domain: $domain, ')
+          ..write('likelySystems: $likelySystems, ')
+          ..write('prioritySignal: $prioritySignal, ')
+          ..write('status: $status, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    projectId,
+    priority,
+    domain,
+    likelySystems,
+    prioritySignal,
+    status,
+    sortOrder,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is IntegrationDomain &&
+          other.id == this.id &&
+          other.projectId == this.projectId &&
+          other.priority == this.priority &&
+          other.domain == this.domain &&
+          other.likelySystems == this.likelySystems &&
+          other.prioritySignal == this.prioritySignal &&
+          other.status == this.status &&
+          other.sortOrder == this.sortOrder &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class IntegrationDomainsCompanion extends UpdateCompanion<IntegrationDomain> {
+  final Value<String> id;
+  final Value<String> projectId;
+  final Value<String?> priority;
+  final Value<String> domain;
+  final Value<String?> likelySystems;
+  final Value<String?> prioritySignal;
+  final Value<String> status;
+  final Value<int> sortOrder;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const IntegrationDomainsCompanion({
+    this.id = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.priority = const Value.absent(),
+    this.domain = const Value.absent(),
+    this.likelySystems = const Value.absent(),
+    this.prioritySignal = const Value.absent(),
+    this.status = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  IntegrationDomainsCompanion.insert({
+    required String id,
+    required String projectId,
+    this.priority = const Value.absent(),
+    required String domain,
+    this.likelySystems = const Value.absent(),
+    this.prioritySignal = const Value.absent(),
+    this.status = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       projectId = Value(projectId),
+       domain = Value(domain);
+  static Insertable<IntegrationDomain> custom({
+    Expression<String>? id,
+    Expression<String>? projectId,
+    Expression<String>? priority,
+    Expression<String>? domain,
+    Expression<String>? likelySystems,
+    Expression<String>? prioritySignal,
+    Expression<String>? status,
+    Expression<int>? sortOrder,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (projectId != null) 'project_id': projectId,
+      if (priority != null) 'priority': priority,
+      if (domain != null) 'domain': domain,
+      if (likelySystems != null) 'likely_systems': likelySystems,
+      if (prioritySignal != null) 'priority_signal': prioritySignal,
+      if (status != null) 'status': status,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  IntegrationDomainsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? projectId,
+    Value<String?>? priority,
+    Value<String>? domain,
+    Value<String?>? likelySystems,
+    Value<String?>? prioritySignal,
+    Value<String>? status,
+    Value<int>? sortOrder,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return IntegrationDomainsCompanion(
+      id: id ?? this.id,
+      projectId: projectId ?? this.projectId,
+      priority: priority ?? this.priority,
+      domain: domain ?? this.domain,
+      likelySystems: likelySystems ?? this.likelySystems,
+      prioritySignal: prioritySignal ?? this.prioritySignal,
+      status: status ?? this.status,
+      sortOrder: sortOrder ?? this.sortOrder,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (priority.present) {
+      map['priority'] = Variable<String>(priority.value);
+    }
+    if (domain.present) {
+      map['domain'] = Variable<String>(domain.value);
+    }
+    if (likelySystems.present) {
+      map['likely_systems'] = Variable<String>(likelySystems.value);
+    }
+    if (prioritySignal.present) {
+      map['priority_signal'] = Variable<String>(prioritySignal.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('IntegrationDomainsCompanion(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('priority: $priority, ')
+          ..write('domain: $domain, ')
+          ..write('likelySystems: $likelySystems, ')
+          ..write('prioritySignal: $prioritySignal, ')
+          ..write('status: $status, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $PrioritisationSourcesTable extends PrioritisationSources
+    with TableInfo<$PrioritisationSourcesTable, PrioritisationSource> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PrioritisationSourcesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES projects (id)',
+    ),
+  );
+  static const VerificationMeta _sourceNameMeta = const VerificationMeta(
+    'sourceName',
+  );
+  @override
+  late final GeneratedColumn<String> sourceName = GeneratedColumn<String>(
+    'source_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _inputTypeMeta = const VerificationMeta(
+    'inputType',
+  );
+  @override
+  late final GeneratedColumn<String> inputType = GeneratedColumn<String>(
+    'input_type',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ownerMeta = const VerificationMeta('owner');
+  @override
+  late final GeneratedColumn<String> owner = GeneratedColumn<String>(
+    'owner',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _mechanismMeta = const VerificationMeta(
+    'mechanism',
+  );
+  @override
+  late final GeneratedColumn<String> mechanism = GeneratedColumn<String>(
+    'mechanism',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _weightMeta = const VerificationMeta('weight');
+  @override
+  late final GeneratedColumn<String> weight = GeneratedColumn<String>(
+    'weight',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    projectId,
+    sourceName,
+    inputType,
+    owner,
+    mechanism,
+    weight,
+    sortOrder,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'prioritisation_sources';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PrioritisationSource> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_projectIdMeta);
+    }
+    if (data.containsKey('source_name')) {
+      context.handle(
+        _sourceNameMeta,
+        sourceName.isAcceptableOrUnknown(data['source_name']!, _sourceNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceNameMeta);
+    }
+    if (data.containsKey('input_type')) {
+      context.handle(
+        _inputTypeMeta,
+        inputType.isAcceptableOrUnknown(data['input_type']!, _inputTypeMeta),
+      );
+    }
+    if (data.containsKey('owner')) {
+      context.handle(
+        _ownerMeta,
+        owner.isAcceptableOrUnknown(data['owner']!, _ownerMeta),
+      );
+    }
+    if (data.containsKey('mechanism')) {
+      context.handle(
+        _mechanismMeta,
+        mechanism.isAcceptableOrUnknown(data['mechanism']!, _mechanismMeta),
+      );
+    }
+    if (data.containsKey('weight')) {
+      context.handle(
+        _weightMeta,
+        weight.isAcceptableOrUnknown(data['weight']!, _weightMeta),
+      );
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PrioritisationSource map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PrioritisationSource(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      )!,
+      sourceName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_name'],
+      )!,
+      inputType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}input_type'],
+      ),
+      owner: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner'],
+      ),
+      mechanism: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mechanism'],
+      ),
+      weight: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}weight'],
+      ),
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $PrioritisationSourcesTable createAlias(String alias) {
+    return $PrioritisationSourcesTable(attachedDatabase, alias);
+  }
+}
+
+class PrioritisationSource extends DataClass
+    implements Insertable<PrioritisationSource> {
+  final String id;
+  final String projectId;
+  final String sourceName;
+  final String? inputType;
+  final String? owner;
+  final String? mechanism;
+  final String? weight;
+  final int sortOrder;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const PrioritisationSource({
+    required this.id,
+    required this.projectId,
+    required this.sourceName,
+    this.inputType,
+    this.owner,
+    this.mechanism,
+    this.weight,
+    required this.sortOrder,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['project_id'] = Variable<String>(projectId);
+    map['source_name'] = Variable<String>(sourceName);
+    if (!nullToAbsent || inputType != null) {
+      map['input_type'] = Variable<String>(inputType);
+    }
+    if (!nullToAbsent || owner != null) {
+      map['owner'] = Variable<String>(owner);
+    }
+    if (!nullToAbsent || mechanism != null) {
+      map['mechanism'] = Variable<String>(mechanism);
+    }
+    if (!nullToAbsent || weight != null) {
+      map['weight'] = Variable<String>(weight);
+    }
+    map['sort_order'] = Variable<int>(sortOrder);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  PrioritisationSourcesCompanion toCompanion(bool nullToAbsent) {
+    return PrioritisationSourcesCompanion(
+      id: Value(id),
+      projectId: Value(projectId),
+      sourceName: Value(sourceName),
+      inputType: inputType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(inputType),
+      owner: owner == null && nullToAbsent
+          ? const Value.absent()
+          : Value(owner),
+      mechanism: mechanism == null && nullToAbsent
+          ? const Value.absent()
+          : Value(mechanism),
+      weight: weight == null && nullToAbsent
+          ? const Value.absent()
+          : Value(weight),
+      sortOrder: Value(sortOrder),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory PrioritisationSource.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PrioritisationSource(
+      id: serializer.fromJson<String>(json['id']),
+      projectId: serializer.fromJson<String>(json['projectId']),
+      sourceName: serializer.fromJson<String>(json['sourceName']),
+      inputType: serializer.fromJson<String?>(json['inputType']),
+      owner: serializer.fromJson<String?>(json['owner']),
+      mechanism: serializer.fromJson<String?>(json['mechanism']),
+      weight: serializer.fromJson<String?>(json['weight']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'projectId': serializer.toJson<String>(projectId),
+      'sourceName': serializer.toJson<String>(sourceName),
+      'inputType': serializer.toJson<String?>(inputType),
+      'owner': serializer.toJson<String?>(owner),
+      'mechanism': serializer.toJson<String?>(mechanism),
+      'weight': serializer.toJson<String?>(weight),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  PrioritisationSource copyWith({
+    String? id,
+    String? projectId,
+    String? sourceName,
+    Value<String?> inputType = const Value.absent(),
+    Value<String?> owner = const Value.absent(),
+    Value<String?> mechanism = const Value.absent(),
+    Value<String?> weight = const Value.absent(),
+    int? sortOrder,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => PrioritisationSource(
+    id: id ?? this.id,
+    projectId: projectId ?? this.projectId,
+    sourceName: sourceName ?? this.sourceName,
+    inputType: inputType.present ? inputType.value : this.inputType,
+    owner: owner.present ? owner.value : this.owner,
+    mechanism: mechanism.present ? mechanism.value : this.mechanism,
+    weight: weight.present ? weight.value : this.weight,
+    sortOrder: sortOrder ?? this.sortOrder,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  PrioritisationSource copyWithCompanion(PrioritisationSourcesCompanion data) {
+    return PrioritisationSource(
+      id: data.id.present ? data.id.value : this.id,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      sourceName: data.sourceName.present
+          ? data.sourceName.value
+          : this.sourceName,
+      inputType: data.inputType.present ? data.inputType.value : this.inputType,
+      owner: data.owner.present ? data.owner.value : this.owner,
+      mechanism: data.mechanism.present ? data.mechanism.value : this.mechanism,
+      weight: data.weight.present ? data.weight.value : this.weight,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PrioritisationSource(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('sourceName: $sourceName, ')
+          ..write('inputType: $inputType, ')
+          ..write('owner: $owner, ')
+          ..write('mechanism: $mechanism, ')
+          ..write('weight: $weight, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    projectId,
+    sourceName,
+    inputType,
+    owner,
+    mechanism,
+    weight,
+    sortOrder,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PrioritisationSource &&
+          other.id == this.id &&
+          other.projectId == this.projectId &&
+          other.sourceName == this.sourceName &&
+          other.inputType == this.inputType &&
+          other.owner == this.owner &&
+          other.mechanism == this.mechanism &&
+          other.weight == this.weight &&
+          other.sortOrder == this.sortOrder &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class PrioritisationSourcesCompanion
+    extends UpdateCompanion<PrioritisationSource> {
+  final Value<String> id;
+  final Value<String> projectId;
+  final Value<String> sourceName;
+  final Value<String?> inputType;
+  final Value<String?> owner;
+  final Value<String?> mechanism;
+  final Value<String?> weight;
+  final Value<int> sortOrder;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const PrioritisationSourcesCompanion({
+    this.id = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.sourceName = const Value.absent(),
+    this.inputType = const Value.absent(),
+    this.owner = const Value.absent(),
+    this.mechanism = const Value.absent(),
+    this.weight = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PrioritisationSourcesCompanion.insert({
+    required String id,
+    required String projectId,
+    required String sourceName,
+    this.inputType = const Value.absent(),
+    this.owner = const Value.absent(),
+    this.mechanism = const Value.absent(),
+    this.weight = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       projectId = Value(projectId),
+       sourceName = Value(sourceName);
+  static Insertable<PrioritisationSource> custom({
+    Expression<String>? id,
+    Expression<String>? projectId,
+    Expression<String>? sourceName,
+    Expression<String>? inputType,
+    Expression<String>? owner,
+    Expression<String>? mechanism,
+    Expression<String>? weight,
+    Expression<int>? sortOrder,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (projectId != null) 'project_id': projectId,
+      if (sourceName != null) 'source_name': sourceName,
+      if (inputType != null) 'input_type': inputType,
+      if (owner != null) 'owner': owner,
+      if (mechanism != null) 'mechanism': mechanism,
+      if (weight != null) 'weight': weight,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PrioritisationSourcesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? projectId,
+    Value<String>? sourceName,
+    Value<String?>? inputType,
+    Value<String?>? owner,
+    Value<String?>? mechanism,
+    Value<String?>? weight,
+    Value<int>? sortOrder,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return PrioritisationSourcesCompanion(
+      id: id ?? this.id,
+      projectId: projectId ?? this.projectId,
+      sourceName: sourceName ?? this.sourceName,
+      inputType: inputType ?? this.inputType,
+      owner: owner ?? this.owner,
+      mechanism: mechanism ?? this.mechanism,
+      weight: weight ?? this.weight,
+      sortOrder: sortOrder ?? this.sortOrder,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (sourceName.present) {
+      map['source_name'] = Variable<String>(sourceName.value);
+    }
+    if (inputType.present) {
+      map['input_type'] = Variable<String>(inputType.value);
+    }
+    if (owner.present) {
+      map['owner'] = Variable<String>(owner.value);
+    }
+    if (mechanism.present) {
+      map['mechanism'] = Variable<String>(mechanism.value);
+    }
+    if (weight.present) {
+      map['weight'] = Variable<String>(weight.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PrioritisationSourcesCompanion(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('sourceName: $sourceName, ')
+          ..write('inputType: $inputType, ')
+          ..write('owner: $owner, ')
+          ..write('mechanism: $mechanism, ')
+          ..write('weight: $weight, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $StatusSnapshotsTable extends StatusSnapshots
+    with TableInfo<$StatusSnapshotsTable, StatusSnapshot> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $StatusSnapshotsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES projects (id)',
+    ),
+  );
+  static const VerificationMeta _weekEndingMeta = const VerificationMeta(
+    'weekEnding',
+  );
+  @override
+  late final GeneratedColumn<DateTime> weekEnding = GeneratedColumn<DateTime>(
+    'week_ending',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _programmeRagMeta = const VerificationMeta(
+    'programmeRag',
+  );
+  @override
+  late final GeneratedColumn<String> programmeRag = GeneratedColumn<String>(
+    'programme_rag',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _workstreamRagMeta = const VerificationMeta(
+    'workstreamRag',
+  );
+  @override
+  late final GeneratedColumn<String> workstreamRag = GeneratedColumn<String>(
+    'workstream_rag',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('{}'),
+  );
+  static const VerificationMeta _overdueActionsCountMeta =
+      const VerificationMeta('overdueActionsCount');
+  @override
+  late final GeneratedColumn<int> overdueActionsCount = GeneratedColumn<int>(
+    'overdue_actions_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _openActionsCountMeta = const VerificationMeta(
+    'openActionsCount',
+  );
+  @override
+  late final GeneratedColumn<int> openActionsCount = GeneratedColumn<int>(
+    'open_actions_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _pendingDecisionsCountMeta =
+      const VerificationMeta('pendingDecisionsCount');
+  @override
+  late final GeneratedColumn<int> pendingDecisionsCount = GeneratedColumn<int>(
+    'pending_decisions_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _openRisksCountMeta = const VerificationMeta(
+    'openRisksCount',
+  );
+  @override
+  late final GeneratedColumn<int> openRisksCount = GeneratedColumn<int>(
+    'open_risks_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    projectId,
+    weekEnding,
+    programmeRag,
+    workstreamRag,
+    overdueActionsCount,
+    openActionsCount,
+    pendingDecisionsCount,
+    openRisksCount,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'status_snapshots';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<StatusSnapshot> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_projectIdMeta);
+    }
+    if (data.containsKey('week_ending')) {
+      context.handle(
+        _weekEndingMeta,
+        weekEnding.isAcceptableOrUnknown(data['week_ending']!, _weekEndingMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_weekEndingMeta);
+    }
+    if (data.containsKey('programme_rag')) {
+      context.handle(
+        _programmeRagMeta,
+        programmeRag.isAcceptableOrUnknown(
+          data['programme_rag']!,
+          _programmeRagMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_programmeRagMeta);
+    }
+    if (data.containsKey('workstream_rag')) {
+      context.handle(
+        _workstreamRagMeta,
+        workstreamRag.isAcceptableOrUnknown(
+          data['workstream_rag']!,
+          _workstreamRagMeta,
+        ),
+      );
+    }
+    if (data.containsKey('overdue_actions_count')) {
+      context.handle(
+        _overdueActionsCountMeta,
+        overdueActionsCount.isAcceptableOrUnknown(
+          data['overdue_actions_count']!,
+          _overdueActionsCountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('open_actions_count')) {
+      context.handle(
+        _openActionsCountMeta,
+        openActionsCount.isAcceptableOrUnknown(
+          data['open_actions_count']!,
+          _openActionsCountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('pending_decisions_count')) {
+      context.handle(
+        _pendingDecisionsCountMeta,
+        pendingDecisionsCount.isAcceptableOrUnknown(
+          data['pending_decisions_count']!,
+          _pendingDecisionsCountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('open_risks_count')) {
+      context.handle(
+        _openRisksCountMeta,
+        openRisksCount.isAcceptableOrUnknown(
+          data['open_risks_count']!,
+          _openRisksCountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  StatusSnapshot map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return StatusSnapshot(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      )!,
+      weekEnding: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}week_ending'],
+      )!,
+      programmeRag: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}programme_rag'],
+      )!,
+      workstreamRag: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workstream_rag'],
+      )!,
+      overdueActionsCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}overdue_actions_count'],
+      )!,
+      openActionsCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}open_actions_count'],
+      )!,
+      pendingDecisionsCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}pending_decisions_count'],
+      )!,
+      openRisksCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}open_risks_count'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $StatusSnapshotsTable createAlias(String alias) {
+    return $StatusSnapshotsTable(attachedDatabase, alias);
+  }
+}
+
+class StatusSnapshot extends DataClass implements Insertable<StatusSnapshot> {
+  final String id;
+  final String projectId;
+  final DateTime weekEnding;
+  final String programmeRag;
+  final String workstreamRag;
+  final int overdueActionsCount;
+  final int openActionsCount;
+  final int pendingDecisionsCount;
+  final int openRisksCount;
+  final DateTime createdAt;
+  const StatusSnapshot({
+    required this.id,
+    required this.projectId,
+    required this.weekEnding,
+    required this.programmeRag,
+    required this.workstreamRag,
+    required this.overdueActionsCount,
+    required this.openActionsCount,
+    required this.pendingDecisionsCount,
+    required this.openRisksCount,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['project_id'] = Variable<String>(projectId);
+    map['week_ending'] = Variable<DateTime>(weekEnding);
+    map['programme_rag'] = Variable<String>(programmeRag);
+    map['workstream_rag'] = Variable<String>(workstreamRag);
+    map['overdue_actions_count'] = Variable<int>(overdueActionsCount);
+    map['open_actions_count'] = Variable<int>(openActionsCount);
+    map['pending_decisions_count'] = Variable<int>(pendingDecisionsCount);
+    map['open_risks_count'] = Variable<int>(openRisksCount);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  StatusSnapshotsCompanion toCompanion(bool nullToAbsent) {
+    return StatusSnapshotsCompanion(
+      id: Value(id),
+      projectId: Value(projectId),
+      weekEnding: Value(weekEnding),
+      programmeRag: Value(programmeRag),
+      workstreamRag: Value(workstreamRag),
+      overdueActionsCount: Value(overdueActionsCount),
+      openActionsCount: Value(openActionsCount),
+      pendingDecisionsCount: Value(pendingDecisionsCount),
+      openRisksCount: Value(openRisksCount),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory StatusSnapshot.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return StatusSnapshot(
+      id: serializer.fromJson<String>(json['id']),
+      projectId: serializer.fromJson<String>(json['projectId']),
+      weekEnding: serializer.fromJson<DateTime>(json['weekEnding']),
+      programmeRag: serializer.fromJson<String>(json['programmeRag']),
+      workstreamRag: serializer.fromJson<String>(json['workstreamRag']),
+      overdueActionsCount: serializer.fromJson<int>(
+        json['overdueActionsCount'],
+      ),
+      openActionsCount: serializer.fromJson<int>(json['openActionsCount']),
+      pendingDecisionsCount: serializer.fromJson<int>(
+        json['pendingDecisionsCount'],
+      ),
+      openRisksCount: serializer.fromJson<int>(json['openRisksCount']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'projectId': serializer.toJson<String>(projectId),
+      'weekEnding': serializer.toJson<DateTime>(weekEnding),
+      'programmeRag': serializer.toJson<String>(programmeRag),
+      'workstreamRag': serializer.toJson<String>(workstreamRag),
+      'overdueActionsCount': serializer.toJson<int>(overdueActionsCount),
+      'openActionsCount': serializer.toJson<int>(openActionsCount),
+      'pendingDecisionsCount': serializer.toJson<int>(pendingDecisionsCount),
+      'openRisksCount': serializer.toJson<int>(openRisksCount),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  StatusSnapshot copyWith({
+    String? id,
+    String? projectId,
+    DateTime? weekEnding,
+    String? programmeRag,
+    String? workstreamRag,
+    int? overdueActionsCount,
+    int? openActionsCount,
+    int? pendingDecisionsCount,
+    int? openRisksCount,
+    DateTime? createdAt,
+  }) => StatusSnapshot(
+    id: id ?? this.id,
+    projectId: projectId ?? this.projectId,
+    weekEnding: weekEnding ?? this.weekEnding,
+    programmeRag: programmeRag ?? this.programmeRag,
+    workstreamRag: workstreamRag ?? this.workstreamRag,
+    overdueActionsCount: overdueActionsCount ?? this.overdueActionsCount,
+    openActionsCount: openActionsCount ?? this.openActionsCount,
+    pendingDecisionsCount: pendingDecisionsCount ?? this.pendingDecisionsCount,
+    openRisksCount: openRisksCount ?? this.openRisksCount,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  StatusSnapshot copyWithCompanion(StatusSnapshotsCompanion data) {
+    return StatusSnapshot(
+      id: data.id.present ? data.id.value : this.id,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      weekEnding: data.weekEnding.present
+          ? data.weekEnding.value
+          : this.weekEnding,
+      programmeRag: data.programmeRag.present
+          ? data.programmeRag.value
+          : this.programmeRag,
+      workstreamRag: data.workstreamRag.present
+          ? data.workstreamRag.value
+          : this.workstreamRag,
+      overdueActionsCount: data.overdueActionsCount.present
+          ? data.overdueActionsCount.value
+          : this.overdueActionsCount,
+      openActionsCount: data.openActionsCount.present
+          ? data.openActionsCount.value
+          : this.openActionsCount,
+      pendingDecisionsCount: data.pendingDecisionsCount.present
+          ? data.pendingDecisionsCount.value
+          : this.pendingDecisionsCount,
+      openRisksCount: data.openRisksCount.present
+          ? data.openRisksCount.value
+          : this.openRisksCount,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StatusSnapshot(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('weekEnding: $weekEnding, ')
+          ..write('programmeRag: $programmeRag, ')
+          ..write('workstreamRag: $workstreamRag, ')
+          ..write('overdueActionsCount: $overdueActionsCount, ')
+          ..write('openActionsCount: $openActionsCount, ')
+          ..write('pendingDecisionsCount: $pendingDecisionsCount, ')
+          ..write('openRisksCount: $openRisksCount, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    projectId,
+    weekEnding,
+    programmeRag,
+    workstreamRag,
+    overdueActionsCount,
+    openActionsCount,
+    pendingDecisionsCount,
+    openRisksCount,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is StatusSnapshot &&
+          other.id == this.id &&
+          other.projectId == this.projectId &&
+          other.weekEnding == this.weekEnding &&
+          other.programmeRag == this.programmeRag &&
+          other.workstreamRag == this.workstreamRag &&
+          other.overdueActionsCount == this.overdueActionsCount &&
+          other.openActionsCount == this.openActionsCount &&
+          other.pendingDecisionsCount == this.pendingDecisionsCount &&
+          other.openRisksCount == this.openRisksCount &&
+          other.createdAt == this.createdAt);
+}
+
+class StatusSnapshotsCompanion extends UpdateCompanion<StatusSnapshot> {
+  final Value<String> id;
+  final Value<String> projectId;
+  final Value<DateTime> weekEnding;
+  final Value<String> programmeRag;
+  final Value<String> workstreamRag;
+  final Value<int> overdueActionsCount;
+  final Value<int> openActionsCount;
+  final Value<int> pendingDecisionsCount;
+  final Value<int> openRisksCount;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const StatusSnapshotsCompanion({
+    this.id = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.weekEnding = const Value.absent(),
+    this.programmeRag = const Value.absent(),
+    this.workstreamRag = const Value.absent(),
+    this.overdueActionsCount = const Value.absent(),
+    this.openActionsCount = const Value.absent(),
+    this.pendingDecisionsCount = const Value.absent(),
+    this.openRisksCount = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  StatusSnapshotsCompanion.insert({
+    required String id,
+    required String projectId,
+    required DateTime weekEnding,
+    required String programmeRag,
+    this.workstreamRag = const Value.absent(),
+    this.overdueActionsCount = const Value.absent(),
+    this.openActionsCount = const Value.absent(),
+    this.pendingDecisionsCount = const Value.absent(),
+    this.openRisksCount = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       projectId = Value(projectId),
+       weekEnding = Value(weekEnding),
+       programmeRag = Value(programmeRag);
+  static Insertable<StatusSnapshot> custom({
+    Expression<String>? id,
+    Expression<String>? projectId,
+    Expression<DateTime>? weekEnding,
+    Expression<String>? programmeRag,
+    Expression<String>? workstreamRag,
+    Expression<int>? overdueActionsCount,
+    Expression<int>? openActionsCount,
+    Expression<int>? pendingDecisionsCount,
+    Expression<int>? openRisksCount,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (projectId != null) 'project_id': projectId,
+      if (weekEnding != null) 'week_ending': weekEnding,
+      if (programmeRag != null) 'programme_rag': programmeRag,
+      if (workstreamRag != null) 'workstream_rag': workstreamRag,
+      if (overdueActionsCount != null)
+        'overdue_actions_count': overdueActionsCount,
+      if (openActionsCount != null) 'open_actions_count': openActionsCount,
+      if (pendingDecisionsCount != null)
+        'pending_decisions_count': pendingDecisionsCount,
+      if (openRisksCount != null) 'open_risks_count': openRisksCount,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  StatusSnapshotsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? projectId,
+    Value<DateTime>? weekEnding,
+    Value<String>? programmeRag,
+    Value<String>? workstreamRag,
+    Value<int>? overdueActionsCount,
+    Value<int>? openActionsCount,
+    Value<int>? pendingDecisionsCount,
+    Value<int>? openRisksCount,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return StatusSnapshotsCompanion(
+      id: id ?? this.id,
+      projectId: projectId ?? this.projectId,
+      weekEnding: weekEnding ?? this.weekEnding,
+      programmeRag: programmeRag ?? this.programmeRag,
+      workstreamRag: workstreamRag ?? this.workstreamRag,
+      overdueActionsCount: overdueActionsCount ?? this.overdueActionsCount,
+      openActionsCount: openActionsCount ?? this.openActionsCount,
+      pendingDecisionsCount:
+          pendingDecisionsCount ?? this.pendingDecisionsCount,
+      openRisksCount: openRisksCount ?? this.openRisksCount,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (weekEnding.present) {
+      map['week_ending'] = Variable<DateTime>(weekEnding.value);
+    }
+    if (programmeRag.present) {
+      map['programme_rag'] = Variable<String>(programmeRag.value);
+    }
+    if (workstreamRag.present) {
+      map['workstream_rag'] = Variable<String>(workstreamRag.value);
+    }
+    if (overdueActionsCount.present) {
+      map['overdue_actions_count'] = Variable<int>(overdueActionsCount.value);
+    }
+    if (openActionsCount.present) {
+      map['open_actions_count'] = Variable<int>(openActionsCount.value);
+    }
+    if (pendingDecisionsCount.present) {
+      map['pending_decisions_count'] = Variable<int>(
+        pendingDecisionsCount.value,
+      );
+    }
+    if (openRisksCount.present) {
+      map['open_risks_count'] = Variable<int>(openRisksCount.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StatusSnapshotsCompanion(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('weekEnding: $weekEnding, ')
+          ..write('programmeRag: $programmeRag, ')
+          ..write('workstreamRag: $workstreamRag, ')
+          ..write('overdueActionsCount: $overdueActionsCount, ')
+          ..write('openActionsCount: $openActionsCount, ')
+          ..write('pendingDecisionsCount: $pendingDecisionsCount, ')
+          ..write('openRisksCount: $openRisksCount, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ProjectChartersTable extends ProjectCharters
+    with TableInfo<$ProjectChartersTable, ProjectCharter> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ProjectChartersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES projects (id)',
+    ),
+  );
+  static const VerificationMeta _visionMeta = const VerificationMeta('vision');
+  @override
+  late final GeneratedColumn<String> vision = GeneratedColumn<String>(
+    'vision',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _objectivesMeta = const VerificationMeta(
+    'objectives',
+  );
+  @override
+  late final GeneratedColumn<String> objectives = GeneratedColumn<String>(
+    'objectives',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _scopeInMeta = const VerificationMeta(
+    'scopeIn',
+  );
+  @override
+  late final GeneratedColumn<String> scopeIn = GeneratedColumn<String>(
+    'scope_in',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _scopeOutMeta = const VerificationMeta(
+    'scopeOut',
+  );
+  @override
+  late final GeneratedColumn<String> scopeOut = GeneratedColumn<String>(
+    'scope_out',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _deliveryApproachMeta = const VerificationMeta(
+    'deliveryApproach',
+  );
+  @override
+  late final GeneratedColumn<String> deliveryApproach = GeneratedColumn<String>(
+    'delivery_approach',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _successCriteriaMeta = const VerificationMeta(
+    'successCriteria',
+  );
+  @override
+  late final GeneratedColumn<String> successCriteria = GeneratedColumn<String>(
+    'success_criteria',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _keyConstraintsMeta = const VerificationMeta(
+    'keyConstraints',
+  );
+  @override
+  late final GeneratedColumn<String> keyConstraints = GeneratedColumn<String>(
+    'key_constraints',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _assumptionsMeta = const VerificationMeta(
+    'assumptions',
+  );
+  @override
+  late final GeneratedColumn<String> assumptions = GeneratedColumn<String>(
+    'assumptions',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    projectId,
+    vision,
+    objectives,
+    scopeIn,
+    scopeOut,
+    deliveryApproach,
+    successCriteria,
+    keyConstraints,
+    assumptions,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'project_charters';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ProjectCharter> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_projectIdMeta);
+    }
+    if (data.containsKey('vision')) {
+      context.handle(
+        _visionMeta,
+        vision.isAcceptableOrUnknown(data['vision']!, _visionMeta),
+      );
+    }
+    if (data.containsKey('objectives')) {
+      context.handle(
+        _objectivesMeta,
+        objectives.isAcceptableOrUnknown(data['objectives']!, _objectivesMeta),
+      );
+    }
+    if (data.containsKey('scope_in')) {
+      context.handle(
+        _scopeInMeta,
+        scopeIn.isAcceptableOrUnknown(data['scope_in']!, _scopeInMeta),
+      );
+    }
+    if (data.containsKey('scope_out')) {
+      context.handle(
+        _scopeOutMeta,
+        scopeOut.isAcceptableOrUnknown(data['scope_out']!, _scopeOutMeta),
+      );
+    }
+    if (data.containsKey('delivery_approach')) {
+      context.handle(
+        _deliveryApproachMeta,
+        deliveryApproach.isAcceptableOrUnknown(
+          data['delivery_approach']!,
+          _deliveryApproachMeta,
+        ),
+      );
+    }
+    if (data.containsKey('success_criteria')) {
+      context.handle(
+        _successCriteriaMeta,
+        successCriteria.isAcceptableOrUnknown(
+          data['success_criteria']!,
+          _successCriteriaMeta,
+        ),
+      );
+    }
+    if (data.containsKey('key_constraints')) {
+      context.handle(
+        _keyConstraintsMeta,
+        keyConstraints.isAcceptableOrUnknown(
+          data['key_constraints']!,
+          _keyConstraintsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('assumptions')) {
+      context.handle(
+        _assumptionsMeta,
+        assumptions.isAcceptableOrUnknown(
+          data['assumptions']!,
+          _assumptionsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ProjectCharter map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ProjectCharter(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      )!,
+      vision: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}vision'],
+      ),
+      objectives: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}objectives'],
+      ),
+      scopeIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}scope_in'],
+      ),
+      scopeOut: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}scope_out'],
+      ),
+      deliveryApproach: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}delivery_approach'],
+      ),
+      successCriteria: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}success_criteria'],
+      ),
+      keyConstraints: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}key_constraints'],
+      ),
+      assumptions: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}assumptions'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ProjectChartersTable createAlias(String alias) {
+    return $ProjectChartersTable(attachedDatabase, alias);
+  }
+}
+
+class ProjectCharter extends DataClass implements Insertable<ProjectCharter> {
+  final String id;
+  final String projectId;
+  final String? vision;
+  final String? objectives;
+  final String? scopeIn;
+  final String? scopeOut;
+  final String? deliveryApproach;
+  final String? successCriteria;
+  final String? keyConstraints;
+  final String? assumptions;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const ProjectCharter({
+    required this.id,
+    required this.projectId,
+    this.vision,
+    this.objectives,
+    this.scopeIn,
+    this.scopeOut,
+    this.deliveryApproach,
+    this.successCriteria,
+    this.keyConstraints,
+    this.assumptions,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['project_id'] = Variable<String>(projectId);
+    if (!nullToAbsent || vision != null) {
+      map['vision'] = Variable<String>(vision);
+    }
+    if (!nullToAbsent || objectives != null) {
+      map['objectives'] = Variable<String>(objectives);
+    }
+    if (!nullToAbsent || scopeIn != null) {
+      map['scope_in'] = Variable<String>(scopeIn);
+    }
+    if (!nullToAbsent || scopeOut != null) {
+      map['scope_out'] = Variable<String>(scopeOut);
+    }
+    if (!nullToAbsent || deliveryApproach != null) {
+      map['delivery_approach'] = Variable<String>(deliveryApproach);
+    }
+    if (!nullToAbsent || successCriteria != null) {
+      map['success_criteria'] = Variable<String>(successCriteria);
+    }
+    if (!nullToAbsent || keyConstraints != null) {
+      map['key_constraints'] = Variable<String>(keyConstraints);
+    }
+    if (!nullToAbsent || assumptions != null) {
+      map['assumptions'] = Variable<String>(assumptions);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  ProjectChartersCompanion toCompanion(bool nullToAbsent) {
+    return ProjectChartersCompanion(
+      id: Value(id),
+      projectId: Value(projectId),
+      vision: vision == null && nullToAbsent
+          ? const Value.absent()
+          : Value(vision),
+      objectives: objectives == null && nullToAbsent
+          ? const Value.absent()
+          : Value(objectives),
+      scopeIn: scopeIn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(scopeIn),
+      scopeOut: scopeOut == null && nullToAbsent
+          ? const Value.absent()
+          : Value(scopeOut),
+      deliveryApproach: deliveryApproach == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deliveryApproach),
+      successCriteria: successCriteria == null && nullToAbsent
+          ? const Value.absent()
+          : Value(successCriteria),
+      keyConstraints: keyConstraints == null && nullToAbsent
+          ? const Value.absent()
+          : Value(keyConstraints),
+      assumptions: assumptions == null && nullToAbsent
+          ? const Value.absent()
+          : Value(assumptions),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory ProjectCharter.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ProjectCharter(
+      id: serializer.fromJson<String>(json['id']),
+      projectId: serializer.fromJson<String>(json['projectId']),
+      vision: serializer.fromJson<String?>(json['vision']),
+      objectives: serializer.fromJson<String?>(json['objectives']),
+      scopeIn: serializer.fromJson<String?>(json['scopeIn']),
+      scopeOut: serializer.fromJson<String?>(json['scopeOut']),
+      deliveryApproach: serializer.fromJson<String?>(json['deliveryApproach']),
+      successCriteria: serializer.fromJson<String?>(json['successCriteria']),
+      keyConstraints: serializer.fromJson<String?>(json['keyConstraints']),
+      assumptions: serializer.fromJson<String?>(json['assumptions']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'projectId': serializer.toJson<String>(projectId),
+      'vision': serializer.toJson<String?>(vision),
+      'objectives': serializer.toJson<String?>(objectives),
+      'scopeIn': serializer.toJson<String?>(scopeIn),
+      'scopeOut': serializer.toJson<String?>(scopeOut),
+      'deliveryApproach': serializer.toJson<String?>(deliveryApproach),
+      'successCriteria': serializer.toJson<String?>(successCriteria),
+      'keyConstraints': serializer.toJson<String?>(keyConstraints),
+      'assumptions': serializer.toJson<String?>(assumptions),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  ProjectCharter copyWith({
+    String? id,
+    String? projectId,
+    Value<String?> vision = const Value.absent(),
+    Value<String?> objectives = const Value.absent(),
+    Value<String?> scopeIn = const Value.absent(),
+    Value<String?> scopeOut = const Value.absent(),
+    Value<String?> deliveryApproach = const Value.absent(),
+    Value<String?> successCriteria = const Value.absent(),
+    Value<String?> keyConstraints = const Value.absent(),
+    Value<String?> assumptions = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => ProjectCharter(
+    id: id ?? this.id,
+    projectId: projectId ?? this.projectId,
+    vision: vision.present ? vision.value : this.vision,
+    objectives: objectives.present ? objectives.value : this.objectives,
+    scopeIn: scopeIn.present ? scopeIn.value : this.scopeIn,
+    scopeOut: scopeOut.present ? scopeOut.value : this.scopeOut,
+    deliveryApproach: deliveryApproach.present
+        ? deliveryApproach.value
+        : this.deliveryApproach,
+    successCriteria: successCriteria.present
+        ? successCriteria.value
+        : this.successCriteria,
+    keyConstraints: keyConstraints.present
+        ? keyConstraints.value
+        : this.keyConstraints,
+    assumptions: assumptions.present ? assumptions.value : this.assumptions,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  ProjectCharter copyWithCompanion(ProjectChartersCompanion data) {
+    return ProjectCharter(
+      id: data.id.present ? data.id.value : this.id,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      vision: data.vision.present ? data.vision.value : this.vision,
+      objectives: data.objectives.present
+          ? data.objectives.value
+          : this.objectives,
+      scopeIn: data.scopeIn.present ? data.scopeIn.value : this.scopeIn,
+      scopeOut: data.scopeOut.present ? data.scopeOut.value : this.scopeOut,
+      deliveryApproach: data.deliveryApproach.present
+          ? data.deliveryApproach.value
+          : this.deliveryApproach,
+      successCriteria: data.successCriteria.present
+          ? data.successCriteria.value
+          : this.successCriteria,
+      keyConstraints: data.keyConstraints.present
+          ? data.keyConstraints.value
+          : this.keyConstraints,
+      assumptions: data.assumptions.present
+          ? data.assumptions.value
+          : this.assumptions,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProjectCharter(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('vision: $vision, ')
+          ..write('objectives: $objectives, ')
+          ..write('scopeIn: $scopeIn, ')
+          ..write('scopeOut: $scopeOut, ')
+          ..write('deliveryApproach: $deliveryApproach, ')
+          ..write('successCriteria: $successCriteria, ')
+          ..write('keyConstraints: $keyConstraints, ')
+          ..write('assumptions: $assumptions, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    projectId,
+    vision,
+    objectives,
+    scopeIn,
+    scopeOut,
+    deliveryApproach,
+    successCriteria,
+    keyConstraints,
+    assumptions,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ProjectCharter &&
+          other.id == this.id &&
+          other.projectId == this.projectId &&
+          other.vision == this.vision &&
+          other.objectives == this.objectives &&
+          other.scopeIn == this.scopeIn &&
+          other.scopeOut == this.scopeOut &&
+          other.deliveryApproach == this.deliveryApproach &&
+          other.successCriteria == this.successCriteria &&
+          other.keyConstraints == this.keyConstraints &&
+          other.assumptions == this.assumptions &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class ProjectChartersCompanion extends UpdateCompanion<ProjectCharter> {
+  final Value<String> id;
+  final Value<String> projectId;
+  final Value<String?> vision;
+  final Value<String?> objectives;
+  final Value<String?> scopeIn;
+  final Value<String?> scopeOut;
+  final Value<String?> deliveryApproach;
+  final Value<String?> successCriteria;
+  final Value<String?> keyConstraints;
+  final Value<String?> assumptions;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const ProjectChartersCompanion({
+    this.id = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.vision = const Value.absent(),
+    this.objectives = const Value.absent(),
+    this.scopeIn = const Value.absent(),
+    this.scopeOut = const Value.absent(),
+    this.deliveryApproach = const Value.absent(),
+    this.successCriteria = const Value.absent(),
+    this.keyConstraints = const Value.absent(),
+    this.assumptions = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ProjectChartersCompanion.insert({
+    required String id,
+    required String projectId,
+    this.vision = const Value.absent(),
+    this.objectives = const Value.absent(),
+    this.scopeIn = const Value.absent(),
+    this.scopeOut = const Value.absent(),
+    this.deliveryApproach = const Value.absent(),
+    this.successCriteria = const Value.absent(),
+    this.keyConstraints = const Value.absent(),
+    this.assumptions = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       projectId = Value(projectId);
+  static Insertable<ProjectCharter> custom({
+    Expression<String>? id,
+    Expression<String>? projectId,
+    Expression<String>? vision,
+    Expression<String>? objectives,
+    Expression<String>? scopeIn,
+    Expression<String>? scopeOut,
+    Expression<String>? deliveryApproach,
+    Expression<String>? successCriteria,
+    Expression<String>? keyConstraints,
+    Expression<String>? assumptions,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (projectId != null) 'project_id': projectId,
+      if (vision != null) 'vision': vision,
+      if (objectives != null) 'objectives': objectives,
+      if (scopeIn != null) 'scope_in': scopeIn,
+      if (scopeOut != null) 'scope_out': scopeOut,
+      if (deliveryApproach != null) 'delivery_approach': deliveryApproach,
+      if (successCriteria != null) 'success_criteria': successCriteria,
+      if (keyConstraints != null) 'key_constraints': keyConstraints,
+      if (assumptions != null) 'assumptions': assumptions,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ProjectChartersCompanion copyWith({
+    Value<String>? id,
+    Value<String>? projectId,
+    Value<String?>? vision,
+    Value<String?>? objectives,
+    Value<String?>? scopeIn,
+    Value<String?>? scopeOut,
+    Value<String?>? deliveryApproach,
+    Value<String?>? successCriteria,
+    Value<String?>? keyConstraints,
+    Value<String?>? assumptions,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return ProjectChartersCompanion(
+      id: id ?? this.id,
+      projectId: projectId ?? this.projectId,
+      vision: vision ?? this.vision,
+      objectives: objectives ?? this.objectives,
+      scopeIn: scopeIn ?? this.scopeIn,
+      scopeOut: scopeOut ?? this.scopeOut,
+      deliveryApproach: deliveryApproach ?? this.deliveryApproach,
+      successCriteria: successCriteria ?? this.successCriteria,
+      keyConstraints: keyConstraints ?? this.keyConstraints,
+      assumptions: assumptions ?? this.assumptions,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (vision.present) {
+      map['vision'] = Variable<String>(vision.value);
+    }
+    if (objectives.present) {
+      map['objectives'] = Variable<String>(objectives.value);
+    }
+    if (scopeIn.present) {
+      map['scope_in'] = Variable<String>(scopeIn.value);
+    }
+    if (scopeOut.present) {
+      map['scope_out'] = Variable<String>(scopeOut.value);
+    }
+    if (deliveryApproach.present) {
+      map['delivery_approach'] = Variable<String>(deliveryApproach.value);
+    }
+    if (successCriteria.present) {
+      map['success_criteria'] = Variable<String>(successCriteria.value);
+    }
+    if (keyConstraints.present) {
+      map['key_constraints'] = Variable<String>(keyConstraints.value);
+    }
+    if (assumptions.present) {
+      map['assumptions'] = Variable<String>(assumptions.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProjectChartersCompanion(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('vision: $vision, ')
+          ..write('objectives: $objectives, ')
+          ..write('scopeIn: $scopeIn, ')
+          ..write('scopeOut: $scopeOut, ')
+          ..write('deliveryApproach: $deliveryApproach, ')
+          ..write('successCriteria: $successCriteria, ')
+          ..write('keyConstraints: $keyConstraints, ')
+          ..write('assumptions: $assumptions, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ProgrammeOverviewStatesTable extends ProgrammeOverviewStates
+    with TableInfo<$ProgrammeOverviewStatesTable, ProgrammeOverviewState> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ProgrammeOverviewStatesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES projects (id)',
+    ),
+  );
+  static const VerificationMeta _cachedRagMeta = const VerificationMeta(
+    'cachedRag',
+  );
+  @override
+  late final GeneratedColumn<String> cachedRag = GeneratedColumn<String>(
+    'cached_rag',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _cachedNarrativeMeta = const VerificationMeta(
+    'cachedNarrative',
+  );
+  @override
+  late final GeneratedColumn<String> cachedNarrative = GeneratedColumn<String>(
+    'cached_narrative',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _narrativeGeneratedAtMeta =
+      const VerificationMeta('narrativeGeneratedAt');
+  @override
+  late final GeneratedColumn<DateTime> narrativeGeneratedAt =
+      GeneratedColumn<DateTime>(
+        'narrative_generated_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _narrativeManualOverrideMeta =
+      const VerificationMeta('narrativeManualOverride');
+  @override
+  late final GeneratedColumn<String> narrativeManualOverride =
+      GeneratedColumn<String>(
+        'narrative_manual_override',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _ragManualOverrideMeta = const VerificationMeta(
+    'ragManualOverride',
+  );
+  @override
+  late final GeneratedColumn<String> ragManualOverride =
+      GeneratedColumn<String>(
+        'rag_manual_override',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    projectId,
+    cachedRag,
+    cachedNarrative,
+    narrativeGeneratedAt,
+    narrativeManualOverride,
+    ragManualOverride,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'programme_overview_states';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ProgrammeOverviewState> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_projectIdMeta);
+    }
+    if (data.containsKey('cached_rag')) {
+      context.handle(
+        _cachedRagMeta,
+        cachedRag.isAcceptableOrUnknown(data['cached_rag']!, _cachedRagMeta),
+      );
+    }
+    if (data.containsKey('cached_narrative')) {
+      context.handle(
+        _cachedNarrativeMeta,
+        cachedNarrative.isAcceptableOrUnknown(
+          data['cached_narrative']!,
+          _cachedNarrativeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('narrative_generated_at')) {
+      context.handle(
+        _narrativeGeneratedAtMeta,
+        narrativeGeneratedAt.isAcceptableOrUnknown(
+          data['narrative_generated_at']!,
+          _narrativeGeneratedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('narrative_manual_override')) {
+      context.handle(
+        _narrativeManualOverrideMeta,
+        narrativeManualOverride.isAcceptableOrUnknown(
+          data['narrative_manual_override']!,
+          _narrativeManualOverrideMeta,
+        ),
+      );
+    }
+    if (data.containsKey('rag_manual_override')) {
+      context.handle(
+        _ragManualOverrideMeta,
+        ragManualOverride.isAcceptableOrUnknown(
+          data['rag_manual_override']!,
+          _ragManualOverrideMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ProgrammeOverviewState map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ProgrammeOverviewState(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      )!,
+      cachedRag: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cached_rag'],
+      ),
+      cachedNarrative: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cached_narrative'],
+      ),
+      narrativeGeneratedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}narrative_generated_at'],
+      ),
+      narrativeManualOverride: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}narrative_manual_override'],
+      ),
+      ragManualOverride: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}rag_manual_override'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ProgrammeOverviewStatesTable createAlias(String alias) {
+    return $ProgrammeOverviewStatesTable(attachedDatabase, alias);
+  }
+}
+
+class ProgrammeOverviewState extends DataClass
+    implements Insertable<ProgrammeOverviewState> {
+  final String id;
+  final String projectId;
+  final String? cachedRag;
+  final String? cachedNarrative;
+  final DateTime? narrativeGeneratedAt;
+  final String? narrativeManualOverride;
+  final String? ragManualOverride;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const ProgrammeOverviewState({
+    required this.id,
+    required this.projectId,
+    this.cachedRag,
+    this.cachedNarrative,
+    this.narrativeGeneratedAt,
+    this.narrativeManualOverride,
+    this.ragManualOverride,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['project_id'] = Variable<String>(projectId);
+    if (!nullToAbsent || cachedRag != null) {
+      map['cached_rag'] = Variable<String>(cachedRag);
+    }
+    if (!nullToAbsent || cachedNarrative != null) {
+      map['cached_narrative'] = Variable<String>(cachedNarrative);
+    }
+    if (!nullToAbsent || narrativeGeneratedAt != null) {
+      map['narrative_generated_at'] = Variable<DateTime>(narrativeGeneratedAt);
+    }
+    if (!nullToAbsent || narrativeManualOverride != null) {
+      map['narrative_manual_override'] = Variable<String>(
+        narrativeManualOverride,
+      );
+    }
+    if (!nullToAbsent || ragManualOverride != null) {
+      map['rag_manual_override'] = Variable<String>(ragManualOverride);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  ProgrammeOverviewStatesCompanion toCompanion(bool nullToAbsent) {
+    return ProgrammeOverviewStatesCompanion(
+      id: Value(id),
+      projectId: Value(projectId),
+      cachedRag: cachedRag == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cachedRag),
+      cachedNarrative: cachedNarrative == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cachedNarrative),
+      narrativeGeneratedAt: narrativeGeneratedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(narrativeGeneratedAt),
+      narrativeManualOverride: narrativeManualOverride == null && nullToAbsent
+          ? const Value.absent()
+          : Value(narrativeManualOverride),
+      ragManualOverride: ragManualOverride == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ragManualOverride),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory ProgrammeOverviewState.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ProgrammeOverviewState(
+      id: serializer.fromJson<String>(json['id']),
+      projectId: serializer.fromJson<String>(json['projectId']),
+      cachedRag: serializer.fromJson<String?>(json['cachedRag']),
+      cachedNarrative: serializer.fromJson<String?>(json['cachedNarrative']),
+      narrativeGeneratedAt: serializer.fromJson<DateTime?>(
+        json['narrativeGeneratedAt'],
+      ),
+      narrativeManualOverride: serializer.fromJson<String?>(
+        json['narrativeManualOverride'],
+      ),
+      ragManualOverride: serializer.fromJson<String?>(
+        json['ragManualOverride'],
+      ),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'projectId': serializer.toJson<String>(projectId),
+      'cachedRag': serializer.toJson<String?>(cachedRag),
+      'cachedNarrative': serializer.toJson<String?>(cachedNarrative),
+      'narrativeGeneratedAt': serializer.toJson<DateTime?>(
+        narrativeGeneratedAt,
+      ),
+      'narrativeManualOverride': serializer.toJson<String?>(
+        narrativeManualOverride,
+      ),
+      'ragManualOverride': serializer.toJson<String?>(ragManualOverride),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  ProgrammeOverviewState copyWith({
+    String? id,
+    String? projectId,
+    Value<String?> cachedRag = const Value.absent(),
+    Value<String?> cachedNarrative = const Value.absent(),
+    Value<DateTime?> narrativeGeneratedAt = const Value.absent(),
+    Value<String?> narrativeManualOverride = const Value.absent(),
+    Value<String?> ragManualOverride = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => ProgrammeOverviewState(
+    id: id ?? this.id,
+    projectId: projectId ?? this.projectId,
+    cachedRag: cachedRag.present ? cachedRag.value : this.cachedRag,
+    cachedNarrative: cachedNarrative.present
+        ? cachedNarrative.value
+        : this.cachedNarrative,
+    narrativeGeneratedAt: narrativeGeneratedAt.present
+        ? narrativeGeneratedAt.value
+        : this.narrativeGeneratedAt,
+    narrativeManualOverride: narrativeManualOverride.present
+        ? narrativeManualOverride.value
+        : this.narrativeManualOverride,
+    ragManualOverride: ragManualOverride.present
+        ? ragManualOverride.value
+        : this.ragManualOverride,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  ProgrammeOverviewState copyWithCompanion(
+    ProgrammeOverviewStatesCompanion data,
+  ) {
+    return ProgrammeOverviewState(
+      id: data.id.present ? data.id.value : this.id,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      cachedRag: data.cachedRag.present ? data.cachedRag.value : this.cachedRag,
+      cachedNarrative: data.cachedNarrative.present
+          ? data.cachedNarrative.value
+          : this.cachedNarrative,
+      narrativeGeneratedAt: data.narrativeGeneratedAt.present
+          ? data.narrativeGeneratedAt.value
+          : this.narrativeGeneratedAt,
+      narrativeManualOverride: data.narrativeManualOverride.present
+          ? data.narrativeManualOverride.value
+          : this.narrativeManualOverride,
+      ragManualOverride: data.ragManualOverride.present
+          ? data.ragManualOverride.value
+          : this.ragManualOverride,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProgrammeOverviewState(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('cachedRag: $cachedRag, ')
+          ..write('cachedNarrative: $cachedNarrative, ')
+          ..write('narrativeGeneratedAt: $narrativeGeneratedAt, ')
+          ..write('narrativeManualOverride: $narrativeManualOverride, ')
+          ..write('ragManualOverride: $ragManualOverride, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    projectId,
+    cachedRag,
+    cachedNarrative,
+    narrativeGeneratedAt,
+    narrativeManualOverride,
+    ragManualOverride,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ProgrammeOverviewState &&
+          other.id == this.id &&
+          other.projectId == this.projectId &&
+          other.cachedRag == this.cachedRag &&
+          other.cachedNarrative == this.cachedNarrative &&
+          other.narrativeGeneratedAt == this.narrativeGeneratedAt &&
+          other.narrativeManualOverride == this.narrativeManualOverride &&
+          other.ragManualOverride == this.ragManualOverride &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class ProgrammeOverviewStatesCompanion
+    extends UpdateCompanion<ProgrammeOverviewState> {
+  final Value<String> id;
+  final Value<String> projectId;
+  final Value<String?> cachedRag;
+  final Value<String?> cachedNarrative;
+  final Value<DateTime?> narrativeGeneratedAt;
+  final Value<String?> narrativeManualOverride;
+  final Value<String?> ragManualOverride;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const ProgrammeOverviewStatesCompanion({
+    this.id = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.cachedRag = const Value.absent(),
+    this.cachedNarrative = const Value.absent(),
+    this.narrativeGeneratedAt = const Value.absent(),
+    this.narrativeManualOverride = const Value.absent(),
+    this.ragManualOverride = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ProgrammeOverviewStatesCompanion.insert({
+    required String id,
+    required String projectId,
+    this.cachedRag = const Value.absent(),
+    this.cachedNarrative = const Value.absent(),
+    this.narrativeGeneratedAt = const Value.absent(),
+    this.narrativeManualOverride = const Value.absent(),
+    this.ragManualOverride = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       projectId = Value(projectId);
+  static Insertable<ProgrammeOverviewState> custom({
+    Expression<String>? id,
+    Expression<String>? projectId,
+    Expression<String>? cachedRag,
+    Expression<String>? cachedNarrative,
+    Expression<DateTime>? narrativeGeneratedAt,
+    Expression<String>? narrativeManualOverride,
+    Expression<String>? ragManualOverride,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (projectId != null) 'project_id': projectId,
+      if (cachedRag != null) 'cached_rag': cachedRag,
+      if (cachedNarrative != null) 'cached_narrative': cachedNarrative,
+      if (narrativeGeneratedAt != null)
+        'narrative_generated_at': narrativeGeneratedAt,
+      if (narrativeManualOverride != null)
+        'narrative_manual_override': narrativeManualOverride,
+      if (ragManualOverride != null) 'rag_manual_override': ragManualOverride,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ProgrammeOverviewStatesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? projectId,
+    Value<String?>? cachedRag,
+    Value<String?>? cachedNarrative,
+    Value<DateTime?>? narrativeGeneratedAt,
+    Value<String?>? narrativeManualOverride,
+    Value<String?>? ragManualOverride,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return ProgrammeOverviewStatesCompanion(
+      id: id ?? this.id,
+      projectId: projectId ?? this.projectId,
+      cachedRag: cachedRag ?? this.cachedRag,
+      cachedNarrative: cachedNarrative ?? this.cachedNarrative,
+      narrativeGeneratedAt: narrativeGeneratedAt ?? this.narrativeGeneratedAt,
+      narrativeManualOverride:
+          narrativeManualOverride ?? this.narrativeManualOverride,
+      ragManualOverride: ragManualOverride ?? this.ragManualOverride,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (cachedRag.present) {
+      map['cached_rag'] = Variable<String>(cachedRag.value);
+    }
+    if (cachedNarrative.present) {
+      map['cached_narrative'] = Variable<String>(cachedNarrative.value);
+    }
+    if (narrativeGeneratedAt.present) {
+      map['narrative_generated_at'] = Variable<DateTime>(
+        narrativeGeneratedAt.value,
+      );
+    }
+    if (narrativeManualOverride.present) {
+      map['narrative_manual_override'] = Variable<String>(
+        narrativeManualOverride.value,
+      );
+    }
+    if (ragManualOverride.present) {
+      map['rag_manual_override'] = Variable<String>(ragManualOverride.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProgrammeOverviewStatesCompanion(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('cachedRag: $cachedRag, ')
+          ..write('cachedNarrative: $cachedNarrative, ')
+          ..write('narrativeGeneratedAt: $narrativeGeneratedAt, ')
+          ..write('narrativeManualOverride: $narrativeManualOverride, ')
+          ..write('ragManualOverride: $ragManualOverride, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -17404,6 +26994,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $PersonsTable persons = $PersonsTable(this);
   late final $StakeholderProfilesTable stakeholderProfiles =
       $StakeholderProfilesTable(this);
+  late final $StakeholderRolesTable stakeholderRoles = $StakeholderRolesTable(
+    this,
+  );
+  late final $TeamRolesTable teamRoles = $TeamRolesTable(this);
+  late final $MilestonesTable milestones = $MilestonesTable(this);
+  late final $WorkstreamActivitiesTable workstreamActivities =
+      $WorkstreamActivitiesTable(this);
   late final $ColleagueProfilesTable colleagueProfiles =
       $ColleagueProfilesTable(this);
   late final $ActionCategoriesTable actionCategories = $ActionCategoriesTable(
@@ -17429,6 +27026,28 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $ProjectStageProgressesTable projectStageProgresses =
       $ProjectStageProgressesTable(this);
+  late final $TimelineWorkPackagesTable timelineWorkPackages =
+      $TimelineWorkPackagesTable(this);
+  late final $TimelineActivitiesTable timelineActivities =
+      $TimelineActivitiesTable(this);
+  late final $TimelineDependenciesTable timelineDependencies =
+      $TimelineDependenciesTable(this);
+  late final $ProgrammeHeadersTable programmeHeaders = $ProgrammeHeadersTable(
+    this,
+  );
+  late final $ProjectScopesTable projectScopes = $ProjectScopesTable(this);
+  late final $IntegrationDomainsTable integrationDomains =
+      $IntegrationDomainsTable(this);
+  late final $PrioritisationSourcesTable prioritisationSources =
+      $PrioritisationSourcesTable(this);
+  late final $StatusSnapshotsTable statusSnapshots = $StatusSnapshotsTable(
+    this,
+  );
+  late final $ProjectChartersTable projectCharters = $ProjectChartersTable(
+    this,
+  );
+  late final $ProgrammeOverviewStatesTable programmeOverviewStates =
+      $ProgrammeOverviewStatesTable(this);
   late final ProjectDao projectDao = ProjectDao(this as AppDatabase);
   late final ProgrammeDao programmeDao = ProgrammeDao(this as AppDatabase);
   late final RaidDao raidDao = RaidDao(this as AppDatabase);
@@ -17447,6 +27066,24 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this as AppDatabase,
   );
   late final PlaybookDao playbookDao = PlaybookDao(this as AppDatabase);
+  late final StakeholderRoleDao stakeholderRoleDao = StakeholderRoleDao(
+    this as AppDatabase,
+  );
+  late final TeamRoleDao teamRoleDao = TeamRoleDao(this as AppDatabase);
+  late final MilestonesDao milestonesDao = MilestonesDao(this as AppDatabase);
+  late final WorkstreamActivitiesDao workstreamActivitiesDao =
+      WorkstreamActivitiesDao(this as AppDatabase);
+  late final ProgrammeGanttDao programmeGanttDao = ProgrammeGanttDao(
+    this as AppDatabase,
+  );
+  late final StatusSnapshotDao statusSnapshotDao = StatusSnapshotDao(
+    this as AppDatabase,
+  );
+  late final ProjectCharterDao projectCharterDao = ProjectCharterDao(
+    this as AppDatabase,
+  );
+  late final ProgrammeOverviewStateDao programmeOverviewStateDao =
+      ProgrammeOverviewStateDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -17464,6 +27101,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     decisions,
     persons,
     stakeholderProfiles,
+    stakeholderRoles,
+    teamRoles,
+    milestones,
+    workstreamActivities,
     colleagueProfiles,
     actionCategories,
     projectActions,
@@ -17480,6 +27121,16 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     stageTemplates,
     projectPlaybooks,
     projectStageProgresses,
+    timelineWorkPackages,
+    timelineActivities,
+    timelineDependencies,
+    programmeHeaders,
+    projectScopes,
+    integrationDomains,
+    prioritisationSources,
+    statusSnapshots,
+    projectCharters,
+    programmeOverviewStates,
   ];
 }
 
@@ -17743,6 +27394,93 @@ final class $$ProjectsTableReferences
     );
   }
 
+  static MultiTypedResultKey<$StakeholderRolesTable, List<StakeholderRole>>
+  _stakeholderRolesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.stakeholderRoles,
+    aliasName: $_aliasNameGenerator(
+      db.projects.id,
+      db.stakeholderRoles.projectId,
+    ),
+  );
+
+  $$StakeholderRolesTableProcessedTableManager get stakeholderRolesRefs {
+    final manager = $$StakeholderRolesTableTableManager(
+      $_db,
+      $_db.stakeholderRoles,
+    ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _stakeholderRolesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$TeamRolesTable, List<TeamRole>>
+  _teamRolesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.teamRoles,
+    aliasName: $_aliasNameGenerator(db.projects.id, db.teamRoles.projectId),
+  );
+
+  $$TeamRolesTableProcessedTableManager get teamRolesRefs {
+    final manager = $$TeamRolesTableTableManager(
+      $_db,
+      $_db.teamRoles,
+    ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_teamRolesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$MilestonesTable, List<Milestone>>
+  _milestonesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.milestones,
+    aliasName: $_aliasNameGenerator(db.projects.id, db.milestones.projectId),
+  );
+
+  $$MilestonesTableProcessedTableManager get milestonesRefs {
+    final manager = $$MilestonesTableTableManager(
+      $_db,
+      $_db.milestones,
+    ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_milestonesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $WorkstreamActivitiesTable,
+    List<WorkstreamActivity>
+  >
+  _workstreamActivitiesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.workstreamActivities,
+        aliasName: $_aliasNameGenerator(
+          db.projects.id,
+          db.workstreamActivities.projectId,
+        ),
+      );
+
+  $$WorkstreamActivitiesTableProcessedTableManager
+  get workstreamActivitiesRefs {
+    final manager = $$WorkstreamActivitiesTableTableManager(
+      $_db,
+      $_db.workstreamActivities,
+    ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _workstreamActivitiesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
   static MultiTypedResultKey<$ColleagueProfilesTable, List<ColleagueProfile>>
   _colleagueProfilesRefsTable(_$AppDatabase db) =>
       MultiTypedResultKey.fromTable(
@@ -17947,6 +27685,230 @@ final class $$ProjectsTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _projectPlaybooksRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $TimelineWorkPackagesTable,
+    List<TimelineWorkPackage>
+  >
+  _timelineWorkPackagesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.timelineWorkPackages,
+        aliasName: $_aliasNameGenerator(
+          db.projects.id,
+          db.timelineWorkPackages.projectId,
+        ),
+      );
+
+  $$TimelineWorkPackagesTableProcessedTableManager
+  get timelineWorkPackagesRefs {
+    final manager = $$TimelineWorkPackagesTableTableManager(
+      $_db,
+      $_db.timelineWorkPackages,
+    ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _timelineWorkPackagesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$TimelineActivitiesTable, List<TimelineActivity>>
+  _timelineActivitiesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.timelineActivities,
+        aliasName: $_aliasNameGenerator(
+          db.projects.id,
+          db.timelineActivities.projectId,
+        ),
+      );
+
+  $$TimelineActivitiesTableProcessedTableManager get timelineActivitiesRefs {
+    final manager = $$TimelineActivitiesTableTableManager(
+      $_db,
+      $_db.timelineActivities,
+    ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _timelineActivitiesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $TimelineDependenciesTable,
+    List<TimelineDependency>
+  >
+  _timelineDependenciesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.timelineDependencies,
+        aliasName: $_aliasNameGenerator(
+          db.projects.id,
+          db.timelineDependencies.projectId,
+        ),
+      );
+
+  $$TimelineDependenciesTableProcessedTableManager
+  get timelineDependenciesRefs {
+    final manager = $$TimelineDependenciesTableTableManager(
+      $_db,
+      $_db.timelineDependencies,
+    ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _timelineDependenciesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$ProjectScopesTable, List<ProjectScope>>
+  _projectScopesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.projectScopes,
+    aliasName: $_aliasNameGenerator(db.projects.id, db.projectScopes.projectId),
+  );
+
+  $$ProjectScopesTableProcessedTableManager get projectScopesRefs {
+    final manager = $$ProjectScopesTableTableManager(
+      $_db,
+      $_db.projectScopes,
+    ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_projectScopesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$IntegrationDomainsTable, List<IntegrationDomain>>
+  _integrationDomainsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.integrationDomains,
+        aliasName: $_aliasNameGenerator(
+          db.projects.id,
+          db.integrationDomains.projectId,
+        ),
+      );
+
+  $$IntegrationDomainsTableProcessedTableManager get integrationDomainsRefs {
+    final manager = $$IntegrationDomainsTableTableManager(
+      $_db,
+      $_db.integrationDomains,
+    ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _integrationDomainsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $PrioritisationSourcesTable,
+    List<PrioritisationSource>
+  >
+  _prioritisationSourcesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.prioritisationSources,
+        aliasName: $_aliasNameGenerator(
+          db.projects.id,
+          db.prioritisationSources.projectId,
+        ),
+      );
+
+  $$PrioritisationSourcesTableProcessedTableManager
+  get prioritisationSourcesRefs {
+    final manager = $$PrioritisationSourcesTableTableManager(
+      $_db,
+      $_db.prioritisationSources,
+    ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _prioritisationSourcesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$StatusSnapshotsTable, List<StatusSnapshot>>
+  _statusSnapshotsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.statusSnapshots,
+    aliasName: $_aliasNameGenerator(
+      db.projects.id,
+      db.statusSnapshots.projectId,
+    ),
+  );
+
+  $$StatusSnapshotsTableProcessedTableManager get statusSnapshotsRefs {
+    final manager = $$StatusSnapshotsTableTableManager(
+      $_db,
+      $_db.statusSnapshots,
+    ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _statusSnapshotsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$ProjectChartersTable, List<ProjectCharter>>
+  _projectChartersRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.projectCharters,
+    aliasName: $_aliasNameGenerator(
+      db.projects.id,
+      db.projectCharters.projectId,
+    ),
+  );
+
+  $$ProjectChartersTableProcessedTableManager get projectChartersRefs {
+    final manager = $$ProjectChartersTableTableManager(
+      $_db,
+      $_db.projectCharters,
+    ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _projectChartersRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $ProgrammeOverviewStatesTable,
+    List<ProgrammeOverviewState>
+  >
+  _programmeOverviewStatesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.programmeOverviewStates,
+        aliasName: $_aliasNameGenerator(
+          db.projects.id,
+          db.programmeOverviewStates.projectId,
+        ),
+      );
+
+  $$ProgrammeOverviewStatesTableProcessedTableManager
+  get programmeOverviewStatesRefs {
+    final manager = $$ProgrammeOverviewStatesTableTableManager(
+      $_db,
+      $_db.programmeOverviewStates,
+    ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _programmeOverviewStatesRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -18273,6 +28235,106 @@ class $$ProjectsTableFilterComposer
     return f(composer);
   }
 
+  Expression<bool> stakeholderRolesRefs(
+    Expression<bool> Function($$StakeholderRolesTableFilterComposer f) f,
+  ) {
+    final $$StakeholderRolesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.stakeholderRoles,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StakeholderRolesTableFilterComposer(
+            $db: $db,
+            $table: $db.stakeholderRoles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> teamRolesRefs(
+    Expression<bool> Function($$TeamRolesTableFilterComposer f) f,
+  ) {
+    final $$TeamRolesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.teamRoles,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TeamRolesTableFilterComposer(
+            $db: $db,
+            $table: $db.teamRoles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> milestonesRefs(
+    Expression<bool> Function($$MilestonesTableFilterComposer f) f,
+  ) {
+    final $$MilestonesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.milestones,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MilestonesTableFilterComposer(
+            $db: $db,
+            $table: $db.milestones,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> workstreamActivitiesRefs(
+    Expression<bool> Function($$WorkstreamActivitiesTableFilterComposer f) f,
+  ) {
+    final $$WorkstreamActivitiesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.workstreamActivities,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkstreamActivitiesTableFilterComposer(
+            $db: $db,
+            $table: $db.workstreamActivities,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<bool> colleagueProfilesRefs(
     Expression<bool> Function($$ColleagueProfilesTableFilterComposer f) f,
   ) {
@@ -18520,6 +28582,233 @@ class $$ProjectsTableFilterComposer
                 $removeJoinBuilderFromRootComposer,
           ),
     );
+    return f(composer);
+  }
+
+  Expression<bool> timelineWorkPackagesRefs(
+    Expression<bool> Function($$TimelineWorkPackagesTableFilterComposer f) f,
+  ) {
+    final $$TimelineWorkPackagesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.timelineWorkPackages,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TimelineWorkPackagesTableFilterComposer(
+            $db: $db,
+            $table: $db.timelineWorkPackages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> timelineActivitiesRefs(
+    Expression<bool> Function($$TimelineActivitiesTableFilterComposer f) f,
+  ) {
+    final $$TimelineActivitiesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.timelineActivities,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TimelineActivitiesTableFilterComposer(
+            $db: $db,
+            $table: $db.timelineActivities,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> timelineDependenciesRefs(
+    Expression<bool> Function($$TimelineDependenciesTableFilterComposer f) f,
+  ) {
+    final $$TimelineDependenciesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.timelineDependencies,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TimelineDependenciesTableFilterComposer(
+            $db: $db,
+            $table: $db.timelineDependencies,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> projectScopesRefs(
+    Expression<bool> Function($$ProjectScopesTableFilterComposer f) f,
+  ) {
+    final $$ProjectScopesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.projectScopes,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectScopesTableFilterComposer(
+            $db: $db,
+            $table: $db.projectScopes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> integrationDomainsRefs(
+    Expression<bool> Function($$IntegrationDomainsTableFilterComposer f) f,
+  ) {
+    final $$IntegrationDomainsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.integrationDomains,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$IntegrationDomainsTableFilterComposer(
+            $db: $db,
+            $table: $db.integrationDomains,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> prioritisationSourcesRefs(
+    Expression<bool> Function($$PrioritisationSourcesTableFilterComposer f) f,
+  ) {
+    final $$PrioritisationSourcesTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.prioritisationSources,
+          getReferencedColumn: (t) => t.projectId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$PrioritisationSourcesTableFilterComposer(
+                $db: $db,
+                $table: $db.prioritisationSources,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<bool> statusSnapshotsRefs(
+    Expression<bool> Function($$StatusSnapshotsTableFilterComposer f) f,
+  ) {
+    final $$StatusSnapshotsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.statusSnapshots,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StatusSnapshotsTableFilterComposer(
+            $db: $db,
+            $table: $db.statusSnapshots,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> projectChartersRefs(
+    Expression<bool> Function($$ProjectChartersTableFilterComposer f) f,
+  ) {
+    final $$ProjectChartersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.projectCharters,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectChartersTableFilterComposer(
+            $db: $db,
+            $table: $db.projectCharters,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> programmeOverviewStatesRefs(
+    Expression<bool> Function($$ProgrammeOverviewStatesTableFilterComposer f) f,
+  ) {
+    final $$ProgrammeOverviewStatesTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.programmeOverviewStates,
+          getReferencedColumn: (t) => t.projectId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ProgrammeOverviewStatesTableFilterComposer(
+                $db: $db,
+                $table: $db.programmeOverviewStates,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
     return f(composer);
   }
 }
@@ -18880,6 +29169,107 @@ class $$ProjectsTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> stakeholderRolesRefs<T extends Object>(
+    Expression<T> Function($$StakeholderRolesTableAnnotationComposer a) f,
+  ) {
+    final $$StakeholderRolesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.stakeholderRoles,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StakeholderRolesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.stakeholderRoles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> teamRolesRefs<T extends Object>(
+    Expression<T> Function($$TeamRolesTableAnnotationComposer a) f,
+  ) {
+    final $$TeamRolesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.teamRoles,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TeamRolesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.teamRoles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> milestonesRefs<T extends Object>(
+    Expression<T> Function($$MilestonesTableAnnotationComposer a) f,
+  ) {
+    final $$MilestonesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.milestones,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MilestonesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.milestones,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> workstreamActivitiesRefs<T extends Object>(
+    Expression<T> Function($$WorkstreamActivitiesTableAnnotationComposer a) f,
+  ) {
+    final $$WorkstreamActivitiesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workstreamActivities,
+          getReferencedColumn: (t) => t.projectId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkstreamActivitiesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.workstreamActivities,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
   Expression<T> colleagueProfilesRefs<T extends Object>(
     Expression<T> Function($$ColleagueProfilesTableAnnotationComposer a) f,
   ) {
@@ -19130,6 +29520,238 @@ class $$ProjectsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> timelineWorkPackagesRefs<T extends Object>(
+    Expression<T> Function($$TimelineWorkPackagesTableAnnotationComposer a) f,
+  ) {
+    final $$TimelineWorkPackagesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.timelineWorkPackages,
+          getReferencedColumn: (t) => t.projectId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$TimelineWorkPackagesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.timelineWorkPackages,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> timelineActivitiesRefs<T extends Object>(
+    Expression<T> Function($$TimelineActivitiesTableAnnotationComposer a) f,
+  ) {
+    final $$TimelineActivitiesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.timelineActivities,
+          getReferencedColumn: (t) => t.projectId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$TimelineActivitiesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.timelineActivities,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> timelineDependenciesRefs<T extends Object>(
+    Expression<T> Function($$TimelineDependenciesTableAnnotationComposer a) f,
+  ) {
+    final $$TimelineDependenciesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.timelineDependencies,
+          getReferencedColumn: (t) => t.projectId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$TimelineDependenciesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.timelineDependencies,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> projectScopesRefs<T extends Object>(
+    Expression<T> Function($$ProjectScopesTableAnnotationComposer a) f,
+  ) {
+    final $$ProjectScopesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.projectScopes,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectScopesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.projectScopes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> integrationDomainsRefs<T extends Object>(
+    Expression<T> Function($$IntegrationDomainsTableAnnotationComposer a) f,
+  ) {
+    final $$IntegrationDomainsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.integrationDomains,
+          getReferencedColumn: (t) => t.projectId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$IntegrationDomainsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.integrationDomains,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> prioritisationSourcesRefs<T extends Object>(
+    Expression<T> Function($$PrioritisationSourcesTableAnnotationComposer a) f,
+  ) {
+    final $$PrioritisationSourcesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.prioritisationSources,
+          getReferencedColumn: (t) => t.projectId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$PrioritisationSourcesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.prioritisationSources,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> statusSnapshotsRefs<T extends Object>(
+    Expression<T> Function($$StatusSnapshotsTableAnnotationComposer a) f,
+  ) {
+    final $$StatusSnapshotsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.statusSnapshots,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StatusSnapshotsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.statusSnapshots,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> projectChartersRefs<T extends Object>(
+    Expression<T> Function($$ProjectChartersTableAnnotationComposer a) f,
+  ) {
+    final $$ProjectChartersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.projectCharters,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectChartersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.projectCharters,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> programmeOverviewStatesRefs<T extends Object>(
+    Expression<T> Function($$ProgrammeOverviewStatesTableAnnotationComposer a)
+    f,
+  ) {
+    final $$ProgrammeOverviewStatesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.programmeOverviewStates,
+          getReferencedColumn: (t) => t.projectId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ProgrammeOverviewStatesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.programmeOverviewStates,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$ProjectsTableTableManager
@@ -19157,6 +29779,10 @@ class $$ProjectsTableTableManager
             bool decisionsRefs,
             bool personsRefs,
             bool stakeholderProfilesRefs,
+            bool stakeholderRolesRefs,
+            bool teamRolesRefs,
+            bool milestonesRefs,
+            bool workstreamActivitiesRefs,
             bool colleagueProfilesRefs,
             bool actionCategoriesRefs,
             bool projectActionsRefs,
@@ -19167,6 +29793,15 @@ class $$ProjectsTableTableManager
             bool statusReportsRefs,
             bool journalEntriesRefs,
             bool projectPlaybooksRefs,
+            bool timelineWorkPackagesRefs,
+            bool timelineActivitiesRefs,
+            bool timelineDependenciesRefs,
+            bool projectScopesRefs,
+            bool integrationDomainsRefs,
+            bool prioritisationSourcesRefs,
+            bool statusSnapshotsRefs,
+            bool projectChartersRefs,
+            bool programmeOverviewStatesRefs,
           })
         > {
   $$ProjectsTableTableManager(_$AppDatabase db, $ProjectsTable table)
@@ -19241,6 +29876,10 @@ class $$ProjectsTableTableManager
                 decisionsRefs = false,
                 personsRefs = false,
                 stakeholderProfilesRefs = false,
+                stakeholderRolesRefs = false,
+                teamRolesRefs = false,
+                milestonesRefs = false,
+                workstreamActivitiesRefs = false,
                 colleagueProfilesRefs = false,
                 actionCategoriesRefs = false,
                 projectActionsRefs = false,
@@ -19251,6 +29890,15 @@ class $$ProjectsTableTableManager
                 statusReportsRefs = false,
                 journalEntriesRefs = false,
                 projectPlaybooksRefs = false,
+                timelineWorkPackagesRefs = false,
+                timelineActivitiesRefs = false,
+                timelineDependenciesRefs = false,
+                projectScopesRefs = false,
+                integrationDomainsRefs = false,
+                prioritisationSourcesRefs = false,
+                statusSnapshotsRefs = false,
+                projectChartersRefs = false,
+                programmeOverviewStatesRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -19266,6 +29914,10 @@ class $$ProjectsTableTableManager
                     if (decisionsRefs) db.decisions,
                     if (personsRefs) db.persons,
                     if (stakeholderProfilesRefs) db.stakeholderProfiles,
+                    if (stakeholderRolesRefs) db.stakeholderRoles,
+                    if (teamRolesRefs) db.teamRoles,
+                    if (milestonesRefs) db.milestones,
+                    if (workstreamActivitiesRefs) db.workstreamActivities,
                     if (colleagueProfilesRefs) db.colleagueProfiles,
                     if (actionCategoriesRefs) db.actionCategories,
                     if (projectActionsRefs) db.projectActions,
@@ -19276,6 +29928,15 @@ class $$ProjectsTableTableManager
                     if (statusReportsRefs) db.statusReports,
                     if (journalEntriesRefs) db.journalEntries,
                     if (projectPlaybooksRefs) db.projectPlaybooks,
+                    if (timelineWorkPackagesRefs) db.timelineWorkPackages,
+                    if (timelineActivitiesRefs) db.timelineActivities,
+                    if (timelineDependenciesRefs) db.timelineDependencies,
+                    if (projectScopesRefs) db.projectScopes,
+                    if (integrationDomainsRefs) db.integrationDomains,
+                    if (prioritisationSourcesRefs) db.prioritisationSources,
+                    if (statusSnapshotsRefs) db.statusSnapshots,
+                    if (projectChartersRefs) db.projectCharters,
+                    if (programmeOverviewStatesRefs) db.programmeOverviewStates,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -19511,6 +30172,90 @@ class $$ProjectsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (stakeholderRolesRefs)
+                        await $_getPrefetchedData<
+                          Project,
+                          $ProjectsTable,
+                          StakeholderRole
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProjectsTableReferences
+                              ._stakeholderRolesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).stakeholderRolesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.projectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (teamRolesRefs)
+                        await $_getPrefetchedData<
+                          Project,
+                          $ProjectsTable,
+                          TeamRole
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProjectsTableReferences
+                              ._teamRolesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).teamRolesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.projectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (milestonesRefs)
+                        await $_getPrefetchedData<
+                          Project,
+                          $ProjectsTable,
+                          Milestone
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProjectsTableReferences
+                              ._milestonesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).milestonesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.projectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (workstreamActivitiesRefs)
+                        await $_getPrefetchedData<
+                          Project,
+                          $ProjectsTable,
+                          WorkstreamActivity
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProjectsTableReferences
+                              ._workstreamActivitiesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).workstreamActivitiesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.projectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (colleagueProfilesRefs)
                         await $_getPrefetchedData<
                           Project,
@@ -19721,6 +30466,195 @@ class $$ProjectsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (timelineWorkPackagesRefs)
+                        await $_getPrefetchedData<
+                          Project,
+                          $ProjectsTable,
+                          TimelineWorkPackage
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProjectsTableReferences
+                              ._timelineWorkPackagesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).timelineWorkPackagesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.projectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (timelineActivitiesRefs)
+                        await $_getPrefetchedData<
+                          Project,
+                          $ProjectsTable,
+                          TimelineActivity
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProjectsTableReferences
+                              ._timelineActivitiesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).timelineActivitiesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.projectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (timelineDependenciesRefs)
+                        await $_getPrefetchedData<
+                          Project,
+                          $ProjectsTable,
+                          TimelineDependency
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProjectsTableReferences
+                              ._timelineDependenciesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).timelineDependenciesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.projectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (projectScopesRefs)
+                        await $_getPrefetchedData<
+                          Project,
+                          $ProjectsTable,
+                          ProjectScope
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProjectsTableReferences
+                              ._projectScopesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).projectScopesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.projectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (integrationDomainsRefs)
+                        await $_getPrefetchedData<
+                          Project,
+                          $ProjectsTable,
+                          IntegrationDomain
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProjectsTableReferences
+                              ._integrationDomainsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).integrationDomainsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.projectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (prioritisationSourcesRefs)
+                        await $_getPrefetchedData<
+                          Project,
+                          $ProjectsTable,
+                          PrioritisationSource
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProjectsTableReferences
+                              ._prioritisationSourcesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).prioritisationSourcesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.projectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (statusSnapshotsRefs)
+                        await $_getPrefetchedData<
+                          Project,
+                          $ProjectsTable,
+                          StatusSnapshot
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProjectsTableReferences
+                              ._statusSnapshotsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).statusSnapshotsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.projectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (projectChartersRefs)
+                        await $_getPrefetchedData<
+                          Project,
+                          $ProjectsTable,
+                          ProjectCharter
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProjectsTableReferences
+                              ._projectChartersRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).projectChartersRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.projectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (programmeOverviewStatesRefs)
+                        await $_getPrefetchedData<
+                          Project,
+                          $ProjectsTable,
+                          ProgrammeOverviewState
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProjectsTableReferences
+                              ._programmeOverviewStatesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).programmeOverviewStatesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.projectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -19753,6 +30687,10 @@ typedef $$ProjectsTableProcessedTableManager =
         bool decisionsRefs,
         bool personsRefs,
         bool stakeholderProfilesRefs,
+        bool stakeholderRolesRefs,
+        bool teamRolesRefs,
+        bool milestonesRefs,
+        bool workstreamActivitiesRefs,
         bool colleagueProfilesRefs,
         bool actionCategoriesRefs,
         bool projectActionsRefs,
@@ -19763,6 +30701,15 @@ typedef $$ProjectsTableProcessedTableManager =
         bool statusReportsRefs,
         bool journalEntriesRefs,
         bool projectPlaybooksRefs,
+        bool timelineWorkPackagesRefs,
+        bool timelineActivitiesRefs,
+        bool timelineDependenciesRefs,
+        bool projectScopesRefs,
+        bool integrationDomainsRefs,
+        bool prioritisationSourcesRefs,
+        bool statusSnapshotsRefs,
+        bool projectChartersRefs,
+        bool programmeOverviewStatesRefs,
       })
     >;
 typedef $$ProgrammeOverviewsTableCreateCompanionBuilder =
@@ -20296,6 +31243,34 @@ final class $$WorkstreamsTableReferences
       manager.$state.copyWith(prefetchedData: [item]),
     );
   }
+
+  static MultiTypedResultKey<
+    $WorkstreamActivitiesTable,
+    List<WorkstreamActivity>
+  >
+  _workstreamActivitiesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.workstreamActivities,
+        aliasName: $_aliasNameGenerator(
+          db.workstreams.id,
+          db.workstreamActivities.workstreamId,
+        ),
+      );
+
+  $$WorkstreamActivitiesTableProcessedTableManager
+  get workstreamActivitiesRefs {
+    final manager = $$WorkstreamActivitiesTableTableManager(
+      $_db,
+      $_db.workstreamActivities,
+    ).filter((f) => f.workstreamId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _workstreamActivitiesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$WorkstreamsTableFilterComposer
@@ -20383,6 +31358,31 @@ class $$WorkstreamsTableFilterComposer
           ),
     );
     return composer;
+  }
+
+  Expression<bool> workstreamActivitiesRefs(
+    Expression<bool> Function($$WorkstreamActivitiesTableFilterComposer f) f,
+  ) {
+    final $$WorkstreamActivitiesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.workstreamActivities,
+      getReferencedColumn: (t) => t.workstreamId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkstreamActivitiesTableFilterComposer(
+            $db: $db,
+            $table: $db.workstreamActivities,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
   }
 }
 
@@ -20538,6 +31538,32 @@ class $$WorkstreamsTableAnnotationComposer
     );
     return composer;
   }
+
+  Expression<T> workstreamActivitiesRefs<T extends Object>(
+    Expression<T> Function($$WorkstreamActivitiesTableAnnotationComposer a) f,
+  ) {
+    final $$WorkstreamActivitiesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workstreamActivities,
+          getReferencedColumn: (t) => t.workstreamId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkstreamActivitiesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.workstreamActivities,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$WorkstreamsTableTableManager
@@ -20553,7 +31579,10 @@ class $$WorkstreamsTableTableManager
           $$WorkstreamsTableUpdateCompanionBuilder,
           (Workstream, $$WorkstreamsTableReferences),
           Workstream,
-          PrefetchHooks Function({bool projectId})
+          PrefetchHooks Function({
+            bool projectId,
+            bool workstreamActivitiesRefs,
+          })
         > {
   $$WorkstreamsTableTableManager(_$AppDatabase db, $WorkstreamsTable table)
     : super(
@@ -20634,47 +31663,74 @@ class $$WorkstreamsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({projectId = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [],
-              addJoins:
-                  <
-                    T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (projectId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.projectId,
-                                referencedTable: $$WorkstreamsTableReferences
-                                    ._projectIdTable(db),
-                                referencedColumn: $$WorkstreamsTableReferences
-                                    ._projectIdTable(db)
-                                    .id,
-                              )
-                              as T;
-                    }
+          prefetchHooksCallback:
+              ({projectId = false, workstreamActivitiesRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (workstreamActivitiesRefs) db.workstreamActivities,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (projectId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.projectId,
+                                    referencedTable:
+                                        $$WorkstreamsTableReferences
+                                            ._projectIdTable(db),
+                                    referencedColumn:
+                                        $$WorkstreamsTableReferences
+                                            ._projectIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
 
-                    return state;
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (workstreamActivitiesRefs)
+                        await $_getPrefetchedData<
+                          Workstream,
+                          $WorkstreamsTable,
+                          WorkstreamActivity
+                        >(
+                          currentTable: table,
+                          referencedTable: $$WorkstreamsTableReferences
+                              ._workstreamActivitiesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$WorkstreamsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).workstreamActivitiesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workstreamId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
                   },
-              getPrefetchedDataCallback: (items) async {
-                return [];
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -20691,7 +31747,7 @@ typedef $$WorkstreamsTableProcessedTableManager =
       $$WorkstreamsTableUpdateCompanionBuilder,
       (Workstream, $$WorkstreamsTableReferences),
       Workstream,
-      PrefetchHooks Function({bool projectId})
+      PrefetchHooks Function({bool projectId, bool workstreamActivitiesRefs})
     >;
 typedef $$WorkstreamLinksTableCreateCompanionBuilder =
     WorkstreamLinksCompanion Function({
@@ -24968,6 +36024,2012 @@ typedef $$StakeholderProfilesTableProcessedTableManager =
       (StakeholderProfile, $$StakeholderProfilesTableReferences),
       StakeholderProfile,
       PrefetchHooks Function({bool projectId, bool personId})
+    >;
+typedef $$StakeholderRolesTableCreateCompanionBuilder =
+    StakeholderRolesCompanion Function({
+      required String id,
+      required String projectId,
+      required String roleName,
+      required String roleType,
+      Value<String?> personId,
+      Value<bool> isScaffold,
+      Value<bool> isApplicable,
+      Value<int> sortOrder,
+      Value<String?> notes,
+      Value<String?> functionalArea,
+      Value<String?> integrationRelevance,
+      Value<String?> priority,
+      Value<String?> engagementStatus,
+      Value<bool> gapFlag,
+      Value<String?> gapDescription,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$StakeholderRolesTableUpdateCompanionBuilder =
+    StakeholderRolesCompanion Function({
+      Value<String> id,
+      Value<String> projectId,
+      Value<String> roleName,
+      Value<String> roleType,
+      Value<String?> personId,
+      Value<bool> isScaffold,
+      Value<bool> isApplicable,
+      Value<int> sortOrder,
+      Value<String?> notes,
+      Value<String?> functionalArea,
+      Value<String?> integrationRelevance,
+      Value<String?> priority,
+      Value<String?> engagementStatus,
+      Value<bool> gapFlag,
+      Value<String?> gapDescription,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$StakeholderRolesTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $StakeholderRolesTable, StakeholderRole> {
+  $$StakeholderRolesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ProjectsTable _projectIdTable(_$AppDatabase db) =>
+      db.projects.createAlias(
+        $_aliasNameGenerator(db.stakeholderRoles.projectId, db.projects.id),
+      );
+
+  $$ProjectsTableProcessedTableManager get projectId {
+    final $_column = $_itemColumn<String>('project_id')!;
+
+    final manager = $$ProjectsTableTableManager(
+      $_db,
+      $_db.projects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_projectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$StakeholderRolesTableFilterComposer
+    extends Composer<_$AppDatabase, $StakeholderRolesTable> {
+  $$StakeholderRolesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get roleName => $composableBuilder(
+    column: $table.roleName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get roleType => $composableBuilder(
+    column: $table.roleType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get personId => $composableBuilder(
+    column: $table.personId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isScaffold => $composableBuilder(
+    column: $table.isScaffold,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isApplicable => $composableBuilder(
+    column: $table.isApplicable,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get functionalArea => $composableBuilder(
+    column: $table.functionalArea,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get integrationRelevance => $composableBuilder(
+    column: $table.integrationRelevance,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get priority => $composableBuilder(
+    column: $table.priority,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get engagementStatus => $composableBuilder(
+    column: $table.engagementStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get gapFlag => $composableBuilder(
+    column: $table.gapFlag,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get gapDescription => $composableBuilder(
+    column: $table.gapDescription,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ProjectsTableFilterComposer get projectId {
+    final $$ProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StakeholderRolesTableOrderingComposer
+    extends Composer<_$AppDatabase, $StakeholderRolesTable> {
+  $$StakeholderRolesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get roleName => $composableBuilder(
+    column: $table.roleName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get roleType => $composableBuilder(
+    column: $table.roleType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get personId => $composableBuilder(
+    column: $table.personId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isScaffold => $composableBuilder(
+    column: $table.isScaffold,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isApplicable => $composableBuilder(
+    column: $table.isApplicable,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get functionalArea => $composableBuilder(
+    column: $table.functionalArea,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get integrationRelevance => $composableBuilder(
+    column: $table.integrationRelevance,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get priority => $composableBuilder(
+    column: $table.priority,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get engagementStatus => $composableBuilder(
+    column: $table.engagementStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get gapFlag => $composableBuilder(
+    column: $table.gapFlag,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get gapDescription => $composableBuilder(
+    column: $table.gapDescription,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ProjectsTableOrderingComposer get projectId {
+    final $$ProjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StakeholderRolesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $StakeholderRolesTable> {
+  $$StakeholderRolesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get roleName =>
+      $composableBuilder(column: $table.roleName, builder: (column) => column);
+
+  GeneratedColumn<String> get roleType =>
+      $composableBuilder(column: $table.roleType, builder: (column) => column);
+
+  GeneratedColumn<String> get personId =>
+      $composableBuilder(column: $table.personId, builder: (column) => column);
+
+  GeneratedColumn<bool> get isScaffold => $composableBuilder(
+    column: $table.isScaffold,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isApplicable => $composableBuilder(
+    column: $table.isApplicable,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<String> get functionalArea => $composableBuilder(
+    column: $table.functionalArea,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get integrationRelevance => $composableBuilder(
+    column: $table.integrationRelevance,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get priority =>
+      $composableBuilder(column: $table.priority, builder: (column) => column);
+
+  GeneratedColumn<String> get engagementStatus => $composableBuilder(
+    column: $table.engagementStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get gapFlag =>
+      $composableBuilder(column: $table.gapFlag, builder: (column) => column);
+
+  GeneratedColumn<String> get gapDescription => $composableBuilder(
+    column: $table.gapDescription,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$ProjectsTableAnnotationComposer get projectId {
+    final $$ProjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StakeholderRolesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $StakeholderRolesTable,
+          StakeholderRole,
+          $$StakeholderRolesTableFilterComposer,
+          $$StakeholderRolesTableOrderingComposer,
+          $$StakeholderRolesTableAnnotationComposer,
+          $$StakeholderRolesTableCreateCompanionBuilder,
+          $$StakeholderRolesTableUpdateCompanionBuilder,
+          (StakeholderRole, $$StakeholderRolesTableReferences),
+          StakeholderRole,
+          PrefetchHooks Function({bool projectId})
+        > {
+  $$StakeholderRolesTableTableManager(
+    _$AppDatabase db,
+    $StakeholderRolesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$StakeholderRolesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$StakeholderRolesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$StakeholderRolesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> projectId = const Value.absent(),
+                Value<String> roleName = const Value.absent(),
+                Value<String> roleType = const Value.absent(),
+                Value<String?> personId = const Value.absent(),
+                Value<bool> isScaffold = const Value.absent(),
+                Value<bool> isApplicable = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<String?> functionalArea = const Value.absent(),
+                Value<String?> integrationRelevance = const Value.absent(),
+                Value<String?> priority = const Value.absent(),
+                Value<String?> engagementStatus = const Value.absent(),
+                Value<bool> gapFlag = const Value.absent(),
+                Value<String?> gapDescription = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => StakeholderRolesCompanion(
+                id: id,
+                projectId: projectId,
+                roleName: roleName,
+                roleType: roleType,
+                personId: personId,
+                isScaffold: isScaffold,
+                isApplicable: isApplicable,
+                sortOrder: sortOrder,
+                notes: notes,
+                functionalArea: functionalArea,
+                integrationRelevance: integrationRelevance,
+                priority: priority,
+                engagementStatus: engagementStatus,
+                gapFlag: gapFlag,
+                gapDescription: gapDescription,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String projectId,
+                required String roleName,
+                required String roleType,
+                Value<String?> personId = const Value.absent(),
+                Value<bool> isScaffold = const Value.absent(),
+                Value<bool> isApplicable = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<String?> functionalArea = const Value.absent(),
+                Value<String?> integrationRelevance = const Value.absent(),
+                Value<String?> priority = const Value.absent(),
+                Value<String?> engagementStatus = const Value.absent(),
+                Value<bool> gapFlag = const Value.absent(),
+                Value<String?> gapDescription = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => StakeholderRolesCompanion.insert(
+                id: id,
+                projectId: projectId,
+                roleName: roleName,
+                roleType: roleType,
+                personId: personId,
+                isScaffold: isScaffold,
+                isApplicable: isApplicable,
+                sortOrder: sortOrder,
+                notes: notes,
+                functionalArea: functionalArea,
+                integrationRelevance: integrationRelevance,
+                priority: priority,
+                engagementStatus: engagementStatus,
+                gapFlag: gapFlag,
+                gapDescription: gapDescription,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$StakeholderRolesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({projectId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (projectId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.projectId,
+                                referencedTable:
+                                    $$StakeholderRolesTableReferences
+                                        ._projectIdTable(db),
+                                referencedColumn:
+                                    $$StakeholderRolesTableReferences
+                                        ._projectIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$StakeholderRolesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $StakeholderRolesTable,
+      StakeholderRole,
+      $$StakeholderRolesTableFilterComposer,
+      $$StakeholderRolesTableOrderingComposer,
+      $$StakeholderRolesTableAnnotationComposer,
+      $$StakeholderRolesTableCreateCompanionBuilder,
+      $$StakeholderRolesTableUpdateCompanionBuilder,
+      (StakeholderRole, $$StakeholderRolesTableReferences),
+      StakeholderRole,
+      PrefetchHooks Function({bool projectId})
+    >;
+typedef $$TeamRolesTableCreateCompanionBuilder =
+    TeamRolesCompanion Function({
+      required String id,
+      required String projectId,
+      required String roleName,
+      required String teamGroup,
+      Value<String?> personId,
+      Value<bool> isScaffold,
+      Value<bool> isApplicable,
+      Value<int> sortOrder,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$TeamRolesTableUpdateCompanionBuilder =
+    TeamRolesCompanion Function({
+      Value<String> id,
+      Value<String> projectId,
+      Value<String> roleName,
+      Value<String> teamGroup,
+      Value<String?> personId,
+      Value<bool> isScaffold,
+      Value<bool> isApplicable,
+      Value<int> sortOrder,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$TeamRolesTableReferences
+    extends BaseReferences<_$AppDatabase, $TeamRolesTable, TeamRole> {
+  $$TeamRolesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $ProjectsTable _projectIdTable(_$AppDatabase db) =>
+      db.projects.createAlias(
+        $_aliasNameGenerator(db.teamRoles.projectId, db.projects.id),
+      );
+
+  $$ProjectsTableProcessedTableManager get projectId {
+    final $_column = $_itemColumn<String>('project_id')!;
+
+    final manager = $$ProjectsTableTableManager(
+      $_db,
+      $_db.projects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_projectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$TeamRolesTableFilterComposer
+    extends Composer<_$AppDatabase, $TeamRolesTable> {
+  $$TeamRolesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get roleName => $composableBuilder(
+    column: $table.roleName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get teamGroup => $composableBuilder(
+    column: $table.teamGroup,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get personId => $composableBuilder(
+    column: $table.personId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isScaffold => $composableBuilder(
+    column: $table.isScaffold,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isApplicable => $composableBuilder(
+    column: $table.isApplicable,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ProjectsTableFilterComposer get projectId {
+    final $$ProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TeamRolesTableOrderingComposer
+    extends Composer<_$AppDatabase, $TeamRolesTable> {
+  $$TeamRolesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get roleName => $composableBuilder(
+    column: $table.roleName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get teamGroup => $composableBuilder(
+    column: $table.teamGroup,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get personId => $composableBuilder(
+    column: $table.personId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isScaffold => $composableBuilder(
+    column: $table.isScaffold,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isApplicable => $composableBuilder(
+    column: $table.isApplicable,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ProjectsTableOrderingComposer get projectId {
+    final $$ProjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TeamRolesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TeamRolesTable> {
+  $$TeamRolesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get roleName =>
+      $composableBuilder(column: $table.roleName, builder: (column) => column);
+
+  GeneratedColumn<String> get teamGroup =>
+      $composableBuilder(column: $table.teamGroup, builder: (column) => column);
+
+  GeneratedColumn<String> get personId =>
+      $composableBuilder(column: $table.personId, builder: (column) => column);
+
+  GeneratedColumn<bool> get isScaffold => $composableBuilder(
+    column: $table.isScaffold,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isApplicable => $composableBuilder(
+    column: $table.isApplicable,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$ProjectsTableAnnotationComposer get projectId {
+    final $$ProjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TeamRolesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TeamRolesTable,
+          TeamRole,
+          $$TeamRolesTableFilterComposer,
+          $$TeamRolesTableOrderingComposer,
+          $$TeamRolesTableAnnotationComposer,
+          $$TeamRolesTableCreateCompanionBuilder,
+          $$TeamRolesTableUpdateCompanionBuilder,
+          (TeamRole, $$TeamRolesTableReferences),
+          TeamRole,
+          PrefetchHooks Function({bool projectId})
+        > {
+  $$TeamRolesTableTableManager(_$AppDatabase db, $TeamRolesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TeamRolesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TeamRolesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TeamRolesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> projectId = const Value.absent(),
+                Value<String> roleName = const Value.absent(),
+                Value<String> teamGroup = const Value.absent(),
+                Value<String?> personId = const Value.absent(),
+                Value<bool> isScaffold = const Value.absent(),
+                Value<bool> isApplicable = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TeamRolesCompanion(
+                id: id,
+                projectId: projectId,
+                roleName: roleName,
+                teamGroup: teamGroup,
+                personId: personId,
+                isScaffold: isScaffold,
+                isApplicable: isApplicable,
+                sortOrder: sortOrder,
+                notes: notes,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String projectId,
+                required String roleName,
+                required String teamGroup,
+                Value<String?> personId = const Value.absent(),
+                Value<bool> isScaffold = const Value.absent(),
+                Value<bool> isApplicable = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TeamRolesCompanion.insert(
+                id: id,
+                projectId: projectId,
+                roleName: roleName,
+                teamGroup: teamGroup,
+                personId: personId,
+                isScaffold: isScaffold,
+                isApplicable: isApplicable,
+                sortOrder: sortOrder,
+                notes: notes,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$TeamRolesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({projectId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (projectId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.projectId,
+                                referencedTable: $$TeamRolesTableReferences
+                                    ._projectIdTable(db),
+                                referencedColumn: $$TeamRolesTableReferences
+                                    ._projectIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$TeamRolesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TeamRolesTable,
+      TeamRole,
+      $$TeamRolesTableFilterComposer,
+      $$TeamRolesTableOrderingComposer,
+      $$TeamRolesTableAnnotationComposer,
+      $$TeamRolesTableCreateCompanionBuilder,
+      $$TeamRolesTableUpdateCompanionBuilder,
+      (TeamRole, $$TeamRolesTableReferences),
+      TeamRole,
+      PrefetchHooks Function({bool projectId})
+    >;
+typedef $$MilestonesTableCreateCompanionBuilder =
+    MilestonesCompanion Function({
+      required String id,
+      required String projectId,
+      required String name,
+      required String date,
+      Value<String?> ownerId,
+      Value<String> status,
+      Value<bool> isHardDeadline,
+      Value<String?> notes,
+      Value<String?> workstreamId,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$MilestonesTableUpdateCompanionBuilder =
+    MilestonesCompanion Function({
+      Value<String> id,
+      Value<String> projectId,
+      Value<String> name,
+      Value<String> date,
+      Value<String?> ownerId,
+      Value<String> status,
+      Value<bool> isHardDeadline,
+      Value<String?> notes,
+      Value<String?> workstreamId,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$MilestonesTableReferences
+    extends BaseReferences<_$AppDatabase, $MilestonesTable, Milestone> {
+  $$MilestonesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $ProjectsTable _projectIdTable(_$AppDatabase db) =>
+      db.projects.createAlias(
+        $_aliasNameGenerator(db.milestones.projectId, db.projects.id),
+      );
+
+  $$ProjectsTableProcessedTableManager get projectId {
+    final $_column = $_itemColumn<String>('project_id')!;
+
+    final manager = $$ProjectsTableTableManager(
+      $_db,
+      $_db.projects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_projectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$MilestonesTableFilterComposer
+    extends Composer<_$AppDatabase, $MilestonesTable> {
+  $$MilestonesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ownerId => $composableBuilder(
+    column: $table.ownerId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isHardDeadline => $composableBuilder(
+    column: $table.isHardDeadline,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get workstreamId => $composableBuilder(
+    column: $table.workstreamId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ProjectsTableFilterComposer get projectId {
+    final $$ProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MilestonesTableOrderingComposer
+    extends Composer<_$AppDatabase, $MilestonesTable> {
+  $$MilestonesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ownerId => $composableBuilder(
+    column: $table.ownerId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isHardDeadline => $composableBuilder(
+    column: $table.isHardDeadline,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get workstreamId => $composableBuilder(
+    column: $table.workstreamId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ProjectsTableOrderingComposer get projectId {
+    final $$ProjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MilestonesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MilestonesTable> {
+  $$MilestonesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get date =>
+      $composableBuilder(column: $table.date, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerId =>
+      $composableBuilder(column: $table.ownerId, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<bool> get isHardDeadline => $composableBuilder(
+    column: $table.isHardDeadline,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<String> get workstreamId => $composableBuilder(
+    column: $table.workstreamId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$ProjectsTableAnnotationComposer get projectId {
+    final $$ProjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MilestonesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MilestonesTable,
+          Milestone,
+          $$MilestonesTableFilterComposer,
+          $$MilestonesTableOrderingComposer,
+          $$MilestonesTableAnnotationComposer,
+          $$MilestonesTableCreateCompanionBuilder,
+          $$MilestonesTableUpdateCompanionBuilder,
+          (Milestone, $$MilestonesTableReferences),
+          Milestone,
+          PrefetchHooks Function({bool projectId})
+        > {
+  $$MilestonesTableTableManager(_$AppDatabase db, $MilestonesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MilestonesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MilestonesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MilestonesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> projectId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> date = const Value.absent(),
+                Value<String?> ownerId = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<bool> isHardDeadline = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<String?> workstreamId = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MilestonesCompanion(
+                id: id,
+                projectId: projectId,
+                name: name,
+                date: date,
+                ownerId: ownerId,
+                status: status,
+                isHardDeadline: isHardDeadline,
+                notes: notes,
+                workstreamId: workstreamId,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String projectId,
+                required String name,
+                required String date,
+                Value<String?> ownerId = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<bool> isHardDeadline = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<String?> workstreamId = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MilestonesCompanion.insert(
+                id: id,
+                projectId: projectId,
+                name: name,
+                date: date,
+                ownerId: ownerId,
+                status: status,
+                isHardDeadline: isHardDeadline,
+                notes: notes,
+                workstreamId: workstreamId,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$MilestonesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({projectId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (projectId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.projectId,
+                                referencedTable: $$MilestonesTableReferences
+                                    ._projectIdTable(db),
+                                referencedColumn: $$MilestonesTableReferences
+                                    ._projectIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$MilestonesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MilestonesTable,
+      Milestone,
+      $$MilestonesTableFilterComposer,
+      $$MilestonesTableOrderingComposer,
+      $$MilestonesTableAnnotationComposer,
+      $$MilestonesTableCreateCompanionBuilder,
+      $$MilestonesTableUpdateCompanionBuilder,
+      (Milestone, $$MilestonesTableReferences),
+      Milestone,
+      PrefetchHooks Function({bool projectId})
+    >;
+typedef $$WorkstreamActivitiesTableCreateCompanionBuilder =
+    WorkstreamActivitiesCompanion Function({
+      required String id,
+      required String workstreamId,
+      required String projectId,
+      required String name,
+      required String startDate,
+      required String endDate,
+      Value<String?> ownerId,
+      Value<String> status,
+      Value<String?> notes,
+      Value<int> sortOrder,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$WorkstreamActivitiesTableUpdateCompanionBuilder =
+    WorkstreamActivitiesCompanion Function({
+      Value<String> id,
+      Value<String> workstreamId,
+      Value<String> projectId,
+      Value<String> name,
+      Value<String> startDate,
+      Value<String> endDate,
+      Value<String?> ownerId,
+      Value<String> status,
+      Value<String?> notes,
+      Value<int> sortOrder,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$WorkstreamActivitiesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $WorkstreamActivitiesTable,
+          WorkstreamActivity
+        > {
+  $$WorkstreamActivitiesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $WorkstreamsTable _workstreamIdTable(_$AppDatabase db) =>
+      db.workstreams.createAlias(
+        $_aliasNameGenerator(
+          db.workstreamActivities.workstreamId,
+          db.workstreams.id,
+        ),
+      );
+
+  $$WorkstreamsTableProcessedTableManager get workstreamId {
+    final $_column = $_itemColumn<String>('workstream_id')!;
+
+    final manager = $$WorkstreamsTableTableManager(
+      $_db,
+      $_db.workstreams,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_workstreamIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ProjectsTable _projectIdTable(_$AppDatabase db) =>
+      db.projects.createAlias(
+        $_aliasNameGenerator(db.workstreamActivities.projectId, db.projects.id),
+      );
+
+  $$ProjectsTableProcessedTableManager get projectId {
+    final $_column = $_itemColumn<String>('project_id')!;
+
+    final manager = $$ProjectsTableTableManager(
+      $_db,
+      $_db.projects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_projectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$WorkstreamActivitiesTableFilterComposer
+    extends Composer<_$AppDatabase, $WorkstreamActivitiesTable> {
+  $$WorkstreamActivitiesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get startDate => $composableBuilder(
+    column: $table.startDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get endDate => $composableBuilder(
+    column: $table.endDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ownerId => $composableBuilder(
+    column: $table.ownerId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$WorkstreamsTableFilterComposer get workstreamId {
+    final $$WorkstreamsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workstreamId,
+      referencedTable: $db.workstreams,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkstreamsTableFilterComposer(
+            $db: $db,
+            $table: $db.workstreams,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ProjectsTableFilterComposer get projectId {
+    final $$ProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkstreamActivitiesTableOrderingComposer
+    extends Composer<_$AppDatabase, $WorkstreamActivitiesTable> {
+  $$WorkstreamActivitiesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get startDate => $composableBuilder(
+    column: $table.startDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get endDate => $composableBuilder(
+    column: $table.endDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ownerId => $composableBuilder(
+    column: $table.ownerId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$WorkstreamsTableOrderingComposer get workstreamId {
+    final $$WorkstreamsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workstreamId,
+      referencedTable: $db.workstreams,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkstreamsTableOrderingComposer(
+            $db: $db,
+            $table: $db.workstreams,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ProjectsTableOrderingComposer get projectId {
+    final $$ProjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkstreamActivitiesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WorkstreamActivitiesTable> {
+  $$WorkstreamActivitiesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get startDate =>
+      $composableBuilder(column: $table.startDate, builder: (column) => column);
+
+  GeneratedColumn<String> get endDate =>
+      $composableBuilder(column: $table.endDate, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerId =>
+      $composableBuilder(column: $table.ownerId, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$WorkstreamsTableAnnotationComposer get workstreamId {
+    final $$WorkstreamsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workstreamId,
+      referencedTable: $db.workstreams,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkstreamsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.workstreams,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ProjectsTableAnnotationComposer get projectId {
+    final $$ProjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkstreamActivitiesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WorkstreamActivitiesTable,
+          WorkstreamActivity,
+          $$WorkstreamActivitiesTableFilterComposer,
+          $$WorkstreamActivitiesTableOrderingComposer,
+          $$WorkstreamActivitiesTableAnnotationComposer,
+          $$WorkstreamActivitiesTableCreateCompanionBuilder,
+          $$WorkstreamActivitiesTableUpdateCompanionBuilder,
+          (WorkstreamActivity, $$WorkstreamActivitiesTableReferences),
+          WorkstreamActivity,
+          PrefetchHooks Function({bool workstreamId, bool projectId})
+        > {
+  $$WorkstreamActivitiesTableTableManager(
+    _$AppDatabase db,
+    $WorkstreamActivitiesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WorkstreamActivitiesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$WorkstreamActivitiesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$WorkstreamActivitiesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> workstreamId = const Value.absent(),
+                Value<String> projectId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> startDate = const Value.absent(),
+                Value<String> endDate = const Value.absent(),
+                Value<String?> ownerId = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkstreamActivitiesCompanion(
+                id: id,
+                workstreamId: workstreamId,
+                projectId: projectId,
+                name: name,
+                startDate: startDate,
+                endDate: endDate,
+                ownerId: ownerId,
+                status: status,
+                notes: notes,
+                sortOrder: sortOrder,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String workstreamId,
+                required String projectId,
+                required String name,
+                required String startDate,
+                required String endDate,
+                Value<String?> ownerId = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkstreamActivitiesCompanion.insert(
+                id: id,
+                workstreamId: workstreamId,
+                projectId: projectId,
+                name: name,
+                startDate: startDate,
+                endDate: endDate,
+                ownerId: ownerId,
+                status: status,
+                notes: notes,
+                sortOrder: sortOrder,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$WorkstreamActivitiesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({workstreamId = false, projectId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (workstreamId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.workstreamId,
+                                referencedTable:
+                                    $$WorkstreamActivitiesTableReferences
+                                        ._workstreamIdTable(db),
+                                referencedColumn:
+                                    $$WorkstreamActivitiesTableReferences
+                                        ._workstreamIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+                    if (projectId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.projectId,
+                                referencedTable:
+                                    $$WorkstreamActivitiesTableReferences
+                                        ._projectIdTable(db),
+                                referencedColumn:
+                                    $$WorkstreamActivitiesTableReferences
+                                        ._projectIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$WorkstreamActivitiesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WorkstreamActivitiesTable,
+      WorkstreamActivity,
+      $$WorkstreamActivitiesTableFilterComposer,
+      $$WorkstreamActivitiesTableOrderingComposer,
+      $$WorkstreamActivitiesTableAnnotationComposer,
+      $$WorkstreamActivitiesTableCreateCompanionBuilder,
+      $$WorkstreamActivitiesTableUpdateCompanionBuilder,
+      (WorkstreamActivity, $$WorkstreamActivitiesTableReferences),
+      WorkstreamActivity,
+      PrefetchHooks Function({bool workstreamId, bool projectId})
     >;
 typedef $$ColleagueProfilesTableCreateCompanionBuilder =
     ColleagueProfilesCompanion Function({
@@ -32598,6 +45660,4556 @@ typedef $$ProjectStageProgressesTableProcessedTableManager =
       ProjectStageProgressesData,
       PrefetchHooks Function({bool projectPlaybookId, bool stageId})
     >;
+typedef $$TimelineWorkPackagesTableCreateCompanionBuilder =
+    TimelineWorkPackagesCompanion Function({
+      required String id,
+      required String projectId,
+      required String name,
+      Value<String?> shortCode,
+      Value<String?> description,
+      Value<String> colourTheme,
+      Value<int> sortOrder,
+      Value<String> ragStatus,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$TimelineWorkPackagesTableUpdateCompanionBuilder =
+    TimelineWorkPackagesCompanion Function({
+      Value<String> id,
+      Value<String> projectId,
+      Value<String> name,
+      Value<String?> shortCode,
+      Value<String?> description,
+      Value<String> colourTheme,
+      Value<int> sortOrder,
+      Value<String> ragStatus,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$TimelineWorkPackagesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $TimelineWorkPackagesTable,
+          TimelineWorkPackage
+        > {
+  $$TimelineWorkPackagesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ProjectsTable _projectIdTable(_$AppDatabase db) =>
+      db.projects.createAlias(
+        $_aliasNameGenerator(db.timelineWorkPackages.projectId, db.projects.id),
+      );
+
+  $$ProjectsTableProcessedTableManager get projectId {
+    final $_column = $_itemColumn<String>('project_id')!;
+
+    final manager = $$ProjectsTableTableManager(
+      $_db,
+      $_db.projects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_projectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$TimelineActivitiesTable, List<TimelineActivity>>
+  _timelineActivitiesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.timelineActivities,
+        aliasName: $_aliasNameGenerator(
+          db.timelineWorkPackages.id,
+          db.timelineActivities.workPackageId,
+        ),
+      );
+
+  $$TimelineActivitiesTableProcessedTableManager get timelineActivitiesRefs {
+    final manager = $$TimelineActivitiesTableTableManager(
+      $_db,
+      $_db.timelineActivities,
+    ).filter((f) => f.workPackageId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _timelineActivitiesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$TimelineWorkPackagesTableFilterComposer
+    extends Composer<_$AppDatabase, $TimelineWorkPackagesTable> {
+  $$TimelineWorkPackagesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get shortCode => $composableBuilder(
+    column: $table.shortCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get colourTheme => $composableBuilder(
+    column: $table.colourTheme,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ragStatus => $composableBuilder(
+    column: $table.ragStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ProjectsTableFilterComposer get projectId {
+    final $$ProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> timelineActivitiesRefs(
+    Expression<bool> Function($$TimelineActivitiesTableFilterComposer f) f,
+  ) {
+    final $$TimelineActivitiesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.timelineActivities,
+      getReferencedColumn: (t) => t.workPackageId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TimelineActivitiesTableFilterComposer(
+            $db: $db,
+            $table: $db.timelineActivities,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$TimelineWorkPackagesTableOrderingComposer
+    extends Composer<_$AppDatabase, $TimelineWorkPackagesTable> {
+  $$TimelineWorkPackagesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get shortCode => $composableBuilder(
+    column: $table.shortCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get colourTheme => $composableBuilder(
+    column: $table.colourTheme,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ragStatus => $composableBuilder(
+    column: $table.ragStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ProjectsTableOrderingComposer get projectId {
+    final $$ProjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TimelineWorkPackagesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TimelineWorkPackagesTable> {
+  $$TimelineWorkPackagesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get shortCode =>
+      $composableBuilder(column: $table.shortCode, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get colourTheme => $composableBuilder(
+    column: $table.colourTheme,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<String> get ragStatus =>
+      $composableBuilder(column: $table.ragStatus, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$ProjectsTableAnnotationComposer get projectId {
+    final $$ProjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> timelineActivitiesRefs<T extends Object>(
+    Expression<T> Function($$TimelineActivitiesTableAnnotationComposer a) f,
+  ) {
+    final $$TimelineActivitiesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.timelineActivities,
+          getReferencedColumn: (t) => t.workPackageId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$TimelineActivitiesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.timelineActivities,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$TimelineWorkPackagesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TimelineWorkPackagesTable,
+          TimelineWorkPackage,
+          $$TimelineWorkPackagesTableFilterComposer,
+          $$TimelineWorkPackagesTableOrderingComposer,
+          $$TimelineWorkPackagesTableAnnotationComposer,
+          $$TimelineWorkPackagesTableCreateCompanionBuilder,
+          $$TimelineWorkPackagesTableUpdateCompanionBuilder,
+          (TimelineWorkPackage, $$TimelineWorkPackagesTableReferences),
+          TimelineWorkPackage,
+          PrefetchHooks Function({bool projectId, bool timelineActivitiesRefs})
+        > {
+  $$TimelineWorkPackagesTableTableManager(
+    _$AppDatabase db,
+    $TimelineWorkPackagesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TimelineWorkPackagesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TimelineWorkPackagesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$TimelineWorkPackagesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> projectId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> shortCode = const Value.absent(),
+                Value<String?> description = const Value.absent(),
+                Value<String> colourTheme = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<String> ragStatus = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TimelineWorkPackagesCompanion(
+                id: id,
+                projectId: projectId,
+                name: name,
+                shortCode: shortCode,
+                description: description,
+                colourTheme: colourTheme,
+                sortOrder: sortOrder,
+                ragStatus: ragStatus,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String projectId,
+                required String name,
+                Value<String?> shortCode = const Value.absent(),
+                Value<String?> description = const Value.absent(),
+                Value<String> colourTheme = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<String> ragStatus = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TimelineWorkPackagesCompanion.insert(
+                id: id,
+                projectId: projectId,
+                name: name,
+                shortCode: shortCode,
+                description: description,
+                colourTheme: colourTheme,
+                sortOrder: sortOrder,
+                ragStatus: ragStatus,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$TimelineWorkPackagesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({projectId = false, timelineActivitiesRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (timelineActivitiesRefs) db.timelineActivities,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (projectId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.projectId,
+                                    referencedTable:
+                                        $$TimelineWorkPackagesTableReferences
+                                            ._projectIdTable(db),
+                                    referencedColumn:
+                                        $$TimelineWorkPackagesTableReferences
+                                            ._projectIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (timelineActivitiesRefs)
+                        await $_getPrefetchedData<
+                          TimelineWorkPackage,
+                          $TimelineWorkPackagesTable,
+                          TimelineActivity
+                        >(
+                          currentTable: table,
+                          referencedTable: $$TimelineWorkPackagesTableReferences
+                              ._timelineActivitiesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TimelineWorkPackagesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).timelineActivitiesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workPackageId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$TimelineWorkPackagesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TimelineWorkPackagesTable,
+      TimelineWorkPackage,
+      $$TimelineWorkPackagesTableFilterComposer,
+      $$TimelineWorkPackagesTableOrderingComposer,
+      $$TimelineWorkPackagesTableAnnotationComposer,
+      $$TimelineWorkPackagesTableCreateCompanionBuilder,
+      $$TimelineWorkPackagesTableUpdateCompanionBuilder,
+      (TimelineWorkPackage, $$TimelineWorkPackagesTableReferences),
+      TimelineWorkPackage,
+      PrefetchHooks Function({bool projectId, bool timelineActivitiesRefs})
+    >;
+typedef $$TimelineActivitiesTableCreateCompanionBuilder =
+    TimelineActivitiesCompanion Function({
+      required String id,
+      required String workPackageId,
+      required String projectId,
+      required String name,
+      Value<String?> owner,
+      Value<String?> ownerId,
+      Value<String> activityType,
+      Value<int?> startMonth,
+      Value<int?> endMonth,
+      Value<String?> startDate,
+      Value<String?> endDate,
+      Value<String> status,
+      Value<bool> isCritical,
+      Value<bool> isBaseline,
+      Value<int?> baselineStart,
+      Value<int?> baselineEnd,
+      Value<String?> cellLabel,
+      Value<String?> notes,
+      Value<int> sortOrder,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$TimelineActivitiesTableUpdateCompanionBuilder =
+    TimelineActivitiesCompanion Function({
+      Value<String> id,
+      Value<String> workPackageId,
+      Value<String> projectId,
+      Value<String> name,
+      Value<String?> owner,
+      Value<String?> ownerId,
+      Value<String> activityType,
+      Value<int?> startMonth,
+      Value<int?> endMonth,
+      Value<String?> startDate,
+      Value<String?> endDate,
+      Value<String> status,
+      Value<bool> isCritical,
+      Value<bool> isBaseline,
+      Value<int?> baselineStart,
+      Value<int?> baselineEnd,
+      Value<String?> cellLabel,
+      Value<String?> notes,
+      Value<int> sortOrder,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$TimelineActivitiesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $TimelineActivitiesTable,
+          TimelineActivity
+        > {
+  $$TimelineActivitiesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $TimelineWorkPackagesTable _workPackageIdTable(_$AppDatabase db) =>
+      db.timelineWorkPackages.createAlias(
+        $_aliasNameGenerator(
+          db.timelineActivities.workPackageId,
+          db.timelineWorkPackages.id,
+        ),
+      );
+
+  $$TimelineWorkPackagesTableProcessedTableManager get workPackageId {
+    final $_column = $_itemColumn<String>('work_package_id')!;
+
+    final manager = $$TimelineWorkPackagesTableTableManager(
+      $_db,
+      $_db.timelineWorkPackages,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_workPackageIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ProjectsTable _projectIdTable(_$AppDatabase db) =>
+      db.projects.createAlias(
+        $_aliasNameGenerator(db.timelineActivities.projectId, db.projects.id),
+      );
+
+  $$ProjectsTableProcessedTableManager get projectId {
+    final $_column = $_itemColumn<String>('project_id')!;
+
+    final manager = $$ProjectsTableTableManager(
+      $_db,
+      $_db.projects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_projectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$TimelineActivitiesTableFilterComposer
+    extends Composer<_$AppDatabase, $TimelineActivitiesTable> {
+  $$TimelineActivitiesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get owner => $composableBuilder(
+    column: $table.owner,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ownerId => $composableBuilder(
+    column: $table.ownerId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get activityType => $composableBuilder(
+    column: $table.activityType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get startMonth => $composableBuilder(
+    column: $table.startMonth,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get endMonth => $composableBuilder(
+    column: $table.endMonth,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get startDate => $composableBuilder(
+    column: $table.startDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get endDate => $composableBuilder(
+    column: $table.endDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isCritical => $composableBuilder(
+    column: $table.isCritical,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isBaseline => $composableBuilder(
+    column: $table.isBaseline,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get baselineStart => $composableBuilder(
+    column: $table.baselineStart,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get baselineEnd => $composableBuilder(
+    column: $table.baselineEnd,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cellLabel => $composableBuilder(
+    column: $table.cellLabel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$TimelineWorkPackagesTableFilterComposer get workPackageId {
+    final $$TimelineWorkPackagesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workPackageId,
+      referencedTable: $db.timelineWorkPackages,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TimelineWorkPackagesTableFilterComposer(
+            $db: $db,
+            $table: $db.timelineWorkPackages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ProjectsTableFilterComposer get projectId {
+    final $$ProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TimelineActivitiesTableOrderingComposer
+    extends Composer<_$AppDatabase, $TimelineActivitiesTable> {
+  $$TimelineActivitiesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get owner => $composableBuilder(
+    column: $table.owner,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ownerId => $composableBuilder(
+    column: $table.ownerId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get activityType => $composableBuilder(
+    column: $table.activityType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get startMonth => $composableBuilder(
+    column: $table.startMonth,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get endMonth => $composableBuilder(
+    column: $table.endMonth,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get startDate => $composableBuilder(
+    column: $table.startDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get endDate => $composableBuilder(
+    column: $table.endDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isCritical => $composableBuilder(
+    column: $table.isCritical,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isBaseline => $composableBuilder(
+    column: $table.isBaseline,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get baselineStart => $composableBuilder(
+    column: $table.baselineStart,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get baselineEnd => $composableBuilder(
+    column: $table.baselineEnd,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cellLabel => $composableBuilder(
+    column: $table.cellLabel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$TimelineWorkPackagesTableOrderingComposer get workPackageId {
+    final $$TimelineWorkPackagesTableOrderingComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.workPackageId,
+          referencedTable: $db.timelineWorkPackages,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$TimelineWorkPackagesTableOrderingComposer(
+                $db: $db,
+                $table: $db.timelineWorkPackages,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  $$ProjectsTableOrderingComposer get projectId {
+    final $$ProjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TimelineActivitiesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TimelineActivitiesTable> {
+  $$TimelineActivitiesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get owner =>
+      $composableBuilder(column: $table.owner, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerId =>
+      $composableBuilder(column: $table.ownerId, builder: (column) => column);
+
+  GeneratedColumn<String> get activityType => $composableBuilder(
+    column: $table.activityType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get startMonth => $composableBuilder(
+    column: $table.startMonth,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get endMonth =>
+      $composableBuilder(column: $table.endMonth, builder: (column) => column);
+
+  GeneratedColumn<String> get startDate =>
+      $composableBuilder(column: $table.startDate, builder: (column) => column);
+
+  GeneratedColumn<String> get endDate =>
+      $composableBuilder(column: $table.endDate, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<bool> get isCritical => $composableBuilder(
+    column: $table.isCritical,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isBaseline => $composableBuilder(
+    column: $table.isBaseline,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get baselineStart => $composableBuilder(
+    column: $table.baselineStart,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get baselineEnd => $composableBuilder(
+    column: $table.baselineEnd,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get cellLabel =>
+      $composableBuilder(column: $table.cellLabel, builder: (column) => column);
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$TimelineWorkPackagesTableAnnotationComposer get workPackageId {
+    final $$TimelineWorkPackagesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.workPackageId,
+          referencedTable: $db.timelineWorkPackages,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$TimelineWorkPackagesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.timelineWorkPackages,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  $$ProjectsTableAnnotationComposer get projectId {
+    final $$ProjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TimelineActivitiesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TimelineActivitiesTable,
+          TimelineActivity,
+          $$TimelineActivitiesTableFilterComposer,
+          $$TimelineActivitiesTableOrderingComposer,
+          $$TimelineActivitiesTableAnnotationComposer,
+          $$TimelineActivitiesTableCreateCompanionBuilder,
+          $$TimelineActivitiesTableUpdateCompanionBuilder,
+          (TimelineActivity, $$TimelineActivitiesTableReferences),
+          TimelineActivity,
+          PrefetchHooks Function({bool workPackageId, bool projectId})
+        > {
+  $$TimelineActivitiesTableTableManager(
+    _$AppDatabase db,
+    $TimelineActivitiesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TimelineActivitiesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TimelineActivitiesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TimelineActivitiesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> workPackageId = const Value.absent(),
+                Value<String> projectId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> owner = const Value.absent(),
+                Value<String?> ownerId = const Value.absent(),
+                Value<String> activityType = const Value.absent(),
+                Value<int?> startMonth = const Value.absent(),
+                Value<int?> endMonth = const Value.absent(),
+                Value<String?> startDate = const Value.absent(),
+                Value<String?> endDate = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<bool> isCritical = const Value.absent(),
+                Value<bool> isBaseline = const Value.absent(),
+                Value<int?> baselineStart = const Value.absent(),
+                Value<int?> baselineEnd = const Value.absent(),
+                Value<String?> cellLabel = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TimelineActivitiesCompanion(
+                id: id,
+                workPackageId: workPackageId,
+                projectId: projectId,
+                name: name,
+                owner: owner,
+                ownerId: ownerId,
+                activityType: activityType,
+                startMonth: startMonth,
+                endMonth: endMonth,
+                startDate: startDate,
+                endDate: endDate,
+                status: status,
+                isCritical: isCritical,
+                isBaseline: isBaseline,
+                baselineStart: baselineStart,
+                baselineEnd: baselineEnd,
+                cellLabel: cellLabel,
+                notes: notes,
+                sortOrder: sortOrder,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String workPackageId,
+                required String projectId,
+                required String name,
+                Value<String?> owner = const Value.absent(),
+                Value<String?> ownerId = const Value.absent(),
+                Value<String> activityType = const Value.absent(),
+                Value<int?> startMonth = const Value.absent(),
+                Value<int?> endMonth = const Value.absent(),
+                Value<String?> startDate = const Value.absent(),
+                Value<String?> endDate = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<bool> isCritical = const Value.absent(),
+                Value<bool> isBaseline = const Value.absent(),
+                Value<int?> baselineStart = const Value.absent(),
+                Value<int?> baselineEnd = const Value.absent(),
+                Value<String?> cellLabel = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TimelineActivitiesCompanion.insert(
+                id: id,
+                workPackageId: workPackageId,
+                projectId: projectId,
+                name: name,
+                owner: owner,
+                ownerId: ownerId,
+                activityType: activityType,
+                startMonth: startMonth,
+                endMonth: endMonth,
+                startDate: startDate,
+                endDate: endDate,
+                status: status,
+                isCritical: isCritical,
+                isBaseline: isBaseline,
+                baselineStart: baselineStart,
+                baselineEnd: baselineEnd,
+                cellLabel: cellLabel,
+                notes: notes,
+                sortOrder: sortOrder,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$TimelineActivitiesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({workPackageId = false, projectId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (workPackageId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.workPackageId,
+                                referencedTable:
+                                    $$TimelineActivitiesTableReferences
+                                        ._workPackageIdTable(db),
+                                referencedColumn:
+                                    $$TimelineActivitiesTableReferences
+                                        ._workPackageIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+                    if (projectId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.projectId,
+                                referencedTable:
+                                    $$TimelineActivitiesTableReferences
+                                        ._projectIdTable(db),
+                                referencedColumn:
+                                    $$TimelineActivitiesTableReferences
+                                        ._projectIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$TimelineActivitiesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TimelineActivitiesTable,
+      TimelineActivity,
+      $$TimelineActivitiesTableFilterComposer,
+      $$TimelineActivitiesTableOrderingComposer,
+      $$TimelineActivitiesTableAnnotationComposer,
+      $$TimelineActivitiesTableCreateCompanionBuilder,
+      $$TimelineActivitiesTableUpdateCompanionBuilder,
+      (TimelineActivity, $$TimelineActivitiesTableReferences),
+      TimelineActivity,
+      PrefetchHooks Function({bool workPackageId, bool projectId})
+    >;
+typedef $$TimelineDependenciesTableCreateCompanionBuilder =
+    TimelineDependenciesCompanion Function({
+      required String id,
+      required String projectId,
+      required String fromActivityId,
+      required String toActivityId,
+      Value<String> dependencyType,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+typedef $$TimelineDependenciesTableUpdateCompanionBuilder =
+    TimelineDependenciesCompanion Function({
+      Value<String> id,
+      Value<String> projectId,
+      Value<String> fromActivityId,
+      Value<String> toActivityId,
+      Value<String> dependencyType,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+final class $$TimelineDependenciesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $TimelineDependenciesTable,
+          TimelineDependency
+        > {
+  $$TimelineDependenciesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ProjectsTable _projectIdTable(_$AppDatabase db) =>
+      db.projects.createAlias(
+        $_aliasNameGenerator(db.timelineDependencies.projectId, db.projects.id),
+      );
+
+  $$ProjectsTableProcessedTableManager get projectId {
+    final $_column = $_itemColumn<String>('project_id')!;
+
+    final manager = $$ProjectsTableTableManager(
+      $_db,
+      $_db.projects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_projectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$TimelineDependenciesTableFilterComposer
+    extends Composer<_$AppDatabase, $TimelineDependenciesTable> {
+  $$TimelineDependenciesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fromActivityId => $composableBuilder(
+    column: $table.fromActivityId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get toActivityId => $composableBuilder(
+    column: $table.toActivityId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get dependencyType => $composableBuilder(
+    column: $table.dependencyType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ProjectsTableFilterComposer get projectId {
+    final $$ProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TimelineDependenciesTableOrderingComposer
+    extends Composer<_$AppDatabase, $TimelineDependenciesTable> {
+  $$TimelineDependenciesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fromActivityId => $composableBuilder(
+    column: $table.fromActivityId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get toActivityId => $composableBuilder(
+    column: $table.toActivityId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get dependencyType => $composableBuilder(
+    column: $table.dependencyType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ProjectsTableOrderingComposer get projectId {
+    final $$ProjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TimelineDependenciesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TimelineDependenciesTable> {
+  $$TimelineDependenciesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get fromActivityId => $composableBuilder(
+    column: $table.fromActivityId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get toActivityId => $composableBuilder(
+    column: $table.toActivityId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get dependencyType => $composableBuilder(
+    column: $table.dependencyType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$ProjectsTableAnnotationComposer get projectId {
+    final $$ProjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TimelineDependenciesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TimelineDependenciesTable,
+          TimelineDependency,
+          $$TimelineDependenciesTableFilterComposer,
+          $$TimelineDependenciesTableOrderingComposer,
+          $$TimelineDependenciesTableAnnotationComposer,
+          $$TimelineDependenciesTableCreateCompanionBuilder,
+          $$TimelineDependenciesTableUpdateCompanionBuilder,
+          (TimelineDependency, $$TimelineDependenciesTableReferences),
+          TimelineDependency,
+          PrefetchHooks Function({bool projectId})
+        > {
+  $$TimelineDependenciesTableTableManager(
+    _$AppDatabase db,
+    $TimelineDependenciesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TimelineDependenciesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TimelineDependenciesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$TimelineDependenciesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> projectId = const Value.absent(),
+                Value<String> fromActivityId = const Value.absent(),
+                Value<String> toActivityId = const Value.absent(),
+                Value<String> dependencyType = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TimelineDependenciesCompanion(
+                id: id,
+                projectId: projectId,
+                fromActivityId: fromActivityId,
+                toActivityId: toActivityId,
+                dependencyType: dependencyType,
+                notes: notes,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String projectId,
+                required String fromActivityId,
+                required String toActivityId,
+                Value<String> dependencyType = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TimelineDependenciesCompanion.insert(
+                id: id,
+                projectId: projectId,
+                fromActivityId: fromActivityId,
+                toActivityId: toActivityId,
+                dependencyType: dependencyType,
+                notes: notes,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$TimelineDependenciesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({projectId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (projectId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.projectId,
+                                referencedTable:
+                                    $$TimelineDependenciesTableReferences
+                                        ._projectIdTable(db),
+                                referencedColumn:
+                                    $$TimelineDependenciesTableReferences
+                                        ._projectIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$TimelineDependenciesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TimelineDependenciesTable,
+      TimelineDependency,
+      $$TimelineDependenciesTableFilterComposer,
+      $$TimelineDependenciesTableOrderingComposer,
+      $$TimelineDependenciesTableAnnotationComposer,
+      $$TimelineDependenciesTableCreateCompanionBuilder,
+      $$TimelineDependenciesTableUpdateCompanionBuilder,
+      (TimelineDependency, $$TimelineDependenciesTableReferences),
+      TimelineDependency,
+      PrefetchHooks Function({bool projectId})
+    >;
+typedef $$ProgrammeHeadersTableCreateCompanionBuilder =
+    ProgrammeHeadersCompanion Function({
+      required String id,
+      required String projectId,
+      Value<String?> title,
+      Value<String?> subtitle,
+      Value<String?> hardDeadline,
+      Value<String?> inScope,
+      Value<String?> outOfScope,
+      Value<String?> monthLabels,
+      Value<String?> month0Date,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$ProgrammeHeadersTableUpdateCompanionBuilder =
+    ProgrammeHeadersCompanion Function({
+      Value<String> id,
+      Value<String> projectId,
+      Value<String?> title,
+      Value<String?> subtitle,
+      Value<String?> hardDeadline,
+      Value<String?> inScope,
+      Value<String?> outOfScope,
+      Value<String?> monthLabels,
+      Value<String?> month0Date,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$ProgrammeHeadersTableFilterComposer
+    extends Composer<_$AppDatabase, $ProgrammeHeadersTable> {
+  $$ProgrammeHeadersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get projectId => $composableBuilder(
+    column: $table.projectId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get subtitle => $composableBuilder(
+    column: $table.subtitle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get hardDeadline => $composableBuilder(
+    column: $table.hardDeadline,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get inScope => $composableBuilder(
+    column: $table.inScope,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get outOfScope => $composableBuilder(
+    column: $table.outOfScope,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get monthLabels => $composableBuilder(
+    column: $table.monthLabels,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get month0Date => $composableBuilder(
+    column: $table.month0Date,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ProgrammeHeadersTableOrderingComposer
+    extends Composer<_$AppDatabase, $ProgrammeHeadersTable> {
+  $$ProgrammeHeadersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get projectId => $composableBuilder(
+    column: $table.projectId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get subtitle => $composableBuilder(
+    column: $table.subtitle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get hardDeadline => $composableBuilder(
+    column: $table.hardDeadline,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get inScope => $composableBuilder(
+    column: $table.inScope,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get outOfScope => $composableBuilder(
+    column: $table.outOfScope,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get monthLabels => $composableBuilder(
+    column: $table.monthLabels,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get month0Date => $composableBuilder(
+    column: $table.month0Date,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ProgrammeHeadersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ProgrammeHeadersTable> {
+  $$ProgrammeHeadersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get projectId =>
+      $composableBuilder(column: $table.projectId, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get subtitle =>
+      $composableBuilder(column: $table.subtitle, builder: (column) => column);
+
+  GeneratedColumn<String> get hardDeadline => $composableBuilder(
+    column: $table.hardDeadline,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get inScope =>
+      $composableBuilder(column: $table.inScope, builder: (column) => column);
+
+  GeneratedColumn<String> get outOfScope => $composableBuilder(
+    column: $table.outOfScope,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get monthLabels => $composableBuilder(
+    column: $table.monthLabels,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get month0Date => $composableBuilder(
+    column: $table.month0Date,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$ProgrammeHeadersTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ProgrammeHeadersTable,
+          ProgrammeHeader,
+          $$ProgrammeHeadersTableFilterComposer,
+          $$ProgrammeHeadersTableOrderingComposer,
+          $$ProgrammeHeadersTableAnnotationComposer,
+          $$ProgrammeHeadersTableCreateCompanionBuilder,
+          $$ProgrammeHeadersTableUpdateCompanionBuilder,
+          (
+            ProgrammeHeader,
+            BaseReferences<
+              _$AppDatabase,
+              $ProgrammeHeadersTable,
+              ProgrammeHeader
+            >,
+          ),
+          ProgrammeHeader,
+          PrefetchHooks Function()
+        > {
+  $$ProgrammeHeadersTableTableManager(
+    _$AppDatabase db,
+    $ProgrammeHeadersTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ProgrammeHeadersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ProgrammeHeadersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ProgrammeHeadersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> projectId = const Value.absent(),
+                Value<String?> title = const Value.absent(),
+                Value<String?> subtitle = const Value.absent(),
+                Value<String?> hardDeadline = const Value.absent(),
+                Value<String?> inScope = const Value.absent(),
+                Value<String?> outOfScope = const Value.absent(),
+                Value<String?> monthLabels = const Value.absent(),
+                Value<String?> month0Date = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ProgrammeHeadersCompanion(
+                id: id,
+                projectId: projectId,
+                title: title,
+                subtitle: subtitle,
+                hardDeadline: hardDeadline,
+                inScope: inScope,
+                outOfScope: outOfScope,
+                monthLabels: monthLabels,
+                month0Date: month0Date,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String projectId,
+                Value<String?> title = const Value.absent(),
+                Value<String?> subtitle = const Value.absent(),
+                Value<String?> hardDeadline = const Value.absent(),
+                Value<String?> inScope = const Value.absent(),
+                Value<String?> outOfScope = const Value.absent(),
+                Value<String?> monthLabels = const Value.absent(),
+                Value<String?> month0Date = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ProgrammeHeadersCompanion.insert(
+                id: id,
+                projectId: projectId,
+                title: title,
+                subtitle: subtitle,
+                hardDeadline: hardDeadline,
+                inScope: inScope,
+                outOfScope: outOfScope,
+                monthLabels: monthLabels,
+                month0Date: month0Date,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ProgrammeHeadersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ProgrammeHeadersTable,
+      ProgrammeHeader,
+      $$ProgrammeHeadersTableFilterComposer,
+      $$ProgrammeHeadersTableOrderingComposer,
+      $$ProgrammeHeadersTableAnnotationComposer,
+      $$ProgrammeHeadersTableCreateCompanionBuilder,
+      $$ProgrammeHeadersTableUpdateCompanionBuilder,
+      (
+        ProgrammeHeader,
+        BaseReferences<_$AppDatabase, $ProgrammeHeadersTable, ProgrammeHeader>,
+      ),
+      ProgrammeHeader,
+      PrefetchHooks Function()
+    >;
+typedef $$ProjectScopesTableCreateCompanionBuilder =
+    ProjectScopesCompanion Function({
+      required String id,
+      required String projectId,
+      Value<String?> inScopeItems,
+      Value<String?> outOfScope,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$ProjectScopesTableUpdateCompanionBuilder =
+    ProjectScopesCompanion Function({
+      Value<String> id,
+      Value<String> projectId,
+      Value<String?> inScopeItems,
+      Value<String?> outOfScope,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$ProjectScopesTableReferences
+    extends BaseReferences<_$AppDatabase, $ProjectScopesTable, ProjectScope> {
+  $$ProjectScopesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ProjectsTable _projectIdTable(_$AppDatabase db) =>
+      db.projects.createAlias(
+        $_aliasNameGenerator(db.projectScopes.projectId, db.projects.id),
+      );
+
+  $$ProjectsTableProcessedTableManager get projectId {
+    final $_column = $_itemColumn<String>('project_id')!;
+
+    final manager = $$ProjectsTableTableManager(
+      $_db,
+      $_db.projects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_projectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ProjectScopesTableFilterComposer
+    extends Composer<_$AppDatabase, $ProjectScopesTable> {
+  $$ProjectScopesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get inScopeItems => $composableBuilder(
+    column: $table.inScopeItems,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get outOfScope => $composableBuilder(
+    column: $table.outOfScope,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ProjectsTableFilterComposer get projectId {
+    final $$ProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ProjectScopesTableOrderingComposer
+    extends Composer<_$AppDatabase, $ProjectScopesTable> {
+  $$ProjectScopesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get inScopeItems => $composableBuilder(
+    column: $table.inScopeItems,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get outOfScope => $composableBuilder(
+    column: $table.outOfScope,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ProjectsTableOrderingComposer get projectId {
+    final $$ProjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ProjectScopesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ProjectScopesTable> {
+  $$ProjectScopesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get inScopeItems => $composableBuilder(
+    column: $table.inScopeItems,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get outOfScope => $composableBuilder(
+    column: $table.outOfScope,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$ProjectsTableAnnotationComposer get projectId {
+    final $$ProjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ProjectScopesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ProjectScopesTable,
+          ProjectScope,
+          $$ProjectScopesTableFilterComposer,
+          $$ProjectScopesTableOrderingComposer,
+          $$ProjectScopesTableAnnotationComposer,
+          $$ProjectScopesTableCreateCompanionBuilder,
+          $$ProjectScopesTableUpdateCompanionBuilder,
+          (ProjectScope, $$ProjectScopesTableReferences),
+          ProjectScope,
+          PrefetchHooks Function({bool projectId})
+        > {
+  $$ProjectScopesTableTableManager(_$AppDatabase db, $ProjectScopesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ProjectScopesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ProjectScopesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ProjectScopesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> projectId = const Value.absent(),
+                Value<String?> inScopeItems = const Value.absent(),
+                Value<String?> outOfScope = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ProjectScopesCompanion(
+                id: id,
+                projectId: projectId,
+                inScopeItems: inScopeItems,
+                outOfScope: outOfScope,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String projectId,
+                Value<String?> inScopeItems = const Value.absent(),
+                Value<String?> outOfScope = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ProjectScopesCompanion.insert(
+                id: id,
+                projectId: projectId,
+                inScopeItems: inScopeItems,
+                outOfScope: outOfScope,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ProjectScopesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({projectId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (projectId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.projectId,
+                                referencedTable: $$ProjectScopesTableReferences
+                                    ._projectIdTable(db),
+                                referencedColumn: $$ProjectScopesTableReferences
+                                    ._projectIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ProjectScopesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ProjectScopesTable,
+      ProjectScope,
+      $$ProjectScopesTableFilterComposer,
+      $$ProjectScopesTableOrderingComposer,
+      $$ProjectScopesTableAnnotationComposer,
+      $$ProjectScopesTableCreateCompanionBuilder,
+      $$ProjectScopesTableUpdateCompanionBuilder,
+      (ProjectScope, $$ProjectScopesTableReferences),
+      ProjectScope,
+      PrefetchHooks Function({bool projectId})
+    >;
+typedef $$IntegrationDomainsTableCreateCompanionBuilder =
+    IntegrationDomainsCompanion Function({
+      required String id,
+      required String projectId,
+      Value<String?> priority,
+      required String domain,
+      Value<String?> likelySystems,
+      Value<String?> prioritySignal,
+      Value<String> status,
+      Value<int> sortOrder,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$IntegrationDomainsTableUpdateCompanionBuilder =
+    IntegrationDomainsCompanion Function({
+      Value<String> id,
+      Value<String> projectId,
+      Value<String?> priority,
+      Value<String> domain,
+      Value<String?> likelySystems,
+      Value<String?> prioritySignal,
+      Value<String> status,
+      Value<int> sortOrder,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$IntegrationDomainsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $IntegrationDomainsTable,
+          IntegrationDomain
+        > {
+  $$IntegrationDomainsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ProjectsTable _projectIdTable(_$AppDatabase db) =>
+      db.projects.createAlias(
+        $_aliasNameGenerator(db.integrationDomains.projectId, db.projects.id),
+      );
+
+  $$ProjectsTableProcessedTableManager get projectId {
+    final $_column = $_itemColumn<String>('project_id')!;
+
+    final manager = $$ProjectsTableTableManager(
+      $_db,
+      $_db.projects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_projectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$IntegrationDomainsTableFilterComposer
+    extends Composer<_$AppDatabase, $IntegrationDomainsTable> {
+  $$IntegrationDomainsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get priority => $composableBuilder(
+    column: $table.priority,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get domain => $composableBuilder(
+    column: $table.domain,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get likelySystems => $composableBuilder(
+    column: $table.likelySystems,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get prioritySignal => $composableBuilder(
+    column: $table.prioritySignal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ProjectsTableFilterComposer get projectId {
+    final $$ProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$IntegrationDomainsTableOrderingComposer
+    extends Composer<_$AppDatabase, $IntegrationDomainsTable> {
+  $$IntegrationDomainsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get priority => $composableBuilder(
+    column: $table.priority,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get domain => $composableBuilder(
+    column: $table.domain,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get likelySystems => $composableBuilder(
+    column: $table.likelySystems,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get prioritySignal => $composableBuilder(
+    column: $table.prioritySignal,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ProjectsTableOrderingComposer get projectId {
+    final $$ProjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$IntegrationDomainsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $IntegrationDomainsTable> {
+  $$IntegrationDomainsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get priority =>
+      $composableBuilder(column: $table.priority, builder: (column) => column);
+
+  GeneratedColumn<String> get domain =>
+      $composableBuilder(column: $table.domain, builder: (column) => column);
+
+  GeneratedColumn<String> get likelySystems => $composableBuilder(
+    column: $table.likelySystems,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get prioritySignal => $composableBuilder(
+    column: $table.prioritySignal,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$ProjectsTableAnnotationComposer get projectId {
+    final $$ProjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$IntegrationDomainsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $IntegrationDomainsTable,
+          IntegrationDomain,
+          $$IntegrationDomainsTableFilterComposer,
+          $$IntegrationDomainsTableOrderingComposer,
+          $$IntegrationDomainsTableAnnotationComposer,
+          $$IntegrationDomainsTableCreateCompanionBuilder,
+          $$IntegrationDomainsTableUpdateCompanionBuilder,
+          (IntegrationDomain, $$IntegrationDomainsTableReferences),
+          IntegrationDomain,
+          PrefetchHooks Function({bool projectId})
+        > {
+  $$IntegrationDomainsTableTableManager(
+    _$AppDatabase db,
+    $IntegrationDomainsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$IntegrationDomainsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$IntegrationDomainsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$IntegrationDomainsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> projectId = const Value.absent(),
+                Value<String?> priority = const Value.absent(),
+                Value<String> domain = const Value.absent(),
+                Value<String?> likelySystems = const Value.absent(),
+                Value<String?> prioritySignal = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => IntegrationDomainsCompanion(
+                id: id,
+                projectId: projectId,
+                priority: priority,
+                domain: domain,
+                likelySystems: likelySystems,
+                prioritySignal: prioritySignal,
+                status: status,
+                sortOrder: sortOrder,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String projectId,
+                Value<String?> priority = const Value.absent(),
+                required String domain,
+                Value<String?> likelySystems = const Value.absent(),
+                Value<String?> prioritySignal = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => IntegrationDomainsCompanion.insert(
+                id: id,
+                projectId: projectId,
+                priority: priority,
+                domain: domain,
+                likelySystems: likelySystems,
+                prioritySignal: prioritySignal,
+                status: status,
+                sortOrder: sortOrder,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$IntegrationDomainsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({projectId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (projectId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.projectId,
+                                referencedTable:
+                                    $$IntegrationDomainsTableReferences
+                                        ._projectIdTable(db),
+                                referencedColumn:
+                                    $$IntegrationDomainsTableReferences
+                                        ._projectIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$IntegrationDomainsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $IntegrationDomainsTable,
+      IntegrationDomain,
+      $$IntegrationDomainsTableFilterComposer,
+      $$IntegrationDomainsTableOrderingComposer,
+      $$IntegrationDomainsTableAnnotationComposer,
+      $$IntegrationDomainsTableCreateCompanionBuilder,
+      $$IntegrationDomainsTableUpdateCompanionBuilder,
+      (IntegrationDomain, $$IntegrationDomainsTableReferences),
+      IntegrationDomain,
+      PrefetchHooks Function({bool projectId})
+    >;
+typedef $$PrioritisationSourcesTableCreateCompanionBuilder =
+    PrioritisationSourcesCompanion Function({
+      required String id,
+      required String projectId,
+      required String sourceName,
+      Value<String?> inputType,
+      Value<String?> owner,
+      Value<String?> mechanism,
+      Value<String?> weight,
+      Value<int> sortOrder,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$PrioritisationSourcesTableUpdateCompanionBuilder =
+    PrioritisationSourcesCompanion Function({
+      Value<String> id,
+      Value<String> projectId,
+      Value<String> sourceName,
+      Value<String?> inputType,
+      Value<String?> owner,
+      Value<String?> mechanism,
+      Value<String?> weight,
+      Value<int> sortOrder,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$PrioritisationSourcesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $PrioritisationSourcesTable,
+          PrioritisationSource
+        > {
+  $$PrioritisationSourcesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ProjectsTable _projectIdTable(_$AppDatabase db) =>
+      db.projects.createAlias(
+        $_aliasNameGenerator(
+          db.prioritisationSources.projectId,
+          db.projects.id,
+        ),
+      );
+
+  $$ProjectsTableProcessedTableManager get projectId {
+    final $_column = $_itemColumn<String>('project_id')!;
+
+    final manager = $$ProjectsTableTableManager(
+      $_db,
+      $_db.projects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_projectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$PrioritisationSourcesTableFilterComposer
+    extends Composer<_$AppDatabase, $PrioritisationSourcesTable> {
+  $$PrioritisationSourcesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceName => $composableBuilder(
+    column: $table.sourceName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get inputType => $composableBuilder(
+    column: $table.inputType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get owner => $composableBuilder(
+    column: $table.owner,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mechanism => $composableBuilder(
+    column: $table.mechanism,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get weight => $composableBuilder(
+    column: $table.weight,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ProjectsTableFilterComposer get projectId {
+    final $$ProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PrioritisationSourcesTableOrderingComposer
+    extends Composer<_$AppDatabase, $PrioritisationSourcesTable> {
+  $$PrioritisationSourcesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceName => $composableBuilder(
+    column: $table.sourceName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get inputType => $composableBuilder(
+    column: $table.inputType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get owner => $composableBuilder(
+    column: $table.owner,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mechanism => $composableBuilder(
+    column: $table.mechanism,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get weight => $composableBuilder(
+    column: $table.weight,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ProjectsTableOrderingComposer get projectId {
+    final $$ProjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PrioritisationSourcesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PrioritisationSourcesTable> {
+  $$PrioritisationSourcesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get sourceName => $composableBuilder(
+    column: $table.sourceName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get inputType =>
+      $composableBuilder(column: $table.inputType, builder: (column) => column);
+
+  GeneratedColumn<String> get owner =>
+      $composableBuilder(column: $table.owner, builder: (column) => column);
+
+  GeneratedColumn<String> get mechanism =>
+      $composableBuilder(column: $table.mechanism, builder: (column) => column);
+
+  GeneratedColumn<String> get weight =>
+      $composableBuilder(column: $table.weight, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$ProjectsTableAnnotationComposer get projectId {
+    final $$ProjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PrioritisationSourcesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PrioritisationSourcesTable,
+          PrioritisationSource,
+          $$PrioritisationSourcesTableFilterComposer,
+          $$PrioritisationSourcesTableOrderingComposer,
+          $$PrioritisationSourcesTableAnnotationComposer,
+          $$PrioritisationSourcesTableCreateCompanionBuilder,
+          $$PrioritisationSourcesTableUpdateCompanionBuilder,
+          (PrioritisationSource, $$PrioritisationSourcesTableReferences),
+          PrioritisationSource,
+          PrefetchHooks Function({bool projectId})
+        > {
+  $$PrioritisationSourcesTableTableManager(
+    _$AppDatabase db,
+    $PrioritisationSourcesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PrioritisationSourcesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$PrioritisationSourcesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$PrioritisationSourcesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> projectId = const Value.absent(),
+                Value<String> sourceName = const Value.absent(),
+                Value<String?> inputType = const Value.absent(),
+                Value<String?> owner = const Value.absent(),
+                Value<String?> mechanism = const Value.absent(),
+                Value<String?> weight = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PrioritisationSourcesCompanion(
+                id: id,
+                projectId: projectId,
+                sourceName: sourceName,
+                inputType: inputType,
+                owner: owner,
+                mechanism: mechanism,
+                weight: weight,
+                sortOrder: sortOrder,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String projectId,
+                required String sourceName,
+                Value<String?> inputType = const Value.absent(),
+                Value<String?> owner = const Value.absent(),
+                Value<String?> mechanism = const Value.absent(),
+                Value<String?> weight = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PrioritisationSourcesCompanion.insert(
+                id: id,
+                projectId: projectId,
+                sourceName: sourceName,
+                inputType: inputType,
+                owner: owner,
+                mechanism: mechanism,
+                weight: weight,
+                sortOrder: sortOrder,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$PrioritisationSourcesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({projectId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (projectId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.projectId,
+                                referencedTable:
+                                    $$PrioritisationSourcesTableReferences
+                                        ._projectIdTable(db),
+                                referencedColumn:
+                                    $$PrioritisationSourcesTableReferences
+                                        ._projectIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$PrioritisationSourcesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PrioritisationSourcesTable,
+      PrioritisationSource,
+      $$PrioritisationSourcesTableFilterComposer,
+      $$PrioritisationSourcesTableOrderingComposer,
+      $$PrioritisationSourcesTableAnnotationComposer,
+      $$PrioritisationSourcesTableCreateCompanionBuilder,
+      $$PrioritisationSourcesTableUpdateCompanionBuilder,
+      (PrioritisationSource, $$PrioritisationSourcesTableReferences),
+      PrioritisationSource,
+      PrefetchHooks Function({bool projectId})
+    >;
+typedef $$StatusSnapshotsTableCreateCompanionBuilder =
+    StatusSnapshotsCompanion Function({
+      required String id,
+      required String projectId,
+      required DateTime weekEnding,
+      required String programmeRag,
+      Value<String> workstreamRag,
+      Value<int> overdueActionsCount,
+      Value<int> openActionsCount,
+      Value<int> pendingDecisionsCount,
+      Value<int> openRisksCount,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+typedef $$StatusSnapshotsTableUpdateCompanionBuilder =
+    StatusSnapshotsCompanion Function({
+      Value<String> id,
+      Value<String> projectId,
+      Value<DateTime> weekEnding,
+      Value<String> programmeRag,
+      Value<String> workstreamRag,
+      Value<int> overdueActionsCount,
+      Value<int> openActionsCount,
+      Value<int> pendingDecisionsCount,
+      Value<int> openRisksCount,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+final class $$StatusSnapshotsTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $StatusSnapshotsTable, StatusSnapshot> {
+  $$StatusSnapshotsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ProjectsTable _projectIdTable(_$AppDatabase db) =>
+      db.projects.createAlias(
+        $_aliasNameGenerator(db.statusSnapshots.projectId, db.projects.id),
+      );
+
+  $$ProjectsTableProcessedTableManager get projectId {
+    final $_column = $_itemColumn<String>('project_id')!;
+
+    final manager = $$ProjectsTableTableManager(
+      $_db,
+      $_db.projects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_projectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$StatusSnapshotsTableFilterComposer
+    extends Composer<_$AppDatabase, $StatusSnapshotsTable> {
+  $$StatusSnapshotsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get weekEnding => $composableBuilder(
+    column: $table.weekEnding,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get programmeRag => $composableBuilder(
+    column: $table.programmeRag,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get workstreamRag => $composableBuilder(
+    column: $table.workstreamRag,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get overdueActionsCount => $composableBuilder(
+    column: $table.overdueActionsCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get openActionsCount => $composableBuilder(
+    column: $table.openActionsCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get pendingDecisionsCount => $composableBuilder(
+    column: $table.pendingDecisionsCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get openRisksCount => $composableBuilder(
+    column: $table.openRisksCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ProjectsTableFilterComposer get projectId {
+    final $$ProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StatusSnapshotsTableOrderingComposer
+    extends Composer<_$AppDatabase, $StatusSnapshotsTable> {
+  $$StatusSnapshotsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get weekEnding => $composableBuilder(
+    column: $table.weekEnding,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get programmeRag => $composableBuilder(
+    column: $table.programmeRag,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get workstreamRag => $composableBuilder(
+    column: $table.workstreamRag,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get overdueActionsCount => $composableBuilder(
+    column: $table.overdueActionsCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get openActionsCount => $composableBuilder(
+    column: $table.openActionsCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get pendingDecisionsCount => $composableBuilder(
+    column: $table.pendingDecisionsCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get openRisksCount => $composableBuilder(
+    column: $table.openRisksCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ProjectsTableOrderingComposer get projectId {
+    final $$ProjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StatusSnapshotsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $StatusSnapshotsTable> {
+  $$StatusSnapshotsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get weekEnding => $composableBuilder(
+    column: $table.weekEnding,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get programmeRag => $composableBuilder(
+    column: $table.programmeRag,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get workstreamRag => $composableBuilder(
+    column: $table.workstreamRag,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get overdueActionsCount => $composableBuilder(
+    column: $table.overdueActionsCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get openActionsCount => $composableBuilder(
+    column: $table.openActionsCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get pendingDecisionsCount => $composableBuilder(
+    column: $table.pendingDecisionsCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get openRisksCount => $composableBuilder(
+    column: $table.openRisksCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$ProjectsTableAnnotationComposer get projectId {
+    final $$ProjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StatusSnapshotsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $StatusSnapshotsTable,
+          StatusSnapshot,
+          $$StatusSnapshotsTableFilterComposer,
+          $$StatusSnapshotsTableOrderingComposer,
+          $$StatusSnapshotsTableAnnotationComposer,
+          $$StatusSnapshotsTableCreateCompanionBuilder,
+          $$StatusSnapshotsTableUpdateCompanionBuilder,
+          (StatusSnapshot, $$StatusSnapshotsTableReferences),
+          StatusSnapshot,
+          PrefetchHooks Function({bool projectId})
+        > {
+  $$StatusSnapshotsTableTableManager(
+    _$AppDatabase db,
+    $StatusSnapshotsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$StatusSnapshotsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$StatusSnapshotsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$StatusSnapshotsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> projectId = const Value.absent(),
+                Value<DateTime> weekEnding = const Value.absent(),
+                Value<String> programmeRag = const Value.absent(),
+                Value<String> workstreamRag = const Value.absent(),
+                Value<int> overdueActionsCount = const Value.absent(),
+                Value<int> openActionsCount = const Value.absent(),
+                Value<int> pendingDecisionsCount = const Value.absent(),
+                Value<int> openRisksCount = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => StatusSnapshotsCompanion(
+                id: id,
+                projectId: projectId,
+                weekEnding: weekEnding,
+                programmeRag: programmeRag,
+                workstreamRag: workstreamRag,
+                overdueActionsCount: overdueActionsCount,
+                openActionsCount: openActionsCount,
+                pendingDecisionsCount: pendingDecisionsCount,
+                openRisksCount: openRisksCount,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String projectId,
+                required DateTime weekEnding,
+                required String programmeRag,
+                Value<String> workstreamRag = const Value.absent(),
+                Value<int> overdueActionsCount = const Value.absent(),
+                Value<int> openActionsCount = const Value.absent(),
+                Value<int> pendingDecisionsCount = const Value.absent(),
+                Value<int> openRisksCount = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => StatusSnapshotsCompanion.insert(
+                id: id,
+                projectId: projectId,
+                weekEnding: weekEnding,
+                programmeRag: programmeRag,
+                workstreamRag: workstreamRag,
+                overdueActionsCount: overdueActionsCount,
+                openActionsCount: openActionsCount,
+                pendingDecisionsCount: pendingDecisionsCount,
+                openRisksCount: openRisksCount,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$StatusSnapshotsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({projectId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (projectId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.projectId,
+                                referencedTable:
+                                    $$StatusSnapshotsTableReferences
+                                        ._projectIdTable(db),
+                                referencedColumn:
+                                    $$StatusSnapshotsTableReferences
+                                        ._projectIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$StatusSnapshotsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $StatusSnapshotsTable,
+      StatusSnapshot,
+      $$StatusSnapshotsTableFilterComposer,
+      $$StatusSnapshotsTableOrderingComposer,
+      $$StatusSnapshotsTableAnnotationComposer,
+      $$StatusSnapshotsTableCreateCompanionBuilder,
+      $$StatusSnapshotsTableUpdateCompanionBuilder,
+      (StatusSnapshot, $$StatusSnapshotsTableReferences),
+      StatusSnapshot,
+      PrefetchHooks Function({bool projectId})
+    >;
+typedef $$ProjectChartersTableCreateCompanionBuilder =
+    ProjectChartersCompanion Function({
+      required String id,
+      required String projectId,
+      Value<String?> vision,
+      Value<String?> objectives,
+      Value<String?> scopeIn,
+      Value<String?> scopeOut,
+      Value<String?> deliveryApproach,
+      Value<String?> successCriteria,
+      Value<String?> keyConstraints,
+      Value<String?> assumptions,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$ProjectChartersTableUpdateCompanionBuilder =
+    ProjectChartersCompanion Function({
+      Value<String> id,
+      Value<String> projectId,
+      Value<String?> vision,
+      Value<String?> objectives,
+      Value<String?> scopeIn,
+      Value<String?> scopeOut,
+      Value<String?> deliveryApproach,
+      Value<String?> successCriteria,
+      Value<String?> keyConstraints,
+      Value<String?> assumptions,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$ProjectChartersTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $ProjectChartersTable, ProjectCharter> {
+  $$ProjectChartersTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ProjectsTable _projectIdTable(_$AppDatabase db) =>
+      db.projects.createAlias(
+        $_aliasNameGenerator(db.projectCharters.projectId, db.projects.id),
+      );
+
+  $$ProjectsTableProcessedTableManager get projectId {
+    final $_column = $_itemColumn<String>('project_id')!;
+
+    final manager = $$ProjectsTableTableManager(
+      $_db,
+      $_db.projects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_projectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ProjectChartersTableFilterComposer
+    extends Composer<_$AppDatabase, $ProjectChartersTable> {
+  $$ProjectChartersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get vision => $composableBuilder(
+    column: $table.vision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get objectives => $composableBuilder(
+    column: $table.objectives,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get scopeIn => $composableBuilder(
+    column: $table.scopeIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get scopeOut => $composableBuilder(
+    column: $table.scopeOut,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deliveryApproach => $composableBuilder(
+    column: $table.deliveryApproach,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get successCriteria => $composableBuilder(
+    column: $table.successCriteria,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get keyConstraints => $composableBuilder(
+    column: $table.keyConstraints,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get assumptions => $composableBuilder(
+    column: $table.assumptions,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ProjectsTableFilterComposer get projectId {
+    final $$ProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ProjectChartersTableOrderingComposer
+    extends Composer<_$AppDatabase, $ProjectChartersTable> {
+  $$ProjectChartersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get vision => $composableBuilder(
+    column: $table.vision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get objectives => $composableBuilder(
+    column: $table.objectives,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get scopeIn => $composableBuilder(
+    column: $table.scopeIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get scopeOut => $composableBuilder(
+    column: $table.scopeOut,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deliveryApproach => $composableBuilder(
+    column: $table.deliveryApproach,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get successCriteria => $composableBuilder(
+    column: $table.successCriteria,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get keyConstraints => $composableBuilder(
+    column: $table.keyConstraints,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get assumptions => $composableBuilder(
+    column: $table.assumptions,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ProjectsTableOrderingComposer get projectId {
+    final $$ProjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ProjectChartersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ProjectChartersTable> {
+  $$ProjectChartersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get vision =>
+      $composableBuilder(column: $table.vision, builder: (column) => column);
+
+  GeneratedColumn<String> get objectives => $composableBuilder(
+    column: $table.objectives,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get scopeIn =>
+      $composableBuilder(column: $table.scopeIn, builder: (column) => column);
+
+  GeneratedColumn<String> get scopeOut =>
+      $composableBuilder(column: $table.scopeOut, builder: (column) => column);
+
+  GeneratedColumn<String> get deliveryApproach => $composableBuilder(
+    column: $table.deliveryApproach,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get successCriteria => $composableBuilder(
+    column: $table.successCriteria,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get keyConstraints => $composableBuilder(
+    column: $table.keyConstraints,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get assumptions => $composableBuilder(
+    column: $table.assumptions,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$ProjectsTableAnnotationComposer get projectId {
+    final $$ProjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ProjectChartersTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ProjectChartersTable,
+          ProjectCharter,
+          $$ProjectChartersTableFilterComposer,
+          $$ProjectChartersTableOrderingComposer,
+          $$ProjectChartersTableAnnotationComposer,
+          $$ProjectChartersTableCreateCompanionBuilder,
+          $$ProjectChartersTableUpdateCompanionBuilder,
+          (ProjectCharter, $$ProjectChartersTableReferences),
+          ProjectCharter,
+          PrefetchHooks Function({bool projectId})
+        > {
+  $$ProjectChartersTableTableManager(
+    _$AppDatabase db,
+    $ProjectChartersTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ProjectChartersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ProjectChartersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ProjectChartersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> projectId = const Value.absent(),
+                Value<String?> vision = const Value.absent(),
+                Value<String?> objectives = const Value.absent(),
+                Value<String?> scopeIn = const Value.absent(),
+                Value<String?> scopeOut = const Value.absent(),
+                Value<String?> deliveryApproach = const Value.absent(),
+                Value<String?> successCriteria = const Value.absent(),
+                Value<String?> keyConstraints = const Value.absent(),
+                Value<String?> assumptions = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ProjectChartersCompanion(
+                id: id,
+                projectId: projectId,
+                vision: vision,
+                objectives: objectives,
+                scopeIn: scopeIn,
+                scopeOut: scopeOut,
+                deliveryApproach: deliveryApproach,
+                successCriteria: successCriteria,
+                keyConstraints: keyConstraints,
+                assumptions: assumptions,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String projectId,
+                Value<String?> vision = const Value.absent(),
+                Value<String?> objectives = const Value.absent(),
+                Value<String?> scopeIn = const Value.absent(),
+                Value<String?> scopeOut = const Value.absent(),
+                Value<String?> deliveryApproach = const Value.absent(),
+                Value<String?> successCriteria = const Value.absent(),
+                Value<String?> keyConstraints = const Value.absent(),
+                Value<String?> assumptions = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ProjectChartersCompanion.insert(
+                id: id,
+                projectId: projectId,
+                vision: vision,
+                objectives: objectives,
+                scopeIn: scopeIn,
+                scopeOut: scopeOut,
+                deliveryApproach: deliveryApproach,
+                successCriteria: successCriteria,
+                keyConstraints: keyConstraints,
+                assumptions: assumptions,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ProjectChartersTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({projectId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (projectId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.projectId,
+                                referencedTable:
+                                    $$ProjectChartersTableReferences
+                                        ._projectIdTable(db),
+                                referencedColumn:
+                                    $$ProjectChartersTableReferences
+                                        ._projectIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ProjectChartersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ProjectChartersTable,
+      ProjectCharter,
+      $$ProjectChartersTableFilterComposer,
+      $$ProjectChartersTableOrderingComposer,
+      $$ProjectChartersTableAnnotationComposer,
+      $$ProjectChartersTableCreateCompanionBuilder,
+      $$ProjectChartersTableUpdateCompanionBuilder,
+      (ProjectCharter, $$ProjectChartersTableReferences),
+      ProjectCharter,
+      PrefetchHooks Function({bool projectId})
+    >;
+typedef $$ProgrammeOverviewStatesTableCreateCompanionBuilder =
+    ProgrammeOverviewStatesCompanion Function({
+      required String id,
+      required String projectId,
+      Value<String?> cachedRag,
+      Value<String?> cachedNarrative,
+      Value<DateTime?> narrativeGeneratedAt,
+      Value<String?> narrativeManualOverride,
+      Value<String?> ragManualOverride,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$ProgrammeOverviewStatesTableUpdateCompanionBuilder =
+    ProgrammeOverviewStatesCompanion Function({
+      Value<String> id,
+      Value<String> projectId,
+      Value<String?> cachedRag,
+      Value<String?> cachedNarrative,
+      Value<DateTime?> narrativeGeneratedAt,
+      Value<String?> narrativeManualOverride,
+      Value<String?> ragManualOverride,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$ProgrammeOverviewStatesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ProgrammeOverviewStatesTable,
+          ProgrammeOverviewState
+        > {
+  $$ProgrammeOverviewStatesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ProjectsTable _projectIdTable(_$AppDatabase db) =>
+      db.projects.createAlias(
+        $_aliasNameGenerator(
+          db.programmeOverviewStates.projectId,
+          db.projects.id,
+        ),
+      );
+
+  $$ProjectsTableProcessedTableManager get projectId {
+    final $_column = $_itemColumn<String>('project_id')!;
+
+    final manager = $$ProjectsTableTableManager(
+      $_db,
+      $_db.projects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_projectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ProgrammeOverviewStatesTableFilterComposer
+    extends Composer<_$AppDatabase, $ProgrammeOverviewStatesTable> {
+  $$ProgrammeOverviewStatesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cachedRag => $composableBuilder(
+    column: $table.cachedRag,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cachedNarrative => $composableBuilder(
+    column: $table.cachedNarrative,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get narrativeGeneratedAt => $composableBuilder(
+    column: $table.narrativeGeneratedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get narrativeManualOverride => $composableBuilder(
+    column: $table.narrativeManualOverride,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ragManualOverride => $composableBuilder(
+    column: $table.ragManualOverride,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ProjectsTableFilterComposer get projectId {
+    final $$ProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ProgrammeOverviewStatesTableOrderingComposer
+    extends Composer<_$AppDatabase, $ProgrammeOverviewStatesTable> {
+  $$ProgrammeOverviewStatesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cachedRag => $composableBuilder(
+    column: $table.cachedRag,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cachedNarrative => $composableBuilder(
+    column: $table.cachedNarrative,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get narrativeGeneratedAt => $composableBuilder(
+    column: $table.narrativeGeneratedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get narrativeManualOverride => $composableBuilder(
+    column: $table.narrativeManualOverride,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ragManualOverride => $composableBuilder(
+    column: $table.ragManualOverride,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ProjectsTableOrderingComposer get projectId {
+    final $$ProjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ProgrammeOverviewStatesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ProgrammeOverviewStatesTable> {
+  $$ProgrammeOverviewStatesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get cachedRag =>
+      $composableBuilder(column: $table.cachedRag, builder: (column) => column);
+
+  GeneratedColumn<String> get cachedNarrative => $composableBuilder(
+    column: $table.cachedNarrative,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get narrativeGeneratedAt => $composableBuilder(
+    column: $table.narrativeGeneratedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get narrativeManualOverride => $composableBuilder(
+    column: $table.narrativeManualOverride,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get ragManualOverride => $composableBuilder(
+    column: $table.ragManualOverride,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$ProjectsTableAnnotationComposer get projectId {
+    final $$ProjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ProgrammeOverviewStatesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ProgrammeOverviewStatesTable,
+          ProgrammeOverviewState,
+          $$ProgrammeOverviewStatesTableFilterComposer,
+          $$ProgrammeOverviewStatesTableOrderingComposer,
+          $$ProgrammeOverviewStatesTableAnnotationComposer,
+          $$ProgrammeOverviewStatesTableCreateCompanionBuilder,
+          $$ProgrammeOverviewStatesTableUpdateCompanionBuilder,
+          (ProgrammeOverviewState, $$ProgrammeOverviewStatesTableReferences),
+          ProgrammeOverviewState,
+          PrefetchHooks Function({bool projectId})
+        > {
+  $$ProgrammeOverviewStatesTableTableManager(
+    _$AppDatabase db,
+    $ProgrammeOverviewStatesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ProgrammeOverviewStatesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$ProgrammeOverviewStatesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ProgrammeOverviewStatesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> projectId = const Value.absent(),
+                Value<String?> cachedRag = const Value.absent(),
+                Value<String?> cachedNarrative = const Value.absent(),
+                Value<DateTime?> narrativeGeneratedAt = const Value.absent(),
+                Value<String?> narrativeManualOverride = const Value.absent(),
+                Value<String?> ragManualOverride = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ProgrammeOverviewStatesCompanion(
+                id: id,
+                projectId: projectId,
+                cachedRag: cachedRag,
+                cachedNarrative: cachedNarrative,
+                narrativeGeneratedAt: narrativeGeneratedAt,
+                narrativeManualOverride: narrativeManualOverride,
+                ragManualOverride: ragManualOverride,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String projectId,
+                Value<String?> cachedRag = const Value.absent(),
+                Value<String?> cachedNarrative = const Value.absent(),
+                Value<DateTime?> narrativeGeneratedAt = const Value.absent(),
+                Value<String?> narrativeManualOverride = const Value.absent(),
+                Value<String?> ragManualOverride = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ProgrammeOverviewStatesCompanion.insert(
+                id: id,
+                projectId: projectId,
+                cachedRag: cachedRag,
+                cachedNarrative: cachedNarrative,
+                narrativeGeneratedAt: narrativeGeneratedAt,
+                narrativeManualOverride: narrativeManualOverride,
+                ragManualOverride: ragManualOverride,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ProgrammeOverviewStatesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({projectId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (projectId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.projectId,
+                                referencedTable:
+                                    $$ProgrammeOverviewStatesTableReferences
+                                        ._projectIdTable(db),
+                                referencedColumn:
+                                    $$ProgrammeOverviewStatesTableReferences
+                                        ._projectIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ProgrammeOverviewStatesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ProgrammeOverviewStatesTable,
+      ProgrammeOverviewState,
+      $$ProgrammeOverviewStatesTableFilterComposer,
+      $$ProgrammeOverviewStatesTableOrderingComposer,
+      $$ProgrammeOverviewStatesTableAnnotationComposer,
+      $$ProgrammeOverviewStatesTableCreateCompanionBuilder,
+      $$ProgrammeOverviewStatesTableUpdateCompanionBuilder,
+      (ProgrammeOverviewState, $$ProgrammeOverviewStatesTableReferences),
+      ProgrammeOverviewState,
+      PrefetchHooks Function({bool projectId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -32626,6 +50238,14 @@ class $AppDatabaseManager {
       $$PersonsTableTableManager(_db, _db.persons);
   $$StakeholderProfilesTableTableManager get stakeholderProfiles =>
       $$StakeholderProfilesTableTableManager(_db, _db.stakeholderProfiles);
+  $$StakeholderRolesTableTableManager get stakeholderRoles =>
+      $$StakeholderRolesTableTableManager(_db, _db.stakeholderRoles);
+  $$TeamRolesTableTableManager get teamRoles =>
+      $$TeamRolesTableTableManager(_db, _db.teamRoles);
+  $$MilestonesTableTableManager get milestones =>
+      $$MilestonesTableTableManager(_db, _db.milestones);
+  $$WorkstreamActivitiesTableTableManager get workstreamActivities =>
+      $$WorkstreamActivitiesTableTableManager(_db, _db.workstreamActivities);
   $$ColleagueProfilesTableTableManager get colleagueProfiles =>
       $$ColleagueProfilesTableTableManager(_db, _db.colleagueProfiles);
   $$ActionCategoriesTableTableManager get actionCategories =>
@@ -32660,6 +50280,29 @@ class $AppDatabaseManager {
       $$ProjectStageProgressesTableTableManager(
         _db,
         _db.projectStageProgresses,
+      );
+  $$TimelineWorkPackagesTableTableManager get timelineWorkPackages =>
+      $$TimelineWorkPackagesTableTableManager(_db, _db.timelineWorkPackages);
+  $$TimelineActivitiesTableTableManager get timelineActivities =>
+      $$TimelineActivitiesTableTableManager(_db, _db.timelineActivities);
+  $$TimelineDependenciesTableTableManager get timelineDependencies =>
+      $$TimelineDependenciesTableTableManager(_db, _db.timelineDependencies);
+  $$ProgrammeHeadersTableTableManager get programmeHeaders =>
+      $$ProgrammeHeadersTableTableManager(_db, _db.programmeHeaders);
+  $$ProjectScopesTableTableManager get projectScopes =>
+      $$ProjectScopesTableTableManager(_db, _db.projectScopes);
+  $$IntegrationDomainsTableTableManager get integrationDomains =>
+      $$IntegrationDomainsTableTableManager(_db, _db.integrationDomains);
+  $$PrioritisationSourcesTableTableManager get prioritisationSources =>
+      $$PrioritisationSourcesTableTableManager(_db, _db.prioritisationSources);
+  $$StatusSnapshotsTableTableManager get statusSnapshots =>
+      $$StatusSnapshotsTableTableManager(_db, _db.statusSnapshots);
+  $$ProjectChartersTableTableManager get projectCharters =>
+      $$ProjectChartersTableTableManager(_db, _db.projectCharters);
+  $$ProgrammeOverviewStatesTableTableManager get programmeOverviewStates =>
+      $$ProgrammeOverviewStatesTableTableManager(
+        _db,
+        _db.programmeOverviewStates,
       );
 }
 
@@ -32969,5 +50612,190 @@ class PlaybookDaoManager {
       $$ProjectStageProgressesTableTableManager(
         _db.attachedDatabase,
         _db.projectStageProgresses,
+      );
+}
+
+mixin _$StakeholderRoleDaoMixin on DatabaseAccessor<AppDatabase> {
+  $ProjectsTable get projects => attachedDatabase.projects;
+  $StakeholderRolesTable get stakeholderRoles =>
+      attachedDatabase.stakeholderRoles;
+  StakeholderRoleDaoManager get managers => StakeholderRoleDaoManager(this);
+}
+
+class StakeholderRoleDaoManager {
+  final _$StakeholderRoleDaoMixin _db;
+  StakeholderRoleDaoManager(this._db);
+  $$ProjectsTableTableManager get projects =>
+      $$ProjectsTableTableManager(_db.attachedDatabase, _db.projects);
+  $$StakeholderRolesTableTableManager get stakeholderRoles =>
+      $$StakeholderRolesTableTableManager(
+        _db.attachedDatabase,
+        _db.stakeholderRoles,
+      );
+}
+
+mixin _$TeamRoleDaoMixin on DatabaseAccessor<AppDatabase> {
+  $ProjectsTable get projects => attachedDatabase.projects;
+  $TeamRolesTable get teamRoles => attachedDatabase.teamRoles;
+  TeamRoleDaoManager get managers => TeamRoleDaoManager(this);
+}
+
+class TeamRoleDaoManager {
+  final _$TeamRoleDaoMixin _db;
+  TeamRoleDaoManager(this._db);
+  $$ProjectsTableTableManager get projects =>
+      $$ProjectsTableTableManager(_db.attachedDatabase, _db.projects);
+  $$TeamRolesTableTableManager get teamRoles =>
+      $$TeamRolesTableTableManager(_db.attachedDatabase, _db.teamRoles);
+}
+
+mixin _$MilestonesDaoMixin on DatabaseAccessor<AppDatabase> {
+  $ProjectsTable get projects => attachedDatabase.projects;
+  $MilestonesTable get milestones => attachedDatabase.milestones;
+  MilestonesDaoManager get managers => MilestonesDaoManager(this);
+}
+
+class MilestonesDaoManager {
+  final _$MilestonesDaoMixin _db;
+  MilestonesDaoManager(this._db);
+  $$ProjectsTableTableManager get projects =>
+      $$ProjectsTableTableManager(_db.attachedDatabase, _db.projects);
+  $$MilestonesTableTableManager get milestones =>
+      $$MilestonesTableTableManager(_db.attachedDatabase, _db.milestones);
+}
+
+mixin _$WorkstreamActivitiesDaoMixin on DatabaseAccessor<AppDatabase> {
+  $ProjectsTable get projects => attachedDatabase.projects;
+  $WorkstreamsTable get workstreams => attachedDatabase.workstreams;
+  $WorkstreamActivitiesTable get workstreamActivities =>
+      attachedDatabase.workstreamActivities;
+  WorkstreamActivitiesDaoManager get managers =>
+      WorkstreamActivitiesDaoManager(this);
+}
+
+class WorkstreamActivitiesDaoManager {
+  final _$WorkstreamActivitiesDaoMixin _db;
+  WorkstreamActivitiesDaoManager(this._db);
+  $$ProjectsTableTableManager get projects =>
+      $$ProjectsTableTableManager(_db.attachedDatabase, _db.projects);
+  $$WorkstreamsTableTableManager get workstreams =>
+      $$WorkstreamsTableTableManager(_db.attachedDatabase, _db.workstreams);
+  $$WorkstreamActivitiesTableTableManager get workstreamActivities =>
+      $$WorkstreamActivitiesTableTableManager(
+        _db.attachedDatabase,
+        _db.workstreamActivities,
+      );
+}
+
+mixin _$ProgrammeGanttDaoMixin on DatabaseAccessor<AppDatabase> {
+  $ProjectsTable get projects => attachedDatabase.projects;
+  $TimelineWorkPackagesTable get timelineWorkPackages =>
+      attachedDatabase.timelineWorkPackages;
+  $TimelineActivitiesTable get timelineActivities =>
+      attachedDatabase.timelineActivities;
+  $TimelineDependenciesTable get timelineDependencies =>
+      attachedDatabase.timelineDependencies;
+  $ProgrammeHeadersTable get programmeHeaders =>
+      attachedDatabase.programmeHeaders;
+  $ProjectScopesTable get projectScopes => attachedDatabase.projectScopes;
+  $IntegrationDomainsTable get integrationDomains =>
+      attachedDatabase.integrationDomains;
+  $PrioritisationSourcesTable get prioritisationSources =>
+      attachedDatabase.prioritisationSources;
+  ProgrammeGanttDaoManager get managers => ProgrammeGanttDaoManager(this);
+}
+
+class ProgrammeGanttDaoManager {
+  final _$ProgrammeGanttDaoMixin _db;
+  ProgrammeGanttDaoManager(this._db);
+  $$ProjectsTableTableManager get projects =>
+      $$ProjectsTableTableManager(_db.attachedDatabase, _db.projects);
+  $$TimelineWorkPackagesTableTableManager get timelineWorkPackages =>
+      $$TimelineWorkPackagesTableTableManager(
+        _db.attachedDatabase,
+        _db.timelineWorkPackages,
+      );
+  $$TimelineActivitiesTableTableManager get timelineActivities =>
+      $$TimelineActivitiesTableTableManager(
+        _db.attachedDatabase,
+        _db.timelineActivities,
+      );
+  $$TimelineDependenciesTableTableManager get timelineDependencies =>
+      $$TimelineDependenciesTableTableManager(
+        _db.attachedDatabase,
+        _db.timelineDependencies,
+      );
+  $$ProgrammeHeadersTableTableManager get programmeHeaders =>
+      $$ProgrammeHeadersTableTableManager(
+        _db.attachedDatabase,
+        _db.programmeHeaders,
+      );
+  $$ProjectScopesTableTableManager get projectScopes =>
+      $$ProjectScopesTableTableManager(_db.attachedDatabase, _db.projectScopes);
+  $$IntegrationDomainsTableTableManager get integrationDomains =>
+      $$IntegrationDomainsTableTableManager(
+        _db.attachedDatabase,
+        _db.integrationDomains,
+      );
+  $$PrioritisationSourcesTableTableManager get prioritisationSources =>
+      $$PrioritisationSourcesTableTableManager(
+        _db.attachedDatabase,
+        _db.prioritisationSources,
+      );
+}
+
+mixin _$StatusSnapshotDaoMixin on DatabaseAccessor<AppDatabase> {
+  $ProjectsTable get projects => attachedDatabase.projects;
+  $StatusSnapshotsTable get statusSnapshots => attachedDatabase.statusSnapshots;
+  StatusSnapshotDaoManager get managers => StatusSnapshotDaoManager(this);
+}
+
+class StatusSnapshotDaoManager {
+  final _$StatusSnapshotDaoMixin _db;
+  StatusSnapshotDaoManager(this._db);
+  $$ProjectsTableTableManager get projects =>
+      $$ProjectsTableTableManager(_db.attachedDatabase, _db.projects);
+  $$StatusSnapshotsTableTableManager get statusSnapshots =>
+      $$StatusSnapshotsTableTableManager(
+        _db.attachedDatabase,
+        _db.statusSnapshots,
+      );
+}
+
+mixin _$ProjectCharterDaoMixin on DatabaseAccessor<AppDatabase> {
+  $ProjectsTable get projects => attachedDatabase.projects;
+  $ProjectChartersTable get projectCharters => attachedDatabase.projectCharters;
+  ProjectCharterDaoManager get managers => ProjectCharterDaoManager(this);
+}
+
+class ProjectCharterDaoManager {
+  final _$ProjectCharterDaoMixin _db;
+  ProjectCharterDaoManager(this._db);
+  $$ProjectsTableTableManager get projects =>
+      $$ProjectsTableTableManager(_db.attachedDatabase, _db.projects);
+  $$ProjectChartersTableTableManager get projectCharters =>
+      $$ProjectChartersTableTableManager(
+        _db.attachedDatabase,
+        _db.projectCharters,
+      );
+}
+
+mixin _$ProgrammeOverviewStateDaoMixin on DatabaseAccessor<AppDatabase> {
+  $ProjectsTable get projects => attachedDatabase.projects;
+  $ProgrammeOverviewStatesTable get programmeOverviewStates =>
+      attachedDatabase.programmeOverviewStates;
+  ProgrammeOverviewStateDaoManager get managers =>
+      ProgrammeOverviewStateDaoManager(this);
+}
+
+class ProgrammeOverviewStateDaoManager {
+  final _$ProgrammeOverviewStateDaoMixin _db;
+  ProgrammeOverviewStateDaoManager(this._db);
+  $$ProjectsTableTableManager get projects =>
+      $$ProjectsTableTableManager(_db.attachedDatabase, _db.projects);
+  $$ProgrammeOverviewStatesTableTableManager get programmeOverviewStates =>
+      $$ProgrammeOverviewStatesTableTableManager(
+        _db.attachedDatabase,
+        _db.programmeOverviewStates,
       );
 }

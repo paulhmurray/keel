@@ -64,7 +64,7 @@ class JournalPersonMention extends StatelessWidget {
                   'PEOPLE',
                   style: TextStyle(
                     color: KColors.textDim,
-                    fontSize: 9,
+                    fontSize: 10,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.08,
                   ),

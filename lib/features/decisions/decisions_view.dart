@@ -225,29 +225,36 @@ class _DecisionCard extends StatelessWidget {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        if (decision.decisionMaker != null &&
-                            decision.decisionMaker!.isNotEmpty) ...[
-                          const Icon(Icons.person_outline,
-                              size: 11, color: KColors.textDim),
-                          const SizedBox(width: 3),
-                          Flexible(
-                            child: Text(decision.decisionMaker!,
-                                style: const TextStyle(
-                                    color: KColors.textDim, fontSize: 11),
-                                overflow: TextOverflow.ellipsis),
+                        Flexible(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (decision.decisionMaker != null &&
+                                  decision.decisionMaker!.isNotEmpty) ...[
+                                const Icon(Icons.person_outline,
+                                    size: 11, color: KColors.textDim),
+                                const SizedBox(width: 3),
+                                Flexible(
+                                  child: Text(decision.decisionMaker!,
+                                      style: const TextStyle(
+                                          color: KColors.textDim, fontSize: 11),
+                                      overflow: TextOverflow.ellipsis),
+                                ),
+                                const SizedBox(width: 10),
+                              ],
+                              if (decision.dueDate != null &&
+                                  decision.dueDate!.isNotEmpty) ...[
+                                const Icon(Icons.calendar_today_outlined,
+                                    size: 11, color: KColors.textDim),
+                                const SizedBox(width: 3),
+                                Text(du.formatDate(decision.dueDate),
+                                    style: const TextStyle(
+                                        color: KColors.textDim, fontSize: 11)),
+                                const SizedBox(width: 4),
+                              ],
+                            ],
                           ),
-                          const SizedBox(width: 10),
-                        ],
-                        if (decision.dueDate != null &&
-                            decision.dueDate!.isNotEmpty) ...[
-                          const Icon(Icons.calendar_today_outlined,
-                              size: 11, color: KColors.textDim),
-                          const SizedBox(width: 3),
-                          Text(du.formatDate(decision.dueDate),
-                              style: const TextStyle(
-                                  color: KColors.textDim, fontSize: 11)),
-                          const SizedBox(width: 4),
-                        ],
+                        ),
                         SourceBadge(source: decision.source),
                       ],
                     ),

@@ -596,7 +596,7 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
                         style: TextStyle(
                           color:
                               isActive ? KColors.amber : KColors.textMuted,
-                          fontSize: 9,
+                          fontSize: 10,
                           fontWeight: isActive
                               ? FontWeight.w700
                               : FontWeight.normal,

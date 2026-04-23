@@ -12,12 +12,13 @@ import '../raid/dependency_form.dart';
 import 'timeline_chart.dart' show TimelineEvent, TimelineEventType, TimelineChart, parseHexColor;
 import 'gantt_chart.dart';
 import 'workstream_form.dart';
+import 'milestone_form.dart';
 
 // ---------------------------------------------------------------------------
-// Internal model (list view only)
+// Internal model (list view)
 // ---------------------------------------------------------------------------
 
-enum _EventType { action, decision, issue, dependency }
+enum _EventType { action, decision, issue, dependency, milestone }
 
 class _TimelineEvent {
   final String? id;
@@ -46,21 +47,16 @@ class _TimelineEvent {
 }
 
 // ---------------------------------------------------------------------------
-// Internal model — extended with category info for chart
-// ---------------------------------------------------------------------------
-
-// (see _TimelineEvent above — categoryColor and linkedActionId added below)
-
-// ---------------------------------------------------------------------------
-// Conversion helper
+// Conversion helper (actions/decisions/issues/deps → chart event)
 // ---------------------------------------------------------------------------
 
 TimelineEvent _toChartEvent(_TimelineEvent e) {
   final type = switch (e.type) {
-    _EventType.action => TimelineEventType.action,
-    _EventType.decision => TimelineEventType.decision,
-    _EventType.issue => TimelineEventType.issue,
+    _EventType.action     => TimelineEventType.action,
+    _EventType.decision   => TimelineEventType.decision,
+    _EventType.issue      => TimelineEventType.issue,
     _EventType.dependency => TimelineEventType.dependency,
+    _EventType.milestone  => TimelineEventType.action, // not used for chart
   };
 
   DateTime? date;
@@ -87,27 +83,21 @@ TimelineEvent _toChartEvent(_TimelineEvent e) {
 
 IconData _iconForType(_EventType t) {
   switch (t) {
-    case _EventType.action:
-      return Icons.check_circle_outline;
-    case _EventType.decision:
-      return Icons.gavel_outlined;
-    case _EventType.issue:
-      return Icons.warning_amber_outlined;
-    case _EventType.dependency:
-      return Icons.link;
+    case _EventType.action:     return Icons.check_circle_outline;
+    case _EventType.decision:   return Icons.gavel_outlined;
+    case _EventType.issue:      return Icons.warning_amber_outlined;
+    case _EventType.dependency: return Icons.link;
+    case _EventType.milestone:  return Icons.diamond_outlined;
   }
 }
 
 (Color bg, Color fg) _colorsForType(_EventType t) {
   switch (t) {
-    case _EventType.action:
-      return (KColors.blueDim, KColors.blue);
-    case _EventType.decision:
-      return (KColors.amberDim, KColors.amber);
-    case _EventType.issue:
-      return (KColors.redDim, KColors.red);
-    case _EventType.dependency:
-      return (KColors.phosDim, KColors.phosphor);
+    case _EventType.action:     return (KColors.blueDim, KColors.blue);
+    case _EventType.decision:   return (KColors.amberDim, KColors.amber);
+    case _EventType.issue:      return (KColors.redDim, KColors.red);
+    case _EventType.dependency: return (KColors.phosDim, KColors.phosphor);
+    case _EventType.milestone:  return (KColors.redDim.withValues(alpha: 0.3), KColors.text);
   }
 }
 
@@ -121,7 +111,6 @@ class TimelineView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final projectId = context.watch<ProjectProvider>().currentProjectId;
-
     if (projectId == null) {
       return const Center(
         child: Text(
@@ -130,14 +119,12 @@ class TimelineView extends StatelessWidget {
         ),
       );
     }
-
     return _TimelineContent(projectId: projectId);
   }
 }
 
 class _TimelineContent extends StatefulWidget {
   final String projectId;
-
   const _TimelineContent({required this.projectId});
 
   @override
@@ -150,6 +137,8 @@ class _TimelineContentState extends State<_TimelineContent> {
   List<_TimelineEvent> _events = [];
   List<GanttWorkstream> _ganttWorkstreams = [];
   List<Workstream> _rawWorkstreams = [];
+  List<GanttMilestone> _ganttMilestones = [];
+  List<Milestone> _rawMilestones = [];
 
   @override
   void initState() {
@@ -168,24 +157,60 @@ class _TimelineContentState extends State<_TimelineContent> {
     setState(() => _loading = true);
     final events = await _loadEvents(db);
     final (raw, gantt) = await _loadWorkstreams(db);
+    final (rawMs, ganttMs) = await _loadMilestones(db);
     if (!mounted) return;
     setState(() {
       _events = events;
       _rawWorkstreams = raw;
       _ganttWorkstreams = gantt;
+      _rawMilestones = rawMs;
+      _ganttMilestones = ganttMs;
       _loading = false;
     });
   }
 
-  Future<(List<Workstream>, List<GanttWorkstream>)> _loadWorkstreams(AppDatabase db) async {
+  Future<(List<Workstream>, List<GanttWorkstream>)> _loadWorkstreams(
+      AppDatabase db) async {
     final wsList = await db.workstreamsDao.getForProject(widget.projectId);
-    final links = await db.workstreamsDao.getLinksForProject(widget.projectId);
+    final links =
+        await db.workstreamsDao.getLinksForProject(widget.projectId);
+    final allActivities =
+        await db.workstreamActivitiesDao.getForProject(widget.projectId);
+    final persons =
+        await db.peopleDao.getPersonsForProject(widget.projectId);
+    final personMap = {for (final p in persons) p.id: p};
+
+    final actsByWs = <String, List<WorkstreamActivity>>{};
+    for (final act in allActivities) {
+      actsByWs.putIfAbsent(act.workstreamId, () => []).add(act);
+    }
 
     final gantt = wsList.map((ws) {
       final dependsOnIds = links
           .where((l) => l.toId == ws.id)
           .map((l) => l.fromId)
           .toList();
+
+      final rawActs = actsByWs[ws.id] ?? [];
+      rawActs.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+      final ganttActs = rawActs
+          .map((act) => GanttActivity(
+                id: act.id,
+                name: act.name,
+                status: act.status,
+                start: act.startDate.isNotEmpty
+                    ? DateTime.tryParse(act.startDate)
+                    : null,
+                end: act.endDate.isNotEmpty
+                    ? DateTime.tryParse(act.endDate)
+                    : null,
+                ownerName: act.ownerId != null
+                    ? personMap[act.ownerId!]?.name
+                    : null,
+                sortOrder: act.sortOrder,
+              ))
+          .toList();
+
       return GanttWorkstream(
         id: ws.id,
         name: ws.name,
@@ -195,10 +220,37 @@ class _TimelineContentState extends State<_TimelineContent> {
         start: ws.startDate != null ? DateTime.tryParse(ws.startDate!) : null,
         end: ws.endDate != null ? DateTime.tryParse(ws.endDate!) : null,
         dependsOnIds: dependsOnIds,
+        activities: ganttActs,
       );
     }).toList();
 
     return (wsList, gantt);
+  }
+
+  Future<(List<Milestone>, List<GanttMilestone>)> _loadMilestones(
+      AppDatabase db) async {
+    final rawMs =
+        await db.milestonesDao.getForProject(widget.projectId);
+    final persons =
+        await db.peopleDao.getPersonsForProject(widget.projectId);
+    final personMap = {for (final p in persons) p.id: p};
+
+    final ganttMs = rawMs
+        .map((ms) => GanttMilestone(
+              id: ms.id,
+              name: ms.name,
+              date: ms.date,
+              ownerName: ms.ownerId != null
+                  ? personMap[ms.ownerId!]?.name
+                  : null,
+              status: ms.status,
+              isHardDeadline: ms.isHardDeadline,
+              notes: ms.notes,
+              workstreamId: ms.workstreamId,
+            ))
+        .toList();
+
+    return (rawMs, ganttMs);
   }
 
   void _openEventDetail(TimelineEvent ev) {
@@ -210,50 +262,77 @@ class _TimelineContentState extends State<_TimelineContent> {
         showDialog(
           context: context,
           builder: (_) => ActionFormDialog(
-            projectId: widget.projectId,
-            db: db,
-            action: item as ProjectAction,
-            startInViewMode: true,
-          ),
+              projectId: widget.projectId,
+              db: db,
+              action: item as ProjectAction,
+              startInViewMode: true),
         ).then((_) => _reload());
       case TimelineEventType.decision:
         showDialog(
           context: context,
           builder: (_) => DecisionFormDialog(
-            projectId: widget.projectId,
-            db: db,
-            decision: item as Decision,
-            startInViewMode: true,
-          ),
+              projectId: widget.projectId,
+              db: db,
+              decision: item as Decision,
+              startInViewMode: true),
         ).then((_) => _reload());
       case TimelineEventType.issue:
         showDialog(
           context: context,
           builder: (_) => IssueFormDialog(
-            projectId: widget.projectId,
-            db: db,
-            issue: item as Issue,
-            startInViewMode: true,
-          ),
+              projectId: widget.projectId,
+              db: db,
+              issue: item as Issue,
+              startInViewMode: true),
         ).then((_) => _reload());
       case TimelineEventType.dependency:
         showDialog(
           context: context,
           builder: (_) => DependencyFormDialog(
-            projectId: widget.projectId,
-            db: db,
-            dependency: item as ProgramDependency,
-            startInViewMode: true,
-          ),
+              projectId: widget.projectId,
+              db: db,
+              dependency: item as ProgramDependency,
+              startInViewMode: true),
         ).then((_) => _reload());
     }
+  }
+
+  void _openMilestoneDetail(GanttMilestone gm) {
+    final db = context.read<AppDatabase>();
+    final ms = _rawMilestones.where((m) => m.id == gm.id).firstOrNull;
+    showDialog(
+      context: context,
+      builder: (_) => MilestoneFormDialog(
+          projectId: widget.projectId, db: db, milestone: ms),
+    ).then((_) => _reload());
+  }
+
+  void _openActivityEdit(GanttActivity act, GanttWorkstream gws) {
+    final db = context.read<AppDatabase>();
+    final ws = _rawWorkstreams.where((w) => w.id == gws.id).firstOrNull;
+    if (ws == null) return;
+    showDialog(
+      context: context,
+      builder: (_) => WorkstreamFormDialog(
+          projectId: widget.projectId, db: db, workstream: ws),
+    ).then((_) => _reload());
   }
 
   void _addWorkstream() {
     final db = context.read<AppDatabase>();
     showDialog(
       context: context,
-      builder: (_) => WorkstreamFormDialog(projectId: widget.projectId, db: db),
+      builder: (_) =>
+          WorkstreamFormDialog(projectId: widget.projectId, db: db),
+    ).then((_) => _reload());
+  }
+
+  void _addMilestone() {
+    final db = context.read<AppDatabase>();
+    showDialog(
+      context: context,
+      builder: (_) =>
+          MilestoneFormDialog(projectId: widget.projectId, db: db),
     ).then((_) => _reload());
   }
 
@@ -275,19 +354,20 @@ class _TimelineContentState extends State<_TimelineContent> {
   Future<List<_TimelineEvent>> _loadEvents(AppDatabase db) async {
     final today = du.toIsoDate(DateTime.now());
 
-    final actions =
-        await db.actionsDao.getActionsForProject(widget.projectId);
+    final actions = await db.actionsDao.getActionsForProject(widget.projectId);
     final decisions =
         await db.decisionsDao.getDecisionsForProject(widget.projectId);
-    final issues =
-        await db.raidDao.getIssuesForProject(widget.projectId);
+    final issues = await db.raidDao.getIssuesForProject(widget.projectId);
     final dependencies =
         await db.raidDao.getDependenciesForProject(widget.projectId);
-
-    // Load categories for colour lookup
+    final milestones =
+        await db.milestonesDao.getForProject(widget.projectId);
+    final persons =
+        await db.peopleDao.getPersonsForProject(widget.projectId);
     final categories =
         await db.actionCategoriesDao.getForProject(widget.projectId);
     final catMap = {for (final c in categories) c.id: c};
+    final personMap = {for (final p in persons) p.id: p};
 
     final events = <_TimelineEvent>[];
 
@@ -359,6 +439,23 @@ class _TimelineContentState extends State<_TimelineContent> {
       ));
     }
 
+    // Milestones in list view — exclude achieved milestones
+    for (final ms in milestones) {
+      if (ms.status == 'achieved') continue;
+      final overdue = ms.date.isNotEmpty && ms.date.compareTo(today) < 0;
+      final ownerName =
+          ms.ownerId != null ? personMap[ms.ownerId!]?.name : null;
+      events.add(_TimelineEvent(
+        id: ms.id,
+        title: ms.name,
+        dateIso: ms.date,
+        type: _EventType.milestone,
+        owner: ownerName,
+        isOverdue: overdue,
+        item: ms,
+      ));
+    }
+
     return events;
   }
 
@@ -367,14 +464,18 @@ class _TimelineContentState extends State<_TimelineContent> {
     if (_loading) return const Center(child: CircularProgressIndicator());
 
     final chartEvents = _events
-        .where((e) => e.dateIso != null && e.dateIso!.isNotEmpty)
+        .where((e) =>
+            e.type != _EventType.milestone &&
+            e.dateIso != null &&
+            e.dateIso!.isNotEmpty)
         .map(_toChartEvent)
         .toList();
 
     final today = du.toIsoDate(DateTime.now());
     final now = DateTime.now();
     final endOfWeek = du.toIsoDate(now.add(const Duration(days: 6)));
-    final endOfMonth = du.toIsoDate(DateTime(now.year, now.month + 1, 0));
+    final endOfMonth =
+        du.toIsoDate(DateTime(now.year, now.month + 1, 0));
 
     final overdue = <_TimelineEvent>[];
     final thisWeek = <_TimelineEvent>[];
@@ -414,13 +515,32 @@ class _TimelineContentState extends State<_TimelineContent> {
             children: [
               const Icon(Icons.timeline, color: KColors.amber, size: 18),
               const SizedBox(width: 8),
-              Text('TIMELINE',
-                  style: Theme.of(context).textTheme.headlineSmall),
-              const Spacer(),
+              Flexible(
+                child: Text('SCHEDULE',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                    overflow: TextOverflow.ellipsis),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Your operational view. What needs your attention today or this week.',
+                style: TextStyle(color: KColors.textMuted, fontSize: 11),
+              ),
+              const SizedBox(width: 12),
               ElevatedButton.icon(
                 onPressed: _addWorkstream,
                 icon: const Icon(Icons.add, size: 14),
                 label: const Text('Add Workstream'),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton.icon(
+                onPressed: _addMilestone,
+                icon: const Icon(Icons.diamond_outlined, size: 14),
+                label: const Text('Add Milestone'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: KColors.surface2,
+                  foregroundColor: KColors.text,
+                  side: const BorderSide(color: KColors.border2),
+                ),
               ),
               const SizedBox(width: 10),
               _ViewToggle(
@@ -445,18 +565,20 @@ class _TimelineContentState extends State<_TimelineContent> {
                 children: [
                   Row(
                     children: [
-                      const Text('WORKSTREAMS & EVENTS',
-                          style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.15,
-                              color: KColors.textMuted)),
-                      const Spacer(),
+                      const Expanded(
+                        child: Text('WORKSTREAMS & EVENTS',
+                            style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.15,
+                                color: KColors.textMuted)),
+                      ),
                       _StatusLegend(),
                     ],
                   ),
                   const SizedBox(height: 12),
-                  if (_ganttWorkstreams.isEmpty)
+                  if (_ganttWorkstreams.isEmpty &&
+                      _ganttMilestones.isEmpty)
                     _EmptyWorkstreams(
                       projectId: widget.projectId,
                       context: context,
@@ -467,7 +589,10 @@ class _TimelineContentState extends State<_TimelineContent> {
                     GanttChart(
                       workstreams: _ganttWorkstreams,
                       events: chartEvents,
+                      milestones: _ganttMilestones,
                       onEventTap: _openEventDetail,
+                      onMilestoneTap: _openMilestoneDetail,
+                      onActivityTap: _openActivityEdit,
                     ),
                 ],
               ),
@@ -485,6 +610,26 @@ class _TimelineContentState extends State<_TimelineContent> {
                   )),
               const SizedBox(height: 24),
             ],
+
+            // ── Milestones list ────────────────────────────────────────
+            if (_rawMilestones.isNotEmpty) ...[
+              const _MilestonesListHeader(),
+              const SizedBox(height: 8),
+              ..._rawMilestones.map((ms) => _MilestoneRow(
+                    milestone: ms,
+                    onTap: () {
+                      final db = context.read<AppDatabase>();
+                      showDialog(
+                        context: context,
+                        builder: (_) => MilestoneFormDialog(
+                            projectId: widget.projectId,
+                            db: db,
+                            milestone: ms),
+                      ).then((_) => _reload());
+                    },
+                  )),
+              const SizedBox(height: 24),
+            ],
           ],
 
           // ── Deadline list ─────────────────────────────────────────────
@@ -493,7 +638,8 @@ class _TimelineContentState extends State<_TimelineContent> {
               child: Padding(
                 padding: EdgeInsets.symmetric(vertical: 32),
                 child: Text('No upcoming deadlines.',
-                    style: TextStyle(color: KColors.textDim, fontSize: 13)),
+                    style:
+                        TextStyle(color: KColors.textDim, fontSize: 13)),
               ),
             )
           else if (_events.isEmpty && _ganttWorkstreams.isEmpty)
@@ -505,12 +651,14 @@ class _TimelineContentState extends State<_TimelineContent> {
                       size: 40, color: KColors.textMuted),
                   SizedBox(height: 16),
                   Text('No workstreams or deadlines yet.',
-                      style: TextStyle(color: KColors.textDim, fontSize: 14)),
+                      style: TextStyle(
+                          color: KColors.textDim, fontSize: 14)),
                   SizedBox(height: 8),
                   Text(
                     'Add a workstream above, or add due dates\nto actions, decisions, issues and dependencies.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: KColors.textMuted, fontSize: 12),
+                    style: TextStyle(
+                        color: KColors.textMuted, fontSize: 12),
                   ),
                 ],
               ),
@@ -520,32 +668,44 @@ class _TimelineContentState extends State<_TimelineContent> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (overdue.isNotEmpty) ...[
-                  _SectionHeader(label: 'OVERDUE', dotColor: KColors.red),
+                  _SectionHeader(
+                      label: 'OVERDUE', dotColor: KColors.red),
                   const SizedBox(height: 8),
                   ...overdue.map((e) => _EventRow(
-                      event: e, projectId: widget.projectId, db: context.read<AppDatabase>())),
+                      event: e,
+                      projectId: widget.projectId,
+                      db: context.read<AppDatabase>())),
                   const SizedBox(height: 20),
                 ],
                 if (thisWeek.isNotEmpty) ...[
-                  _SectionHeader(label: 'THIS WEEK', dotColor: KColors.amber),
+                  _SectionHeader(
+                      label: 'THIS WEEK', dotColor: KColors.amber),
                   const SizedBox(height: 8),
                   ...thisWeek.map((e) => _EventRow(
-                      event: e, projectId: widget.projectId, db: context.read<AppDatabase>())),
+                      event: e,
+                      projectId: widget.projectId,
+                      db: context.read<AppDatabase>())),
                   const SizedBox(height: 20),
                 ],
                 if (thisMonth.isNotEmpty) ...[
                   _SectionHeader(
-                      label: 'THIS MONTH', dotColor: KColors.textMuted),
+                      label: 'THIS MONTH',
+                      dotColor: KColors.textMuted),
                   const SizedBox(height: 8),
                   ...thisMonth.map((e) => _EventRow(
-                      event: e, projectId: widget.projectId, db: context.read<AppDatabase>())),
+                      event: e,
+                      projectId: widget.projectId,
+                      db: context.read<AppDatabase>())),
                   const SizedBox(height: 20),
                 ],
                 if (future.isNotEmpty) ...[
-                  _SectionHeader(label: 'FUTURE', dotColor: KColors.textMuted),
+                  _SectionHeader(
+                      label: 'FUTURE', dotColor: KColors.textMuted),
                   const SizedBox(height: 8),
                   ...future.map((e) => _EventRow(
-                      event: e, projectId: widget.projectId, db: context.read<AppDatabase>())),
+                      event: e,
+                      projectId: widget.projectId,
+                      db: context.read<AppDatabase>())),
                   const SizedBox(height: 20),
                 ],
                 if (noDate.isNotEmpty) ...[
@@ -553,7 +713,9 @@ class _TimelineContentState extends State<_TimelineContent> {
                       label: 'NO DATE', dotColor: KColors.textMuted),
                   const SizedBox(height: 8),
                   ...noDate.map((e) => _EventRow(
-                      event: e, projectId: widget.projectId, db: context.read<AppDatabase>())),
+                      event: e,
+                      projectId: widget.projectId,
+                      db: context.read<AppDatabase>())),
                 ],
               ],
             ),
@@ -564,7 +726,7 @@ class _TimelineContentState extends State<_TimelineContent> {
 }
 
 // ---------------------------------------------------------------------------
-// Empty workstreams — shows existing event dots chart + prompt
+// Empty workstreams prompt
 // ---------------------------------------------------------------------------
 
 class _EmptyWorkstreams extends StatelessWidget {
@@ -612,7 +774,8 @@ class _EmptyWorkstreams extends StatelessWidget {
                     SizedBox(height: 2),
                     Text(
                       'Add workstreams to see swim lanes, Gantt bars and dependency arrows.',
-                      style: TextStyle(color: KColors.textDim, fontSize: 11),
+                      style:
+                          TextStyle(color: KColors.textDim, fontSize: 11),
                     ),
                   ],
                 ),
@@ -642,15 +805,13 @@ class _WorkstreamListHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Row(
       children: [
-        Text(
-          'WORKSTREAMS',
-          style: TextStyle(
-            fontSize: 9,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.15,
-            color: KColors.textMuted,
-          ),
-        ),
+        Text('WORKSTREAMS',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.15,
+              color: KColors.textMuted,
+            )),
       ],
     );
   }
@@ -718,11 +879,13 @@ class _WorkstreamRow extends StatelessWidget {
                 Text(workstream.name,
                     style: const TextStyle(
                         fontSize: 13, fontWeight: FontWeight.w600)),
-                if (workstream.lead != null || workstream.lane.isNotEmpty)
+                if (workstream.lead != null ||
+                    workstream.lane.isNotEmpty)
                   Text(
                     [
                       if (workstream.lane.isNotEmpty) workstream.lane,
-                      if (workstream.lead != null) 'Lead: ${workstream.lead}',
+                      if (workstream.lead != null)
+                        'Lead: ${workstream.lead}',
                     ].join(' · '),
                     style: const TextStyle(
                         fontSize: 11, color: KColors.textDim),
@@ -731,7 +894,8 @@ class _WorkstreamRow extends StatelessWidget {
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
               color: color.withAlpha(30),
               borderRadius: BorderRadius.circular(3),
@@ -739,7 +903,9 @@ class _WorkstreamRow extends StatelessWidget {
             child: Text(
               _statusLabel(workstream.status),
               style: TextStyle(
-                  fontSize: 10, fontWeight: FontWeight.w600, color: color),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: color),
             ),
           ),
           const SizedBox(width: 8),
@@ -757,6 +923,100 @@ class _WorkstreamRow extends StatelessWidget {
           ),
           const SizedBox(width: 4),
         ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Milestones list header + row
+// ---------------------------------------------------------------------------
+
+class _MilestonesListHeader extends StatelessWidget {
+  const _MilestonesListHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Row(
+      children: [
+        Text('MILESTONES',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.15,
+              color: KColors.textMuted,
+            )),
+      ],
+    );
+  }
+}
+
+class _MilestoneRow extends StatelessWidget {
+  final Milestone milestone;
+  final VoidCallback onTap;
+
+  const _MilestoneRow({required this.milestone, required this.onTap});
+
+  Color _statusColor(String s, bool isHard) {
+    if (isHard) return KColors.red;
+    switch (s) {
+      case 'achieved': return KColors.phosphor;
+      case 'at_risk':  return KColors.amber;
+      case 'missed':   return KColors.red;
+      default:         return KColors.text;
+    }
+  }
+
+  String _statusLabel(String s) {
+    switch (s) {
+      case 'achieved': return 'Achieved';
+      case 'at_risk':  return 'At Risk';
+      case 'missed':   return 'Missed';
+      default:         return 'Upcoming';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _statusColor(milestone.status, milestone.isHardDeadline);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(4),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 4),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: KColors.surface,
+          border: Border.all(color: KColors.border),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.diamond, size: 14, color: color),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(milestone.name,
+                      style: const TextStyle(
+                          fontSize: 13, fontWeight: FontWeight.w500)),
+                  Text(
+                    [
+                      milestone.date,
+                      _statusLabel(milestone.status),
+                      if (milestone.isHardDeadline) 'Hard Deadline',
+                    ].join(' · '),
+                    style: TextStyle(fontSize: 11, color: color),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.edit_outlined,
+                size: 14, color: KColors.textMuted),
+          ],
+        ),
       ),
     );
   }
@@ -863,37 +1123,30 @@ class _ToggleButton extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
           color: active
               ? KColors.amber.withValues(alpha: 0.15)
               : Colors.transparent,
           borderRadius: BorderRadius.horizontal(
-            left: isFirst
-                ? const Radius.circular(2)
-                : Radius.zero,
-            right:
-                isFirst ? Radius.zero : const Radius.circular(2),
+            left: isFirst ? const Radius.circular(2) : Radius.zero,
+            right: isFirst ? Radius.zero : const Radius.circular(2),
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 13,
-              color: active ? KColors.amber : KColors.textDim,
-            ),
+            Icon(icon,
+                size: 13,
+                color: active ? KColors.amber : KColors.textDim),
             const SizedBox(width: 4),
             Text(
               label,
               style: TextStyle(
                 color: active ? KColors.amber : KColors.textDim,
                 fontSize: 11,
-                fontWeight: active
-                    ? FontWeight.w600
-                    : FontWeight.normal,
+                fontWeight:
+                    active ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
           ],
@@ -911,10 +1164,7 @@ class _SectionHeader extends StatelessWidget {
   final String label;
   final Color dotColor;
 
-  const _SectionHeader({
-    required this.label,
-    required this.dotColor,
-  });
+  const _SectionHeader({required this.label, required this.dotColor});
 
   @override
   Widget build(BuildContext context) {
@@ -923,19 +1173,16 @@ class _SectionHeader extends StatelessWidget {
         Container(
           width: 6,
           height: 6,
-          decoration:
-              BoxDecoration(color: dotColor, shape: BoxShape.circle),
+          decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
           margin: const EdgeInsets.only(right: 6),
         ),
-        Text(
-          label,
-          style: const TextStyle(
-            color: KColors.textMuted,
-            fontSize: 9,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.15,
-          ),
-        ),
+        Text(label,
+            style: const TextStyle(
+              color: KColors.textMuted,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.15,
+            )),
       ],
     );
   }
@@ -963,41 +1210,45 @@ class _EventRow extends StatelessWidget {
         showDialog(
           context: context,
           builder: (_) => ActionFormDialog(
-            projectId: projectId,
-            db: db,
-            action: item as ProjectAction,
-            startInViewMode: true,
-          ),
+              projectId: projectId,
+              db: db,
+              action: item as ProjectAction,
+              startInViewMode: true),
         );
       case _EventType.decision:
         showDialog(
           context: context,
           builder: (_) => DecisionFormDialog(
-            projectId: projectId,
-            db: db,
-            decision: item as Decision,
-            startInViewMode: true,
-          ),
+              projectId: projectId,
+              db: db,
+              decision: item as Decision,
+              startInViewMode: true),
         );
       case _EventType.issue:
         showDialog(
           context: context,
           builder: (_) => IssueFormDialog(
-            projectId: projectId,
-            db: db,
-            issue: item as Issue,
-            startInViewMode: true,
-          ),
+              projectId: projectId,
+              db: db,
+              issue: item as Issue,
+              startInViewMode: true),
         );
       case _EventType.dependency:
         showDialog(
           context: context,
           builder: (_) => DependencyFormDialog(
-            projectId: projectId,
-            db: db,
-            dependency: item as ProgramDependency,
-            startInViewMode: true,
-          ),
+              projectId: projectId,
+              db: db,
+              dependency: item as ProgramDependency,
+              startInViewMode: true),
+        );
+      case _EventType.milestone:
+        showDialog(
+          context: context,
+          builder: (_) => MilestoneFormDialog(
+              projectId: projectId,
+              db: db,
+              milestone: item as Milestone),
         );
     }
   }
@@ -1006,118 +1257,149 @@ class _EventRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final (typeBg, typeFg) = _colorsForType(event.type);
     final typeIcon = _iconForType(event.type);
+    final isMilestone = event.type == _EventType.milestone;
+    final ms = isMilestone ? event.item as Milestone : null;
+    final milestoneColor = ms != null
+        ? (ms.isHardDeadline
+            ? KColors.red
+            : switch (ms.status) {
+                'achieved' => KColors.phosphor,
+                'at_risk'  => KColors.amber,
+                'missed'   => KColors.red,
+                _          => KColors.text,
+              })
+        : typeFg;
 
     return InkWell(
       onTap: () => _openDetail(context),
       borderRadius: BorderRadius.circular(3),
       child: Container(
-      margin: const EdgeInsets.only(bottom: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: KColors.surface,
-        borderRadius: BorderRadius.circular(3),
-        border: Border.all(color: KColors.border),
-      ),
-      child: Row(
-        children: [
-          // Type icon box
-          Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              color: typeBg,
-              borderRadius: BorderRadius.circular(3),
-            ),
-            alignment: Alignment.center,
-            child: Icon(typeIcon, size: 13, color: typeFg),
-          ),
-          const SizedBox(width: 10),
-
-          // Ref badge
-          if (event.ref != null && event.ref!.isNotEmpty) ...[
+        margin: const EdgeInsets.only(bottom: 4),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: KColors.surface,
+          borderRadius: BorderRadius.circular(3),
+          border: Border.all(color: KColors.border),
+        ),
+        child: Row(
+          children: [
+            // Type icon box
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+              width: 24,
+              height: 24,
               decoration: BoxDecoration(
-                color: typeBg,
-                borderRadius: BorderRadius.circular(2),
+                color: isMilestone
+                    ? milestoneColor.withValues(alpha: 0.15)
+                    : typeBg,
+                borderRadius: BorderRadius.circular(3),
               ),
+              alignment: Alignment.center,
+              child: Icon(typeIcon,
+                  size: 13,
+                  color: isMilestone ? milestoneColor : typeFg),
+            ),
+            const SizedBox(width: 10),
+
+            // Ref badge
+            if (event.ref != null && event.ref!.isNotEmpty) ...[
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                decoration: BoxDecoration(
+                  color: typeBg,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+                child: Text(event.ref!,
+                    style: TextStyle(
+                        color: typeFg,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600)),
+              ),
+              const SizedBox(width: 8),
+            ],
+
+            // Hard deadline badge
+            if (ms != null && ms.isHardDeadline) ...[
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                decoration: BoxDecoration(
+                  color: KColors.red.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+                child: const Text('HARD',
+                    style: TextStyle(
+                        color: KColors.red,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700)),
+              ),
+              const SizedBox(width: 6),
+            ],
+
+            // Title
+            Expanded(
               child: Text(
-                event.ref!,
-                style: TextStyle(
-                  color: typeFg,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
+                event.title,
+                style: const TextStyle(color: KColors.text, fontSize: 12),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+
+            // Owner
+            if (event.owner != null && event.owner!.isNotEmpty) ...[
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  event.owner!,
+                  style: const TextStyle(
+                      color: KColors.textDim, fontSize: 11),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ),
-            ),
-            const SizedBox(width: 8),
-          ],
+            ],
 
-          // Title
-          Expanded(
-            child: Text(
-              event.title,
-              style: const TextStyle(
-                color: KColors.text,
-                fontSize: 12,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-
-          // Owner
-          if (event.owner != null && event.owner!.isNotEmpty) ...[
-            const SizedBox(width: 8),
-            Text(
-              event.owner!,
-              style: const TextStyle(
-                color: KColors.textDim,
-                fontSize: 11,
-              ),
-            ),
-          ],
-
-          // Due date chip
-          if (event.dateIso != null && event.dateIso!.isNotEmpty) ...[
-            const SizedBox(width: 8),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-              decoration: BoxDecoration(
-                color: event.isOverdue
-                    ? KColors.redDim
-                    : event.dateIso!.compareTo(
-                                du.toIsoDate(DateTime.now().add(
-                                    const Duration(days: 7)))) <=
-                            0
-                        ? KColors.amberDim
-                        : KColors.surface2,
-                borderRadius: BorderRadius.circular(2),
-              ),
-              child: Text(
-                du.formatDate(event.dateIso),
-                style: TextStyle(
+            // Due date chip
+            if (event.dateIso != null && event.dateIso!.isNotEmpty) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                decoration: BoxDecoration(
                   color: event.isOverdue
-                      ? KColors.red
-                      : event.dateIso!.compareTo(
-                                  du.toIsoDate(DateTime.now().add(
-                                      const Duration(days: 7)))) <=
+                      ? KColors.redDim
+                      : event.dateIso!.compareTo(du.toIsoDate(
+                                  DateTime.now()
+                                      .add(const Duration(days: 7)))) <=
                               0
-                          ? KColors.amber
-                          : KColors.textDim,
-                  fontSize: 10,
-                  fontWeight: event.isOverdue
-                      ? FontWeight.w600
-                      : FontWeight.normal,
+                          ? KColors.amberDim
+                          : KColors.surface2,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+                child: Text(
+                  du.formatDate(event.dateIso),
+                  style: TextStyle(
+                    color: event.isOverdue
+                        ? KColors.red
+                        : event.dateIso!.compareTo(du.toIsoDate(
+                                    DateTime.now()
+                                        .add(const Duration(days: 7)))) <=
+                                0
+                            ? KColors.amber
+                            : KColors.textDim,
+                    fontSize: 10,
+                    fontWeight: event.isOverdue
+                        ? FontWeight.w600
+                        : FontWeight.normal,
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
-        ],
+        ),
       ),
-    ),
     );
   }
 }

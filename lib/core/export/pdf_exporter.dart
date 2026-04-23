@@ -4,6 +4,74 @@ import 'package:pdf/widgets.dart' as pw;
 import '../database/database.dart';
 import '../platform/web_download.dart';
 
+// ─── Status PDF data models ───────────────────────────────────────────────────
+
+class StatusWorkstreamPdf {
+  final String name;
+  final String rag;
+  final String trend;
+  const StatusWorkstreamPdf({
+      required this.name, required this.rag, required this.trend});
+}
+
+class StatusMilestonePdf {
+  final String icon;
+  final String name;
+  final String date;
+  final String owner;
+  const StatusMilestonePdf({
+      required this.icon, required this.name,
+      required this.date, required this.owner});
+}
+
+class StatusRiskPdf {
+  final String ref;
+  final String likelihood;
+  final String impact;
+  final String description;
+  const StatusRiskPdf({
+      required this.ref, required this.likelihood,
+      required this.impact, required this.description});
+}
+
+class StatusDecisionPdf {
+  final String ref;
+  final String dueDate;
+  final String description;
+  const StatusDecisionPdf({
+      required this.ref, required this.dueDate, required this.description});
+}
+
+class StatusSummaryForPdf {
+  final String programmeRag;
+  final String trendArrow;
+  final String trendLabel;
+  final String? narrative;
+  final List<StatusWorkstreamPdf> workstreams;
+  final List<StatusMilestonePdf> milestones;
+  final List<StatusRiskPdf> risks;
+  final List<StatusDecisionPdf> decisions;
+  final int overdueActions;
+  final int openActions;
+  final int pendingDecisions;
+  final int openRisks;
+
+  const StatusSummaryForPdf({
+    required this.programmeRag,
+    required this.trendArrow,
+    required this.trendLabel,
+    this.narrative,
+    required this.workstreams,
+    required this.milestones,
+    required this.risks,
+    required this.decisions,
+    required this.overdueActions,
+    required this.openActions,
+    required this.pendingDecisions,
+    required this.openRisks,
+  });
+}
+
 class PdfExporter {
   // ---------------------------------------------------------------------------
   // Public file-writing methods
@@ -359,4 +427,253 @@ class PdfExporter {
 
   static String _slug(String s) =>
       s.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '_');
+
+  // ---------------------------------------------------------------------------
+  // Status dashboard PDF
+  // ---------------------------------------------------------------------------
+
+  static Future<String> exportStatus({
+    required String projectName,
+    required StatusSummaryForPdf summary,
+  }) async {
+    final bytes = await buildStatusBytes(
+        projectName: projectName, summary: summary);
+    final date = DateTime.now().toIso8601String().substring(0, 10);
+    final filename =
+        'status_${_slug(projectName)}_$date.pdf';
+    return saveAndOpen(filename, bytes, mimeType: 'application/pdf');
+  }
+
+  static Future<List<int>> buildStatusBytes({
+    required String projectName,
+    required StatusSummaryForPdf summary,
+  }) async {
+    final doc = pw.Document();
+    final date = DateTime.now().toIso8601String().substring(0, 10);
+
+    doc.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(36),
+        header: (ctx) => pw.Container(
+          margin: const pw.EdgeInsets.only(bottom: 12),
+          padding: const pw.EdgeInsets.only(bottom: 6),
+          decoration: const pw.BoxDecoration(
+              border: pw.Border(
+                  bottom: pw.BorderSide(color: PdfColors.grey300))),
+          child: pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text(
+                _sanitize('STATUS — $projectName'),
+                style: pw.TextStyle(
+                    fontSize: 14, fontWeight: pw.FontWeight.bold),
+              ),
+              pw.Text(date,
+                  style: const pw.TextStyle(
+                      fontSize: 10, color: PdfColors.grey600)),
+            ],
+          ),
+        ),
+        build: (ctx) => [
+          // Programme RAG
+          pw.Container(
+            padding: const pw.EdgeInsets.all(12),
+            decoration: pw.BoxDecoration(
+                border: pw.Border.all(color: _ragColor(summary.programmeRag)),
+                borderRadius: pw.BorderRadius.circular(4)),
+            child: pw.Row(children: [
+              pw.Container(
+                padding: const pw.EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 6),
+                decoration: pw.BoxDecoration(
+                    color: _ragBgColor(summary.programmeRag),
+                    borderRadius: pw.BorderRadius.circular(3)),
+                child: pw.Text(
+                  summary.programmeRag.toUpperCase(),
+                  style: pw.TextStyle(
+                      fontSize: 14,
+                      fontWeight: pw.FontWeight.bold,
+                      color: _ragColor(summary.programmeRag)),
+                ),
+              ),
+              pw.SizedBox(width: 12),
+              pw.Text('${summary.trendArrow}  ${summary.trendLabel}',
+                  style: const pw.TextStyle(
+                      fontSize: 11, color: PdfColors.grey600)),
+            ]),
+          ),
+          pw.SizedBox(height: 16),
+
+          // Narrative
+          if (summary.narrative != null &&
+              summary.narrative!.isNotEmpty) ...[
+            _sectionHeader('Status Narrative'),
+            pw.SizedBox(height: 6),
+            pw.Text(_sanitize(summary.narrative!),
+                style: const pw.TextStyle(fontSize: 10, lineSpacing: 3)),
+            pw.SizedBox(height: 16),
+          ],
+
+          // Workstreams
+          _sectionHeader('Workstreams'),
+          pw.SizedBox(height: 6),
+          pw.Table(
+            border: pw.TableBorder.all(color: PdfColors.grey300),
+            columnWidths: {
+              0: const pw.FlexColumnWidth(3),
+              1: const pw.FlexColumnWidth(1),
+              2: const pw.FlexColumnWidth(2),
+            },
+            children: [
+              pw.TableRow(
+                decoration:
+                    const pw.BoxDecoration(color: PdfColors.grey100),
+                children: [
+                  _tableHeader('WORK PACKAGE'),
+                  _tableHeader('RAG'),
+                  _tableHeader('TREND'),
+                ],
+              ),
+              for (final ws in summary.workstreams)
+                pw.TableRow(children: [
+                  _tableCell(ws.name),
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.all(4),
+                    child: pw.Text(ws.rag.toUpperCase(),
+                        style: pw.TextStyle(
+                            fontSize: 9,
+                            fontWeight: pw.FontWeight.bold,
+                            color: _ragColor(ws.rag))),
+                  ),
+                  _tableCell(ws.trend),
+                ]),
+            ],
+          ),
+          pw.SizedBox(height: 16),
+
+          // Upcoming milestones
+          if (summary.milestones.isNotEmpty) ...[
+            _sectionHeader('Upcoming Milestones'),
+            pw.SizedBox(height: 6),
+            for (final m in summary.milestones)
+              pw.Padding(
+                padding: const pw.EdgeInsets.only(bottom: 3),
+                child: pw.Text(
+                    _sanitize(
+                        '${m.icon}  ${m.name}   ${m.date}   ${m.owner}'),
+                    style: const pw.TextStyle(fontSize: 10)),
+              ),
+            pw.SizedBox(height: 16),
+          ],
+
+          // Top risks
+          if (summary.risks.isNotEmpty) ...[
+            _sectionHeader('Top Risks'),
+            pw.SizedBox(height: 6),
+            pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.grey300),
+              columnWidths: {
+                0: const pw.FixedColumnWidth(36),
+                1: const pw.FixedColumnWidth(80),
+                2: const pw.FlexColumnWidth(1),
+              },
+              children: [
+                pw.TableRow(
+                  decoration:
+                      const pw.BoxDecoration(color: PdfColors.grey100),
+                  children: [
+                    _tableHeader('REF'),
+                    _tableHeader('LIKELIHOOD/IMPACT'),
+                    _tableHeader('DESCRIPTION'),
+                  ],
+                ),
+                for (final r in summary.risks)
+                  pw.TableRow(children: [
+                    _tableCell(r.ref),
+                    _tableCell('${r.likelihood} / ${r.impact}'),
+                    _tableCell(r.description),
+                  ]),
+              ],
+            ),
+            pw.SizedBox(height: 16),
+          ],
+
+          // Pending decisions
+          if (summary.decisions.isNotEmpty) ...[
+            _sectionHeader('Pending Decisions'),
+            pw.SizedBox(height: 6),
+            for (final d in summary.decisions)
+              pw.Padding(
+                padding: const pw.EdgeInsets.only(bottom: 3),
+                child: pw.Text(
+                    _sanitize(
+                        '${d.ref}   Due: ${d.dueDate}   ${d.description}'),
+                    style: const pw.TextStyle(fontSize: 10)),
+              ),
+            pw.SizedBox(height: 16),
+          ],
+
+          // Counts
+          _sectionHeader('Summary Counts'),
+          pw.SizedBox(height: 6),
+          pw.Row(children: [
+            _countCell('${summary.overdueActions}', 'Overdue actions'),
+            pw.SizedBox(width: 8),
+            _countCell('${summary.openActions}',    'Open actions'),
+            pw.SizedBox(width: 8),
+            _countCell('${summary.pendingDecisions}','Pending decisions'),
+            pw.SizedBox(width: 8),
+            _countCell('${summary.openRisks}',      'Open risks'),
+          ]),
+        ],
+      ),
+    );
+
+    return doc.save();
+  }
+
+  static pw.Widget _tableHeader(String t) => pw.Padding(
+        padding: const pw.EdgeInsets.all(4),
+        child: pw.Text(t,
+            style: pw.TextStyle(
+                fontSize: 8, fontWeight: pw.FontWeight.bold,
+                color: PdfColors.grey700)),
+      );
+
+  static pw.Widget _tableCell(String t) => pw.Padding(
+        padding: const pw.EdgeInsets.all(4),
+        child: pw.Text(_sanitize(t),
+            style: const pw.TextStyle(fontSize: 9)),
+      );
+
+  static pw.Widget _countCell(String num, String label) =>
+      pw.Expanded(
+        child: pw.Container(
+          padding: const pw.EdgeInsets.all(8),
+          decoration: pw.BoxDecoration(
+            border: pw.Border.all(color: PdfColors.grey300),
+            borderRadius: pw.BorderRadius.circular(3),
+          ),
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(num,
+                  style: pw.TextStyle(
+                      fontSize: 16, fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.orange)),
+              pw.Text(_sanitize(label),
+                  style: const pw.TextStyle(
+                      fontSize: 8, color: PdfColors.grey600)),
+            ],
+          ),
+        ),
+      );
+
+  static PdfColor _ragBgColor(String rag) => switch (rag.toLowerCase()) {
+        'red'   => const PdfColor.fromInt(0xff3f1515),
+        'amber' => const PdfColor.fromInt(0xff3d2b05),
+        'green' => const PdfColor.fromInt(0xff0d3325),
+        _       => PdfColors.grey100,
+      };
 }

@@ -17,6 +17,7 @@ class LeftPanel extends StatelessWidget {
   final VoidCallback? onNavigateToActions;
   final VoidCallback? onNavigateToJournal;
   final VoidCallback? onNavigateToPlaybook;
+  final VoidCallback? onNavigateToProgramme;
 
   const LeftPanel({
     super.key,
@@ -25,6 +26,7 @@ class LeftPanel extends StatelessWidget {
     this.onNavigateToActions,
     this.onNavigateToJournal,
     this.onNavigateToPlaybook,
+    this.onNavigateToProgramme,
   });
 
   @override
@@ -34,7 +36,7 @@ class LeftPanel extends StatelessWidget {
     final projectId = projectProvider.currentProjectId;
 
     return Container(
-      width: 220,
+      width: 240,
       color: KColors.surface,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -77,6 +79,8 @@ class LeftPanel extends StatelessWidget {
                         _RecentJournalSection(projectId: projectId, db: db, onTap: onNavigateToJournal),
                         _SectionHeader(label: 'Playbook Stage', icon: Icons.account_tree_outlined),
                         _PlaybookStageSection(projectId: projectId, db: db, onTap: onNavigateToPlaybook),
+                        _ProgrammeGapsSection(projectId: projectId, db: db, onTap: onNavigateToProgramme),
+                        _UpcomingDeadlinesSection(projectId: projectId, db: db),
                         const SizedBox(height: 8),
                       ],
                     ),
@@ -98,16 +102,16 @@ class _SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 10, 14, 6),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 6),
       child: Row(
         children: [
-          Icon(icon, size: 11, color: KColors.textMuted),
-          const SizedBox(width: 5),
+          Icon(icon, size: 13, color: KColors.textDim),
+          const SizedBox(width: 6),
           Text(
             label.toUpperCase(),
             style: const TextStyle(
-              color: KColors.textMuted,
-              fontSize: 9,
+              color: KColors.textDim,
+              fontSize: 11,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.15,
             ),
@@ -256,7 +260,7 @@ class _TopActionsSection extends StatelessWidget {
                             du.formatDate(a.dueDate),
                             style: const TextStyle(
                               color: KColors.red,
-                              fontSize: 10,
+                              fontSize: 11,
                             ),
                           )
                         : null,
@@ -294,13 +298,13 @@ class _PulseItem extends StatelessWidget {
             bottom: BorderSide(color: KColors.border, width: 1),
           ),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
               width: 2,
-              height: 36,
+              height: 40,
               color: barColor,
               margin: const EdgeInsets.only(right: 10),
             ),
@@ -312,7 +316,7 @@ class _PulseItem extends StatelessWidget {
                     label,
                     style: const TextStyle(
                       color: KColors.text,
-                      fontSize: 11,
+                      fontSize: 12,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -358,7 +362,7 @@ class _PulseEmpty extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 14),
       child: Text(
         message,
-        style: const TextStyle(color: KColors.textMuted, fontSize: 11),
+        style: const TextStyle(color: KColors.textMuted, fontSize: 12),
       ),
     );
   }
@@ -373,7 +377,7 @@ class _NoProjectPlaceholder extends StatelessWidget {
         child: Text(
           'Create or select a project to see live data.',
           textAlign: TextAlign.center,
-          style: TextStyle(color: KColors.textDim, fontSize: 11),
+          style: TextStyle(color: KColors.textDim, fontSize: 12),
         ),
       ),
     );
@@ -501,13 +505,13 @@ class _PlaybookStageSection extends StatelessWidget {
                     children: [
                       Text(
                         _statusLabel(status),
-                        style: TextStyle(color: barColor, fontSize: 9),
+                        style: TextStyle(color: barColor, fontSize: 10),
                       ),
                       if (totalCount > 0)
                         Text(
                           '$checkedCount of $totalCount checklist done',
                           style: const TextStyle(
-                              color: KColors.textMuted, fontSize: 9),
+                              color: KColors.textMuted, fontSize: 10),
                         ),
                     ],
                   ),
@@ -546,5 +550,138 @@ class _PlaybookStageSection extends StatelessWidget {
     } catch (_) {
       return 0;
     }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Upcoming Deadlines — hard-deadline milestones within 30 days, not achieved
+// ---------------------------------------------------------------------------
+
+class _UpcomingDeadlinesSection extends StatelessWidget {
+  final String projectId;
+  final AppDatabase db;
+
+  const _UpcomingDeadlinesSection({
+    required this.projectId,
+    required this.db,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<Milestone>>(
+      stream: db.milestonesDao.watchForProject(projectId),
+      builder: (context, snap) {
+        if (!snap.hasData) return const SizedBox.shrink();
+        final today = DateTime.now();
+        final in30Days = today.add(const Duration(days: 30));
+        final todayStr = today.toIso8601String().substring(0, 10);
+        final in30Str = in30Days.toIso8601String().substring(0, 10);
+
+        final upcoming = snap.data!
+            .where((ms) =>
+                ms.isHardDeadline &&
+                ms.status != 'achieved' &&
+                ms.date.isNotEmpty &&
+                ms.date.compareTo(todayStr) >= 0 &&
+                ms.date.compareTo(in30Str) <= 0)
+            .take(2)
+            .toList();
+
+        if (upcoming.isEmpty) return const SizedBox.shrink();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SectionHeader(
+                label: 'Upcoming Deadlines',
+                icon: Icons.diamond_outlined),
+            ...upcoming.map((ms) => _PulseItem(
+                  label: ms.name,
+                  barColor: KColors.red,
+                  trailing: Text(
+                    ms.date,
+                    style: const TextStyle(
+                        color: KColors.red, fontSize: 10),
+                  ),
+                )),
+          ],
+        );
+      },
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Programme Gaps — sponsor + change manager alerts
+// ---------------------------------------------------------------------------
+
+class _ProgrammeGapsSection extends StatelessWidget {
+  final String projectId;
+  final AppDatabase db;
+  final VoidCallback? onTap;
+
+  const _ProgrammeGapsSection({
+    required this.projectId,
+    required this.db,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<StakeholderRole>>(
+      stream: db.stakeholderRoleDao.watchForProject(projectId),
+      builder: (context, srSnap) {
+        return StreamBuilder<List<TeamRole>>(
+          stream: db.teamRoleDao.watchForProject(projectId),
+          builder: (context, trSnap) {
+            final stakeholderRoles = srSnap.data ?? [];
+            final teamRoles = trSnap.data ?? [];
+
+            final sponsorFilled = stakeholderRoles
+                .where((r) =>
+                    r.roleName == 'Programme Sponsor' &&
+                    r.isApplicable &&
+                    r.personId != null)
+                .isNotEmpty;
+
+            final changeMgrFilled = teamRoles
+                .where((r) =>
+                    r.roleName == 'Change Manager' &&
+                    r.isApplicable &&
+                    r.personId != null)
+                .isNotEmpty;
+
+            final gaps = <String>[];
+            if (!sponsorFilled &&
+                stakeholderRoles.any((r) =>
+                    r.roleName == 'Programme Sponsor' && r.isApplicable)) {
+              gaps.add('Programme Sponsor');
+            }
+            if (!changeMgrFilled &&
+                teamRoles.any((r) =>
+                    r.roleName == 'Change Manager' && r.isApplicable)) {
+              gaps.add('Change Manager');
+            }
+
+            if (gaps.isEmpty) return const SizedBox.shrink();
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _SectionHeader(
+                    label: 'Programme Gaps', icon: Icons.warning_amber_rounded),
+                ...gaps.map((g) => _PulseItem(
+                      label: 'No $g assigned',
+                      barColor: KColors.amber,
+                      trailing: const Icon(Icons.warning_amber_rounded,
+                          size: 12, color: KColors.amber),
+                      onTap: onTap,
+                    )),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 }

@@ -1241,7 +1241,7 @@ class _KeyHint extends StatelessWidget {
             border: Border.all(color: KColors.border2),
             borderRadius: BorderRadius.circular(2),
           ),
-          child: Text(keyLabel, style: const TextStyle(color: KColors.textDim, fontSize: 9, fontWeight: FontWeight.w600)),
+          child: Text(keyLabel, style: const TextStyle(color: KColors.textDim, fontSize: 10, fontWeight: FontWeight.w600)),
         ),
         const SizedBox(width: 4),
         Text(hint, style: const TextStyle(color: KColors.textMuted, fontSize: 10)),

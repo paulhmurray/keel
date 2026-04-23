@@ -104,7 +104,7 @@ class _UpdatePanelNotice extends StatelessWidget {
                 'UPDATE AVAILABLE'.toUpperCase(),
                 style: const TextStyle(
                   color: KColors.amber,
-                  fontSize: 9,
+                  fontSize: 10,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.15,
                 ),

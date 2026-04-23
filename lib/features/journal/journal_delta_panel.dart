@@ -22,6 +22,7 @@ class JournalDeltaPanel extends StatefulWidget {
 
 class _JournalDeltaPanelState extends State<JournalDeltaPanel> {
   int _activeIndex = 0;
+  bool _editingActive = false;
   late FocusNode _focusNode;
 
   @override
@@ -40,8 +41,16 @@ class _JournalDeltaPanelState extends State<JournalDeltaPanel> {
   List<DetectedDelta> get _pending =>
       widget.deltas.where((d) => !d.confirmed && !d.ignored).toList();
 
+  /// Returns keyboard focus to the panel after editing ends.
+  void _reclaimFocus() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focusNode.requestFocus();
+    });
+  }
+
   void _confirmActive() {
     setState(() {
+      _editingActive = false;
       final pending = _pending;
       if (pending.isNotEmpty && _activeIndex < pending.length) {
         pending[_activeIndex].confirmed = true;
@@ -51,10 +60,12 @@ class _JournalDeltaPanelState extends State<JournalDeltaPanel> {
         if (_activeIndex < 0) _activeIndex = 0;
       }
     });
+    _reclaimFocus();
   }
 
   void _ignoreActive() {
     setState(() {
+      _editingActive = false;
       final pending = _pending;
       if (pending.isNotEmpty && _activeIndex < pending.length) {
         pending[_activeIndex].ignored = true;
@@ -64,19 +75,29 @@ class _JournalDeltaPanelState extends State<JournalDeltaPanel> {
         if (_activeIndex < 0) _activeIndex = 0;
       }
     });
+    _reclaimFocus();
+  }
+
+  void _cancelEdit() {
+    setState(() => _editingActive = false);
+    _reclaimFocus();
   }
 
   void _nextItem() {
     setState(() {
+      _editingActive = false;
       final pending = _pending;
       if (_activeIndex < pending.length - 1) _activeIndex++;
     });
+    _reclaimFocus();
   }
 
   void _prevItem() {
     setState(() {
+      _editingActive = false;
       if (_activeIndex > 0) _activeIndex--;
     });
+    _reclaimFocus();
   }
 
   KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
@@ -96,15 +117,29 @@ class _JournalDeltaPanelState extends State<JournalDeltaPanel> {
       }
     }
     if (event.logicalKey == LogicalKeyboardKey.keyN) {
-      _ignoreActive();
-      return KeyEventResult.handled;
+      if (!_editingActive) {
+        _ignoreActive();
+        return KeyEventResult.handled;
+      }
+    }
+    if (event.logicalKey == LogicalKeyboardKey.keyE) {
+      if (!_editingActive && _pending.isNotEmpty) {
+        setState(() => _editingActive = true);
+        return KeyEventResult.handled;
+      }
     }
     if (event.logicalKey == LogicalKeyboardKey.tab) {
-      final isShift = HardwareKeyboard.instance.isShiftPressed;
-      if (isShift) _prevItem(); else _nextItem();
-      return KeyEventResult.handled;
+      if (!_editingActive) {
+        final isShift = HardwareKeyboard.instance.isShiftPressed;
+        if (isShift) { _prevItem(); } else { _nextItem(); }
+        return KeyEventResult.handled;
+      }
     }
     if (event.logicalKey == LogicalKeyboardKey.escape) {
+      if (_editingActive) {
+        _cancelEdit();
+        return KeyEventResult.handled;
+      }
       widget.onDismiss();
       return KeyEventResult.handled;
     }
@@ -186,12 +221,11 @@ class _JournalDeltaPanelState extends State<JournalDeltaPanel> {
                     return JournalDeltaItemWidget(
                       delta: e.value,
                       isActive: isActive,
+                      isEditing: isActive && _editingActive,
                       onConfirm: _confirmActive,
                       onIgnore: _ignoreActive,
-                      onEdit: () {
-                        // edit inline - just confirm for now
-                        _confirmActive();
-                      },
+                      onEdit: () => setState(() => _editingActive = true),
+                      onCancelEdit: _cancelEdit,
                     );
                   }).toList(),
                 ),
@@ -208,6 +242,7 @@ class _JournalDeltaPanelState extends State<JournalDeltaPanel> {
                 children: [
                   const _KeyHintRow(hints: [
                     _KeyHintData('Y', 'confirm'),
+                    _KeyHintData('E', 'edit'),
                     _KeyHintData('N', 'ignore'),
                     _KeyHintData('Tab', 'next'),
                   ]),
@@ -275,7 +310,7 @@ class _KeyHintRow extends StatelessWidget {
             ),
             child: Text(h.keyLabel,
                 style: const TextStyle(
-                    color: KColors.textDim, fontSize: 9, fontWeight: FontWeight.w600)),
+                    color: KColors.textDim, fontSize: 10, fontWeight: FontWeight.w600)),
           ),
           const SizedBox(width: 4),
           Text(h.actionLabel,

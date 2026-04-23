@@ -419,7 +419,7 @@ class _KanbanCard extends StatelessWidget {
                       action.ref!,
                       style: const TextStyle(
                         color: KColors.amber,
-                        fontSize: 9,
+                        fontSize: 10,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -459,7 +459,7 @@ class _KanbanCard extends StatelessWidget {
                           _initials(action.owner!),
                           style: const TextStyle(
                             color: KColors.amber,
-                            fontSize: 9,
+                            fontSize: 10,
                             fontWeight: FontWeight.bold,
                           ),
                         ),

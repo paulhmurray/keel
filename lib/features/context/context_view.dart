@@ -1545,7 +1545,7 @@ class _GlossaryTabState extends State<_GlossaryTab> {
                   const Text(
                     'SYSTEMS & TERMS',
                     style: TextStyle(
-                      fontSize: 9,
+                      fontSize: 10,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.15,
                       color: KColors.textMuted,
@@ -1640,7 +1640,7 @@ class _GlossaryGroupHeader extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            fontSize: 9,
+            fontSize: 10,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.15,
             color: color,

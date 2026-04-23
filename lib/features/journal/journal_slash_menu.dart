@@ -15,47 +15,50 @@ class SlashCommand {
   });
 }
 
+// Placeholder markers use ⟨ ⟩ (U+27E8/27E9 — mathematical angle brackets).
+// These are virtually never typed by hand, making them safe tab-stop markers.
+// The editor selects each ⟨placeholder⟩ in turn as the user presses Tab.
 const kSlashCommands = [
   SlashCommand(
     command: '/meeting',
     description: 'Meeting header',
-    template: '## Meeting: \nDate: \nAttendees: \n\n',
+    template: '## Meeting: ⟨title⟩\nDate: ⟨date⟩\nAttendees: ⟨names⟩\n\n',
     icon: Icons.groups_outlined,
   ),
   SlashCommand(
     command: '/action',
     description: 'Action item',
-    template: '**Action:** @name — task — by date\n',
+    template: '**Action:** ⟨name⟩ — ⟨task⟩ — by ⟨date⟩\n',
     icon: Icons.check_circle_outline,
   ),
   SlashCommand(
     command: '/decision',
     description: 'Decision',
-    template: '**Decision:** description\nDecision-maker: \n',
+    template: '**Decision:** ⟨description⟩\nDecision-maker: ⟨maker⟩\n',
     icon: Icons.gavel_outlined,
   ),
   SlashCommand(
     command: '/risk',
     description: 'Risk',
-    template: '**Risk:** description\nLikelihood: medium | Impact: medium\n',
+    template: '**Risk:** ⟨description⟩\nLikelihood: ⟨medium⟩ | Impact: ⟨medium⟩\n',
     icon: Icons.shield_outlined,
   ),
   SlashCommand(
     command: '/issue',
     description: 'Issue',
-    template: '**Issue:** description\nOwner: \n',
+    template: '**Issue:** ⟨description⟩\nOwner: ⟨owner⟩\n',
     icon: Icons.warning_amber_outlined,
   ),
   SlashCommand(
     command: '/dep',
     description: 'Dependency',
-    template: '**Dependency:** description\nOwner: \n',
+    template: '**Dependency:** ⟨description⟩\nOwner: ⟨owner⟩\n',
     icon: Icons.link_outlined,
   ),
   SlashCommand(
     command: '/note',
     description: 'Plain note',
-    template: '**Note:** ',
+    template: '**Note:** ⟨note⟩',
     icon: Icons.sticky_note_2_outlined,
   ),
   SlashCommand(
@@ -121,7 +124,7 @@ class JournalSlashMenu extends StatelessWidget {
                   'COMMANDS',
                   style: TextStyle(
                     color: KColors.textDim,
-                    fontSize: 9,
+                    fontSize: 10,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.08,
                   ),

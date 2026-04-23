@@ -883,7 +883,7 @@ class _Chip extends StatelessWidget {
       ),
       child: Text(label,
           style: TextStyle(
-              color: color, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.1)),
+              color: color, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.1)),
     );
   }
 }

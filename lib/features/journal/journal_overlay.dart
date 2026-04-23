@@ -11,6 +11,7 @@ import '../../providers/settings_provider.dart';
 import '../../shared/theme/keel_colors.dart';
 import 'journal_editor.dart';
 import 'journal_delta_panel.dart';
+import 'journal_link_renderer.dart';
 
 enum _OverlayPhase { editor, parsing, reviewing }
 
@@ -39,6 +40,7 @@ class _JournalOverlayState extends State<JournalOverlay> {
   late FocusNode _bodyFocus;
   List<DetectedDelta> _deltas = [];
   List<Person> _persons = [];
+  List<GlossaryEntry> _glossaryEntries = [];
   String? _savedEntryId;
   bool _hasChanges = false;
 
@@ -52,6 +54,7 @@ class _JournalOverlayState extends State<JournalOverlay> {
     _savedEntryId = e?.id;
     _bodyCtrl.addListener(() => _hasChanges = true);
     _loadPersons();
+    _loadGlossaryEntries();
     WidgetsBinding.instance.addPostFrameCallback((_) => _bodyFocus.requestFocus());
   }
 
@@ -64,8 +67,37 @@ class _JournalOverlayState extends State<JournalOverlay> {
   }
 
   Future<void> _loadPersons() async {
-    final persons = await widget.db.peopleDao.getPersonsForProject(widget.projectId);
+    final persons =
+        await widget.db.peopleDao.getPersonsForProject(widget.projectId);
     if (mounted) setState(() => _persons = persons);
+  }
+
+  Future<void> _loadGlossaryEntries() async {
+    final entries =
+        await widget.db.glossaryDao.getForProject(widget.projectId);
+    if (mounted) setState(() => _glossaryEntries = entries);
+  }
+
+  Future<GlossaryEntry?> _createGlossaryEntry(String name) async {
+    if (!mounted) return null;
+    final result = await showDialog<GlossaryEntry>(
+      context: context,
+      builder: (_) => _QuickGlossaryDialog(name: name),
+    );
+    if (result != null) {
+      await widget.db.glossaryDao.upsert(GlossaryEntriesCompanion(
+        id: Value(result.id),
+        projectId: Value(widget.projectId),
+        name: Value(result.name),
+        acronym: Value(result.acronym),
+        type: Value(result.type),
+        description: Value(result.description),
+        createdAt: Value(result.createdAt),
+        updatedAt: Value(result.updatedAt),
+      ));
+      await _loadGlossaryEntries();
+    }
+    return result;
   }
 
   Future<Person?> _createPerson(String name) async {
@@ -308,10 +340,10 @@ class _JournalOverlayState extends State<JournalOverlay> {
             bodyFocusNode: _bodyFocus,
             entryDate: _formatDisplayDate(_entryDate),
             persons: _persons,
+            glossaryEntries: _glossaryEntries,
             onSave: _saveAndParse,
             onCreatePerson: _createPerson,
-            vimMode: widget.settings.journalVimMode,
-            vimEscapeSequence: widget.settings.vimEscapeSequence,
+            onCreateGlossaryEntry: _createGlossaryEntry,
           ),
         );
 
@@ -366,13 +398,10 @@ class _JournalOverlayState extends State<JournalOverlay> {
                     const SizedBox(height: 12),
                     Expanded(
                       child: SingleChildScrollView(
-                        child: Text(
-                          _bodyCtrl.text,
-                          style: const TextStyle(
-                            color: KColors.text,
-                            fontSize: 12,
-                            height: 1.7,
-                          ),
+                        child: JournalLinkRenderer(
+                          text: _bodyCtrl.text,
+                          persons: _persons,
+                          glossaryEntries: _glossaryEntries,
                         ),
                       ),
                     ),
@@ -505,6 +534,187 @@ class _QuickPersonDialogState extends State<_QuickPersonDialog> {
           child: const Text('Add'),
         ),
       ],
+    );
+  }
+}
+
+class _QuickGlossaryDialog extends StatefulWidget {
+  final String name;
+  const _QuickGlossaryDialog({required this.name});
+
+  @override
+  State<_QuickGlossaryDialog> createState() => _QuickGlossaryDialogState();
+}
+
+class _QuickGlossaryDialogState extends State<_QuickGlossaryDialog> {
+  late TextEditingController _nameCtrl;
+  final _acronymCtrl = TextEditingController();
+  final _descCtrl = TextEditingController();
+  String _type = 'term';
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtrl = TextEditingController(text: widget.name);
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _acronymCtrl.dispose();
+    _descCtrl.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final name = _nameCtrl.text.trim();
+    if (name.isEmpty) return;
+    final now = DateTime.now();
+    final entry = GlossaryEntry(
+      id: const Uuid().v4(),
+      projectId: '',
+      name: name,
+      acronym: _acronymCtrl.text.trim().isEmpty ? null : _acronymCtrl.text.trim(),
+      type: _type,
+      description: _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
+      owner: null,
+      environment: null,
+      status: null,
+      createdAt: now,
+      updatedAt: now,
+    );
+    Navigator.of(context).pop(entry);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: KColors.surface,
+      title: const Text('Add Glossary Entry',
+          style: TextStyle(color: KColors.text, fontSize: 14)),
+      content: SizedBox(
+        width: 340,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Type toggle
+            Row(
+              children: [
+                const Text('Type:',
+                    style: TextStyle(color: KColors.textDim, fontSize: 12)),
+                const SizedBox(width: 12),
+                _TypeToggle(
+                  value: _type,
+                  onChanged: (v) => setState(() => _type = v),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _nameCtrl,
+              autofocus: true,
+              style: const TextStyle(color: KColors.text, fontSize: 13),
+              decoration: const InputDecoration(
+                labelText: 'Name',
+                labelStyle: TextStyle(color: KColors.textDim, fontSize: 12),
+              ),
+              onSubmitted: (_) => _submit(),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _acronymCtrl,
+              style: const TextStyle(color: KColors.text, fontSize: 13),
+              decoration: const InputDecoration(
+                labelText: 'Acronym (optional)',
+                labelStyle: TextStyle(color: KColors.textDim, fontSize: 12),
+              ),
+              onSubmitted: (_) => _submit(),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _descCtrl,
+              style: const TextStyle(color: KColors.text, fontSize: 13),
+              maxLines: 3,
+              decoration: const InputDecoration(
+                labelText: 'Description (optional)',
+                labelStyle: TextStyle(color: KColors.textDim, fontSize: 12),
+                alignLabelWithHint: true,
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel',
+              style: TextStyle(color: KColors.textDim, fontSize: 12)),
+        ),
+        ElevatedButton(
+          onPressed: _submit,
+          child: const Text('Add'),
+        ),
+      ],
+    );
+  }
+}
+
+class _TypeToggle extends StatelessWidget {
+  final String value;
+  final void Function(String) onChanged;
+  const _TypeToggle({required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _ToggleBtn(
+          label: 'Term',
+          selected: value == 'term',
+          onTap: () => onChanged('term'),
+        ),
+        const SizedBox(width: 6),
+        _ToggleBtn(
+          label: 'System',
+          selected: value == 'system',
+          onTap: () => onChanged('system'),
+        ),
+      ],
+    );
+  }
+}
+
+class _ToggleBtn extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _ToggleBtn(
+      {required this.label, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(3),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: selected ? KColors.phosDim : Colors.transparent,
+          border: Border.all(
+            color: selected ? KColors.phosphor : KColors.border2,
+          ),
+          borderRadius: BorderRadius.circular(3),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: selected ? KColors.phosphor : KColors.textDim,
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
     );
   }
 }

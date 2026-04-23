@@ -19,6 +19,14 @@ part 'daos/workstreams_dao.dart';
 part 'daos/glossary_dao.dart';
 part 'daos/action_categories_dao.dart';
 part 'daos/playbook_dao.dart';
+part 'daos/stakeholder_role_dao.dart';
+part 'daos/team_role_dao.dart';
+part 'daos/milestones_dao.dart';
+part 'daos/workstream_activities_dao.dart';
+part 'daos/programme_gantt_dao.dart';
+part 'daos/status_snapshot_dao.dart';
+part 'daos/project_charter_dao.dart';
+part 'daos/programme_overview_state_dao.dart';
 
 // ---------------------------------------------------------------------------
 // Tables
@@ -226,6 +234,88 @@ class StakeholderProfiles extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+class StakeholderRoles extends Table {
+  TextColumn get id => text().named('id')();
+  TextColumn get projectId => text().references(Projects, #id)();
+  TextColumn get roleName => text()();
+  // accountable | active | affected
+  TextColumn get roleType => text()();
+  TextColumn get personId => text().nullable()();
+  BoolColumn get isScaffold => boolean().withDefault(const Constant(true))();
+  BoolColumn get isApplicable => boolean().withDefault(const Constant(true))();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  TextColumn get notes => text().nullable()();
+  // Stakeholder map enhancements
+  TextColumn get functionalArea => text().nullable()();
+  TextColumn get integrationRelevance => text().nullable()();
+  // critical | high | medium | low
+  TextColumn get priority => text().nullable()();
+  // not_started | engaged | gap_action_required | not_engaged | complete
+  TextColumn get engagementStatus => text().nullable()();
+  BoolColumn get gapFlag => boolean().withDefault(const Constant(false))();
+  TextColumn get gapDescription => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class TeamRoles extends Table {
+  TextColumn get id => text().named('id')();
+  TextColumn get projectId => text().references(Projects, #id)();
+  TextColumn get roleName => text()();
+  // programme_leadership | business_analysis | technology | specialist | governance
+  TextColumn get teamGroup => text()();
+  TextColumn get personId => text().nullable()();
+  BoolColumn get isScaffold => boolean().withDefault(const Constant(true))();
+  BoolColumn get isApplicable => boolean().withDefault(const Constant(true))();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  TextColumn get notes => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class Milestones extends Table {
+  TextColumn get id => text().named('id')();
+  TextColumn get projectId => text().references(Projects, #id)();
+  TextColumn get name => text()();
+  TextColumn get date => text()(); // ISO date string YYYY-MM-DD
+  TextColumn get ownerId => text().nullable()(); // FK → Persons (nullable)
+  // upcoming | achieved | at_risk | missed
+  TextColumn get status => text().withDefault(const Constant('upcoming'))();
+  BoolColumn get isHardDeadline => boolean().withDefault(const Constant(false))();
+  TextColumn get notes => text().nullable()();
+  TextColumn get workstreamId => text().nullable()(); // FK → Workstreams (nullable)
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class WorkstreamActivities extends Table {
+  TextColumn get id => text().named('id')();
+  TextColumn get workstreamId => text().references(Workstreams, #id)();
+  TextColumn get projectId => text().references(Projects, #id)();
+  TextColumn get name => text()();
+  TextColumn get startDate => text()(); // ISO date string
+  TextColumn get endDate => text()(); // ISO date string
+  TextColumn get ownerId => text().nullable()(); // FK → Persons (nullable)
+  // not_started | in_progress | complete | blocked
+  TextColumn get status => text().withDefault(const Constant('not_started'))();
+  TextColumn get notes => text().nullable()();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 class ColleagueProfiles extends Table {
   TextColumn get id => text().named('id')();
   TextColumn get projectId => text().references(Projects, #id)();
@@ -390,6 +480,211 @@ class StatusReports extends Table {
 }
 
 // ---------------------------------------------------------------------------
+// Timeline v2 — Programme Gantt tables
+// ---------------------------------------------------------------------------
+
+class TimelineWorkPackages extends Table {
+  TextColumn get id => text()();
+  TextColumn get projectId => text().references(Projects, #id)();
+  TextColumn get name => text()();
+  TextColumn get shortCode => text().nullable()();
+  TextColumn get description => text().nullable()();
+  // wp1 | wp2 | wp3 | wp4 | mpower | governance | custom
+  TextColumn get colourTheme =>
+      text().withDefault(const Constant('wp1'))();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  // green | amber | red | not_started
+  TextColumn get ragStatus =>
+      text().withDefault(const Constant('not_started'))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class TimelineActivities extends Table {
+  TextColumn get id => text()();
+  TextColumn get workPackageId =>
+      text().references(TimelineWorkPackages, #id)();
+  TextColumn get projectId => text().references(Projects, #id)();
+  TextColumn get name => text()();
+  TextColumn get owner => text().nullable()();
+  TextColumn get ownerId => text().nullable()(); // FK → Persons (nullable)
+  // activity | milestone | hard_deadline | dependency_marker | ongoing | gate
+  TextColumn get activityType =>
+      text().withDefault(const Constant('activity'))();
+  IntColumn get startMonth => integer().nullable()();
+  IntColumn get endMonth => integer().nullable()();
+  TextColumn get startDate => text().nullable()();
+  TextColumn get endDate => text().nullable()();
+  // not_started | on_track | at_risk | complete | overdue
+  TextColumn get status =>
+      text().withDefault(const Constant('not_started'))();
+  BoolColumn get isCritical =>
+      boolean().withDefault(const Constant(false))();
+  BoolColumn get isBaseline =>
+      boolean().withDefault(const Constant(false))();
+  IntColumn get baselineStart => integer().nullable()();
+  IntColumn get baselineEnd => integer().nullable()();
+  TextColumn get cellLabel => text().nullable()();
+  TextColumn get notes => text().nullable()();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class TimelineDependencies extends Table {
+  TextColumn get id => text()();
+  TextColumn get projectId => text().references(Projects, #id)();
+  TextColumn get fromActivityId => text()();
+  TextColumn get toActivityId => text()();
+  // finish_to_start | start_to_start | finish_to_finish | external
+  TextColumn get dependencyType =>
+      text().withDefault(const Constant('finish_to_start'))();
+  TextColumn get notes => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class ProgrammeHeaders extends Table {
+  TextColumn get id => text()();
+  TextColumn get projectId => text()(); // one per project
+  TextColumn get title => text().nullable()();
+  TextColumn get subtitle => text().nullable()();
+  TextColumn get hardDeadline => text().nullable()();
+  TextColumn get inScope => text().nullable()();
+  TextColumn get outOfScope => text().nullable()();
+  TextColumn get monthLabels => text().nullable()(); // JSON array of strings
+  TextColumn get month0Date => text().nullable()(); // ISO date YYYY-MM-DD
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class ProjectScopes extends Table {
+  TextColumn get id => text()();
+  TextColumn get projectId => text().references(Projects, #id)();
+  TextColumn get inScopeItems => text().nullable()(); // JSON array
+  TextColumn get outOfScope => text().nullable()(); // JSON array of strings
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class IntegrationDomains extends Table {
+  TextColumn get id => text()();
+  TextColumn get projectId => text().references(Projects, #id)();
+  TextColumn get priority => text().nullable()();
+  TextColumn get domain => text()();
+  TextColumn get likelySystems => text().nullable()();
+  TextColumn get prioritySignal => text().nullable()();
+  // not_started | in_progress | complete | at_risk
+  TextColumn get status =>
+      text().withDefault(const Constant('not_started'))();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class PrioritisationSources extends Table {
+  TextColumn get id => text()();
+  TextColumn get projectId => text().references(Projects, #id)();
+  TextColumn get sourceName => text()();
+  TextColumn get inputType => text().nullable()();
+  TextColumn get owner => text().nullable()();
+  TextColumn get mechanism => text().nullable()();
+  TextColumn get weight => text().nullable()();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+// ---------------------------------------------------------------------------
+// Status snapshots
+// ---------------------------------------------------------------------------
+
+class StatusSnapshots extends Table {
+  TextColumn get id => text()();
+  TextColumn get projectId => text().references(Projects, #id)();
+  // Monday of the week this snapshot covers
+  DateTimeColumn get weekEnding => dateTime()();
+  // green | amber | red
+  TextColumn get programmeRag => text()();
+  // JSON map: {wp_id: rag_value}
+  TextColumn get workstreamRag => text().withDefault(const Constant('{}'))();
+  IntColumn get overdueActionsCount =>
+      integer().withDefault(const Constant(0))();
+  IntColumn get openActionsCount =>
+      integer().withDefault(const Constant(0))();
+  IntColumn get pendingDecisionsCount =>
+      integer().withDefault(const Constant(0))();
+  IntColumn get openRisksCount => integer().withDefault(const Constant(0))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+// ---------------------------------------------------------------------------
+// Charter
+// ---------------------------------------------------------------------------
+
+class ProjectCharters extends Table {
+  TextColumn get id => text().named('id')();
+  TextColumn get projectId => text().references(Projects, #id)();
+  TextColumn get vision => text().nullable()();
+  TextColumn get objectives => text().nullable()();
+  TextColumn get scopeIn => text().nullable()();
+  TextColumn get scopeOut => text().nullable()();
+  TextColumn get deliveryApproach => text().nullable()();
+  TextColumn get successCriteria => text().nullable()();
+  TextColumn get keyConstraints => text().nullable()();
+  TextColumn get assumptions => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+// ---------------------------------------------------------------------------
+// Programme Overview state (cached RAG + narrative)
+// ---------------------------------------------------------------------------
+
+class ProgrammeOverviewStates extends Table {
+  TextColumn get id => text().named('id')();
+  TextColumn get projectId => text().references(Projects, #id)();
+  // green | amber | red — null means use computed value
+  TextColumn get cachedRag => text().nullable()();
+  TextColumn get cachedNarrative => text().nullable()();
+  DateTimeColumn get narrativeGeneratedAt => dateTime().nullable()();
+  TextColumn get narrativeManualOverride => text().nullable()();
+  // green | amber | red — explicit PM override, null = auto
+  TextColumn get ragManualOverride => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+// ---------------------------------------------------------------------------
 // Playbook tables
 // ---------------------------------------------------------------------------
 
@@ -507,6 +802,10 @@ class ProjectStageProgresses extends Table {
     Decisions,
     Persons,
     StakeholderProfiles,
+    StakeholderRoles,
+    TeamRoles,
+    Milestones,
+    WorkstreamActivities,
     ColleagueProfiles,
     ActionCategories,
     ProjectActions,
@@ -523,6 +822,16 @@ class ProjectStageProgresses extends Table {
     StageTemplates,
     ProjectPlaybooks,
     ProjectStageProgresses,
+    TimelineWorkPackages,
+    TimelineActivities,
+    TimelineDependencies,
+    ProgrammeHeaders,
+    ProjectScopes,
+    IntegrationDomains,
+    PrioritisationSources,
+    StatusSnapshots,
+    ProjectCharters,
+    ProgrammeOverviewStates,
   ],
   daos: [
     ProjectDao,
@@ -539,6 +848,14 @@ class ProjectStageProgresses extends Table {
     JournalDao,
     WorkstreamsDao,
     PlaybookDao,
+    StakeholderRoleDao,
+    TeamRoleDao,
+    MilestonesDao,
+    WorkstreamActivitiesDao,
+    ProgrammeGanttDao,
+    StatusSnapshotDao,
+    ProjectCharterDao,
+    ProgrammeOverviewStateDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -546,7 +863,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.memory() : super(openMemoryConnection());
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 16;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -595,6 +912,41 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(projectPlaybooks);
             await m.createTable(projectStageProgresses);
           }
+          if (from < 10) {
+            await m.createTable(stakeholderRoles);
+            await m.createTable(teamRoles);
+          }
+          if (from < 11) {
+            await m.createTable(milestones);
+            await m.createTable(workstreamActivities);
+          }
+          if (from < 12) {
+            await m.createTable(timelineWorkPackages);
+            await m.createTable(timelineActivities);
+            await m.createTable(timelineDependencies);
+            await m.createTable(programmeHeaders);
+            await m.createTable(projectScopes);
+            await m.createTable(integrationDomains);
+            await m.createTable(prioritisationSources);
+          }
+          if (from < 13) {
+            await m.addColumn(timelineActivities, timelineActivities.status);
+          }
+          if (from < 14) {
+            await m.addColumn(stakeholderRoles, stakeholderRoles.functionalArea);
+            await m.addColumn(stakeholderRoles, stakeholderRoles.integrationRelevance);
+            await m.addColumn(stakeholderRoles, stakeholderRoles.priority);
+            await m.addColumn(stakeholderRoles, stakeholderRoles.engagementStatus);
+            await m.addColumn(stakeholderRoles, stakeholderRoles.gapFlag);
+            await m.addColumn(stakeholderRoles, stakeholderRoles.gapDescription);
+          }
+          if (from < 15) {
+            await m.createTable(statusSnapshots);
+          }
+          if (from < 16) {
+            await m.createTable(projectCharters);
+            await m.createTable(programmeOverviewStates);
+          }
         },
       );
 
@@ -638,13 +990,28 @@ class AppDatabase extends _$AppDatabase {
             .go();
       }
       await (delete(persons)..where((t) => t.projectId.equals(projectId))).go();
+      await (delete(stakeholderRoles)..where((t) => t.projectId.equals(projectId))).go();
+      await (delete(teamRoles)..where((t) => t.projectId.equals(projectId))).go();
       await (delete(decisions)..where((t) => t.projectId.equals(projectId))).go();
       await (delete(programDependencies)..where((t) => t.projectId.equals(projectId))).go();
       await (delete(issues)..where((t) => t.projectId.equals(projectId))).go();
       await (delete(assumptions)..where((t) => t.projectId.equals(projectId))).go();
       await (delete(risks)..where((t) => t.projectId.equals(projectId))).go();
       await (delete(governanceCadences)..where((t) => t.projectId.equals(projectId))).go();
+      await (delete(milestones)..where((t) => t.projectId.equals(projectId))).go();
+      await (delete(workstreamActivities)..where((t) => t.projectId.equals(projectId))).go();
       await (delete(workstreams)..where((t) => t.projectId.equals(projectId))).go();
+      // Timeline v2
+      await (delete(timelineDependencies)..where((t) => t.projectId.equals(projectId))).go();
+      await (delete(timelineActivities)..where((t) => t.projectId.equals(projectId))).go();
+      await (delete(timelineWorkPackages)..where((t) => t.projectId.equals(projectId))).go();
+      await (delete(programmeHeaders)..where((t) => t.projectId.equals(projectId))).go();
+      await (delete(projectScopes)..where((t) => t.projectId.equals(projectId))).go();
+      await (delete(integrationDomains)..where((t) => t.projectId.equals(projectId))).go();
+      await (delete(prioritisationSources)..where((t) => t.projectId.equals(projectId))).go();
+      await (delete(statusSnapshots)..where((t) => t.projectId.equals(projectId))).go();
+      await (delete(projectCharters)..where((t) => t.projectId.equals(projectId))).go();
+      await (delete(programmeOverviewStates)..where((t) => t.projectId.equals(projectId))).go();
       await (delete(programmeOverviews)..where((t) => t.projectId.equals(projectId))).go();
       // Playbook progress — delete stage progress before project_playbooks
       final ppIds = await (select(projectPlaybooks)

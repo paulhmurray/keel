@@ -90,7 +90,7 @@ class SourceBadge extends StatelessWidget {
               _label,
               style: TextStyle(
                 color: _fg,
-                fontSize: 9,
+                fontSize: 10,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.1,
               ),

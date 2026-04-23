@@ -1,4 +1,6 @@
-name: Release
+name: Release (Linux + Windows)
+# macOS is built and signed via Codemagic (see codemagic.yaml).
+# Codemagic attaches keel-macos.dmg and keel-macos.zip to the GitHub release.
 
 on:
   push:
@@ -17,10 +19,6 @@ jobs:
           - os: ubuntu-latest
             platform: linux
             artifact_name: keel-linux.tar.gz
-
-          - os: macos-latest
-            platform: macos
-            artifact_name: keel-macos.dmg
 
           - os: windows-latest
             platform: windows
@@ -63,31 +61,6 @@ jobs:
           chmod +x build/linux/x64/release/bundle/install.sh
           tar -czf keel-linux.tar.gz \
             -C build/linux/x64/release/bundle .
-
-      # ── macOS ──────────────────────────────────────────────────────────────
-      - name: Build (macOS)
-        if: matrix.platform == 'macos'
-        run: flutter build macos --release
-
-      - name: Ad-hoc sign (macOS)
-        if: matrix.platform == 'macos'
-        run: |
-          APP=$(find build/macos/Build/Products/Release -name "*.app" -maxdepth 1 | head -1)
-          codesign --deep --force --sign - "$APP"
-
-      - name: Package as DMG (macOS)
-        if: matrix.platform == 'macos'
-        run: |
-          APP=$(find build/macos/Build/Products/Release -name "*.app" -maxdepth 1 | head -1)
-          mkdir -p dmg_staging
-          cp -r "$APP" dmg_staging/
-          ln -s /Applications dmg_staging/Applications
-          hdiutil create \
-            -volname "Keel" \
-            -srcfolder dmg_staging \
-            -ov \
-            -format UDZO \
-            keel-macos.dmg
 
       # ── Windows ────────────────────────────────────────────────────────────
       - name: Build (Windows)
@@ -146,6 +119,5 @@ jobs:
           generate_release_notes: true
           files: |
             keel-linux.tar.gz
-            keel-macos.dmg
             keel-windows-setup.exe
             keel-windows.zip

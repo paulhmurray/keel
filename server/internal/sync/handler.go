@@ -1,6 +1,7 @@
 package sync
 
 import (
+	"context"
 	"encoding/base64"
 	"io"
 	"net/http"
@@ -8,11 +9,21 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// dbPool is the subset of pgxpool.Pool used by this handler.
+// Using an interface allows the handler to be tested with a mock DB.
+type dbPool interface {
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+}
+
 type Handler struct {
-	db *pgxpool.Pool
+	db dbPool
 }
 
 func NewHandler(db *pgxpool.Pool) *Handler {

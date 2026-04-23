@@ -306,6 +306,108 @@ class JsonExporter {
           .toList(),
     };
 
+    // Playbook — optional; only exported when a playbook is attached
+    final projectPlaybook =
+        await db.playbookDao.getProjectPlaybook(projectId);
+    if (projectPlaybook != null) {
+      final playbook =
+          await db.playbookDao.getPlaybookById(projectPlaybook.playbookId);
+      final org = playbook != null
+          ? await db.playbookDao.getOrganisationById(playbook.organisationId)
+          : null;
+      final stages = playbook != null
+          ? await db.playbookDao.getStagesForPlaybook(playbook.id)
+          : <PlaybookStage>[];
+      final allTemplates = <Map<String, dynamic>>[];
+      for (final stage in stages) {
+        final templates =
+            await db.playbookDao.getTemplatesForStage(stage.id);
+        for (final t in templates) {
+          allTemplates.add({
+            'id': t.id,
+            'stage_id': t.stageId,
+            'name': t.name,
+            'filename': t.filename,
+            'file_path': t.filePath,
+            'file_type': t.fileType,
+            'fill_strategy': t.fillStrategy,
+            'field_hints': t.fieldHints,
+            'uploaded_at': t.uploadedAt.toIso8601String(),
+          });
+        }
+      }
+      final progresses = await db.playbookDao
+          .getProgressForProjectPlaybook(projectPlaybook.id);
+      data['playbook'] = {
+        'organisation': org == null
+            ? null
+            : {
+                'id': org.id,
+                'name': org.name,
+                'short_name': org.shortName,
+                'notes': org.notes,
+                'created_at': org.createdAt.toIso8601String(),
+                'updated_at': org.updatedAt.toIso8601String(),
+              },
+        'playbook': playbook == null
+            ? null
+            : {
+                'id': playbook.id,
+                'organisation_id': playbook.organisationId,
+                'name': playbook.name,
+                'description': playbook.description,
+                'version': playbook.version,
+                'created_at': playbook.createdAt.toIso8601String(),
+                'updated_at': playbook.updatedAt.toIso8601String(),
+              },
+        'stages': stages
+            .map((s) => {
+                  'id': s.id,
+                  'playbook_id': s.playbookId,
+                  'name': s.name,
+                  'description': s.description,
+                  'sort_order': s.sortOrder,
+                  'approver_role': s.approverRole,
+                  'gate_condition': s.gateCondition,
+                  'notes': s.notes,
+                  'created_at': s.createdAt.toIso8601String(),
+                  'updated_at': s.updatedAt.toIso8601String(),
+                })
+            .toList(),
+        'templates': allTemplates,
+        'project_playbook': {
+          'id': projectPlaybook.id,
+          'project_id': projectPlaybook.projectId,
+          'playbook_id': projectPlaybook.playbookId,
+          'current_stage_id': projectPlaybook.currentStageId,
+          'attached_at': projectPlaybook.attachedAt.toIso8601String(),
+        },
+        'stage_progresses': progresses
+            .map((p) => {
+                  'id': p.id,
+                  'project_playbook_id': p.projectPlaybookId,
+                  'stage_id': p.stageId,
+                  'status': p.status,
+                  'gate_met': p.gateMet,
+                  'approved_by': p.approvedBy,
+                  'approved_at': p.approvedAt?.toIso8601String(),
+                  'approval_notes': p.approvalNotes,
+                  'evidence_filename': p.evidenceFilename,
+                  'evidence_file_path': p.evidenceFilePath,
+                  'evidence_uploaded_at':
+                      p.evidenceUploadedAt?.toIso8601String(),
+                  'checklist': p.checklist,
+                  'generated_doc_path': p.generatedDocPath,
+                  'generated_at': p.generatedAt?.toIso8601String(),
+                  'journal_entry_id': p.journalEntryId,
+                  'notes': p.notes,
+                  'created_at': p.createdAt.toIso8601String(),
+                  'updated_at': p.updatedAt.toIso8601String(),
+                })
+            .toList(),
+      };
+    }
+
     return data;
   }
 

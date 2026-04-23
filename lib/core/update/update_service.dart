@@ -21,9 +21,17 @@ class UpdateInfo {
 class UpdateService {
   static const _versionEndpoint = 'https://api.keel-app.dev/version/latest';
 
+  final http.Client _client;
+
+  /// [overrideCurrentVersion] bypasses PackageInfo for testing.
+  final String? overrideCurrentVersion;
+
+  UpdateService({http.Client? httpClient, this.overrideCurrentVersion})
+      : _client = httpClient ?? http.Client();
+
   Future<UpdateInfo?> checkForUpdate() async {
     try {
-      final response = await http
+      final response = await _client
           .get(Uri.parse(_versionEndpoint))
           .timeout(const Duration(seconds: 10));
 
@@ -31,8 +39,13 @@ class UpdateService {
 
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       final latestVersion = data['version'] as String;
-      final info = await PackageInfo.fromPlatform();
-      final currentVersion = info.version;
+      final String currentVersion;
+      if (overrideCurrentVersion != null) {
+        currentVersion = overrideCurrentVersion!;
+      } else {
+        final info = await PackageInfo.fromPlatform();
+        currentVersion = info.version;
+      }
 
       if (!_isNewer(latestVersion, currentVersion)) return null;
 

@@ -24,7 +24,9 @@ ThemeData get keelTheme {
     ),
   );
 
-  final monoBase = GoogleFonts.jetBrainsMonoTextTheme(base.textTheme);
+  // Inter for body text; JetBrains Mono applied selectively below for
+  // labels, metadata, inputs and chips.
+  final interBase = GoogleFonts.interTextTheme(base.textTheme);
 
   return base.copyWith(
     scaffoldBackgroundColor: KColors.bg,
@@ -56,12 +58,12 @@ ThemeData get keelTheme {
       unselectedIconTheme: IconThemeData(color: KColors.textMuted, size: 20),
       selectedLabelTextStyle: TextStyle(
         color: KColors.amber,
-        fontSize: 9,
+        fontSize: 10,
         fontWeight: FontWeight.w600,
       ),
       unselectedLabelTextStyle: TextStyle(
         color: KColors.textMuted,
-        fontSize: 9,
+        fontSize: 10,
       ),
       indicatorColor: KColors.amberDim,
       minWidth: 56,
@@ -132,7 +134,8 @@ ThemeData get keelTheme {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(3)),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
     ),
-    textTheme: monoBase.copyWith(
+    textTheme: interBase.copyWith(
+      // Syne for all headings and titles
       displayLarge: GoogleFonts.syne(color: KColors.text, fontSize: 48),
       displayMedium: GoogleFonts.syne(color: KColors.text, fontSize: 40),
       displaySmall: GoogleFonts.syne(color: KColors.text, fontSize: 32),
@@ -148,13 +151,17 @@ ThemeData get keelTheme {
           color: KColors.text, fontSize: 14, fontWeight: FontWeight.w500),
       titleSmall: GoogleFonts.syne(
           color: KColors.text, fontSize: 13, fontWeight: FontWeight.w500),
-      bodyLarge: GoogleFonts.jetBrainsMono(color: KColors.text, fontSize: 13),
-      bodyMedium: GoogleFonts.jetBrainsMono(color: KColors.text, fontSize: 12),
-      bodySmall: GoogleFonts.jetBrainsMono(color: KColors.textDim, fontSize: 11),
+      // Inter for body text — prose, descriptions, notes, narratives
+      bodyLarge: GoogleFonts.inter(color: KColors.text, fontSize: 14),
+      bodyMedium: GoogleFonts.inter(color: KColors.text, fontSize: 13),
+      bodySmall: GoogleFonts.inter(color: KColors.textDim, fontSize: 12),
+      // JetBrains Mono for labels — refs, status, metadata, compact UI text
       labelLarge: GoogleFonts.jetBrainsMono(
           color: KColors.text, fontSize: 12, fontWeight: FontWeight.w500),
-      labelMedium: GoogleFonts.jetBrainsMono(color: KColors.textDim, fontSize: 11),
-      labelSmall: GoogleFonts.jetBrainsMono(color: KColors.textDim, fontSize: 10),
+      labelMedium: GoogleFonts.jetBrainsMono(
+          color: KColors.textDim, fontSize: 11),
+      labelSmall: GoogleFonts.jetBrainsMono(
+          color: KColors.textMuted, fontSize: 10),
     ),
     popupMenuTheme: PopupMenuThemeData(
       color: KColors.surface2,
@@ -188,7 +195,7 @@ ThemeData get keelTheme {
         fontSize: 15,
         fontWeight: FontWeight.w600,
       ),
-      contentTextStyle: GoogleFonts.jetBrainsMono(color: KColors.text, fontSize: 12),
+      contentTextStyle: GoogleFonts.inter(color: KColors.text, fontSize: 13),
     ),
     tooltipTheme: TooltipThemeData(
       decoration: BoxDecoration(
@@ -212,7 +219,7 @@ ThemeData get keelTheme {
     ),
     snackBarTheme: SnackBarThemeData(
       backgroundColor: KColors.surface2,
-      contentTextStyle: GoogleFonts.jetBrainsMono(color: KColors.text, fontSize: 12),
+      contentTextStyle: GoogleFonts.inter(color: KColors.text, fontSize: 13),
     ),
   );
 }

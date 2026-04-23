@@ -73,7 +73,7 @@ class JournalEntryCard extends StatelessWidget {
                               '$linkCount item${linkCount == 1 ? '' : 's'}',
                               style: const TextStyle(
                                 color: KColors.amber,
-                                fontSize: 9,
+                                fontSize: 10,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),

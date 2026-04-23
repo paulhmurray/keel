@@ -5,9 +5,21 @@ import '../../core/database/database.dart';
 import '../../shared/theme/keel_colors.dart';
 import 'journal_slash_menu.dart';
 import 'journal_person_mention.dart';
+import 'journal_glossary_mention.dart';
 
 // Left padding for the body TextField — also used by the block cursor painter.
 const _kBodyLeftPad = 12.0;
+
+// Matches ⟨placeholder⟩ tab-stop markers inserted by slash commands.
+final _kTabStopRe = RegExp(r'⟨[^⟩]+⟩');
+
+// Shared text style — must match the TextField and _BlockCursorPainter exactly
+// so the TextPainter used for visual navigation lays out identically.
+const _kEditorTextStyle = TextStyle(
+  color: KColors.text,
+  fontSize: 13,
+  height: 1.7,
+);
 
 // ---------------------------------------------------------------------------
 // Vim mode support
@@ -41,7 +53,9 @@ class JournalEditor extends StatefulWidget {
   final bool saving;
   final bool vimMode;
   final String vimEscapeSequence;
+  final List<GlossaryEntry> glossaryEntries;
   final Future<Person?> Function(String name)? onCreatePerson;
+  final Future<GlossaryEntry?> Function(String name)? onCreateGlossaryEntry;
 
   const JournalEditor({
     super.key,
@@ -54,7 +68,9 @@ class JournalEditor extends StatefulWidget {
     this.saving = false,
     this.vimMode = false,
     this.vimEscapeSequence = '',
+    this.glossaryEntries = const [],
     this.onCreatePerson,
+    this.onCreateGlossaryEntry,
   });
 
   @override
@@ -64,10 +80,16 @@ class JournalEditor extends StatefulWidget {
 class _JournalEditorState extends State<JournalEditor> {
   bool _showSlashMenu = false;
   bool _showMentionMenu = false;
+  bool _showGlossaryMenu = false;
   String _slashQuery = '';
   String _mentionQuery = '';
+  String _glossaryQuery = '';
   int _slashSelectedIndex = 0;
   int _mentionSelectedIndex = 0;
+  int _glossarySelectedIndex = 0;
+
+  // Snippet tab-stop state — active after a slash command with ⟨placeholders⟩
+  bool _inSnippetMode = false;
 
   final LayerLink _layerLink = LayerLink();
   final ScrollController _scrollController = ScrollController();
@@ -77,20 +99,34 @@ class _JournalEditorState extends State<JournalEditor> {
   String _vimPending = ''; // for two-key sequences: 'd', 'g'
   DateTime? _escFirstCharAt; // for escape sequence timing
 
+  // Width available for text — captured in LayoutBuilder and used for
+  // visual-line navigation (j/k via TextPainter).
+  double _layoutWidth = 0;
+
+  // Simple undo stack: each mutating Normal-mode command (and entering Insert)
+  // saves the current value here; u restores.
+  final List<TextEditingValue> _undoStack = [];
+  TextEditingValue? _redoValue;
+
   bool get _inNormal => widget.vimMode && _vimKind == _VimKind.normal;
 
   @override
   void initState() {
     super.initState();
     widget.bodyController.addListener(_onBodyChanged);
-    // Start in Normal mode — user presses i/a/o to begin typing
+    widget.bodyFocusNode.addListener(_onFocusChanged);
   }
 
   @override
   void dispose() {
     widget.bodyController.removeListener(_onBodyChanged);
+    widget.bodyFocusNode.removeListener(_onFocusChanged);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onFocusChanged() {
+    if (!widget.bodyFocusNode.hasFocus) _exitSnippetMode();
   }
 
   // ---------------------------------------------------------------------------
@@ -148,6 +184,10 @@ class _JournalEditorState extends State<JournalEditor> {
       _checkEscapeSequence();
     }
 
+    // While a snippet placeholder is selected (non-collapsed selection),
+    // suppress menu detection — the selection is ours, not the user's typing.
+    if (_inSnippetMode && !widget.bodyController.selection.isCollapsed) return;
+
     final text = widget.bodyController.text;
     final cursor = widget.bodyController.selection.baseOffset;
     if (cursor < 0 || cursor > text.length) return;
@@ -175,16 +215,32 @@ class _JournalEditorState extends State<JournalEditor> {
       setState(() {
         _showMentionMenu = true;
         _showSlashMenu = false;
+        _showGlossaryMenu = false;
         _mentionQuery = query;
         if (!wasShowing) _mentionSelectedIndex = 0;
       });
       return;
     }
 
-    if (_showSlashMenu || _showMentionMenu) {
+    final glossaryMatch = RegExp(r'#(\w*)$').firstMatch(textBeforeCursor);
+    if (glossaryMatch != null) {
+      final query = glossaryMatch.group(1)!;
+      final wasShowing = _showGlossaryMenu && _glossaryQuery == query;
+      setState(() {
+        _showGlossaryMenu = true;
+        _showSlashMenu = false;
+        _showMentionMenu = false;
+        _glossaryQuery = query;
+        if (!wasShowing) _glossarySelectedIndex = 0;
+      });
+      return;
+    }
+
+    if (_showSlashMenu || _showMentionMenu || _showGlossaryMenu) {
       setState(() {
         _showSlashMenu = false;
         _showMentionMenu = false;
+        _showGlossaryMenu = false;
       });
     }
   }
@@ -208,15 +264,81 @@ class _JournalEditorState extends State<JournalEditor> {
 
     final newText =
         text.substring(0, slashStart) + resolved + text.substring(cursor);
+
+    // Find the first ⟨placeholder⟩ tab stop in the resolved template
+    final firstStop = _kTabStopRe.firstMatch(resolved);
+    if (firstStop != null) {
+      ctrl.value = TextEditingValue(
+        text: newText,
+        selection: TextSelection(
+          baseOffset: slashStart + firstStop.start,
+          extentOffset: slashStart + firstStop.end,
+        ),
+      );
+      setState(() {
+        _showSlashMenu = false;
+        _slashSelectedIndex = 0;
+        _inSnippetMode = true;
+      });
+    } else {
+      ctrl.value = TextEditingValue(
+        text: newText,
+        selection: TextSelection.collapsed(offset: slashStart + resolved.length),
+      );
+      setState(() {
+        _showSlashMenu = false;
+        _slashSelectedIndex = 0;
+      });
+    }
+  }
+
+  // Advance to the next ⟨placeholder⟩ after the current cursor/selection end.
+  void _advanceTabStop() {
+    final ctrl = widget.bodyController;
+    final text = ctrl.text;
+    final from = ctrl.selection.extentOffset.clamp(0, text.length);
+
+    RegExpMatch? next;
+    for (final m in _kTabStopRe.allMatches(text)) {
+      if (m.start >= from) { next = m; break; }
+    }
+
+    if (next != null) {
+      ctrl.selection = TextSelection(
+        baseOffset: next.start,
+        extentOffset: next.end,
+      );
+    } else {
+      _exitSnippetMode();
+    }
+  }
+
+  // Exit snippet mode, stripping any unfilled ⟨ ⟩ bracket characters.
+  void _exitSnippetMode() {
+    if (!_inSnippetMode) return;
+    setState(() => _inSnippetMode = false);
+
+    final ctrl = widget.bodyController;
+    final text = ctrl.text;
+    if (!text.contains('⟨') && !text.contains('⟩')) return;
+
+    // Walk the text once, dropping ⟨ and ⟩, tracking cursor shift.
+    final cursor = ctrl.selection.baseOffset.clamp(0, text.length);
+    final sb = StringBuffer();
+    int newCursor = cursor;
+    for (int i = 0; i < text.length; i++) {
+      final ch = text[i];
+      if (ch == '⟨' || ch == '⟩') {
+        if (i < cursor) newCursor--;
+      } else {
+        sb.write(ch);
+      }
+    }
     ctrl.value = TextEditingValue(
-      text: newText,
-      selection:
-          TextSelection.collapsed(offset: slashStart + resolved.length),
+      text: sb.toString(),
+      selection: TextSelection.collapsed(
+          offset: newCursor.clamp(0, sb.length)),
     );
-    setState(() {
-      _showSlashMenu = false;
-      _slashSelectedIndex = 0;
-    });
   }
 
   void _insertMention(Person person) {
@@ -249,6 +371,37 @@ class _JournalEditorState extends State<JournalEditor> {
     }
   }
 
+  Future<void> _handleAddGlossaryEntry() async {
+    if (widget.onCreateGlossaryEntry == null) return;
+    final entry = await widget.onCreateGlossaryEntry!(_glossaryQuery);
+    if (entry != null && mounted) {
+      _insertGlossaryLink(entry);
+    } else if (mounted) {
+      setState(() => _showGlossaryMenu = false);
+    }
+  }
+
+  void _insertGlossaryLink(GlossaryEntry entry) {
+    final ctrl = widget.bodyController;
+    final text = ctrl.text;
+    final cursor = ctrl.selection.baseOffset;
+    final hashStart = text.lastIndexOf('#', cursor - 1);
+    if (hashStart < 0) return;
+
+    final link = '#${entry.name} ';
+    final newText =
+        text.substring(0, hashStart) + link + text.substring(cursor);
+    ctrl.value = TextEditingValue(
+      text: newText,
+      selection:
+          TextSelection.collapsed(offset: hashStart + link.length),
+    );
+    setState(() {
+      _showGlossaryMenu = false;
+      _glossarySelectedIndex = 0;
+    });
+  }
+
   // ---------------------------------------------------------------------------
   // Vim: cursor helpers
   // ---------------------------------------------------------------------------
@@ -262,61 +415,135 @@ class _JournalEditorState extends State<JournalEditor> {
     _ctrl.selection = TextSelection.collapsed(offset: clamped);
   }
 
-  // Move left (h)
-  void _vimH() => _moveTo(_cursor - 1);
+  // ── Undo helpers ──────────────────────────────────────────────────────────
 
-  // Move right (l)
+  void _saveUndo() {
+    _undoStack.add(_ctrl.value);
+    if (_undoStack.length > 100) _undoStack.removeAt(0);
+    _redoValue = null;
+  }
+
+  void _vimUndo() {
+    if (_undoStack.isEmpty) return;
+    _redoValue = _ctrl.value;
+    final prev = _undoStack.removeLast();
+    _ctrl.value = prev;
+  }
+
+  void _vimRedo() {
+    final next = _redoValue;
+    if (next == null) return;
+    _saveUndo();
+    _ctrl.value = next;
+    _redoValue = null;
+  }
+
+  // ── Cursor helpers ─────────────────────────────────────────────────────────
+
+  // Move left (h) — stop at start of line
+  void _vimH() {
+    final pos = _cursor;
+    if (pos <= 0) return;
+    if (_text[pos - 1] == '\n') return; // don't cross line boundary
+    _moveTo(pos - 1);
+  }
+
+  // Move right (l) — stop at last char of line (never land on \n)
   void _vimL() {
     final pos = _cursor;
-    // Don't move past the end of the line
-    if (pos < _text.length && _text[pos] != '\n') _moveTo(pos + 1);
+    if (pos >= _text.length) return;
+    if (_text[pos] == '\n') return; // already at end of empty line
+    final next = pos + 1;
+    // Don't land on \n (last char of a line is the one before \n)
+    if (next < _text.length && _text[next] == '\n') return;
+    _moveTo(next);
   }
 
-  // Move down (j)
+  // ── Visual-line navigation via TextPainter ─────────────────────────────────
+  //
+  // Creates a TextPainter with the same style and width as the editor, so j/k
+  // track wrapped visual lines instead of jumping between \n characters.
+
+  TextPainter _makeNavPainter() {
+    final tp = TextPainter(
+      text: TextSpan(text: _text, style: _kEditorTextStyle),
+      textDirection: TextDirection.ltr,
+    )..layout(maxWidth: _layoutWidth > 0 ? _layoutWidth : 400);
+    return tp;
+  }
+
+  // Move down (j) — visual line
   void _vimJ() {
-    final pos = _cursor;
-    final lineStart = _lineStart(pos);
-    final col = pos - lineStart;
-    final nextLineStart = _text.indexOf('\n', pos);
-    if (nextLineStart < 0) return; // already on last line
-    final nextLineEnd = _nextLineEnd(nextLineStart + 1);
-    _moveTo((nextLineStart + 1 + col).clamp(nextLineStart + 1, nextLineEnd));
+    final tp = _makeNavPainter();
+    final lh = tp.preferredLineHeight;
+    final caretOff = tp.getOffsetForCaret(TextPosition(offset: _cursor), Rect.zero);
+    final target = Offset(caretOff.dx, caretOff.dy + lh * 1.5);
+    final newPos = tp.getPositionForOffset(target);
+    tp.dispose();
+    if (newPos.offset != _cursor) _moveTo(_clampToLine(newPos.offset));
   }
 
-  // Move up (k)
+  // Move up (k) — visual line
   void _vimK() {
-    final pos = _cursor;
-    final lineStart = _lineStart(pos);
-    if (lineStart == 0) return; // already on first line
-    final col = pos - lineStart;
-    final prevLineEnd = lineStart - 1; // the '\n' char
-    final prevLineStart = _lineStart(prevLineEnd);
-    _moveTo((prevLineStart + col).clamp(prevLineStart, prevLineEnd));
+    final tp = _makeNavPainter();
+    final lh = tp.preferredLineHeight;
+    final caretOff = tp.getOffsetForCaret(TextPosition(offset: _cursor), Rect.zero);
+    if (caretOff.dy < lh * 0.5) { tp.dispose(); return; } // already on first visual line
+    final target = Offset(caretOff.dx, caretOff.dy - lh * 0.5);
+    final newPos = tp.getPositionForOffset(target);
+    tp.dispose();
+    if (newPos.offset != _cursor) _moveTo(_clampToLine(newPos.offset));
+  }
+
+  // Ensure pos does not land on a \n (step back one if it does, unless empty line)
+  int _clampToLine(int pos) {
+    if (pos <= 0 || pos >= _text.length) return pos.clamp(0, _text.length);
+    if (_text[pos] == '\n') return pos - 1;
+    return pos;
   }
 
   // Start of line (0)
   void _vim0() => _moveTo(_lineStart(_cursor));
 
-  // End of line ($)
+  // End of line ($) — last char before \n, not on \n
   void _vimDollar() {
-    final end = _nextLineEnd(_cursor);
-    _moveTo(end);
+    final pos = _cursor;
+    final nlIdx = _text.indexOf('\n', pos);
+    if (nlIdx < 0) {
+      // Last line, no trailing newline — end of text
+      if (_text.isNotEmpty) _moveTo(_text.length - 1);
+      return;
+    }
+    // Move to char before newline; if line is empty (pos == nlIdx), stay
+    _moveTo(nlIdx > pos ? nlIdx - 1 : pos);
   }
 
-  // Forward word (w)
+  // Forward word (w) — start of next word
   void _vimW() {
     var i = _cursor;
     if (i >= _text.length) return;
-    // Skip current word chars
     if (_isWordChar(_text[i])) {
       while (i < _text.length && _isWordChar(_text[i])) { i++; }
     } else {
-      while (i < _text.length && !_isWordChar(_text[i]) && _text[i] != '\n') {
-        i++;
-      }
+      while (i < _text.length && !_isWordChar(_text[i]) && _text[i] != '\n') { i++; }
     }
-    // Skip whitespace
     while (i < _text.length && (_text[i] == ' ' || _text[i] == '\t')) { i++; }
+    _moveTo(i);
+  }
+
+  // End of word (e) — last char of current/next word
+  void _vimE() {
+    var i = _cursor;
+    if (i >= _text.length) return;
+    // If on whitespace or end of word, advance to next word first
+    if (!_isWordChar(_text[i])) {
+      while (i < _text.length && !_isWordChar(_text[i])) { i++; }
+    } else if (i + 1 < _text.length && !_isWordChar(_text[i + 1])) {
+      i++; // already at end of word — move to next
+      while (i < _text.length && !_isWordChar(_text[i])) { i++; }
+    }
+    // Now advance to last char of this word
+    while (i + 1 < _text.length && _isWordChar(_text[i + 1])) { i++; }
     _moveTo(i);
   }
 
@@ -324,12 +551,8 @@ class _JournalEditorState extends State<JournalEditor> {
   void _vimB() {
     var i = _cursor;
     if (i == 0) return;
-    i--; // step back one
-    // Skip whitespace
-    while (i > 0 && (_text[i] == ' ' || _text[i] == '\t' || _text[i] == '\n')) {
-      i--;
-    }
-    // Skip word
+    i--;
+    while (i > 0 && (_text[i] == ' ' || _text[i] == '\t' || _text[i] == '\n')) { i--; }
     if (_isWordChar(_text[i])) {
       while (i > 0 && _isWordChar(_text[i - 1])) { i--; }
     }
@@ -340,12 +563,13 @@ class _JournalEditorState extends State<JournalEditor> {
   void _vimGG() => _moveTo(0);
 
   // Go to end (G)
-  void _vimG() => _moveTo(_text.length);
+  void _vimG() => _moveTo(_text.isNotEmpty ? _text.length - 1 : 0);
 
   // Delete char under cursor (x)
   void _vimX() {
     final pos = _cursor;
     if (pos >= _text.length) return;
+    _saveUndo();
     final newText = _text.substring(0, pos) + _text.substring(pos + 1);
     _ctrl.value = TextEditingValue(
       text: newText,
@@ -356,6 +580,7 @@ class _JournalEditorState extends State<JournalEditor> {
 
   // Delete line (dd)
   void _vimDD() {
+    _saveUndo();
     final pos = _cursor;
     final start = _lineStart(pos);
     var end = _text.indexOf('\n', pos);
@@ -405,10 +630,13 @@ class _JournalEditorState extends State<JournalEditor> {
     _enterInsert();
   }
 
-  void _enterInsert() => setState(() {
-        _vimKind = _VimKind.insert;
-        _vimPending = '';
-      });
+  void _enterInsert() {
+    _saveUndo(); // u will restore state from before this insert session
+    setState(() {
+      _vimKind = _VimKind.insert;
+      _vimPending = '';
+    });
+  }
 
   void _enterNormal() => setState(() {
         _vimKind = _VimKind.normal;
@@ -423,11 +651,6 @@ class _JournalEditorState extends State<JournalEditor> {
     if (pos <= 0) return 0;
     final idx = _text.lastIndexOf('\n', pos - 1);
     return idx < 0 ? 0 : idx + 1;
-  }
-
-  int _nextLineEnd(int fromPos) {
-    final idx = _text.indexOf('\n', fromPos);
-    return idx < 0 ? _text.length : idx;
   }
 
   bool _isWordChar(String c) => RegExp(r'\w').hasMatch(c);
@@ -445,6 +668,15 @@ class _JournalEditorState extends State<JournalEditor> {
     // Ctrl+Enter → save (always)
     if (isMetaOrCtrl && event.logicalKey == LogicalKeyboardKey.enter) {
       widget.onSave();
+      return KeyEventResult.handled;
+    }
+
+    // Ctrl+r → redo (vim normal mode only)
+    if (widget.vimMode &&
+        _vimKind == _VimKind.normal &&
+        HardwareKeyboard.instance.isControlPressed &&
+        event.logicalKey == LogicalKeyboardKey.keyR) {
+      _vimRedo();
       return KeyEventResult.handled;
     }
 
@@ -505,6 +737,54 @@ class _JournalEditorState extends State<JournalEditor> {
       }
       if (event.logicalKey == LogicalKeyboardKey.escape) {
         setState(() => _showMentionMenu = false);
+        return KeyEventResult.handled;
+      }
+    }
+
+    // ── Glossary menu navigation ─────────────────────────────────────────────
+    if (_showGlossaryMenu) {
+      final items =
+          filteredGlossaryEntries(widget.glossaryEntries, _glossaryQuery);
+      final hasAddNew = _glossaryQuery.isNotEmpty &&
+          widget.onCreateGlossaryEntry != null;
+      final total = items.length + (hasAddNew ? 1 : 0);
+      if (total > 0) {
+        if (event.logicalKey == LogicalKeyboardKey.arrowDown ||
+            event.logicalKey == LogicalKeyboardKey.tab) {
+          setState(() => _glossarySelectedIndex =
+              (_glossarySelectedIndex + 1) % total);
+          return KeyEventResult.handled;
+        }
+        if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+          setState(() => _glossarySelectedIndex =
+              (_glossarySelectedIndex - 1 + total) % total);
+          return KeyEventResult.handled;
+        }
+        if (event.logicalKey == LogicalKeyboardKey.enter) {
+          if (hasAddNew && _glossarySelectedIndex == items.length) {
+            _handleAddGlossaryEntry();
+          } else if (items.isNotEmpty) {
+            _insertGlossaryLink(
+                items[_glossarySelectedIndex.clamp(0, items.length - 1)]);
+          }
+          return KeyEventResult.handled;
+        }
+      }
+      if (event.logicalKey == LogicalKeyboardKey.escape) {
+        setState(() => _showGlossaryMenu = false);
+        return KeyEventResult.handled;
+      }
+    }
+
+    // ── Snippet tab-stop navigation ──────────────────────────────────────────
+    // Only fires when no overlay menu is open (menus take Tab priority above).
+    if (_inSnippetMode) {
+      if (event.logicalKey == LogicalKeyboardKey.tab) {
+        _advanceTabStop();
+        return KeyEventResult.handled;
+      }
+      if (event.logicalKey == LogicalKeyboardKey.escape) {
+        _exitSnippetMode();
         return KeyEventResult.handled;
       }
     }
@@ -572,10 +852,12 @@ class _JournalEditorState extends State<JournalEditor> {
       case 'j': _vimJ(); return KeyEventResult.handled;
       case 'k': _vimK(); return KeyEventResult.handled;
       case 'w': _vimW(); return KeyEventResult.handled;
+      case 'e': _vimE(); return KeyEventResult.handled;
       case 'b': _vimB(); return KeyEventResult.handled;
       case '0': _vim0(); return KeyEventResult.handled;
       case r'$': _vimDollar(); return KeyEventResult.handled;
       case 'G': _vimG(); return KeyEventResult.handled;
+      case 'u': _vimUndo(); return KeyEventResult.handled;
 
       // Operations
       case 'x': _vimX(); return KeyEventResult.handled;
@@ -663,14 +945,10 @@ class _JournalEditorState extends State<JournalEditor> {
                       if (widget.vimMode)
                         _VimNormalModeFormatter(() => _inNormal),
                     ],
-                    style: const TextStyle(
-                      color: KColors.text,
-                      fontSize: 13,
-                      height: 1.7,
-                    ),
+                    style: _kEditorTextStyle,
                     decoration: const InputDecoration(
                       hintText:
-                          'Write meeting notes, observations, decisions...\n\nType / for commands, @ to mention someone.',
+                          'Write meeting notes, observations, decisions...\n\nType / for commands, @ to mention someone, # to link a glossary term.',
                       hintStyle: TextStyle(
                         color: KColors.textMuted,
                         fontSize: 13,
@@ -687,21 +965,26 @@ class _JournalEditorState extends State<JournalEditor> {
                 if (_inNormal)
                   IgnorePointer(
                     child: LayoutBuilder(
-                      builder: (context, constraints) => ListenableBuilder(
-                        listenable: Listenable.merge(
-                            [widget.bodyController, _scrollController]),
-                        builder: (context, _) => CustomPaint(
-                          size: Size(
-                              constraints.maxWidth, constraints.maxHeight),
-                          painter: _BlockCursorPainter(
-                            controller: widget.bodyController,
-                            scrollOffset: _scrollController.hasClients
-                                ? _scrollController.offset
-                                : 0.0,
-                            availableWidth: constraints.maxWidth - _kBodyLeftPad,
+                      builder: (context, constraints) {
+                        // Store width so visual-line navigation (j/k) can reuse
+                        // the same layout dimensions as the cursor painter.
+                        _layoutWidth = constraints.maxWidth - _kBodyLeftPad;
+                        return ListenableBuilder(
+                          listenable: Listenable.merge(
+                              [widget.bodyController, _scrollController]),
+                          builder: (context, _) => CustomPaint(
+                            size: Size(
+                                constraints.maxWidth, constraints.maxHeight),
+                            painter: _BlockCursorPainter(
+                              controller: widget.bodyController,
+                              scrollOffset: _scrollController.hasClients
+                                  ? _scrollController.offset
+                                  : 0.0,
+                              availableWidth: _layoutWidth,
+                            ),
                           ),
-                        ),
-                      ),
+                        );
+                      },
                     ),
                   ),
 
@@ -732,6 +1015,21 @@ class _JournalEditorState extends State<JournalEditor> {
                           : null,
                     ),
                   ),
+
+                if (_showGlossaryMenu)
+                  Positioned(
+                    top: 40,
+                    left: 0,
+                    child: JournalGlossaryMention(
+                      entries: widget.glossaryEntries,
+                      query: _glossaryQuery,
+                      selectedIndex: _glossarySelectedIndex,
+                      onSelect: _insertGlossaryLink,
+                      onAddNew: widget.onCreateGlossaryEntry != null
+                          ? _handleAddGlossaryEntry
+                          : null,
+                    ),
+                  ),
               ],
             ),
           ),
@@ -750,7 +1048,9 @@ class _JournalEditorState extends State<JournalEditor> {
                   const SizedBox(width: 16),
                   _buildHint('/', 'Commands'),
                   const SizedBox(width: 16),
-                  _buildHint('@', 'Mention'),
+                  _buildHint('@', 'Person'),
+                  const SizedBox(width: 16),
+                  _buildHint('#', 'Glossary'),
                   const SizedBox(width: 16),
                   _buildHint('↑↓', 'Navigate menu'),
                 ],
@@ -795,7 +1095,7 @@ class _JournalEditorState extends State<JournalEditor> {
           child: Text(keyLabel,
               style: const TextStyle(
                   color: KColors.textDim,
-                  fontSize: 9,
+                  fontSize: 10,
                   fontWeight: FontWeight.w600)),
         ),
         const SizedBox(width: 4),
@@ -811,11 +1111,7 @@ class _JournalEditorState extends State<JournalEditor> {
 // ---------------------------------------------------------------------------
 
 class _BlockCursorPainter extends CustomPainter {
-  static const _textStyle = TextStyle(
-    color: KColors.text,
-    fontSize: 13,
-    height: 1.7,
-  );
+  static const _textStyle = _kEditorTextStyle; // must match TextField style exactly
   static const _topPadding = 8.0;             // matches TextField contentPadding.top
   static const _leftPadding = _kBodyLeftPad;  // matches TextField contentPadding.left
 
@@ -926,7 +1222,7 @@ class _VimModeBadge extends StatelessWidget {
         ),
         if (isNormal) ...[
           const SizedBox(width: 10),
-          Text('i insert  a append  o new line  gg top  G end  dd delete line',
+          Text('i/a insert  o new line  w/e/b words  \$ end  gg/G top/end  dd delete  u undo  ^r redo',
               style: const TextStyle(color: KColors.textMuted, fontSize: 10)),
         ] else ...[
           const SizedBox(width: 10),

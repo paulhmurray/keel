@@ -42,7 +42,7 @@ class PersonChip extends StatelessWidget {
                 _initials,
                 style: const TextStyle(
                   color: KColors.amber,
-                  fontSize: 9,
+                  fontSize: 10,
                   fontWeight: FontWeight.bold,
                 ),
               ),

@@ -8,6 +8,8 @@ class DropdownField extends StatelessWidget {
   final String value;
   final List<String> items;
   final ValueChanged<String?> onChanged;
+  /// Optional display-name overrides keyed by item value.
+  final Map<String, String>? labelOverrides;
 
   const DropdownField({
     super.key,
@@ -15,7 +17,15 @@ class DropdownField extends StatelessWidget {
     required this.value,
     required this.items,
     required this.onChanged,
+    this.labelOverrides,
   });
+
+  String _labelFor(String s) {
+    if (labelOverrides != null && labelOverrides!.containsKey(s)) {
+      return labelOverrides![s]!;
+    }
+    return s.isNotEmpty ? s[0].toUpperCase() + s.substring(1) : s;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +42,7 @@ class DropdownField extends StatelessWidget {
           .map((s) => DropdownMenuItem(
                 value: s,
                 child: Text(
-                  s.isNotEmpty ? s[0].toUpperCase() + s.substring(1) : s,
+                  _labelFor(s),
                   style: const TextStyle(fontSize: 13),
                 ),
               ))

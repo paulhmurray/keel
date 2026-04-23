@@ -24,7 +24,10 @@ class KeelNavRail extends StatelessWidget {
                 children: [
                   const SizedBox(height: 8),
                   _NavItem(icon: Icons.dashboard_outlined, label: 'Prog', index: 0, selected: selectedIndex == 0, onTap: onDestinationSelected),
-                  _NavItem(icon: Icons.timeline_outlined, label: 'Time', index: 1, selected: selectedIndex == 1, onTap: onDestinationSelected),
+                  _NavItem(icon: Icons.timeline_outlined, label: 'Sched', index: 1, selected: selectedIndex == 1, onTap: onDestinationSelected),
+                  _NavItem(icon: Icons.table_chart_outlined, label: 'Plan', index: 12, selected: selectedIndex == 12, onTap: onDestinationSelected),
+                  _NavItem(icon: Icons.monitor_heart_outlined, label: 'Status', index: 13, selected: selectedIndex == 13, onTap: onDestinationSelected),
+                  _NavItem(icon: Icons.article_outlined, label: 'Charter', index: 14, selected: selectedIndex == 14, onTap: onDestinationSelected),
                   const _NavDivider(),
                   _NavItem(icon: Icons.shield_outlined, label: 'RAID', index: 2, selected: selectedIndex == 2, onTap: onDestinationSelected),
                   _NavItem(icon: Icons.gavel_outlined, label: 'Dec', index: 3, selected: selectedIndex == 3, onTap: onDestinationSelected),

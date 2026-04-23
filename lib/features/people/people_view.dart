@@ -6,10 +6,14 @@ import 'package:drift/drift.dart' show Value;
 import '../../shared/theme/keel_colors.dart';
 
 import '../../core/database/database.dart';
+import '../../core/programme/coverage_calculator.dart';
 import '../../providers/project_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../shared/widgets/dropdown_field.dart';
 import '../../shared/utils/date_utils.dart' as du;
+import '../programme/overview/coverage_indicator.dart';
+import '../programme/overview/stakeholder_section.dart';
+import '../programme/overview/team_section.dart';
 
 class PeopleView extends StatefulWidget {
   const PeopleView({super.key});
@@ -25,7 +29,7 @@ class _PeopleViewState extends State<PeopleView>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
   }
 
   @override
@@ -77,6 +81,7 @@ class _PeopleViewState extends State<PeopleView>
             isScrollable: true,
             tabAlignment: TabAlignment.start,
             tabs: const [
+              Tab(text: 'Overview'),
               Tab(text: 'Stakeholders'),
               Tab(text: 'Team / Colleagues'),
               Tab(text: 'Executives'),
@@ -91,6 +96,7 @@ class _PeopleViewState extends State<PeopleView>
           child: TabBarView(
             controller: _tabController,
             children: [
+              _PeopleOverviewTab(projectId: projectId, db: db),
               _PersonsList(
                 projectId: projectId,
                 db: db,
@@ -135,6 +141,92 @@ class _PeopleViewState extends State<PeopleView>
         db: db,
         person: person,
         defaultType: defaultType ?? 'stakeholder',
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Overview tab — stakeholder roles, team roles, coverage indicator
+// ---------------------------------------------------------------------------
+
+class _PeopleOverviewTab extends StatelessWidget {
+  final String projectId;
+  final AppDatabase db;
+
+  const _PeopleOverviewTab({required this.projectId, required this.db});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<StakeholderRole>>(
+      stream: db.stakeholderRoleDao.watchForProject(projectId),
+      builder: (context, srSnap) {
+        return StreamBuilder<List<TeamRole>>(
+          stream: db.teamRoleDao.watchForProject(projectId),
+          builder: (context, trSnap) {
+            return StreamBuilder<List<Person>>(
+              stream: db.peopleDao.watchPersonsForProject(projectId),
+              builder: (context, pSnap) {
+                final stakeholderRoles = srSnap.data ?? [];
+                final teamRoles = trSnap.data ?? [];
+                final persons = pSnap.data ?? [];
+
+                final stakeholderCoverage =
+                    CoverageCalculator.forStakeholders(stakeholderRoles);
+                final teamCoverage =
+                    CoverageCalculator.forTeam(teamRoles);
+
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CoverageIndicator(
+                        stakeholders: stakeholderCoverage,
+                        team: teamCoverage,
+                      ),
+                      const _OverviewSectionLabel('STAKEHOLDERS'),
+                      const SizedBox(height: 8),
+                      StakeholderSection(
+                        projectId: projectId,
+                        db: db,
+                        roles: stakeholderRoles,
+                        persons: persons,
+                      ),
+                      const SizedBox(height: 24),
+                      const _OverviewSectionLabel('TEAM'),
+                      const SizedBox(height: 8),
+                      TeamSection(
+                        projectId: projectId,
+                        db: db,
+                        roles: teamRoles,
+                        persons: persons,
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class _OverviewSectionLabel extends StatelessWidget {
+  final String text;
+  const _OverviewSectionLabel(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: const TextStyle(
+        color: KColors.textDim,
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.15,
       ),
     );
   }
@@ -276,7 +368,7 @@ class _PersonCard extends StatelessWidget {
                               'YOU',
                               style: TextStyle(
                                 color: KColors.phosphor,
-                                fontSize: 9,
+                                fontSize: 10,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: 0.5,
                               ),

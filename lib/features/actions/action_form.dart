@@ -313,7 +313,7 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
                   const Text('CATEGORY',
                       style: TextStyle(
                           color: KColors.textMuted,
-                          fontSize: 9,
+                          fontSize: 10,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.1)),
                   const SizedBox(height: 8),
@@ -440,7 +440,7 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
                   const Text('RECURRENCE',
                       style: TextStyle(
                           color: KColors.textMuted,
-                          fontSize: 9,
+                          fontSize: 10,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.1)),
                   const SizedBox(height: 8),
@@ -682,7 +682,7 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
             const Text('COLOUR',
                 style: TextStyle(
                     color: KColors.textMuted,
-                    fontSize: 9,
+                    fontSize: 10,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.1)),
             const SizedBox(height: 8),
@@ -751,7 +751,7 @@ Widget _viewField(String label, String? value,
           label.toUpperCase(),
           style: const TextStyle(
             color: KColors.textMuted,
-            fontSize: 9,
+            fontSize: 10,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.1,
           ),

@@ -305,7 +305,7 @@ Widget _viewField(String label, String? value, {bool large = false}) {
           label.toUpperCase(),
           style: const TextStyle(
             color: KColors.textMuted,
-            fontSize: 9,
+            fontSize: 10,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.1,
           ),

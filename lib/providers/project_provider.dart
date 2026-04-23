@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:uuid/uuid.dart';
 import '../core/database/database.dart';
+import '../core/programme/scaffold_definitions.dart';
 import '../core/seed/seed_service.dart';
 
 class ProjectProvider extends ChangeNotifier {
@@ -64,7 +65,39 @@ class ProjectProvider extends ChangeNotifier {
         startDate: Value(startDate),
       ),
     );
+    await _seedScaffold(id);
     // Projects list will update via the stream listener
+  }
+
+  Future<void> _seedScaffold(String projectId) async {
+    final uuid = const Uuid();
+    final now = DateTime.now();
+    for (final role in stakeholderScaffold) {
+      await _db.stakeholderRoleDao.upsert(StakeholderRolesCompanion.insert(
+        id: uuid.v4(),
+        projectId: projectId,
+        roleName: role.roleName,
+        roleType: role.roleType,
+        isScaffold: const Value(true),
+        isApplicable: const Value(true),
+        sortOrder: Value(role.sortOrder),
+        createdAt: Value(now),
+        updatedAt: Value(now),
+      ));
+    }
+    for (final role in teamScaffold) {
+      await _db.teamRoleDao.upsert(TeamRolesCompanion.insert(
+        id: uuid.v4(),
+        projectId: projectId,
+        roleName: role.roleName,
+        teamGroup: role.teamGroup,
+        isScaffold: const Value(true),
+        isApplicable: const Value(true),
+        sortOrder: Value(role.sortOrder),
+        createdAt: Value(now),
+        updatedAt: Value(now),
+      ));
+    }
   }
 
   Future<void> deleteProject(String id) async {

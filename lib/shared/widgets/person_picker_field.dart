@@ -303,7 +303,7 @@ class _AddPersonDialogState extends State<_AddPersonDialog> {
             const Text('TYPE',
                 style: TextStyle(
                     color: KColors.textMuted,
-                    fontSize: 9,
+                    fontSize: 10,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.1)),
             const SizedBox(height: 6),

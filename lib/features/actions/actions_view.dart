@@ -76,7 +76,7 @@ class _ActionsViewState extends State<ActionsView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header row
+          // Header
           Row(
             children: [
               const Icon(Icons.check_circle, color: KColors.amber, size: 18),
@@ -86,20 +86,7 @@ class _ActionsViewState extends State<ActionsView> {
                     style: Theme.of(context).textTheme.headlineSmall,
                     overflow: TextOverflow.ellipsis),
               ),
-              const SizedBox(width: 12),
-              // Owner filter
-              _OwnerFilter(
-                persons: _persons,
-                selected: _ownerFilter,
-                onChanged: (v) => setState(() => _ownerFilter = v),
-              ),
-              const SizedBox(width: 12),
-              // View toggle
-              _ViewToggle(
-                showBoard: _showBoard,
-                onChanged: _toggleView,
-              ),
-              const SizedBox(width: 12),
+              const Spacer(),
               ElevatedButton.icon(
                 onPressed: () => showDialog(
                   context: context,
@@ -111,7 +98,23 @@ class _ActionsViewState extends State<ActionsView> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
+          // Filter / view row
+          Row(
+            children: [
+              _OwnerFilter(
+                persons: _persons,
+                selected: _ownerFilter,
+                onChanged: (v) => setState(() => _ownerFilter = v),
+              ),
+              const SizedBox(width: 10),
+              _ViewToggle(
+                showBoard: _showBoard,
+                onChanged: _toggleView,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
           Expanded(
             child: StreamBuilder<List<ActionCategory>>(
               stream: db.actionCategoriesDao.watchForProject(projectId),
@@ -424,7 +427,7 @@ class _ActionCard extends StatelessWidget {
                               category!.name,
                               style: TextStyle(
                                 color: parseHexColor(category!.color),
-                                fontSize: 9,
+                                fontSize: 10,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -454,38 +457,48 @@ class _ActionCard extends StatelessWidget {
                       children: [
                         StatusChip(status: action.status),
                         const SizedBox(width: 8),
-                        if (action.owner != null &&
-                            action.owner!.isNotEmpty) ...[
-                          const Icon(Icons.person_outline,
-                              size: 11, color: KColors.textDim),
-                          const SizedBox(width: 3),
-                          Flexible(
-                            child: Text(action.owner!,
-                                style: const TextStyle(
-                                    color: KColors.textDim, fontSize: 11),
-                                overflow: TextOverflow.ellipsis),
+                        Flexible(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (action.owner != null &&
+                                  action.owner!.isNotEmpty) ...[
+                                const Icon(Icons.person_outline,
+                                    size: 11, color: KColors.textDim),
+                                const SizedBox(width: 3),
+                                Flexible(
+                                  child: Text(action.owner!,
+                                      style: const TextStyle(
+                                          color: KColors.textDim, fontSize: 11),
+                                      overflow: TextOverflow.ellipsis),
+                                ),
+                                const SizedBox(width: 8),
+                              ],
+                              if (action.dueDate != null) ...[
+                                Icon(
+                                  Icons.calendar_today_outlined,
+                                  size: 11,
+                                  color: _isOverdue
+                                      ? KColors.red
+                                      : KColors.textDim,
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  du.formatDate(action.dueDate),
+                                  style: TextStyle(
+                                    color: _isOverdue
+                                        ? KColors.red
+                                        : KColors.textDim,
+                                    fontSize: 11,
+                                    fontWeight: _isOverdue
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
-                          const SizedBox(width: 8),
-                        ],
-                        if (action.dueDate != null) ...[
-                          Icon(
-                            Icons.calendar_today_outlined,
-                            size: 11,
-                            color: _isOverdue ? KColors.red : KColors.textDim,
-                          ),
-                          const SizedBox(width: 3),
-                          Text(
-                            du.formatDate(action.dueDate),
-                            style: TextStyle(
-                              color:
-                                  _isOverdue ? KColors.red : KColors.textDim,
-                              fontSize: 11,
-                              fontWeight: _isOverdue
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                            ),
-                          ),
-                        ],
+                        ),
                         const SizedBox(width: 4),
                         SourceBadge(source: action.source),
                       ],

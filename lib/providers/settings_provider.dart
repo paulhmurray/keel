@@ -57,6 +57,10 @@ class AppSettings {
   final bool journalVimMode;
   final String vimEscapeSequence; // e.g. 'jk', empty = disabled
 
+  // Onboarding
+  final bool hasSeenThreeViewTour;
+  final bool hasSeenCharterMigrationNotice;
+
   const AppSettings({
     this.llmProvider = LLMProvider.claudeApi,
     this.claudeApiKey = '',
@@ -81,6 +85,8 @@ class AppSettings {
     this.uiScale = 1.0,
     this.journalVimMode = false,
     this.vimEscapeSequence = '',
+    this.hasSeenThreeViewTour = false,
+    this.hasSeenCharterMigrationNotice = false,
   });
 
   bool get hasApiKey {
@@ -124,6 +130,8 @@ class AppSettings {
     double? uiScale,
     bool? journalVimMode,
     String? vimEscapeSequence,
+    bool? hasSeenThreeViewTour,
+    bool? hasSeenCharterMigrationNotice,
   }) {
     return AppSettings(
       llmProvider: llmProvider ?? this.llmProvider,
@@ -149,6 +157,8 @@ class AppSettings {
       uiScale: uiScale ?? this.uiScale,
       journalVimMode: journalVimMode ?? this.journalVimMode,
       vimEscapeSequence: vimEscapeSequence ?? this.vimEscapeSequence,
+      hasSeenThreeViewTour: hasSeenThreeViewTour ?? this.hasSeenThreeViewTour,
+      hasSeenCharterMigrationNotice: hasSeenCharterMigrationNotice ?? this.hasSeenCharterMigrationNotice,
     );
   }
 
@@ -176,6 +186,8 @@ class AppSettings {
         'uiScale': uiScale,
         'journalVimMode': journalVimMode,
         'vimEscapeSequence': vimEscapeSequence,
+        'hasSeenThreeViewTour': hasSeenThreeViewTour,
+        'hasSeenCharterMigrationNotice': hasSeenCharterMigrationNotice,
       };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) {
@@ -210,6 +222,8 @@ class AppSettings {
       uiScale: (json['uiScale'] as num?)?.toDouble() ?? 1.0,
       journalVimMode: json['journalVimMode'] as bool? ?? false,
       vimEscapeSequence: json['vimEscapeSequence'] as String? ?? '',
+      hasSeenThreeViewTour: json['hasSeenThreeViewTour'] as bool? ?? false,
+      hasSeenCharterMigrationNotice: json['hasSeenCharterMigrationNotice'] as bool? ?? false,
     );
   }
 }
@@ -303,5 +317,15 @@ class SettingsProvider extends ChangeNotifier {
       syncEnabled: enabled,
       syncEmail: email,
     ));
+  }
+
+  Future<void> markThreeViewTourSeen() async {
+    if (_settings.hasSeenThreeViewTour) return;
+    await save(_settings.copyWith(hasSeenThreeViewTour: true));
+  }
+
+  Future<void> markCharterMigrationNoticeSeen() async {
+    if (_settings.hasSeenCharterMigrationNotice) return;
+    await save(_settings.copyWith(hasSeenCharterMigrationNotice: true));
   }
 }

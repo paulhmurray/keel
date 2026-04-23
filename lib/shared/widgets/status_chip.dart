@@ -88,7 +88,7 @@ class StatusChip extends StatelessWidget {
         _displayText.toUpperCase(),
         style: TextStyle(
           color: _fg,
-          fontSize: 9,
+          fontSize: 10,
           fontWeight: FontWeight.w500,
           letterSpacing: 0.05,
         ),

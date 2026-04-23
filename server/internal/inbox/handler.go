@@ -1,17 +1,27 @@
 package inbox
 
 import (
+	"context"
 	"encoding/base64"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// dbPool is the subset of pgxpool.Pool used by this handler.
+type dbPool interface {
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+}
+
 // Handler holds the database pool for inbox operations.
 type Handler struct {
-	db *pgxpool.Pool
+	db dbPool
 }
 
 // NewHandler creates a new inbox Handler.

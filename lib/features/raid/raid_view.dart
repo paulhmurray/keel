@@ -62,7 +62,7 @@ const _kMitigationStyle = TextStyle(
 
 const _kHeaderCellStyle = TextStyle(
   color: KColors.textMuted,
-  fontSize: 9,
+  fontSize: 10,
   fontWeight: FontWeight.w600,
   letterSpacing: 0.12,
 );
@@ -88,7 +88,7 @@ class _MatrixDot extends StatelessWidget {
       height: 28,
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(4)),
       alignment: Alignment.center,
-      child: Text(label, style: TextStyle(color: fg, fontSize: 9, fontWeight: FontWeight.w600)),
+      child: Text(label, style: TextStyle(color: fg, fontSize: 10, fontWeight: FontWeight.w600)),
     );
   }
 }
@@ -290,7 +290,7 @@ class _RaidTab extends StatelessWidget {
                   child: Text(
                     '$count',
                     style: const TextStyle(
-                        fontSize: 9, color: KColors.amber, fontWeight: FontWeight.bold),
+                        fontSize: 10, color: KColors.amber, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],

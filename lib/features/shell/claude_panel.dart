@@ -325,7 +325,7 @@ class _ClaudePanelState extends State<ClaudePanel> {
                 children: [
                   const Text(
                     'CONTEXT INJECTED',
-                    style: TextStyle(color: KColors.textMuted, fontSize: 9, fontWeight: FontWeight.w600, letterSpacing: 0.1),
+                    style: TextStyle(color: KColors.textMuted, fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.1),
                   ),
                   const SizedBox(height: 6),
                   ..._contextSections.map((s) => Padding(
@@ -542,7 +542,7 @@ class _ContextPill extends StatelessWidget {
             label,
             style: TextStyle(
               color: fg,
-              fontSize: 9,
+              fontSize: 10,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -580,13 +580,16 @@ class _PanelHeader extends StatelessWidget {
         children: [
           const Icon(Icons.auto_awesome, size: 13, color: KColors.phosphor),
           const SizedBox(width: 6),
-          Text(
-            '⊹ $name',
-            style: GoogleFonts.syne(
-              color: KColors.phosphor,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.2,
+          Flexible(
+            child: Text(
+              '⊹ $name',
+              style: GoogleFonts.syne(
+                color: KColors.phosphor,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.2,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           const Spacer(),
@@ -612,7 +615,7 @@ class _PanelHeader extends StatelessWidget {
               hasKey ? 'Connected' : 'Not configured',
               style: TextStyle(
                 color: hasKey ? KColors.phosphor : KColors.amber,
-                fontSize: 9,
+                fontSize: 10,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -761,7 +764,7 @@ class _MessageBubble extends StatelessWidget {
                   isUser ? 'You' : _providerLabel(context.watch<SettingsProvider>().settings),
                   style: TextStyle(
                     color: isUser ? KColors.blue : KColors.phosphor,
-                    fontSize: 9,
+                    fontSize: 10,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

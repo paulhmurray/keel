@@ -336,6 +336,97 @@ class JsonImporter {
       }
     }
 
+    // Playbook
+    final playbookSection = data['playbook'] as Map<String, dynamic>?;
+    if (playbookSection != null) {
+      final orgData = playbookSection['organisation'] as Map<String, dynamic>?;
+      if (orgData != null) {
+        await db.playbookDao.upsertOrganisation(OrganisationsCompanion(
+          id: Value(orgData['id'] as String),
+          name: Value(orgData['name'] as String),
+          shortName: Value(orgData['short_name'] as String?),
+          notes: Value(orgData['notes'] as String?),
+        ));
+      }
+      final pbData = playbookSection['playbook'] as Map<String, dynamic>?;
+      if (pbData != null) {
+        await db.playbookDao.upsertPlaybook(PlaybooksCompanion(
+          id: Value(pbData['id'] as String),
+          organisationId: Value(pbData['organisation_id'] as String),
+          name: Value(pbData['name'] as String),
+          description: Value(pbData['description'] as String?),
+          version: Value(pbData['version'] as String?),
+        ));
+      }
+      for (final s in (playbookSection['stages'] as List? ?? [])) {
+        final sm = s as Map<String, dynamic>;
+        await db.playbookDao.upsertStage(PlaybookStagesCompanion(
+          id: Value(sm['id'] as String),
+          playbookId: Value(sm['playbook_id'] as String),
+          name: Value(sm['name'] as String),
+          description: Value(sm['description'] as String?),
+          sortOrder: Value(sm['sort_order'] as int? ?? 0),
+          approverRole: Value(sm['approver_role'] as String?),
+          gateCondition: Value(sm['gate_condition'] as String?),
+          notes: Value(sm['notes'] as String?),
+        ));
+      }
+      for (final t in (playbookSection['templates'] as List? ?? [])) {
+        final tm = t as Map<String, dynamic>;
+        await db.playbookDao.upsertTemplate(StageTemplatesCompanion(
+          id: Value(tm['id'] as String),
+          stageId: Value(tm['stage_id'] as String),
+          name: Value(tm['name'] as String),
+          filename: Value(tm['filename'] as String),
+          filePath: Value(tm['file_path'] as String),
+          fileType: Value(tm['file_type'] as String? ?? 'other'),
+          fillStrategy: Value(tm['fill_strategy'] as String? ?? 'companion'),
+          fieldHints: Value(tm['field_hints'] as String?),
+        ));
+      }
+      final ppData =
+          playbookSection['project_playbook'] as Map<String, dynamic>?;
+      if (ppData != null) {
+        await db.playbookDao.upsertProjectPlaybook(ProjectPlaybooksCompanion(
+          id: Value(ppData['id'] as String),
+          projectId: Value(ppData['project_id'] as String),
+          playbookId: Value(ppData['playbook_id'] as String),
+          currentStageId: Value(ppData['current_stage_id'] as String?),
+          attachedAt: Value(ppData['attached_at'] != null
+              ? DateTime.parse(ppData['attached_at'] as String)
+              : DateTime.now()),
+        ));
+        for (final sp
+            in (playbookSection['stage_progresses'] as List? ?? [])) {
+          final spm = sp as Map<String, dynamic>;
+          await db.playbookDao.upsertProgress(ProjectStageProgressesCompanion(
+            id: Value(spm['id'] as String),
+            projectPlaybookId: Value(spm['project_playbook_id'] as String),
+            stageId: Value(spm['stage_id'] as String),
+            status: Value(spm['status'] as String? ?? 'not_started'),
+            gateMet: Value(spm['gate_met'] as bool? ?? false),
+            approvedBy: Value(spm['approved_by'] as String?),
+            approvedAt: Value(spm['approved_at'] != null
+                ? DateTime.tryParse(spm['approved_at'] as String)
+                : null),
+            approvalNotes: Value(spm['approval_notes'] as String?),
+            evidenceFilename: Value(spm['evidence_filename'] as String?),
+            evidenceFilePath: Value(spm['evidence_file_path'] as String?),
+            evidenceUploadedAt: Value(spm['evidence_uploaded_at'] != null
+                ? DateTime.tryParse(spm['evidence_uploaded_at'] as String)
+                : null),
+            checklist: Value(spm['checklist'] as String?),
+            generatedDocPath: Value(spm['generated_doc_path'] as String?),
+            generatedAt: Value(spm['generated_at'] != null
+                ? DateTime.tryParse(spm['generated_at'] as String)
+                : null),
+            journalEntryId: Value(spm['journal_entry_id'] as String?),
+            notes: Value(spm['notes'] as String?),
+          ));
+        }
+      }
+    }
+
     // Status reports
     for (final r in (data['reports'] as List? ?? [])) {
       final rm = r as Map<String, dynamic>;

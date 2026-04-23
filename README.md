@@ -1,6 +1,6 @@
 # Keel
 
-A local-first command centre for Technical Programme Managers. Manage your programme, track RAID logs, decisions, actions, people, and journal — all stored on your machine, with optional encrypted sync across devices.
+A local-first command centre for Project, Programme and Portfolio Managers. Manage your programme, track RAID logs, decisions, actions, people, and journal — all stored on your machine, with optional encrypted sync across devices.
 
 Built with Flutter for Linux, macOS, and Windows.
 
@@ -30,11 +30,11 @@ Built with Flutter for Linux, macOS, and Windows.
 
 Grab the latest release for your platform from the [Releases](../../releases/latest) page.
 
-| Platform | Download |
-|----------|----------|
+| Platform | Download                                                              |
+| -------- | --------------------------------------------------------------------- |
 | Windows  | `keel-windows-setup.exe` (installer) or `keel-windows.zip` (portable) |
-| macOS    | `keel-macos.dmg` |
-| Linux    | `keel-linux.tar.gz` |
+| macOS    | `keel-macos.dmg`                                                      |
+| Linux    | `keel-linux.tar.gz`                                                   |
 
 ### Installation
 
@@ -46,14 +46,17 @@ Extract `keel-windows.zip` and run `keel.exe` from the folder. Use this if the i
 
 **macOS**
 Open `keel-macos.dmg`, drag `Keel.app` to your Applications folder.
+
 > Note: Keel is ad-hoc signed. On first launch, right-click → Open to bypass Gatekeeper.
 
 **Linux**
+
 ```bash
 tar -xzf keel-linux.tar.gz
 cd keel
 ./install.sh
 ```
+
 Installs to `~/.local/share/keel/`, creates an app launcher entry, and adds `keel` to your PATH. No root required.
 
 ---
@@ -62,27 +65,27 @@ Installs to `~/.local/share/keel/`, creates an app launcher entry, and adds `kee
 
 Keel uses a Doom Emacs-style leader key. Press `Space` to activate, then:
 
-| Keys | Action |
-|------|--------|
-| `SPC SPC` | Programme overview |
-| `SPC t` | Timeline |
-| `SPC r r` | RAID › Risks |
-| `SPC r a` | RAID › Assumptions |
-| `SPC r i` | RAID › Issues |
-| `SPC r d` | RAID › Dependencies |
-| `SPC d` | Decisions |
-| `SPC d n` | New decision |
-| `SPC p` | People |
-| `SPC a` | Actions |
-| `SPC i` | Inbox |
-| `SPC c e` | Context › Entries |
-| `SPC c d` | Context › Documents |
-| `SPC c g` | Context › Glossary |
-| `SPC R` | Reports |
-| `SPC j` | Journal |
-| `SPC P` | Playbook |
-| `Ctrl+j` | Open journal (new entry) |
-| `Ctrl+Shift+j` | Open journal (history) |
+| Keys           | Action                   |
+| -------------- | ------------------------ |
+| `SPC SPC`      | Programme overview       |
+| `SPC t`        | Timeline                 |
+| `SPC r r`      | RAID › Risks             |
+| `SPC r a`      | RAID › Assumptions       |
+| `SPC r i`      | RAID › Issues            |
+| `SPC r d`      | RAID › Dependencies      |
+| `SPC d`        | Decisions                |
+| `SPC d n`      | New decision             |
+| `SPC p`        | People                   |
+| `SPC a`        | Actions                  |
+| `SPC i`        | Inbox                    |
+| `SPC c e`      | Context › Entries        |
+| `SPC c d`      | Context › Documents      |
+| `SPC c g`      | Context › Glossary       |
+| `SPC R`        | Reports                  |
+| `SPC j`        | Journal                  |
+| `SPC P`        | Playbook                 |
+| `Ctrl+j`       | Open journal (new entry) |
+| `Ctrl+Shift+j` | Open journal (history)   |
 
 Append `n` to most section shortcuts to open the new item form directly (e.g. `SPC r r n` → new risk).
 
@@ -91,6 +94,7 @@ Append `n` to most section shortcuts to open the new item form directly (e.g. `S
 ## Development
 
 **Prerequisites**
+
 - Flutter SDK (stable channel)
 - For Linux: `libsecret-1-dev`, `libgtk-3-dev`
 
@@ -102,6 +106,7 @@ flutter run -d linux   # or macos / windows
 ```
 
 **Database code generation** (after schema changes):
+
 ```bash
 dart run build_runner build --delete-conflicting-outputs
 ```

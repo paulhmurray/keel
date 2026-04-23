@@ -1,0 +1,91 @@
+workflows:
+  macos-release:
+    name: macOS Release
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+
+    triggering:
+      events:
+        - tag
+      tag_patterns:
+        - pattern: 'v*'
+          include: true
+
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      groups:
+        - apple_credentials   # contains APP_STORE_CONNECT_* vars (see below)
+
+    scripts:
+      - name: Flutter pub get
+        script: flutter pub get
+
+      - name: Build macOS release
+        script: flutter build macos --release
+
+      - name: Sign and notarize
+        script: |
+          # Fetch (or create) the Developer ID Application certificate via
+          # the connected Developer Portal integration and sign the .app.
+          keychain initialize
+          app_store_connect fetch-signing-files \
+            com.keel.keel \
+            --type MAC_APP_DISTRIBUTION \
+            --create
+          # Developer ID for direct distribution (outside App Store)
+          app_store_connect create-certificate \
+            --type DEVELOPER_ID_APPLICATION \
+            --save || true   # no-op if it already exists
+          keychain add-certificates
+          xcode-project use-profiles
+
+          APP=$(find build/macos/Build/Products/Release -name "*.app" -maxdepth 1 | head -1)
+
+          # Sign with Developer ID
+          codesign \
+            --deep --force --options runtime \
+            --sign "Developer ID Application" \
+            "$APP"
+
+          # Zip for notarization submission
+          ditto -c -k --keepParent "$APP" keel-notarize.zip
+
+          # Submit to Apple notary service
+          xcrun notarytool submit keel-notarize.zip \
+            --key "$APP_STORE_CONNECT_PRIVATE_KEY_PATH" \
+            --key-id "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
+            --issuer "$APP_STORE_CONNECT_ISSUER_ID" \
+            --wait
+
+          # Staple the ticket to the .app
+          xcrun stapler staple "$APP"
+
+      - name: Package as DMG
+        script: |
+          APP=$(find build/macos/Build/Products/Release -name "*.app" -maxdepth 1 | head -1)
+          mkdir -p dmg_staging
+          cp -r "$APP" dmg_staging/
+          ln -s /Applications dmg_staging/Applications
+          hdiutil create \
+            -volname "Keel" \
+            -srcfolder dmg_staging \
+            -ov -format UDZO \
+            keel-macos.dmg
+
+      - name: Package as ZIP
+        script: |
+          APP=$(find build/macos/Build/Products/Release -name "*.app" -maxdepth 1 | head -1)
+          ditto -c -k --keepParent "$APP" keel-macos.zip
+
+    artifacts:
+      - keel-macos.dmg
+      - keel-macos.zip
+
+    publishing:
+      github_releases:
+        # Attaches artifacts to the matching GitHub release for this tag.
+        # Requires a GitHub token with repo write access stored in the
+        # apple_credentials group as GITHUB_TOKEN.
+        tag_pattern: 'v*'

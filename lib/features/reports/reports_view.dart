@@ -7,6 +7,7 @@ import '../../core/database/database.dart';
 import '../../core/export/html_exporter.dart';
 import '../../core/export/pdf_exporter.dart';
 import '../../core/export/handover_exporter.dart';
+import '../../core/export/programme_workbook_exporter.dart';
 import '../../core/llm/llm_client_factory.dart';
 import '../../providers/project_provider.dart';
 import '../../providers/settings_provider.dart';
@@ -28,7 +29,7 @@ class _ReportsViewState extends State<ReportsView>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
   }
 
   @override
@@ -39,7 +40,8 @@ class _ReportsViewState extends State<ReportsView>
 
   @override
   Widget build(BuildContext context) {
-    final projectId = context.watch<ProjectProvider>().currentProjectId;
+    final project = context.watch<ProjectProvider>().currentProject;
+    final projectId = project?.id;
     if (projectId == null) {
       return const Center(child: Text('Select a project.'));
     }
@@ -78,6 +80,7 @@ class _ReportsViewState extends State<ReportsView>
               Tab(text: 'RAID Export'),
               Tab(text: 'Programme Narrative'),
               Tab(text: 'Handover Pack'),
+              Tab(text: 'Programme Workbook'),
             ],
             indicatorColor: KColors.amber,
             labelColor: KColors.amber,
@@ -93,6 +96,10 @@ class _ReportsViewState extends State<ReportsView>
               _RaidExportTab(projectId: projectId, db: db),
               _NarrativeExportTab(projectId: projectId, db: db),
               _HandoverPackTab(projectId: projectId, db: db),
+              _ProgrammeWorkbookTab(
+                  projectId: projectId,
+                  projectName: project?.name ?? 'Programme',
+                  db: db),
             ],
           ),
         ),
@@ -1227,6 +1234,93 @@ class _BulletList extends StatelessWidget {
                 ),
               ))
           .toList(),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Programme Workbook Tab
+// ---------------------------------------------------------------------------
+
+class _ProgrammeWorkbookTab extends StatefulWidget {
+  final String projectId;
+  final String projectName;
+  final AppDatabase db;
+
+  const _ProgrammeWorkbookTab({
+    required this.projectId,
+    required this.projectName,
+    required this.db,
+  });
+
+  @override
+  State<_ProgrammeWorkbookTab> createState() => _ProgrammeWorkbookTabState();
+}
+
+class _ProgrammeWorkbookTabState extends State<_ProgrammeWorkbookTab> {
+  bool _exporting = false;
+  String? _error;
+
+  Future<void> _export() async {
+    setState(() { _exporting = true; _error = null; });
+    try {
+      await ProgrammeWorkbookExporter.export(
+        db: widget.db,
+        projectId: widget.projectId,
+        projectName: widget.projectName,
+      );
+    } catch (e) {
+      setState(() { _error = e.toString(); });
+    } finally {
+      if (mounted) setState(() { _exporting = false; });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Programme Workbook',
+              style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          const Text(
+            'Exports a multi-sheet Excel workbook containing:\n'
+            '  • Programme Timeline (Gantt by work package)\n'
+            '  • Stakeholder Map\n'
+            '  • Scope & Prioritisation\n'
+            '  • RAID Log',
+            style: TextStyle(color: KColors.textDim, fontSize: 13),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: _exporting ? null : _export,
+            icon: _exporting
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.table_chart_outlined, size: 18),
+            label: Text(_exporting ? 'Exporting…' : 'Export Programme Workbook (.xlsx)'),
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: KColors.redDim,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: KColors.red),
+              ),
+              child: Text(_error!,
+                  style: const TextStyle(color: KColors.red, fontSize: 12)),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

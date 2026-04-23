@@ -631,7 +631,7 @@ class _TimelinePainter extends CustomPainter {
     // "Today" label
     const labelStyle = TextStyle(
       color: KColors.amber,
-      fontSize: 9,
+      fontSize: 10,
       fontWeight: FontWeight.w600,
     );
     _drawText(
@@ -667,7 +667,7 @@ class _TimelinePainter extends CustomPainter {
   void _drawDotLabel(Canvas canvas, Size size, _PlacedDot dot, double axisY) {
     const labelStyle = TextStyle(
       color: Color(0xFF8EA8C0),
-      fontSize: 9,
+      fontSize: 10,
     );
 
     final offsetY = dot.aboveAxis

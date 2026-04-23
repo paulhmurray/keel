@@ -16,6 +16,7 @@ import '../../shared/widgets/date_picker_field.dart';
 import '../../shared/widgets/keybindings_table.dart';
 import '../programme/programme_view.dart';
 import '../timeline/timeline_view.dart';
+import '../timeline/gantt/programme_gantt_view.dart';
 import '../raid/raid_view.dart';
 import '../decisions/decisions_view.dart';
 import '../people/people_view.dart';
@@ -27,6 +28,10 @@ import '../settings/settings_view.dart';
 import '../journal/journal_history_view.dart';
 import '../journal/journal_overlay.dart';
 import '../playbook/playbook_view.dart';
+import '../status/status_view.dart';
+import '../charter/charter_view.dart';
+import '../charter/charter_migration_notice.dart';
+import '../../core/charter/charter_migration.dart';
 import '../../shared/widgets/update_banner.dart';
 import 'left_panel.dart';
 import 'nav_rail.dart';
@@ -66,10 +71,13 @@ class _ActionNode extends _KeyNode {
 // Shell layout state
 // ---------------------------------------------------------------------------
 
+enum _GanttLayoutMode { normal, expanded, presentation }
+
 class _ShellLayoutState extends State<ShellLayout> {
   int _selectedIndex = 0;
   bool _leftPanelVisible = true;
   bool _rightPanelVisible = true;
+  _GanttLayoutMode _ganttMode = _GanttLayoutMode.normal;
   StreamSubscription<void>? _dbChangeSub;
 
   // Deep-navigation state (set by leader bindings, consumed by _buildView)
@@ -79,10 +87,21 @@ class _ShellLayoutState extends State<ShellLayout> {
   bool _raidTriggerNew = false;
   bool _decisionsTriggerNew = false;
 
+  // Sequence counters — increment on every navigation action so ValueKey
+  // forces a widget remount even when _selectedIndex doesn't change.
+  int _raidNavSeq = 0;
+  int _contextNavSeq = 0;
+  int _decisionsNavSeq = 0;
+
   // Leader key state — null = inactive, non-null = active at this menu node
   _MenuNode? _currentLeaderMenu;
   String _leaderPrefix = 'SPC';
   late final _MenuNode _rootMenu;
+
+  // Three-view tour: track whether we've already triggered the dialog this
+  // session so didChangeDependencies doesn't fire it twice.
+  bool _tourTriggered = false;
+  bool _charterMigrationTriggered = false;
 
   static const double _leftPanelWidth = 220.0;
   static const double _rightPanelWidth = 280.0;
@@ -109,10 +128,10 @@ class _ShellLayoutState extends State<ShellLayout> {
       'R':  _ActionNode('Reports',     () { _selectedIndex = 8; }),
       'd':  _MenuNode('Decisions', {
         'n': _ActionNode('New decision', () {
-          _selectedIndex = 3; _decisionsTriggerNew = true;
+          _selectedIndex = 3; _decisionsTriggerNew = true; _decisionsNavSeq++;
         }),
       }, onEnter: () {
-        _selectedIndex = 3; _decisionsTriggerNew = false;
+        _selectedIndex = 3; _decisionsTriggerNew = false; _decisionsNavSeq++;
       }),
       'p':  _ActionNode('People',     () { _selectedIndex = 4; }),
       'a':  _ActionNode('Actions',    () { _selectedIndex = 5; }),
@@ -120,59 +139,106 @@ class _ShellLayoutState extends State<ShellLayout> {
       'c':  _MenuNode('Context', {
         'e': _MenuNode('Entries', {
           'n': _ActionNode('New entry', () {
-            _selectedIndex = 7; _contextInitialTab = 0; _contextTriggerNew = true;
+            _selectedIndex = 7; _contextInitialTab = 0; _contextTriggerNew = true; _contextNavSeq++;
           }),
         }, onEnter: () {
-          _selectedIndex = 7; _contextInitialTab = 0; _contextTriggerNew = false;
+          _selectedIndex = 7; _contextInitialTab = 0; _contextTriggerNew = false; _contextNavSeq++;
         }),
         'd': _MenuNode('Documents', {
           'n': _ActionNode('Upload document', () {
-            _selectedIndex = 7; _contextInitialTab = 1; _contextTriggerNew = true;
+            _selectedIndex = 7; _contextInitialTab = 1; _contextTriggerNew = true; _contextNavSeq++;
           }),
         }, onEnter: () {
-          _selectedIndex = 7; _contextInitialTab = 1; _contextTriggerNew = false;
+          _selectedIndex = 7; _contextInitialTab = 1; _contextTriggerNew = false; _contextNavSeq++;
         }),
         'g': _MenuNode('Glossary', {
           'n': _ActionNode('New term', () {
-            _selectedIndex = 7; _contextInitialTab = 2; _contextTriggerNew = true;
+            _selectedIndex = 7; _contextInitialTab = 2; _contextTriggerNew = true; _contextNavSeq++;
           }),
         }, onEnter: () {
-          _selectedIndex = 7; _contextInitialTab = 2; _contextTriggerNew = false;
+          _selectedIndex = 7; _contextInitialTab = 2; _contextTriggerNew = false; _contextNavSeq++;
         }),
       }),
       'r':  _MenuNode('RAID', {
         'r': _MenuNode('Risks', {
           'n': _ActionNode('New risk', () {
-            _selectedIndex = 2; _raidInitialTab = 0; _raidTriggerNew = true;
+            _selectedIndex = 2; _raidInitialTab = 0; _raidTriggerNew = true; _raidNavSeq++;
           }),
         }, onEnter: () {
-          _selectedIndex = 2; _raidInitialTab = 0; _raidTriggerNew = false;
+          _selectedIndex = 2; _raidInitialTab = 0; _raidTriggerNew = false; _raidNavSeq++;
         }),
         'a': _MenuNode('Assumptions', {
           'n': _ActionNode('New assumption', () {
-            _selectedIndex = 2; _raidInitialTab = 1; _raidTriggerNew = true;
+            _selectedIndex = 2; _raidInitialTab = 1; _raidTriggerNew = true; _raidNavSeq++;
           }),
         }, onEnter: () {
-          _selectedIndex = 2; _raidInitialTab = 1; _raidTriggerNew = false;
+          _selectedIndex = 2; _raidInitialTab = 1; _raidTriggerNew = false; _raidNavSeq++;
         }),
         'i': _MenuNode('Issues', {
           'n': _ActionNode('New issue', () {
-            _selectedIndex = 2; _raidInitialTab = 2; _raidTriggerNew = true;
+            _selectedIndex = 2; _raidInitialTab = 2; _raidTriggerNew = true; _raidNavSeq++;
           }),
         }, onEnter: () {
-          _selectedIndex = 2; _raidInitialTab = 2; _raidTriggerNew = false;
+          _selectedIndex = 2; _raidInitialTab = 2; _raidTriggerNew = false; _raidNavSeq++;
         }),
         'd': _MenuNode('Dependencies', {
           'n': _ActionNode('New dependency', () {
-            _selectedIndex = 2; _raidInitialTab = 3; _raidTriggerNew = true;
+            _selectedIndex = 2; _raidInitialTab = 3; _raidTriggerNew = true; _raidNavSeq++;
           }),
         }, onEnter: () {
-          _selectedIndex = 2; _raidInitialTab = 3; _raidTriggerNew = false;
+          _selectedIndex = 2; _raidInitialTab = 3; _raidTriggerNew = false; _raidNavSeq++;
         }),
       }),
       'j':  _ActionNode('Journal',    () { _selectedIndex = 10; }),
       'P':  _ActionNode('Playbook',   () { _selectedIndex = 11; }),
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_tourTriggered) return;
+    final projectId = context.read<ProjectProvider>().currentProjectId;
+    final settings = context.read<SettingsProvider>();
+    if (projectId != null && !settings.settings.hasSeenThreeViewTour) {
+      _tourTriggered = true;
+      final settingsProvider = settings;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        showDialog<void>(
+          context: context,
+          barrierDismissible: true,
+          builder: (_) => const _ThreeViewTourDialog(),
+        ).then((_) => settingsProvider.markThreeViewTourSeen());
+      });
+    }
+
+    // Charter migration notice — run once per user after data migration
+    if (!_charterMigrationTriggered &&
+        projectId != null &&
+        !settings.settings.hasSeenCharterMigrationNotice) {
+      _charterMigrationTriggered = true;
+      final settingsProvider = settings;
+      final db = context.read<AppDatabase>();
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        final migrated = await CharterMigration(db).runIfNeeded();
+        if (!mounted) return;
+        if (migrated) {
+          showDialog<void>(
+            context: context,
+            barrierDismissible: true,
+            builder: (ctx) => CharterMigrationNotice(
+              onOpenCharter: () => setState(() => _selectedIndex = 14),
+              onDismiss: () {},
+            ),
+          ).then((_) => settingsProvider.markCharterMigrationNoticeSeen());
+        } else {
+          // No data to migrate — just mark as seen silently
+          settingsProvider.markCharterMigrationNoticeSeen();
+        }
+      });
+    }
   }
 
   @override
@@ -301,6 +367,24 @@ class _ShellLayoutState extends State<ShellLayout> {
       return true;
     }
 
+    // ── Gantt layout mode shortcuts ───────────────────────────────────────
+    if (_selectedIndex == 12) {
+      if (event.logicalKey == LogicalKeyboardKey.f11) {
+        _toggleGanttPresentation();
+        return true;
+      }
+      if (isMetaOrCtrl && HardwareKeyboard.instance.isShiftPressed) {
+        if (event.logicalKey == LogicalKeyboardKey.keyF) {
+          _toggleGanttPresentation();
+          return true;
+        }
+        if (event.logicalKey == LogicalKeyboardKey.keyE) {
+          _toggleGanttExpanded();
+          return true;
+        }
+      }
+    }
+
     // ── Existing Ctrl / Meta shortcuts ────────────────────────────────────
     if (!isMetaOrCtrl) return false;
 
@@ -323,6 +407,22 @@ class _ShellLayoutState extends State<ShellLayout> {
       return true;
     }
     return false;
+  }
+
+  void _toggleGanttExpanded() {
+    setState(() {
+      _ganttMode = _ganttMode == _GanttLayoutMode.expanded
+          ? _GanttLayoutMode.normal
+          : _GanttLayoutMode.expanded;
+    });
+  }
+
+  void _toggleGanttPresentation() {
+    setState(() {
+      _ganttMode = _ganttMode == _GanttLayoutMode.presentation
+          ? _GanttLayoutMode.normal
+          : _GanttLayoutMode.presentation;
+    });
   }
 
   void _goToSettings() => setState(() => _selectedIndex = 9);
@@ -401,6 +501,12 @@ class _ShellLayoutState extends State<ShellLayout> {
       case 0:
         return ProgrammeView(
           onNavigateToTimeline: () => setState(() => _selectedIndex = 1),
+          onNavigateToCharter: () => setState(() => _selectedIndex = 14),
+          onNavigateToActions: () => setState(() => _selectedIndex = 5),
+          onNavigateToDecisions: () => setState(() => _selectedIndex = 3),
+          onNavigateToRaid: () => setState(() => _selectedIndex = 2),
+          onNavigateToPeople: () => setState(() => _selectedIndex = 4),
+          onNavigateToPlaybook: () => setState(() => _selectedIndex = 11),
         );
       case 1:
         return const TimelineView();
@@ -409,11 +515,11 @@ class _ShellLayoutState extends State<ShellLayout> {
         final doNew = _raidTriggerNew;
         _raidInitialTab = null;
         _raidTriggerNew = false;
-        return RaidView(initialTab: tab, triggerNew: doNew);
+        return RaidView(key: ValueKey(_raidNavSeq), initialTab: tab, triggerNew: doNew);
       case 3:
         final doNew = _decisionsTriggerNew;
         _decisionsTriggerNew = false;
-        return DecisionsView(triggerNew: doNew);
+        return DecisionsView(key: ValueKey(_decisionsNavSeq), triggerNew: doNew);
       case 4:
         return const PeopleView();
       case 5:
@@ -426,7 +532,7 @@ class _ShellLayoutState extends State<ShellLayout> {
         // Consume so re-renders don't retrigger
         _contextInitialTab = null;
         _contextTriggerNew = false;
-        return ContextView(initialTab: tab, triggerNew: doNew);
+        return ContextView(key: ValueKey(_contextNavSeq), initialTab: tab, triggerNew: doNew);
       case 8:
         return const ReportsView();
       case 9:
@@ -435,9 +541,26 @@ class _ShellLayoutState extends State<ShellLayout> {
         return const JournalHistoryView();
       case 11:
         return const PlaybookView();
+      case 12:
+        return ProgrammeGanttView(
+          isExpanded: _ganttMode == _GanttLayoutMode.expanded,
+          isPresentation: _ganttMode == _GanttLayoutMode.presentation,
+          onToggleExpanded: _toggleGanttExpanded,
+          onTogglePresentation: _toggleGanttPresentation,
+        );
+      case 13:
+        return const StatusView();
+      case 14:
+        return const CharterView();
       default:
         return ProgrammeView(
           onNavigateToTimeline: () => setState(() => _selectedIndex = 1),
+          onNavigateToCharter: () => setState(() => _selectedIndex = 14),
+          onNavigateToActions: () => setState(() => _selectedIndex = 5),
+          onNavigateToDecisions: () => setState(() => _selectedIndex = 3),
+          onNavigateToRaid: () => setState(() => _selectedIndex = 2),
+          onNavigateToPeople: () => setState(() => _selectedIndex = 4),
+          onNavigateToPlaybook: () => setState(() => _selectedIndex = 11),
         );
     }
   }
@@ -445,6 +568,20 @@ class _ShellLayoutState extends State<ShellLayout> {
   @override
   Widget build(BuildContext context) {
     final projectId = context.watch<ProjectProvider>().currentProjectId;
+
+    // Presentation mode: full-screen gantt, no chrome
+    if (_selectedIndex == 12 &&
+        _ganttMode == _GanttLayoutMode.presentation) {
+      return Scaffold(
+        backgroundColor: KColors.bg,
+        body: ProgrammeGanttView(
+          isExpanded: false,
+          isPresentation: true,
+          onToggleExpanded: _toggleGanttExpanded,
+          onTogglePresentation: _toggleGanttPresentation,
+        ),
+      );
+    }
 
     return Scaffold(
       body: Column(
@@ -458,8 +595,12 @@ class _ShellLayoutState extends State<ShellLayout> {
                     constraints.maxWidth >= _leftPanelWidth + 100 + 300;
                 final canShowRight =
                     constraints.maxWidth >= _rightPanelWidth + 100;
+                final isGanttExpanded =
+                    _selectedIndex == 12 &&
+                    _ganttMode == _GanttLayoutMode.expanded;
                 final showLeft = _leftPanelVisible && canShowLeft;
-                final showRight = _rightPanelVisible && canShowRight;
+                final showRight =
+                    _rightPanelVisible && canShowRight && !isGanttExpanded;
 
                 // Watermark opacity: higher on overview, high on onboarding
                 final watermarkOpacity = projectId == null
@@ -488,6 +629,8 @@ class _ShellLayoutState extends State<ShellLayout> {
                                     setState(() => _selectedIndex = 10),
                                 onNavigateToPlaybook: () =>
                                     setState(() => _selectedIndex = 11),
+                                onNavigateToProgramme: () =>
+                                    setState(() => _selectedIndex = 0),
                               ),
                             )
                           : const SizedBox.shrink(),
@@ -507,8 +650,10 @@ class _ShellLayoutState extends State<ShellLayout> {
                     // Navigation rail
                     KeelNavRail(
                       selectedIndex: _selectedIndex,
-                      onDestinationSelected: (i) =>
-                          setState(() => _selectedIndex = i),
+                      onDestinationSelected: (i) => setState(() {
+                        _selectedIndex = i;
+                        if (i != 12) _ganttMode = _GanttLayoutMode.normal;
+                      }),
                     ),
 
                     Container(width: 1, color: KColors.border),
@@ -722,6 +867,139 @@ class _ChordChip extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
+// Three-View Tour Dialog
+// ---------------------------------------------------------------------------
+
+class _ThreeViewTourDialog extends StatelessWidget {
+  const _ThreeViewTourDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: KColors.surface,
+      contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Three views. One programme.',
+            style: GoogleFonts.syne(
+              color: KColors.amber,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Each nav item gives you a different lens on your work.',
+            style: TextStyle(color: KColors.textDim, fontSize: 12, fontWeight: FontWeight.normal),
+          ),
+        ],
+      ),
+      content: SizedBox(
+        width: 480,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 4),
+            _TourItem(
+              icon: Icons.calendar_today_outlined,
+              label: 'SCHED — Schedule',
+              description:
+                  'Your operational view. What needs your attention today '
+                  'or this week. Deliverables, milestones and dependencies '
+                  'in time order.',
+            ),
+            const SizedBox(height: 12),
+            _TourItem(
+              icon: Icons.account_tree_outlined,
+              label: 'PLAN — Programme Plan',
+              description:
+                  'The strategic Gantt. Workstreams, phases and long-horizon '
+                  'planning laid out visually. Spot sequencing risks before '
+                  'they become issues.',
+            ),
+            const SizedBox(height: 12),
+            _TourItem(
+              icon: Icons.monitor_heart_outlined,
+              label: 'STATUS — Status Dashboard',
+              description:
+                  'Weekly health snapshot. RAG ratings, trends, top risks, '
+                  'pending decisions and AI-drafted narrative — ready to '
+                  'paste into your steering committee pack.',
+            ),
+            const SizedBox(height: 20),
+            Align(
+              alignment: Alignment.centerRight,
+              child: ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Got it'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TourItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String description;
+
+  const _TourItem({
+    required this.icon,
+    required this.label,
+    required this.description,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: KColors.phosDim,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Icon(icon, size: 18, color: KColors.phosphor),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  color: KColors.text,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.05,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                description,
+                style: const TextStyle(
+                  color: KColors.textDim,
+                  fontSize: 12,
+                  height: 1.5,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Onboarding Screen
 // ---------------------------------------------------------------------------
 
@@ -826,8 +1104,6 @@ class _TopBar extends StatelessWidget {
           // Logo
           Row(
             children: [
-              _HealthCompassIcon(projectId: projectId, db: db),
-              const SizedBox(width: 10),
               Text(
                 'KEEL',
                 style: GoogleFonts.syne(
@@ -1349,234 +1625,4 @@ class _PanelToggle extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Health-reactive compass icon
-// ---------------------------------------------------------------------------
-
-/// Watches live project health and feeds a needle angle to [_AnimatedCompassIcon].
-class _HealthCompassIcon extends StatelessWidget {
-  final String? projectId;
-  final AppDatabase db;
-
-  const _HealthCompassIcon({required this.projectId, required this.db});
-
-  static int _score(String v) =>
-      v.toLowerCase() == 'high' ? 3 : v.toLowerCase() == 'medium' ? 2 : 1;
-
-  @override
-  Widget build(BuildContext context) {
-    if (projectId == null) return const _AnimatedCompassIcon(targetAngle: 0);
-
-    return StreamBuilder<List<ProjectAction>>(
-      stream: db.actionsDao.watchOverdueActionsForProject(projectId!),
-      builder: (context, overdueSnap) {
-        final overdueCount = overdueSnap.data?.length ?? 0;
-        return StreamBuilder<List<Risk>>(
-          stream: db.raidDao.watchOpenRisksForProject(projectId!),
-          builder: (context, riskSnap) {
-            final risks = riskSnap.data ?? [];
-            final hasRed = risks
-                .any((r) => _score(r.likelihood) * _score(r.impact) >= 9);
-            final hasAmber = risks
-                .any((r) => _score(r.likelihood) * _score(r.impact) >= 4);
-
-            // Needle drifts east as programme health worsens
-            double angle = 0.0;
-            if (hasRed || overdueCount >= 3) {
-              angle = 0.55; // ~31°
-            } else if (hasAmber || overdueCount >= 1) {
-              angle = 0.28; // ~16°
-            }
-            return _AnimatedCompassIcon(targetAngle: angle);
-          },
-        );
-      },
-    );
-  }
-}
-
-class _AnimatedCompassIcon extends StatefulWidget {
-  final double targetAngle; // radians
-
-  const _AnimatedCompassIcon({required this.targetAngle});
-
-  @override
-  State<_AnimatedCompassIcon> createState() => _AnimatedCompassIconState();
-}
-
-class _AnimatedCompassIconState extends State<_AnimatedCompassIcon>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  late Animation<double> _angle;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 1400));
-    _angle = Tween<double>(begin: 0, end: widget.targetAngle).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.elasticOut),
-    );
-    _ctrl.forward();
-  }
-
-  @override
-  void didUpdateWidget(_AnimatedCompassIcon old) {
-    super.didUpdateWidget(old);
-    if (old.targetAngle != widget.targetAngle) {
-      final from = _angle.value;
-      _angle = Tween<double>(begin: from, end: widget.targetAngle).animate(
-        CurvedAnimation(parent: _ctrl, curve: Curves.elasticOut),
-      );
-      _ctrl
-        ..reset()
-        ..forward();
-    }
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _angle,
-      builder: (context, child) => CustomPaint(
-        size: const Size(36, 36),
-        painter: _CompassPainter(needleAngle: _angle.value),
-      ),
-    );
-  }
-}
-
-class _CompassPainter extends CustomPainter {
-  final double needleAngle;
-
-  const _CompassPainter({required this.needleAngle});
-
-  static const _bg = Color(0xFF0a0d0f);
-  static const _ring1 = Color(0xFF253040);
-  static const _ring2 = Color(0xFF1e2830);
-  static const _amber = Color(0xFFe8a430);
-  static const _phos = Color(0xFF2dd4a0);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // Scale from 128×128 SVG viewBox to actual size
-    canvas.scale(size.width / 128, size.height / 128);
-
-    // Background
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-          const Rect.fromLTWH(0, 0, 128, 128), const Radius.circular(24)),
-      Paint()..color = _bg,
-    );
-
-    canvas.translate(64, 64);
-
-    final thinStroke = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.8;
-
-    // Rings
-    canvas.drawCircle(
-        Offset.zero, 46, thinStroke..color = _ring1..strokeWidth = 0.8);
-    canvas.drawCircle(
-        Offset.zero, 30, thinStroke..color = _ring2..strokeWidth = 0.8);
-
-    // Crosshairs
-    final xhair = Paint()
-      ..color = _ring2
-      ..strokeWidth = 0.5;
-    canvas.drawLine(const Offset(0, -50), const Offset(0, 50), xhair);
-    canvas.drawLine(const Offset(-50, 0), const Offset(50, 0), xhair);
-
-    // Ring tick dots
-    final dot = Paint()..color = _ring2;
-    for (final p in [
-      const Offset(0, -30), const Offset(0, 30),
-      const Offset(-30, 0), const Offset(30, 0),
-    ]) {
-      canvas.drawCircle(p, 2, dot);
-    }
-
-    // ── Needle (rotated) ──────────────────────────────────────
-    canvas.save();
-    canvas.rotate(needleAngle);
-
-    // North needle (amber)
-    canvas.drawPath(
-      Path()
-        ..moveTo(0, -26)
-        ..lineTo(6, -4)
-        ..lineTo(0, 0)
-        ..lineTo(-6, -4)
-        ..close(),
-      Paint()..color = _amber,
-    );
-
-    // South needle (dark)
-    canvas.drawPath(
-      Path()
-        ..moveTo(0, 0)
-        ..lineTo(6, 4)
-        ..lineTo(0, 26)
-        ..lineTo(-6, 4)
-        ..close(),
-      Paint()..color = _ring1,
-    );
-
-    // Spine
-    canvas.drawLine(
-      const Offset(0, -26),
-      const Offset(0, 26),
-      Paint()
-        ..color = _amber
-        ..strokeWidth = 1.0,
-    );
-
-    // North cap chevron
-    canvas.drawPath(
-      Path()
-        ..moveTo(-5, -43)
-        ..lineTo(0, -50)
-        ..lineTo(5, -43),
-      Paint()
-        ..color = _amber
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round,
-    );
-
-    canvas.restore();
-    // ── End needle ────────────────────────────────────────────
-
-    // Pivot ring
-    canvas.drawCircle(Offset.zero, 4,
-        Paint()
-          ..color = _bg
-          ..style = PaintingStyle.fill);
-    canvas.drawCircle(Offset.zero, 4,
-        Paint()
-          ..color = _amber
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.2);
-    // Centre dot
-    canvas.drawCircle(Offset.zero, 1.5, Paint()..color = _amber);
-
-    // Phosphor bearing dot
-    canvas.drawCircle(
-      const Offset(26, -15),
-      2.5,
-      Paint()..color = _phos.withValues(alpha: 0.7),
-    );
-  }
-
-  @override
-  bool shouldRepaint(_CompassPainter old) => old.needleAngle != needleAngle;
-}
 
