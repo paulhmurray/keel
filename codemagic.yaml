@@ -27,17 +27,18 @@ workflows:
 
       - name: Sign and notarize
         script: |
-          # Write the API private key to a file (avoids newline issues with env vars)
+          # Write the API private key to a file.
+          # printf '%b' converts literal \n escape sequences to real newlines
+          # in case Codemagic stored the key that way.
           mkdir -p /tmp/certs
-          echo "$APP_STORE_CONNECT_PRIVATE_KEY" > /tmp/certs/AuthKey.p8
+          printf '%b' "$APP_STORE_CONNECT_PRIVATE_KEY" > /tmp/certs/AuthKey.p8
+          # Re-export so the app-store-connect CLI reads it cleanly from env
+          export APP_STORE_CONNECT_PRIVATE_KEY="$(cat /tmp/certs/AuthKey.p8)"
 
-          # Initialize keychain and create/fetch the Developer ID Application certificate
+          # Initialize keychain and create the Developer ID Application certificate
           keychain initialize
-          app-store-connect create-certificate \
+          app-store-connect certificates create \
             --type DEVELOPER_ID_APPLICATION \
-            --private-key /tmp/certs/AuthKey.p8 \
-            --key-id "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
-            --issuer-id "$APP_STORE_CONNECT_ISSUER_ID" \
             --save
           keychain add-certificates
 
