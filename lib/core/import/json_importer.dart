@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../charter/charter_migration.dart';
 import '../database/database.dart';
 import '_json_importer_io.dart' if (dart.library.html) '_json_importer_web.dart';
 
@@ -708,6 +709,10 @@ class JsonImporter {
         ));
       }
     }
+
+    // Re-run charter migration in case the source device had overview data but
+    // no charter yet — ensures ProgrammeOverview content is never lost on sync.
+    await CharterMigration(db).runIfNeeded();
 
     return ImportResult(
       projectName: projectData['name'] as String,
