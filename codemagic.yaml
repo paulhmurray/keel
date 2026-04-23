@@ -27,23 +27,23 @@ workflows:
 
       - name: Sign and notarize
         script: |
-          # Fetch (or create) the Developer ID Application certificate via
-          # the connected Developer Portal integration and sign the .app.
+          # Write the API private key to a file (avoids newline issues with env vars)
+          mkdir -p /tmp/certs
+          echo "$APP_STORE_CONNECT_PRIVATE_KEY" > /tmp/certs/AuthKey.p8
+
+          # Initialize keychain and create/fetch the Developer ID Application certificate
           keychain initialize
-          app-store-connect fetch-signing-files \
-            com.keel.keel \
-            --type MAC_APP_DISTRIBUTION \
-            --create
-          # Developer ID for direct distribution (outside App Store)
           app-store-connect create-certificate \
             --type DEVELOPER_ID_APPLICATION \
-            --save || true   # no-op if it already exists
+            --private-key /tmp/certs/AuthKey.p8 \
+            --key-id "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
+            --issuer-id "$APP_STORE_CONNECT_ISSUER_ID" \
+            --save
           keychain add-certificates
-          xcode-project use-profiles
 
           APP=$(find build/macos/Build/Products/Release -name "*.app" -maxdepth 1 | head -1)
 
-          # Sign with Developer ID
+          # Sign with Developer ID (no provisioning profile needed for direct distribution)
           codesign \
             --deep --force --options runtime \
             --sign "Developer ID Application" \
@@ -54,13 +54,15 @@ workflows:
 
           # Submit to Apple notary service
           xcrun notarytool submit keel-notarize.zip \
-            --key "$APP_STORE_CONNECT_PRIVATE_KEY_PATH" \
+            --key /tmp/certs/AuthKey.p8 \
             --key-id "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
             --issuer "$APP_STORE_CONNECT_ISSUER_ID" \
             --wait
 
           # Staple the ticket to the .app
           xcrun stapler staple "$APP"
+
+          rm -rf /tmp/certs
 
       - name: Package as DMG
         script: |
