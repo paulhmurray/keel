@@ -368,7 +368,7 @@
           <div class="download-icon">&#9679;</div>
           <div class="download-info">
             <div class="download-platform">macOS</div>
-            <div class="download-detail">Apple Silicon &amp; Intel · DMG · v1.0.2</div>
+            <div class="download-detail" data-detail="Apple Silicon &amp; Intel · DMG">Apple Silicon &amp; Intel · DMG</div>
           </div>
           <div class="download-arrow">&darr;</div>
         </a>
@@ -376,7 +376,7 @@
           <div class="download-icon">&#9651;</div>
           <div class="download-info">
             <div class="download-platform">Linux</div>
-            <div class="download-detail">x86_64 · tar.gz · v1.0.2</div>
+            <div class="download-detail" data-detail="x86_64 · tar.gz">x86_64 · tar.gz</div>
           </div>
           <div class="download-arrow">&darr;</div>
         </a>
@@ -384,13 +384,34 @@
           <div class="download-icon">&#9633;</div>
           <div class="download-info">
             <div class="download-platform">Windows</div>
-            <div class="download-detail">x64 · Installer · v1.0.2</div>
+            <div class="download-detail" data-detail="x64 · Installer">x64 · Installer</div>
+          </div>
+          <div class="download-arrow">&darr;</div>
+        </a>
+        <a href="https://github.com/paulhmurray/keel/releases/latest/download/keel-windows.zip" class="download-card">
+          <div class="download-icon">&#9633;</div>
+          <div class="download-info">
+            <div class="download-platform">Windows</div>
+            <div class="download-detail" data-detail="x64 · Portable ZIP">x64 · Portable ZIP</div>
           </div>
           <div class="download-arrow">&darr;</div>
         </a>
       </div>
     </div>
   </section>
+
+  <script>
+    fetch('https://api.github.com/repos/paulhmurray/keel/releases/latest')
+      .then(r => r.json())
+      .then(data => {
+        const v = data.tag_name;
+        if (!v) return;
+        document.querySelectorAll('.download-detail[data-detail]').forEach(el => {
+          el.textContent = el.dataset.detail + ' · ' + v;
+        });
+      })
+      .catch(() => {});
+  </script>
 
   <!-- Footer -->
   <footer>
