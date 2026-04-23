@@ -213,10 +213,10 @@ class _ShellLayoutState extends State<ShellLayout> {
       });
     }
 
-    // Charter migration notice — run once per user after data migration
-    if (!_charterMigrationTriggered &&
-        projectId != null &&
-        !settings.settings.hasSeenCharterMigrationNotice) {
+    // Charter migration — always run on startup (idempotent: skips if charter
+    // already exists). The UI notice is shown only once, but the data migration
+    // must re-run after a sync pull in case the charter table was cleared.
+    if (!_charterMigrationTriggered && projectId != null) {
       _charterMigrationTriggered = true;
       final settingsProvider = settings;
       final db = context.read<AppDatabase>();
@@ -224,18 +224,20 @@ class _ShellLayoutState extends State<ShellLayout> {
         if (!mounted) return;
         final migrated = await CharterMigration(db).runIfNeeded();
         if (!mounted) return;
-        if (migrated) {
-          showDialog<void>(
-            context: context,
-            barrierDismissible: true,
-            builder: (ctx) => CharterMigrationNotice(
-              onOpenCharter: () => setState(() => _selectedIndex = 14),
-              onDismiss: () {},
-            ),
-          ).then((_) => settingsProvider.markCharterMigrationNoticeSeen());
-        } else {
-          // No data to migrate — just mark as seen silently
-          settingsProvider.markCharterMigrationNoticeSeen();
+        if (!settingsProvider.settings.hasSeenCharterMigrationNotice) {
+          if (migrated) {
+            showDialog<void>(
+              context: context,
+              barrierDismissible: true,
+              builder: (ctx) => CharterMigrationNotice(
+                onOpenCharter: () => setState(() => _selectedIndex = 14),
+                onDismiss: () {},
+              ),
+            ).then((_) => settingsProvider.markCharterMigrationNoticeSeen());
+          } else {
+            // No data to migrate — just mark as seen silently
+            settingsProvider.markCharterMigrationNoticeSeen();
+          }
         }
       });
     }
