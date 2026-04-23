@@ -85,13 +85,30 @@ workflows:
         script: |
           REPO="paulhmurray/keel"
           TAG="$FCI_TAG"
-          RELEASE_ID=$(curl -sf \
-            -H "Authorization: token $GITHUB_TOKEN" \
-            "https://api.github.com/repos/$REPO/releases/tags/$TAG" \
-            | jq -r .id)
+
+          # Wait for GitHub Actions to create the release (up to 5 minutes)
+          RELEASE_ID=""
+          for i in $(seq 1 30); do
+            RELEASE_ID=$(curl -sf \
+              -H "Authorization: token $GITHUB_TOKEN" \
+              "https://api.github.com/repos/$REPO/releases/tags/$TAG" \
+              | jq -r '.id // empty')
+            if [ -n "$RELEASE_ID" ]; then
+              echo "Found release $RELEASE_ID for $TAG"
+              break
+            fi
+            echo "Waiting for release to exist (attempt $i/30)..."
+            sleep 10
+          done
+
+          if [ -z "$RELEASE_ID" ]; then
+            echo "ERROR: GitHub release for $TAG not found after 5 minutes"
+            exit 1
+          fi
 
           for FILE in keel-macos.dmg keel-macos.zip; do
-            curl -sf -X POST \
+            echo "Uploading $FILE..."
+            curl -f -X POST \
               -H "Authorization: token $GITHUB_TOKEN" \
               -H "Content-Type: application/octet-stream" \
               --data-binary @"$FILE" \
