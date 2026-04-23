@@ -30,12 +30,12 @@ workflows:
           # Fetch (or create) the Developer ID Application certificate via
           # the connected Developer Portal integration and sign the .app.
           keychain initialize
-          app_store_connect fetch-signing-files \
+          app-store-connect fetch-signing-files \
             com.keel.keel \
             --type MAC_APP_DISTRIBUTION \
             --create
           # Developer ID for direct distribution (outside App Store)
-          app_store_connect create-certificate \
+          app-store-connect create-certificate \
             --type DEVELOPER_ID_APPLICATION \
             --save || true   # no-op if it already exists
           keychain add-certificates
