@@ -85,7 +85,5 @@ workflows:
 
     publishing:
       github_releases:
-        # Attaches artifacts to the matching GitHub release for this tag.
-        # Requires a GitHub token with repo write access stored in the
-        # apple_credentials group as GITHUB_TOKEN.
-        tag_pattern: 'v*'
+        prerelease: false
+        draft: false
