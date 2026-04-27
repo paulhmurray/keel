@@ -13,6 +13,7 @@ import '../../../core/database/database.dart';
 import '../../../providers/project_provider.dart';
 import '../../../shared/theme/keel_colors.dart';
 import '../../../shared/widgets/date_picker_field.dart';
+import '../../../shared/widgets/person_picker_field.dart';
 import 'milestone_tracker_view.dart';
 
 // ─── Layout constants ─────────────────────────────────────────────────────────
@@ -1733,6 +1734,8 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
   int?     _endMonth;
   bool     _isCritical = false;
   bool     _saving     = false;
+  String?  _ownerId;
+  List<Person> _persons = [];
 
   bool get _isEdit => widget.activity != null;
   bool get _isSinglePoint =>
@@ -1751,11 +1754,33 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
     _startMonth = a?.startMonth ?? widget.initialStartMonth;
     _endMonth   = a?.endMonth ?? widget.initialEndMonth;
     _isCritical = a?.isCritical ?? false;
+    _ownerId    = a?.ownerId;
+    _ownerCtrl.addListener(_resolveOwnerId);
+    _loadPersons();
+  }
+
+  void _resolveOwnerId() {
+    final name = _ownerCtrl.text.trim().toLowerCase();
+    final match = _persons.cast<Person?>().firstWhere(
+      (p) => p!.name.toLowerCase() == name,
+      orElse: () => null,
+    );
+    final newId = match?.id;
+    if (newId != _ownerId) setState(() => _ownerId = newId);
+  }
+
+  Future<void> _loadPersons() async {
+    final persons = await widget.db.peopleDao.getPersonsForProject(widget.projectId);
+    if (mounted) {
+      setState(() => _persons = persons);
+      _resolveOwnerId();
+    }
   }
 
   @override
   void dispose() {
     _nameCtrl.dispose();
+    _ownerCtrl.removeListener(_resolveOwnerId);
     _ownerCtrl.dispose();
     _labelCtrl.dispose();
     _notesCtrl.dispose();
@@ -1778,6 +1803,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
         name:         Value(_nameCtrl.text.trim()),
         owner:        Value(_ownerCtrl.text.trim().isEmpty
             ? null : _ownerCtrl.text.trim()),
+        ownerId:      Value(_ownerId),
         activityType: Value(_type),
         status:       Value(_status),
         startMonth:   Value(_startMonth),
@@ -1921,11 +1947,13 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                   ],
                 ]),
                 const SizedBox(height: 10),
-                TextFormField(
+                PersonPickerField(
                   controller: _ownerCtrl,
-                  decoration: const InputDecoration(
-                      labelText: 'Owner', isDense: true),
-                  style: const TextStyle(color: KColors.text, fontSize: 12),
+                  label: 'Owner',
+                  persons: _persons,
+                  db: widget.db,
+                  projectId: widget.projectId,
+                  onPersonCreated: _loadPersons,
                 ),
                 const SizedBox(height: 10),
                 DropdownButtonFormField<String>(
