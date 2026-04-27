@@ -5,9 +5,13 @@ class KeybindingsTable extends StatelessWidget {
   const KeybindingsTable({super.key});
 
   static const _bindings = [
+    // --- Navigation ---
     ('Leader key (Spacebar)', 'SPC'),
     ('  → Programme overview', 'SPC SPC'),
-    ('  → Timeline', 'SPC t'),
+    ('  → Timeline / Schedule', 'SPC t'),
+    ('  → Plan (Gantt)', 'SPC l'),
+    ('  → Status', 'SPC s'),
+    ('  → Charter', 'SPC C'),
     ('  → RAID › Risks', 'SPC r r'),
     ('  → RAID › Risks › New', 'SPC r r n'),
     ('  → RAID › Assumptions', 'SPC r a'),
@@ -30,11 +34,13 @@ class KeybindingsTable extends StatelessWidget {
     ('  → Reports', 'SPC R'),
     ('  → Journal', 'SPC j'),
     ('  → Playbook', 'SPC P'),
+    // --- Global shortcuts ---
     ('Open Journal (new entry)', 'Ctrl+j'),
     ('Open Journal (history)', 'Ctrl+Shift+j'),
     ('Save journal entry', 'Ctrl+Enter'),
     ('Open Inbox', 'Ctrl+i'),
     ('Toggle Claude panel', 'Ctrl+Shift+c'),
+    // --- Inbox ---
     ('Accept inbox item', 'y  (in inbox)'),
     ('Reject inbox item', 'n  (in inbox)'),
     ('Navigate inbox', '↑ / ↓  (in inbox)'),

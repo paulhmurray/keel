@@ -191,6 +191,9 @@ class _ShellLayoutState extends State<ShellLayout> {
       }),
       'j':  _ActionNode('Journal',    () { _selectedIndex = 10; }),
       'P':  _ActionNode('Playbook',   () { _selectedIndex = 11; }),
+      'l':  _ActionNode('Plan',       () { _selectedIndex = 12; }),
+      's':  _ActionNode('Status',     () { _selectedIndex = 13; }),
+      'C':  _ActionNode('Charter',    () { _selectedIndex = 14; }),
     });
   }
 
