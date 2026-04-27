@@ -42,17 +42,27 @@ class _JournalOverlayState extends State<JournalOverlay> {
   List<Person> _persons = [];
   List<GlossaryEntry> _glossaryEntries = [];
   String? _savedEntryId;
-  bool _hasChanges = false;
+  // Track original content to detect real changes (not just focus/cursor moves)
+  String _originalBody = '';
+  String _originalTitle = '';
+  bool _forceReparse = false;
+
+  bool get _hasChanges =>
+      _bodyCtrl.text.trim() != _originalBody.trim() ||
+      _titleCtrl.text.trim() != _originalTitle.trim();
+
+  bool get _alreadyParsed => widget.existingEntry?.parsed ?? false;
 
   @override
   void initState() {
     super.initState();
     final e = widget.existingEntry;
-    _titleCtrl = TextEditingController(text: e?.title ?? '');
-    _bodyCtrl = TextEditingController(text: e?.body ?? '');
+    _originalBody = e?.body ?? '';
+    _originalTitle = e?.title ?? '';
+    _titleCtrl = TextEditingController(text: _originalTitle);
+    _bodyCtrl = TextEditingController(text: _originalBody);
     _bodyFocus = FocusNode();
     _savedEntryId = e?.id;
-    _bodyCtrl.addListener(() => _hasChanges = true);
     _loadPersons();
     _loadGlossaryEntries();
     WidgetsBinding.instance.addPostFrameCallback((_) => _bodyFocus.requestFocus());
@@ -144,12 +154,34 @@ class _JournalOverlayState extends State<JournalOverlay> {
       return;
     }
 
-    // Save to DB
     final entryId = _savedEntryId ?? const Uuid().v4();
     _savedEntryId = entryId;
     final now = DateTime.now();
     final title = _titleCtrl.text.trim().isEmpty ? null : _titleCtrl.text.trim();
+    final contentChanged = body != _originalBody.trim();
 
+    // If already parsed and nothing changed (and not a forced re-parse),
+    // just save any title/metadata edits and close — no re-parse.
+    if (_alreadyParsed && !contentChanged && !_forceReparse) {
+      if (_hasChanges) {
+        final existing = await widget.db.journalDao.getEntryById(entryId);
+        await widget.db.journalDao.upsertEntry(JournalEntriesCompanion(
+          id: Value(entryId),
+          projectId: Value(widget.projectId),
+          title: Value(title),
+          body: Value(body),
+          entryDate: Value(_entryDate),
+          parsed: const Value(true),
+          confirmedAt: Value(existing?.confirmedAt),
+          createdAt: Value(existing?.createdAt ?? now),
+          updatedAt: Value(now),
+        ));
+      }
+      _close();
+      return;
+    }
+
+    // Save to DB — mark as not-yet-parsed until review is confirmed
     await widget.db.journalDao.upsertEntry(JournalEntriesCompanion(
       id: Value(entryId),
       projectId: Value(widget.projectId),
@@ -157,7 +189,8 @@ class _JournalOverlayState extends State<JournalOverlay> {
       body: Value(body),
       entryDate: Value(_entryDate),
       parsed: const Value(false),
-      createdAt: Value(now),
+      createdAt: Value(
+          widget.existingEntry?.createdAt ?? now),
       updatedAt: Value(now),
     ));
 
@@ -174,12 +207,62 @@ class _JournalOverlayState extends State<JournalOverlay> {
     final parser = JournalParser(llmClient: llmClient);
     final deltas = await parser.parse(body);
 
+    // Filter out items already extracted from this entry in a previous parse
+    final filteredDeltas = await _filterAlreadyExtracted(entryId, deltas);
+
     if (mounted) {
       setState(() {
-        _deltas = deltas;
+        _deltas = filteredDeltas;
+        _forceReparse = false;
         _phase = _OverlayPhase.reviewing;
       });
     }
+  }
+
+  /// Loads existing journal_entry_links for this entry and marks any delta
+  /// whose description matches an already-linked item as ignored, so the
+  /// user is not asked to confirm duplicates.
+  Future<List<DetectedDelta>> _filterAlreadyExtracted(
+      String entryId, List<DetectedDelta> deltas) async {
+    final links = await widget.db.journalDao.getLinksForEntry(entryId);
+    if (links.isEmpty) return deltas;
+
+    // Build a set of already-extracted descriptions (lowercased)
+    final existingDescs = <String>{};
+    for (final link in links) {
+      String? desc;
+      switch (link.itemType) {
+        case 'action':
+          desc = (await widget.db.actionsDao.getActionById(link.itemId))?.description;
+        case 'decision':
+          desc = (await widget.db.decisionsDao.getDecisionById(link.itemId))?.description;
+        case 'risk':
+          desc = (await widget.db.raidDao.getRiskById(link.itemId))?.description;
+        case 'issue':
+          final issue = await (widget.db.select(widget.db.issues)
+                ..where((t) => t.id.equals(link.itemId)))
+              .getSingleOrNull();
+          desc = issue?.description;
+        case 'dependency':
+          final dep = await (widget.db.select(widget.db.programDependencies)
+                ..where((t) => t.id.equals(link.itemId)))
+              .getSingleOrNull();
+          desc = dep?.description;
+      }
+      if (desc != null && desc.isNotEmpty) {
+        existingDescs.add(desc.toLowerCase().trim());
+      }
+    }
+
+    // Mark deltas that match existing extractions as ignored
+    for (final delta in deltas) {
+      final desc =
+          (delta.editFields['description'] ?? delta.title).toLowerCase().trim();
+      if (existingDescs.contains(desc)) {
+        delta.ignored = true;
+      }
+    }
+    return deltas;
   }
 
   Future<void> _confirmAll() async {
@@ -310,11 +393,32 @@ class _JournalOverlayState extends State<JournalOverlay> {
             ),
           ),
           const Spacer(),
-          if (_phase == _OverlayPhase.editor)
+          if (_phase == _OverlayPhase.editor) ...[
+            if (_alreadyParsed)
+              InkWell(
+                onTap: () {
+                  setState(() => _forceReparse = true);
+                  _saveAndParse();
+                },
+                borderRadius: BorderRadius.circular(3),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: KColors.border2),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                  child: const Text(
+                    'Re-parse',
+                    style: TextStyle(color: KColors.textDim, fontSize: 10),
+                  ),
+                ),
+              ),
+            const SizedBox(width: 8),
             const Text(
               'Cmd+Enter to save · Esc to close',
               style: TextStyle(color: KColors.textMuted, fontSize: 10),
             ),
+          ],
           const SizedBox(width: 16),
           InkWell(
             onTap: _attemptClose,
