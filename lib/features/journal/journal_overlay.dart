@@ -12,6 +12,7 @@ import '../../shared/theme/keel_colors.dart';
 import 'journal_editor.dart';
 import 'journal_delta_panel.dart';
 import 'journal_link_renderer.dart';
+import 'journal_series_form.dart';
 
 enum _OverlayPhase { editor, parsing, reviewing }
 
@@ -21,12 +22,16 @@ class JournalOverlay extends StatefulWidget {
   final AppSettings settings;
   final JournalEntry? existingEntry;
 
+  /// Pre-select a series for a new entry (used by "New entry in series").
+  final String? initialSeriesId;
+
   const JournalOverlay({
     super.key,
     required this.projectId,
     required this.db,
     required this.settings,
     this.existingEntry,
+    this.initialSeriesId,
   });
 
   @override
@@ -46,6 +51,8 @@ class _JournalOverlayState extends State<JournalOverlay> {
   String _originalBody = '';
   String _originalTitle = '';
   bool _forceReparse = false;
+  String? _seriesId;
+  List<JournalSeries> _allSeries = const [];
 
   bool get _hasChanges =>
       _bodyCtrl.text.trim() != _originalBody.trim() ||
@@ -63,9 +70,17 @@ class _JournalOverlayState extends State<JournalOverlay> {
     _bodyCtrl = TextEditingController(text: _originalBody);
     _bodyFocus = FocusNode();
     _savedEntryId = e?.id;
+    _seriesId = e?.seriesId ?? widget.initialSeriesId;
     _loadPersons();
     _loadGlossaryEntries();
+    _loadSeries();
     WidgetsBinding.instance.addPostFrameCallback((_) => _bodyFocus.requestFocus());
+  }
+
+  Future<void> _loadSeries() async {
+    final all =
+        await widget.db.journalSeriesDao.getForProject(widget.projectId);
+    if (mounted) setState(() => _allSeries = all);
   }
 
   @override
@@ -163,7 +178,7 @@ class _JournalOverlayState extends State<JournalOverlay> {
     // If already parsed and nothing changed (and not a forced re-parse),
     // just save any title/metadata edits and close — no re-parse.
     if (_alreadyParsed && !contentChanged && !_forceReparse) {
-      if (_hasChanges) {
+      if (_hasChanges || _seriesId != widget.existingEntry?.seriesId) {
         final existing = await widget.db.journalDao.getEntryById(entryId);
         await widget.db.journalDao.upsertEntry(JournalEntriesCompanion(
           id: Value(entryId),
@@ -173,6 +188,7 @@ class _JournalOverlayState extends State<JournalOverlay> {
           entryDate: Value(_entryDate),
           parsed: const Value(true),
           confirmedAt: Value(existing?.confirmedAt),
+          seriesId: Value(_seriesId),
           createdAt: Value(existing?.createdAt ?? now),
           updatedAt: Value(now),
         ));
@@ -189,6 +205,7 @@ class _JournalOverlayState extends State<JournalOverlay> {
       body: Value(body),
       entryDate: Value(_entryDate),
       parsed: const Value(false),
+      seriesId: Value(_seriesId),
       createdAt: Value(
           widget.existingEntry?.createdAt ?? now),
       updatedAt: Value(now),
@@ -394,6 +411,23 @@ class _JournalOverlayState extends State<JournalOverlay> {
           ),
           const Spacer(),
           if (_phase == _OverlayPhase.editor) ...[
+            _SeriesChip(
+              seriesId: _seriesId,
+              allSeries: _allSeries,
+              onChanged: (id) => setState(() => _seriesId = id),
+              onCreateSeries: () async {
+                final created = await showDialog<JournalSeries>(
+                  context: context,
+                  builder: (_) => JournalSeriesFormDialog(
+                      projectId: widget.projectId, db: widget.db),
+                );
+                await _loadSeries();
+                if (created != null && mounted) {
+                  setState(() => _seriesId = created.id);
+                }
+              },
+            ),
+            const SizedBox(width: 8),
             if (_alreadyParsed)
               InkWell(
                 onTap: () {
@@ -817,6 +851,112 @@ class _ToggleBtn extends StatelessWidget {
             fontSize: 11,
             fontWeight: FontWeight.w600,
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Series chip — quick assign / change / clear in the overlay header.
+// ---------------------------------------------------------------------------
+
+class _SeriesChip extends StatelessWidget {
+  final String? seriesId;
+  final List<JournalSeries> allSeries;
+  final ValueChanged<String?> onChanged;
+  final VoidCallback onCreateSeries;
+
+  const _SeriesChip({
+    required this.seriesId,
+    required this.allSeries,
+    required this.onChanged,
+    required this.onCreateSeries,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final current = seriesId == null
+        ? null
+        : allSeries.where((s) => s.id == seriesId).firstOrNull;
+    final label = current?.name ?? '+ Series';
+
+    return PopupMenuButton<String>(
+      tooltip: 'Tag this entry as part of a recurring series',
+      color: KColors.surface2,
+      onSelected: (value) {
+        if (value == '__none__') {
+          onChanged(null);
+        } else if (value == '__new__') {
+          onCreateSeries();
+        } else {
+          onChanged(value);
+        }
+      },
+      itemBuilder: (_) => [
+        const PopupMenuItem(
+          value: '__none__',
+          height: 32,
+          child: Text('— No series —',
+              style: TextStyle(color: KColors.textDim, fontSize: 12)),
+        ),
+        const PopupMenuDivider(height: 1),
+        for (final s in allSeries)
+          PopupMenuItem(
+            value: s.id,
+            height: 32,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.repeat, size: 11, color: KColors.blue),
+                const SizedBox(width: 6),
+                Text(s.name,
+                    style:
+                        const TextStyle(color: KColors.text, fontSize: 12)),
+              ],
+            ),
+          ),
+        const PopupMenuDivider(height: 1),
+        const PopupMenuItem(
+          value: '__new__',
+          height: 32,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.add, size: 11, color: KColors.phosphor),
+              SizedBox(width: 6),
+              Text('Create new series…',
+                  style: TextStyle(color: KColors.phosphor, fontSize: 12)),
+            ],
+          ),
+        ),
+      ],
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: current == null ? KColors.surface2 : KColors.blueDim,
+          border: Border.all(
+              color: current == null ? KColors.border2 : KColors.blue),
+          borderRadius: BorderRadius.circular(3),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              current == null ? Icons.add : Icons.repeat,
+              size: 11,
+              color: current == null ? KColors.textDim : KColors.blue,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: current == null ? KColors.textDim : KColors.blue,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       ),
     );

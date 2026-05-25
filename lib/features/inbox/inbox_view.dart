@@ -17,6 +17,7 @@ import '../../providers/project_provider.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/widgets/date_picker_field.dart';
 import '../../shared/widgets/dropdown_field.dart';
+import '../../shared/widgets/person_picker_field.dart';
 import '../../shared/widgets/source_badge.dart';
 import '../../shared/widgets/status_chip.dart';
 
@@ -826,6 +827,7 @@ class _ReviewDialogState extends State<_ReviewDialog> {
   String? _depDueDate;
 
   bool _saving = false;
+  List<Person> _persons = const [];
 
   Map<String, dynamic> get d => widget.parsedData;
 
@@ -862,6 +864,12 @@ class _ReviewDialogState extends State<_ReviewDialog> {
     _dependencyType = d['dependency_type'] as String? ?? 'inbound';
     _depOwnerCtrl = TextEditingController(text: d['owner'] as String? ?? '');
     _depDueDate = d['due_date'] as String?;
+    _loadPersons();
+  }
+
+  Future<void> _loadPersons() async {
+    final list = await widget.db.peopleDao.getPersonsForProject(widget.projectId);
+    if (mounted) setState(() => _persons = list);
   }
 
   @override
@@ -1090,9 +1098,13 @@ class _ReviewDialogState extends State<_ReviewDialog> {
               v == null || v.trim().isEmpty ? 'Required' : null,
         ),
         const SizedBox(height: 12),
-        TextFormField(
+        PersonPickerField(
           controller: _ownerCtrl,
-          decoration: const InputDecoration(labelText: 'Owner'),
+          label: 'Owner',
+          persons: _persons,
+          db: widget.db,
+          projectId: widget.projectId,
+          onPersonCreated: _loadPersons,
         ),
         const SizedBox(height: 12),
         DatePickerField(
@@ -1125,9 +1137,13 @@ class _ReviewDialogState extends State<_ReviewDialog> {
               v == null || v.trim().isEmpty ? 'Required' : null,
         ),
         const SizedBox(height: 12),
-        TextFormField(
+        PersonPickerField(
           controller: _decisionMakerCtrl,
-          decoration: const InputDecoration(labelText: 'Decision Maker'),
+          label: 'Decision Maker',
+          persons: _persons,
+          db: widget.db,
+          projectId: widget.projectId,
+          onPersonCreated: _loadPersons,
         ),
         const SizedBox(height: 12),
         DatePickerField(
@@ -1189,9 +1205,13 @@ class _ReviewDialogState extends State<_ReviewDialog> {
           onChanged: (v) => setState(() => _dependencyType = v!),
         ),
         const SizedBox(height: 12),
-        TextFormField(
+        PersonPickerField(
           controller: _depOwnerCtrl,
-          decoration: const InputDecoration(labelText: 'Owner'),
+          label: 'Owner',
+          persons: _persons,
+          db: widget.db,
+          projectId: widget.projectId,
+          onPersonCreated: _loadPersons,
         ),
         const SizedBox(height: 12),
         DatePickerField(

@@ -12,6 +12,8 @@ import '../../shared/theme/keel_colors.dart';
 import 'pending_decisions_panel.dart';
 import 'playbook_stage_summary.dart';
 import 'programme_rag_widget.dart';
+import 'rag_sparkline.dart';
+import 'snapshot_history_panel.dart';
 import 'status_counts_row.dart';
 import 'status_export_dialog.dart';
 import 'status_narrative_panel.dart';
@@ -52,6 +54,7 @@ class _StatusContentState extends State<_StatusContent> {
   List<String> _monthLabels = [];
   String? _narrative;
   String? _loadError;
+  bool _historyMode = false;
 
   String get _projectId => widget.project.id;
 
@@ -240,17 +243,37 @@ class _StatusContentState extends State<_StatusContent> {
               ),
             ),
             const Spacer(),
-            // Snapshot now button
+            // History / Live toggle
             OutlinedButton.icon(
-              onPressed: () async {
-                final db = context.read<AppDatabase>();
-                await StatusSnapshotScheduler.createNow(db, _projectId);
-                _load();
-              },
-              icon: const Icon(Icons.camera_alt_outlined, size: 14),
-              label: const Text('Snapshot', style: TextStyle(fontSize: 12)),
+              onPressed: () =>
+                  setState(() => _historyMode = !_historyMode),
+              icon: Icon(
+                  _historyMode
+                      ? Icons.show_chart
+                      : Icons.history,
+                  size: 14),
+              label: Text(_historyMode ? 'Live' : 'History',
+                  style: const TextStyle(fontSize: 12)),
             ),
             const SizedBox(width: 8),
+            // Snapshot now button (live mode only)
+            if (!_historyMode) ...[
+              OutlinedButton.icon(
+                onPressed: () async {
+                  final db = context.read<AppDatabase>();
+                  await StatusSnapshotScheduler.createNow(
+                    db,
+                    _projectId,
+                    narrative: _narrative,
+                  );
+                  _load();
+                },
+                icon: const Icon(Icons.camera_alt_outlined, size: 14),
+                label:
+                    const Text('Snapshot', style: TextStyle(fontSize: 12)),
+              ),
+              const SizedBox(width: 8),
+            ],
             // Export button
             ElevatedButton.icon(
               onPressed: () => showDialog(
@@ -270,6 +293,14 @@ class _StatusContentState extends State<_StatusContent> {
         ),
         const SizedBox(height: 16),
         // ── Body ─────────────────────────────────────────────────────────────
+        if (_historyMode)
+          Expanded(
+            child: SnapshotHistoryPanel(
+              projectId: _projectId,
+              projectName: widget.project.name,
+            ),
+          )
+        else
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
@@ -286,6 +317,7 @@ class _StatusContentState extends State<_StatusContent> {
                   db:               context.read<AppDatabase>(),
                   wps: data.workstreams.map((w) => w.wp).toList(),
                 ),
+                RagSparkline(projectId: _projectId),
                 const SizedBox(height: 20),
 
                 // Workstreams

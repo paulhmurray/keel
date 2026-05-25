@@ -234,3 +234,76 @@ const teamScaffold = <TeamScaffoldRole>[
     sortOrder: 41,
   ),
 ];
+
+// ---------------------------------------------------------------------------
+// Additional best-practice suggestions
+//
+// Shown as quick-pick chips in the "+ Add" dialog. These are *in addition* to
+// the scaffold (which is already seeded into every new project), so users have
+// a single click for common roles that aren't part of the default framework.
+// ---------------------------------------------------------------------------
+
+const stakeholderSuggestions = <String, List<String>>{
+  'accountable': [
+    'Senior Responsible Owner',
+    'Programme Director',
+    'Portfolio Manager',
+    'Deputy Sponsor',
+    'Investment Committee Rep',
+  ],
+  'active': [
+    'Working Group Chair',
+    'Workstream Lead',
+    'Communications Lead',
+    'Risk Owner',
+    'Procurement Lead',
+    'Audit Liaison',
+    'Legal Counsel',
+  ],
+  'affected': [
+    'Union Representative',
+    'Frontline Champion',
+    'Supplier Representative',
+    'Customer Advisory Board',
+    'Operations Manager',
+    'Support / Service Desk Lead',
+  ],
+};
+
+const teamSuggestions = <String, List<String>>{
+  'programme_leadership': [
+    'Chief of Staff',
+    'Operations Lead',
+    'Workstream Lead',
+    'Scrum Master',
+  ],
+  'business_analysis': [
+    'Senior Business Analyst',
+    'Requirements Lead',
+    'Functional Lead',
+    'Subject Matter Expert',
+  ],
+  'technology': [
+    'Data Architect',
+    'Cloud Architect',
+    'Frontend Lead',
+    'Backend Lead',
+    'Mobile Lead',
+    'API / Integration Engineer',
+  ],
+  'specialist': [
+    'UX / Design Lead',
+    'Training Lead',
+    'Communications Lead',
+    'Migration Lead',
+    'Cutover Manager',
+    'Reporting / Analytics Lead',
+  ],
+  'governance': [
+    'Quality Manager',
+    'Compliance Officer',
+    'Audit Lead',
+    'Finance Controller',
+    'Procurement Manager',
+  ],
+};

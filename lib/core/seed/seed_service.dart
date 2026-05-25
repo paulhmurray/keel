@@ -70,6 +70,76 @@ class SeedService {
     );
 
     // -------------------------------------------------------------------------
+    // Charter
+    // -------------------------------------------------------------------------
+    await db.projectCharterDao.upsert(
+      ProjectChartersCompanion(
+        id:        const Value('seed-charter-001'),
+        projectId: Value(projectId),
+        vision: const Value(
+            'A fully cloud-native, real-time banking platform that enables '
+            'FinCo to launch new products in days, not quarters, while '
+            'meeting the highest standards of resilience and regulatory '
+            'compliance.'),
+        objectives: const Value(
+            '• Decommission the legacy IBM zOS mainframe by Q4 2026\n'
+            '• Migrate 4M customer accounts to Temenos T24 with zero '
+            'unplanned outage\n'
+            '• Launch a mobile app reaching 500k MAU within 12 months '
+            'of public release\n'
+            '• Reduce end-of-day batch processing from 6 hours to under '
+            '5 minutes by enabling real-time event streaming\n'
+            '• Achieve ISO 27001 certification and complete SOC 2 Type II '
+            'audit on the new platform'),
+        scopeIn: const Value(
+            'Core banking replacement, mobile and digital channels, real-time '
+            'data platform, API gateway, identity & access management, '
+            'observability tooling, and the operating-model changes needed '
+            'to run them. Covers Retail Banking and SME divisions across '
+            'all UK branches and digital channels.'),
+        scopeOut: const Value(
+            'Investment Banking, FX trading platform, and the international '
+            'subsidiaries are out of scope — they will be addressed by '
+            'separate programmes already chartered for 2027. Branch network '
+            'real-estate decisions are also out of scope.'),
+        deliveryApproach: const Value(
+            'Hybrid delivery: discovery and design phases run waterfall '
+            'with stage gates at the Architecture Design Authority. Build, '
+            'test and deploy run as quarterly increments using a scaled '
+            'agile cadence (5 squads across the workstreams). Migrations '
+            'are sequenced — pilot (10k accounts), Phase 2 (1M), then full '
+            '(4M) — with go/no-go gates at each cutover.'),
+        successCriteria: const Value(
+            '• Mainframe fully decommissioned (zero workloads remain) by '
+            'end of M21\n'
+            '• 100% of customer accounts running on Temenos T24 with '
+            'reconciliation evidence\n'
+            '• Mobile app at 500k MAU and 4.5+ App Store rating\n'
+            '• ISO 27001 certified, SOC 2 Type II clean opinion\n'
+            '• Batch window <5 minutes sustained over 30 consecutive days\n'
+            '• Programme delivered within £42M envelope (±10%)'),
+        keyConstraints: const Value(
+            '• Hard regulatory deadline: PRA submission of decommission '
+            'plan by end of FY26\n'
+            '• Capacity: only 3 of 6 contracted Temenos developers '
+            'currently available — vendor escalation in flight\n'
+            '• Budget: £42M cap; quarterly re-forecast required by CFO\n'
+            '• Branch staff cannot be taken off the floor for more than '
+            '2 days during peak periods (Apr/Dec)'),
+        assumptions: const Value(
+            '• Temenos resourcing recovers to contracted levels by end '
+            'of Q1 2025\n'
+            '• AWS Frankfurt region remains the primary hosting location\n'
+            '• Branch training plan is approved at the next Steerco\n'
+            '• No major regulatory rule changes during the migration '
+            'window\n'
+            '• Existing data residency policy holds for EU customer '
+            'records (subject to Legal review — DC2 dependency)'),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+
+    // -------------------------------------------------------------------------
     // Workstreams
     // -------------------------------------------------------------------------
     final workstreams = [
@@ -418,6 +488,43 @@ class SeedService {
         'j.farrow@finco.com', null, '@james.farrow',
         'stakeholder',
       ),
+      // Executives
+      (
+        'seed-p-009', 'Diana Holt', 'CEO', 'FinCo Ltd',
+        'diana.holt@finco.com', null, '@diana.holt',
+        'exec',
+      ),
+      (
+        'seed-p-010', 'Olivia Pierce', 'COO', 'FinCo Ltd',
+        'o.pierce@finco.com', null, '@olivia.pierce',
+        'exec',
+      ),
+      (
+        'seed-p-011', 'Kwame Mensah', 'Chair, Audit Committee',
+        'FinCo Ltd Board', 'k.mensah@finco-board.com', null, null,
+        'exec',
+      ),
+      // Vendors
+      (
+        'seed-p-012', 'Stefan Blau', 'Engagement Director', 'Temenos',
+        'stefan.blau@temenos.com', '+41 22 555 0140', null,
+        'vendor',
+      ),
+      (
+        'seed-p-013', 'Elena Vasquez', 'Senior Solutions Architect',
+        'AWS', 'evasquez@amazon.com', null, null,
+        'vendor',
+      ),
+      (
+        'seed-p-014', 'Hugo Reinhardt', 'Audit Partner', 'BDO LLP',
+        'h.reinhardt@bdo.co.uk', null, null,
+        'vendor',
+      ),
+      (
+        'seed-p-015', 'Naomi Kim', 'Senior Manager', 'Accenture',
+        'naomi.kim@accenture.com', null, null,
+        'vendor',
+      ),
     ];
 
     for (final (id, name, role, org, email, phone, teams, type) in persons) {
@@ -736,10 +843,719 @@ class SeedService {
         updatedAt: Value(DateTime.now()),
       ),
     );
+
+    // -------------------------------------------------------------------------
+    // Glossary — systems and terms
+    // -------------------------------------------------------------------------
+    final glossarySystems = <(String, String, String?, String, String, String, String)>[
+      // (id, name, acronym, description, owner, environment, status)
+      ('seed-gl-sys-001', 'Temenos T24', 'T24',
+          'Target core banking platform replacing the legacy mainframe.',
+          'Amara Osei', 'AWS Frankfurt', 'live'),
+      ('seed-gl-sys-002', 'Mainframe', 'IBM zOS',
+          'Legacy core banking platform — to be decommissioned by Q4 2026.',
+          'Amara Osei', 'On-premise (Slough DC)', 'sunsetting'),
+      ('seed-gl-sys-003', 'Apache Kafka', 'Kafka',
+          'Event-streaming backbone for real-time data flow between services.',
+          'Raj Patel', 'AWS MSK', 'live'),
+      ('seed-gl-sys-004', 'Apache Flink', 'Flink',
+          'Streaming compute engine for real-time analytics and aggregations.',
+          'Raj Patel', 'AWS EMR', 'live'),
+      ('seed-gl-sys-005', 'Snowflake', null,
+          'Data warehouse for batch analytics, BI dashboards, and reporting.',
+          'Raj Patel', 'AWS', 'live'),
+      ('seed-gl-sys-006', 'Auth0', null,
+          'Identity provider for the new mobile and web channels.',
+          'Marcus Webb', 'Auth0 EU', 'live'),
+      ('seed-gl-sys-007', 'Datadog', null,
+          'Observability platform — metrics, logs and traces.',
+          'Marcus Webb', 'SaaS', 'live'),
+      ('seed-gl-sys-008', 'Mobile App (FinCo Connect)', 'FCx',
+          'iOS / Android customer-facing app. React Native.',
+          'Sophie Chen', 'App Store / Play Store', 'live'),
+      ('seed-gl-sys-009', 'API Gateway', null,
+          'Kong-based API gateway fronting Temenos and downstream services.',
+          'James Farrow', 'AWS', 'live'),
+      ('seed-gl-sys-010', 'Jira / Confluence', null,
+          'Issue tracking and documentation. Atlassian Cloud.',
+          'Programme Office', 'SaaS', 'live'),
+    ];
+    for (final s in glossarySystems) {
+      final (id, name, acronym, desc, owner, env, status) = s;
+      await db.glossaryDao.upsert(
+        GlossaryEntriesCompanion(
+          id:          Value(id),
+          projectId:   Value(projectId),
+          type:        const Value('system'),
+          name:        Value(name),
+          acronym:     Value(acronym),
+          description: Value(desc),
+          owner:       Value(owner),
+          environment: Value(env),
+          status:      Value(status),
+          updatedAt:   Value(DateTime.now()),
+        ),
+      );
+    }
+
+    final glossaryTerms = <(String, String, String?, String)>[
+      // (id, name, acronym, description)
+      ('seed-gl-tm-001', 'Architecture Design Authority', 'ADA',
+          'Cross-workstream forum that approves architecture decisions. '
+          'Chaired by James Farrow (Chief Architect). Meets fortnightly.'),
+      ('seed-gl-tm-002', 'Steering Committee', 'Steerco',
+          'Programme governance forum — Helena (CTO), Richard (CFO), '
+          'Diana (CEO), and the workstream leads. Monthly.'),
+      ('seed-gl-tm-003', 'Know Your Customer', 'KYC',
+          'Regulatory checks on customer identity at onboarding.'),
+      ('seed-gl-tm-004', 'Anti-Money Laundering', 'AML',
+          'Detection of suspicious transaction patterns.'),
+      ('seed-gl-tm-005', 'RAG Status', 'RAG',
+          'Red / Amber / Green health rating used across workstreams.'),
+      ('seed-gl-tm-006', 'Monthly Active Users', 'MAU',
+          'Distinct users who have opened the mobile app at least once '
+          'in the last 30 days.'),
+      ('seed-gl-tm-007', 'Business as Usual', 'BAU',
+          'Steady-state operation post programme close.'),
+      ('seed-gl-tm-008', 'Recovery Point / Time Objective', 'RPO / RTO',
+          'Disaster recovery targets. Horizon target: RPO 5 min, RTO 30 min.'),
+      ('seed-gl-tm-009', 'Prudential Regulation Authority', 'PRA',
+          'UK regulator for banks. Owns approval of the decommission plan.'),
+      ('seed-gl-tm-010', 'ISO 27001', null,
+          'International standard for information security management. '
+          'Horizon scope certified at M15.'),
+      ('seed-gl-tm-011', 'SOC 2 Type II', 'SOC 2',
+          'Audit report on control effectiveness over a sustained period. '
+          'In flight — final report at M18.'),
+      ('seed-gl-tm-012', 'Open Banking', null,
+          'Regulatory regime requiring banks to expose customer-permissioned '
+          'APIs to authorised third parties.'),
+    ];
+    for (final t in glossaryTerms) {
+      final (id, name, acronym, desc) = t;
+      await db.glossaryDao.upsert(
+        GlossaryEntriesCompanion(
+          id:          Value(id),
+          projectId:   Value(projectId),
+          type:        const Value('term'),
+          name:        Value(name),
+          acronym:     Value(acronym),
+          description: Value(desc),
+          updatedAt:   Value(DateTime.now()),
+        ),
+      );
+    }
+
+    // -------------------------------------------------------------------------
+    // Documents — sample uploaded documents (metadata + extracted text)
+    // -------------------------------------------------------------------------
+    final documents = <(String, String, String, String, String)>[
+      // (id, title, documentType, tags, content)
+      (
+        'seed-doc-001',
+        'Programme Charter v1.2',
+        'pdf',
+        'charter,governance',
+        'HORIZON PROGRAMME — CHARTER v1.2\n\n'
+            'Vision: A fully cloud-native, real-time banking platform.\n\n'
+            'Sponsor: Helena Cross (CTO)\n'
+            'Programme Manager: You\n'
+            'Budget: £42M / 24 months\n\n'
+            'See Charter section in Keel for full content. This document '
+            'is the v1.2 baseline approved at the kick-off Steerco '
+            '(Jan 2025).',
+      ),
+      (
+        'seed-doc-002',
+        'ADA Decision Record — Core Banking Vendor Selection',
+        'pdf',
+        'decision,architecture',
+        'ARCHITECTURE DESIGN AUTHORITY — DECISION RECORD\n'
+            'Date: 21 January 2025\n'
+            'Decision: Adopt Temenos T24 as the target core banking '
+            'platform. Reject the build-in-house and Thought Machine '
+            'options.\n\n'
+            'Rationale: Total cost of ownership over 5 years is 35% lower '
+            'than build-in-house. Time-to-pilot is 4 months shorter than '
+            'Thought Machine. The Temenos accelerator pack covers ~70% '
+            'of the FinCo retail product set out of the box.\n\n'
+            'Risks acknowledged: Vendor lock-in, hosting concentration. '
+            'Mitigations: Multi-region deployment, exit clauses in MSA.',
+      ),
+      (
+        'seed-doc-003',
+        'Q1 2025 Steering Committee Pack',
+        'pdf',
+        'steerco,reporting',
+        'HORIZON STEERCO — Q1 2025 PACK\n\n'
+            'Programme RAG: Amber\n\n'
+            'Highlights:\n'
+            '- Pilot Go-Live (10k accounts) successful, zero incidents.\n'
+            '- Mobile MVP feature-complete; closed beta scheduled for '
+            'Apr 2025.\n'
+            '- ISO 27001 gap analysis complete; remediation in progress.\n\n'
+            'Concerns:\n'
+            '- Temenos resourcing — only 3 of 6 contracted developers '
+            'active. Escalated to vendor account director.\n'
+            '- Branch training plan over budget by 18%. Reforecast '
+            'requested by CFO.\n\n'
+            'Decisions sought: Approval to proceed with Phase 2 migration '
+            '(1M accounts) starting M9.',
+      ),
+      (
+        'seed-doc-004',
+        'Mobile App Architecture Specification',
+        'docx',
+        'architecture,mobile',
+        'FINCO CONNECT — MOBILE APP ARCHITECTURE\n\n'
+            'Platform: React Native (iOS + Android shared codebase).\n'
+            'Auth: Auth0 + biometric (FaceID / fingerprint).\n'
+            'Backend: REST APIs via Kong gateway → Temenos T24 / data '
+            'platform.\n'
+            'State management: Redux Toolkit + RTK Query.\n'
+            'Offline: Read-only cache of last balance + 30 days of '
+            'transactions.\n'
+            'Crash reporting: Datadog RUM.\n\n'
+            'Performance targets: Cold start <2s, p95 API latency <300ms.',
+      ),
+      (
+        'seed-doc-005',
+        'ISO 27001 Gap Analysis Report',
+        'pdf',
+        'security,compliance',
+        'ISO 27001:2022 — GAP ANALYSIS\n'
+            'Prepared by: BDO LLP (Hugo Reinhardt, Audit Partner)\n'
+            'Date: February 2025\n\n'
+            'Annex A controls assessed: 93 / 93\n'
+            'Compliant: 71\n'
+            'Partial: 18 (remediation tracked)\n'
+            'Non-compliant: 4 (remediation in flight)\n\n'
+            'Critical gaps:\n'
+            '- A.5.23 Cloud services (no formal cloud security policy)\n'
+            '- A.8.16 Monitoring activities (Datadog rollout pending)\n'
+            '- A.5.7 Threat intelligence (no formal feed subscribed)\n'
+            '- A.8.28 Secure coding (training programme not mandatory)\n\n'
+            'Recommendation: 6-month remediation plan, certification '
+            'achievable by M15.',
+      ),
+    ];
+    for (final d in documents) {
+      final (id, title, docType, tags, content) = d;
+      await db.contextDao.insertDocument(
+        DocumentsCompanion(
+          id:           Value(id),
+          projectId:    Value(projectId),
+          title:        Value(title),
+          documentType: Value(docType),
+          tags:         Value(tags),
+          content:      Value(content),
+          updatedAt:    Value(DateTime.now()),
+        ),
+      );
+    }
+
+    // -------------------------------------------------------------------------
+    // Journal entries — meeting notes and PM thoughts across the timeline
+    // -------------------------------------------------------------------------
+    final journalEntries = <(String, String, String, String, String)>[
+      // (id, title, entryDate, meetingContext, body)
+      (
+        'seed-jrn-001',
+        'Steerco prep notes — March 2025',
+        '2025-03-12',
+        'Pre-Steerco prep',
+        'Helena wants a tighter narrative on the Temenos resourcing risk. '
+            'Need to walk her through the escalation path before Friday.\n\n'
+            '/risk Temenos resourcing — only 3 of 6 contracted developers '
+            'active. Likely impact: 2-week slippage to Phase 2 start.\n\n'
+            '/action Draft a one-page brief for Helena by EOD Wed '
+            '(owner: me, due 2025-03-13).\n\n'
+            'Richard will press on burn rate — Q1 actuals are 7% under '
+            'plan but his focus is the trajectory not the spot value.',
+      ),
+      (
+        'seed-jrn-002',
+        'Vendor escalation call — Temenos',
+        '2025-03-19',
+        'Call with Stefan Blau (Temenos Engagement Director)',
+        'Stefan acknowledged the resourcing gap. Two senior devs joining '
+            'the programme by 1 April, fully ramped by mid-April.\n\n'
+            '/decision Temenos to provide written commitment on resourcing '
+            '(decision-maker: Stefan Blau, due 2025-03-21).\n\n'
+            '/action Track resourcing weekly via the vendor scorecard '
+            '(owner: Amara Osei, recurring).\n\n'
+            'Stefan also flagged that the Q3 release branch will need '
+            'a second pen test — book BDO accordingly.',
+      ),
+      (
+        'seed-jrn-003',
+        'Pilot Go-Live retrospective',
+        '2025-08-29',
+        'Cross-workstream retro',
+        'Pilot went smoothly — 10k accounts migrated, zero unplanned '
+            'outage, customer NPS unchanged.\n\n'
+            'What worked:\n'
+            '- The dual-write pattern allowed instant rollback if needed.\n'
+            '- Branch staff briefing pack was clear and well-received.\n\n'
+            'What to fix for Phase 2:\n'
+            '- Reconciliation reports were too verbose — simplify the '
+            'morning-after dashboard.\n'
+            '- Customer comms went out 2 hours late due to a manual '
+            'sign-off bottleneck.\n\n'
+            '/action Streamline reconciliation dashboard before Phase 2 '
+            '(owner: Amara Osei, due 2025-09-15).',
+      ),
+      (
+        'seed-jrn-004',
+        'Branch training plan review — Priya',
+        '2025-12-04',
+        '1:1 with Priya Sharma',
+        'The training plan is in trouble. Sponsor (regional ops) hasn\'t '
+            'signed off because the modular structure conflicts with '
+            'existing branch training delivery. Priya needs help.\n\n'
+            '/risk Branch training plan unsigned — risk to mainframe '
+            'decommission readiness. Likely high, impact high.\n\n'
+            '/action Set up a working session with Priya, regional ops '
+            'lead, and the L&D function (owner: me, due 2025-12-10).\n\n'
+            'Helena needs to be in the loop. This will probably end up '
+            'at the next Steerco.',
+      ),
+      (
+        'seed-jrn-005',
+        'Quarterly programme review — Q1 2026',
+        '2026-03-20',
+        'Quarterly review with Helena',
+        'Phase 2 migration completed on schedule. ISO 27001 cert '
+            'achieved on time. Mobile crossed 250k MAU — halfway to the '
+            '500k target. SOC 2 Type II evidence collection underway.\n\n'
+            'Watch items:\n'
+            '- Full migration sprints starting next month — biggest '
+            'technical risk on the programme.\n'
+            '- Branch training still unresolved (see Dec note).\n'
+            '- Open banking integrations slipping — three external partners '
+            'have moved their dates right.\n\n'
+            '/decision Defer the open banking partner C integration to '
+            'Phase 4 (decision-maker: Helena Cross, status: pending).',
+      ),
+      (
+        'seed-jrn-006',
+        'Training plan slip — Steerco escalation',
+        '2026-04-28',
+        'Post-Steerco debrief',
+        'Steerco escalated the training plan. Helena and Diana asked '
+            'Priya to come back with a re-baselined plan in two weeks. '
+            'They\'ve allocated an additional £180k of contingency to '
+            'unblock external trainers.\n\n'
+            '/risk Branch training slip — RAG moved to RED at programme '
+            'level. Watching closely.\n\n'
+            '/action Priya to deliver re-baselined plan (owner: Priya '
+            'Sharma, due 2026-05-12).\n\n'
+            '/decision Approve £180k contingency draw-down for external '
+            'trainers (decision-maker: Richard Okafor, status: approved, '
+            'date: 2026-04-28).',
+      ),
+    ];
+    for (final j in journalEntries) {
+      final (id, title, date, meeting, body) = j;
+      await db.journalDao.insertEntry(
+        JournalEntriesCompanion(
+          id:             Value(id),
+          projectId:      Value(projectId),
+          title:          Value(title),
+          body:           Value(body),
+          entryDate:      Value(date),
+          meetingContext: Value(meeting),
+          // Pre-mark as parsed so the demo doesn't re-extract on first load
+          // and create duplicate actions/risks (which would conflict with
+          // the seeded RAID/Decisions/Actions IDs).
+          parsed:         const Value(true),
+          confirmedAt:    Value(DateTime.now()),
+          updatedAt:      Value(DateTime.now()),
+        ),
+      );
+    }
+
+    // -------------------------------------------------------------------------
+    // Playbook — full 10-stage Project Delivery
+    // -------------------------------------------------------------------------
+    await _seedHorizonPlaybook(db, projectId);
+
+    // -------------------------------------------------------------------------
+    // Plan — Programme Gantt: header, work packages, activities
+    // -------------------------------------------------------------------------
+    await _seedHorizonPlan(db, projectId);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Playbook seeder — Project Delivery (10 stages, attached to Horizon)
+  // ---------------------------------------------------------------------------
+
+  static Future<void> _seedHorizonPlaybook(
+      AppDatabase db, String projectId) async {
+    const orgId = 'seed-org-001';
+    const playbookId = 'seed-pb-001';
+
+    // Organisation that owns the playbook.
+    await db.playbookDao.upsertOrganisation(OrganisationsCompanion(
+      id:        const Value(orgId),
+      name:      const Value('FinCo Ltd'),
+      shortName: const Value('FinCo'),
+      notes:     const Value('Default organisation for the demo playbook.'),
+      updatedAt: Value(DateTime.now()),
+    ));
+
+    // The playbook itself.
+    await db.playbookDao.upsertPlaybook(PlaybooksCompanion(
+      id:             const Value(playbookId),
+      organisationId: const Value(orgId),
+      name:           const Value('Project Delivery'),
+      description:    const Value(
+          'End-to-end project lifecycle from idea to benefits realisation. '
+          'Used across FinCo for any project with a budget over £500k.'),
+      version:        const Value('2.0'),
+      updatedAt:      Value(DateTime.now()),
+    ));
+
+    // Stages.
+    final stages = <_Stage>[
+      _Stage('seed-pb-st-01', 'Initiation',
+          'Capture the idea, identify a sponsor, define the high-level '
+              'problem and outcome.',
+          'Sponsor', 'Sponsor signs off the brief'),
+      _Stage('seed-pb-st-02', 'Discovery',
+          'Validate feasibility. Confirm stakeholders, success criteria, '
+              'high-level scope, and constraints.',
+          'Programme Manager', 'Discovery output reviewed at Steerco'),
+      _Stage('seed-pb-st-03', 'Business Case',
+          'Quantified ROI, options analysis, recommended option, funding '
+              'request. Approved at Investment Committee.',
+          'CFO', 'Investment Committee approval recorded'),
+      _Stage('seed-pb-st-04', 'Planning',
+          'Detailed scope, schedule, budget, resource plan, risk register, '
+              'communications plan, and governance model.',
+          'Programme Manager', 'Plan approved at Steerco'),
+      _Stage('seed-pb-st-05', 'Design',
+          'Solution architecture, security architecture, integration design, '
+              'data model. Approved at the Architecture Design Authority.',
+          'Chief Architect', 'ADA approval recorded'),
+      _Stage('seed-pb-st-06', 'Build',
+          'Iterative development. Sprint cadence, daily stand-ups, '
+              'continuous integration, code reviews, unit tests.',
+          'Workstream Leads', 'Feature complete sign-off per workstream'),
+      _Stage('seed-pb-st-07', 'Test',
+          'System integration test, user acceptance test, performance '
+              'test, security test, regression. Defect triage to zero P1/P2.',
+          'QA Lead', 'UAT pass + zero open P1/P2 defects'),
+      _Stage('seed-pb-st-08', 'Deploy',
+          'Cutover plan, dress rehearsal, go/no-go review, deployment, '
+              'release verification, customer comms.',
+          'Programme Manager', 'Go-Live confirmed by ops + zero rollback'),
+      _Stage('seed-pb-st-09', 'Hypercare',
+          'Heightened post-go-live support. War-room, incident response, '
+              'rapid fixes. Typically 4–8 weeks.',
+          'Operations Lead', 'Hypercare exit criteria met'),
+      _Stage('seed-pb-st-10', 'Close',
+          'Handover to BAU, lessons learned workshop, benefits tracking '
+              'plan, programme financial close, retrospective.',
+          'Programme Manager', 'Lessons-learned doc + benefits plan signed'),
+    ];
+
+    for (var i = 0; i < stages.length; i++) {
+      final s = stages[i];
+      await db.playbookDao.upsertStage(PlaybookStagesCompanion(
+        id:            Value(s.id),
+        playbookId:    const Value(playbookId),
+        name:          Value(s.name),
+        description:   Value(s.description),
+        sortOrder:     Value(i),
+        approverRole:  Value(s.approver),
+        gateCondition: Value(s.gate),
+        updatedAt:     Value(DateTime.now()),
+      ));
+    }
+
+    // Attach to Horizon and create progress records.
+    await db.playbookDao.attachPlaybookToProject(
+      projectId: projectId,
+      playbookId: playbookId,
+    );
+
+    // Mark progress to reflect "we're in mid-Build, parallel-Test" today.
+    final pp = await db.playbookDao.getProjectPlaybook(projectId);
+    if (pp == null) return;
+    final progresses = await db.playbookDao.getProgressForProjectPlaybook(pp.id);
+    const stageStatusByOrder = <int, String>{
+      0: 'complete',     // Initiation
+      1: 'complete',     // Discovery
+      2: 'complete',     // Business Case
+      3: 'complete',     // Planning
+      4: 'complete',     // Design
+      5: 'in_progress',  // Build
+      6: 'in_progress',  // Test
+      7: 'not_started',  // Deploy
+      8: 'not_started',  // Hypercare
+      9: 'not_started',  // Close
+    };
+    final now = DateTime.now();
+    for (final progress in progresses) {
+      final stage = await db.playbookDao.getStageById(progress.stageId);
+      if (stage == null) continue;
+      final status = stageStatusByOrder[stage.sortOrder] ?? 'not_started';
+      final isDone = status == 'complete';
+      await db.playbookDao.upsertProgress(ProjectStageProgressesCompanion(
+        id:                Value(progress.id),
+        projectPlaybookId: Value(progress.projectPlaybookId),
+        stageId:           Value(progress.stageId),
+        status:            Value(status),
+        gateMet:           Value(isDone),
+        approvedBy:        Value(isDone ? 'You' : null),
+        approvedAt:        Value(isDone ? now : null),
+        updatedAt:         Value(now),
+      ));
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Plan / Programme Gantt seeder
+  //
+  // The Plan view is a 24-month Gantt over Jan 2025 → Dec 2026.
+  // Activities use month indices 0..23. Today (≈ M16) splits the plan into
+  // "complete" (M0..M15) and "in-flight or future" (M16+).
+  // ---------------------------------------------------------------------------
+
+  static Future<void> _seedHorizonPlan(
+      AppDatabase db, String projectId) async {
+    // ── Programme header (24 months, Jan 2025 – Dec 2026) ───────────────────
+    await db.programmeGanttDao.upsertHeader(
+      ProgrammeHeadersCompanion(
+        id:           const Value('seed-pg-header-001'),
+        projectId:    Value(projectId),
+        title:        const Value('Horizon Programme'),
+        subtitle:     const Value('FinCo Digital Transformation 2025–2026'),
+        hardDeadline: const Value('Q4 2026 — Mainframe decommission'),
+        inScope:      const Value(
+            'Core banking replacement, mobile channel, data platform, '
+            'API gateway, identity & access management, operational tooling.'),
+        outOfScope:   const Value(
+            'Investment banking, FX trading, international subsidiaries.'),
+        monthLabels:  const Value(_horizonMonthLabelsJson),
+        month0Date:   const Value('2025-01-06'),
+        updatedAt:    Value(DateTime.now()),
+      ),
+    );
+
+    // ── Work packages ───────────────────────────────────────────────────────
+    final wps = <_WP>[
+      _WP('seed-wp-gov',    'Programme Governance',    'governance', 'green', 0,
+          'Steering, design authority, and overall coordination.'),
+      _WP('seed-wp-cb',     'Core Banking Replacement','wp1',        'amber', 1,
+          'Temenos rollout. Pilot complete; full migration in progress.'),
+      _WP('seed-wp-data',   'Data Platform & Analytics','wp2',       'green', 2,
+          'Kafka + Flink + data lake. Real-time analytics live.'),
+      _WP('seed-wp-mobile', 'Mobile & Digital Channels','wp3',       'green', 3,
+          'iOS/Android live. Open banking integrations underway.'),
+      _WP('seed-wp-sec',    'Security & Compliance',   'wp4',        'amber', 4,
+          'ISO 27001 certified. SOC 2 Type II in flight.'),
+      _WP('seed-wp-change', 'Change Mgmt & Training',  'mpower',     'red',   5,
+          'Branch training plan slipped — sponsor escalation raised.'),
+    ];
+
+    for (final wp in wps) {
+      await db.programmeGanttDao.upsertWorkPackage(
+        TimelineWorkPackagesCompanion(
+          id:           Value(wp.id),
+          projectId:    Value(projectId),
+          name:         Value(wp.name),
+          shortCode:    Value(wp.shortCode),
+          description:  Value(wp.description),
+          colourTheme:  Value(wp.colour),
+          ragStatus:    Value(wp.rag),
+          sortOrder:    Value(wp.sortOrder),
+          updatedAt:    Value(DateTime.now()),
+        ),
+      );
+    }
+
+    // ── Activities ──────────────────────────────────────────────────────────
+    // Each entry: workpackage, name, type, startMonth, endMonth, status,
+    // owner, isCritical, optional notes.
+    final activities = <_Act>[
+      // Programme Governance ------------------------------------------------
+      _Act('seed-wp-gov', 'Programme kick-off',
+          'milestone', 0, 0, 'complete', 'You', true,
+          'Steerco established, charter signed.'),
+      _Act('seed-wp-gov', 'Architecture Design Authority approved',
+          'gate', 3, 3, 'complete', 'You', true, null),
+      _Act('seed-wp-gov', 'Monthly Steering Committee',
+          'ongoing', 0, 23, 'on_track', 'You', false, null),
+      _Act('seed-wp-gov', 'Mid-programme review',
+          'milestone', 12, 12, 'complete', 'You', false, null),
+      _Act('seed-wp-gov', 'PRA pre-submission',
+          'hard_deadline', 14, 14, 'complete', 'You', false, null),
+      _Act('seed-wp-gov', 'Programme close & lessons learned',
+          'activity', 22, 23, 'not_started', 'You', false, null),
+
+      // Core Banking Replacement -------------------------------------------
+      _Act('seed-wp-cb', 'Vendor selection finalised',
+          'gate', 1, 1, 'complete', 'Amara Osei', true, null),
+      _Act('seed-wp-cb', 'Core banking architecture design',
+          'activity', 1, 3, 'complete', 'Amara Osei', false, null),
+      _Act('seed-wp-cb', 'Dev environment build',
+          'activity', 3, 6, 'complete', 'Amara Osei', false, null),
+      _Act('seed-wp-cb', 'Pilot data migration (10k accounts)',
+          'activity', 5, 8, 'complete', 'Amara Osei', true, null),
+      _Act('seed-wp-cb', 'Pilot Go-Live',
+          'milestone', 8, 8, 'complete', 'Amara Osei', true,
+          'First 10k customers on new core.'),
+      _Act('seed-wp-cb', 'Phase 2 migration (1M accounts)',
+          'activity', 9, 14, 'complete', 'Amara Osei', true, null),
+      _Act('seed-wp-cb', 'Full migration sprints (4M accounts)',
+          'activity', 14, 20, 'on_track', 'Amara Osei', true,
+          'Temenos resourcing recovered after Q1 escalation.'),
+      _Act('seed-wp-cb', 'Mainframe decommission',
+          'hard_deadline', 21, 21, 'not_started', 'Amara Osei', true, null),
+
+      // Data Platform & Analytics ------------------------------------------
+      _Act('seed-wp-data', 'Kafka cluster build (dev)',
+          'activity', 1, 3, 'complete', 'Raj Patel', false, null),
+      _Act('seed-wp-data', 'Flink streaming jobs',
+          'activity', 3, 5, 'complete', 'Raj Patel', false, null),
+      _Act('seed-wp-data', 'Real-time analytics MVP',
+          'milestone', 7, 7, 'complete', 'Raj Patel', false, null),
+      _Act('seed-wp-data', 'Data lake migration',
+          'activity', 7, 10, 'complete', 'Raj Patel', false, null),
+      _Act('seed-wp-data', 'BI dashboard rollout',
+          'activity', 10, 12, 'complete', 'Raj Patel', false, null),
+      _Act('seed-wp-data', 'ML model deployment (fraud, churn)',
+          'activity', 12, 16, 'complete', 'Raj Patel', false, null),
+      _Act('seed-wp-data', 'Customer 360 view live',
+          'milestone', 19, 19, 'on_track', 'Raj Patel', false, null),
+
+      // Mobile & Digital Channels ------------------------------------------
+      _Act('seed-wp-mobile', 'UX design & sign-off',
+          'gate', 2, 2, 'complete', 'Sophie Chen', true, null),
+      _Act('seed-wp-mobile', 'iOS / Android MVP build',
+          'activity', 2, 5, 'complete', 'Sophie Chen', false, null),
+      _Act('seed-wp-mobile', 'Closed beta (5k users)',
+          'milestone', 8, 8, 'complete', 'Sophie Chen', false, null),
+      _Act('seed-wp-mobile', 'Public launch',
+          'milestone', 10, 10, 'complete', 'Sophie Chen', true,
+          '500k downloads target tracked from this point.'),
+      _Act('seed-wp-mobile', 'Feature parity with web',
+          'activity', 10, 14, 'complete', 'Sophie Chen', false, null),
+      _Act('seed-wp-mobile', 'Open banking integrations',
+          'activity', 14, 18, 'on_track', 'Sophie Chen', false, null),
+      _Act('seed-wp-mobile', '500k MAU milestone',
+          'milestone', 22, 22, 'not_started', 'Sophie Chen', false, null),
+
+      // Security & Compliance ----------------------------------------------
+      _Act('seed-wp-sec', 'ISO 27001 gap analysis',
+          'activity', 0, 2, 'complete', 'Marcus Webb', false, null),
+      _Act('seed-wp-sec', 'Penetration test (Q2 2025)',
+          'activity', 2, 4, 'complete', 'Marcus Webb', false, null),
+      _Act('seed-wp-sec', 'Remediation sprint',
+          'activity', 4, 6, 'complete', 'Marcus Webb', false, null),
+      _Act('seed-wp-sec', 'Identity & Access Management rollout',
+          'activity', 6, 9, 'complete', 'Marcus Webb', false, null),
+      _Act('seed-wp-sec', 'SOC 2 Type II preparation',
+          'activity', 9, 12, 'complete', 'Marcus Webb', false, null),
+      _Act('seed-wp-sec', 'ISO 27001 certification',
+          'milestone', 15, 15, 'complete', 'Marcus Webb', true, null),
+      _Act('seed-wp-sec', 'Continuous compliance monitoring',
+          'ongoing', 15, 23, 'on_track', 'Marcus Webb', false, null),
+      _Act('seed-wp-sec', 'SOC 2 Type II report',
+          'milestone', 18, 18, 'on_track', 'Marcus Webb', false, null),
+
+      // Change Mgmt & Training (currently red) -----------------------------
+      _Act('seed-wp-change', 'Change impact assessment',
+          'activity', 0, 3, 'complete', 'Priya Sharma', false, null),
+      _Act('seed-wp-change', 'Initial training plan draft',
+          'activity', 3, 5, 'complete', 'Priya Sharma', false, null),
+      _Act('seed-wp-change', 'Training plan approval (REVISED)',
+          'gate', 16, 16, 'at_risk', 'Priya Sharma', true,
+          'Slipped from M5. Sponsor escalation raised — at risk for M16.'),
+      _Act('seed-wp-change', 'Branch staff training — cohort 1',
+          'activity', 16, 19, 'not_started', 'Priya Sharma', false, null),
+      _Act('seed-wp-change', 'Branch staff training — cohort 2',
+          'activity', 19, 21, 'not_started', 'Priya Sharma', false, null),
+      _Act('seed-wp-change', 'Customer comms rollout',
+          'activity', 16, 18, 'on_track', 'Priya Sharma', false, null),
+      _Act('seed-wp-change', 'Adoption metric tracking',
+          'ongoing', 18, 23, 'not_started', 'Priya Sharma', false, null),
+      _Act('seed-wp-change', 'Training programme complete',
+          'milestone', 21, 21, 'not_started', 'Priya Sharma', false, null),
+    ];
+
+    var sortOrder = 0;
+    for (final a in activities) {
+      sortOrder++;
+      await db.programmeGanttDao.upsertActivity(
+        TimelineActivitiesCompanion(
+          id:            Value('seed-act-${sortOrder.toString().padLeft(3, "0")}'),
+          workPackageId: Value(a.wpId),
+          projectId:     Value(projectId),
+          name:          Value(a.name),
+          owner:         Value(a.owner),
+          activityType:  Value(a.type),
+          startMonth:    Value(a.start),
+          endMonth:      Value(a.end),
+          status:        Value(a.status),
+          isCritical:    Value(a.critical),
+          notes:         Value(a.notes),
+          sortOrder:     Value(sortOrder),
+          updatedAt:     Value(DateTime.now()),
+        ),
+      );
+    }
   }
 
   static String _dateOffset(DateTime base, int days) {
     final dt = base.add(Duration(days: days));
     return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
   }
+}
+
+// JSON array of month labels covering the 24-month Horizon timeline.
+const _horizonMonthLabelsJson =
+    '["Jan 2025","Feb 2025","Mar 2025","Apr 2025","May 2025","Jun 2025",'
+    '"Jul 2025","Aug 2025","Sep 2025","Oct 2025","Nov 2025","Dec 2025",'
+    '"Jan 2026","Feb 2026","Mar 2026","Apr 2026","May 2026","Jun 2026",'
+    '"Jul 2026","Aug 2026","Sep 2026","Oct 2026","Nov 2026","Dec 2026"]';
+
+// ─── Internal value types kept here so the Plan seeder reads top-down ──────
+
+class _WP {
+  final String id;
+  final String name;
+  final String colour;
+  final String rag;
+  final int sortOrder;
+  final String description;
+  final String shortCode;
+  _WP(this.id, this.name, this.colour, this.rag, this.sortOrder,
+      this.description)
+      : shortCode = id.split('-').last.toUpperCase();
+}
+
+class _Act {
+  final String wpId;
+  final String name;
+  final String type;
+  final int start;
+  final int end;
+  final String status;
+  final String owner;
+  final bool critical;
+  final String? notes;
+  _Act(this.wpId, this.name, this.type, this.start, this.end, this.status,
+      this.owner, this.critical, this.notes);
+}
+
+class _Stage {
+  final String id;
+  final String name;
+  final String description;
+  final String approver;
+  final String gate;
+  _Stage(this.id, this.name, this.description, this.approver, this.gate);
 }

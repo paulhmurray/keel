@@ -53,6 +53,7 @@ class JsonExporter {
     final milestones = await db.milestonesDao.getForProject(projectId);
     final actionCategories = await db.actionCategoriesDao.getForProject(projectId);
     final actions = await db.actionsDao.getActionsForProject(projectId);
+    final actionComments = await db.actionCommentsDao.getForProject(projectId);
     final contextEntries = await db.contextDao.getEntriesForProject(projectId);
     final glossaryEntries = await db.glossaryDao.getForProject(projectId);
     final documents = await db.contextDao.getDocumentsForProject(projectId);
@@ -61,6 +62,8 @@ class JsonExporter {
     final charter = await db.projectCharterDao.getForProject(projectId);
     final overviewState = await db.programmeOverviewStateDao.getForProject(projectId);
     final journalEntries = await db.journalDao.getEntriesForProject(projectId);
+    final journalSeriesList =
+        await db.journalSeriesDao.getForProject(projectId);
     // Timeline / Gantt
     final timelineWorkPackages = await db.programmeGanttDao.getWorkPackages(projectId);
     final timelineActivities = await db.programmeGanttDao.getActivitiesForProject(projectId);
@@ -87,6 +90,9 @@ class JsonExporter {
 
     final data = <String, dynamic>{
       'keel_version': '1.0',
+      // DB schema version of the exporting client. Newer fields gated on this
+      // value let older readers ignore data they don't understand.
+      'schema_version': 25,
       'exported_at': DateTime.now().toIso8601String(),
       'project': {
         'id': project.id,
@@ -166,6 +172,8 @@ class JsonExporter {
                   'description': r.description,
                   'likelihood': r.likelihood,
                   'impact': r.impact,
+                  'likelihood_rationale': r.likelihoodRationale,
+                  'impact_rationale': r.impactRationale,
                   'mitigation': r.mitigation,
                   'owner': r.owner,
                   'status': r.status,
@@ -348,8 +356,21 @@ class JsonExporter {
                 'category_id': a.categoryId,
                 'recurrence_group_id': a.recurrenceGroupId,
                 'linked_action_id': a.linkedActionId,
+                'plan_activity_id': a.planActivityId,
+                'parent_action_id': a.parentActionId,
                 'created_at': a.createdAt.toIso8601String(),
                 'updated_at': a.updatedAt.toIso8601String(),
+              })
+          .toList(),
+      'action_comments': actionComments
+          .map((c) => {
+                'id': c.id,
+                'action_id': c.actionId,
+                'content': c.content,
+                'is_completion': c.isCompletion,
+                'author_name': c.authorName,
+                'created_at': c.createdAt.toIso8601String(),
+                'updated_at': c.updatedAt.toIso8601String(),
               })
           .toList(),
       'context': contextEntries
@@ -400,11 +421,25 @@ class JsonExporter {
                   'meeting_context': e.meetingContext,
                   'parsed': e.parsed,
                   'confirmed_at': e.confirmedAt?.toIso8601String(),
+                  'is_favourite': e.isFavourite,
+                  'series_id': e.seriesId,
                   'created_at': e.createdAt.toIso8601String(),
                   'updated_at': e.updatedAt.toIso8601String(),
                 })
             .toList(),
         'links': journalLinks,
+        'series': journalSeriesList
+            .map((s) => {
+                  'id': s.id,
+                  'name': s.name,
+                  'description': s.description,
+                  'cadence_hint': s.cadenceHint,
+                  'color': s.color,
+                  'sort_order': s.sortOrder,
+                  'created_at': s.createdAt.toIso8601String(),
+                  'updated_at': s.updatedAt.toIso8601String(),
+                })
+            .toList(),
       },
       'reports': reports
           .map((r) => {
@@ -517,6 +552,8 @@ class JsonExporter {
                   'baseline_end': a.baselineEnd,
                   'cell_label': a.cellLabel,
                   'notes': a.notes,
+                  'contributors': a.contributors,
+                  'contributor_ids': a.contributorIds,
                   'sort_order': a.sortOrder,
                   'created_at': a.createdAt.toIso8601String(),
                   'updated_at': a.updatedAt.toIso8601String(),

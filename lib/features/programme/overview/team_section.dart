@@ -4,7 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../../../core/database/database.dart';
 import '../../../core/programme/scaffold_definitions.dart';
 import '../../../shared/theme/keel_colors.dart';
-import 'person_assign_picker.dart';
+import '../../../shared/widgets/person_picker_field.dart';
 import 'role_row_helpers.dart';
 
 class TeamSection extends StatelessWidget {
@@ -157,32 +157,16 @@ class _TeamGroup extends StatelessWidget {
   }
 
   Future<String?> _promptRoleName(BuildContext context) async {
-    final ctrl = TextEditingController();
-    return showDialog<String>(
+    final existing = roles
+        .map((r) => r.roleName.toLowerCase().trim())
+        .toSet();
+    final suggestions = (teamSuggestions[groupKey] ?? const <String>[])
+        .where((s) => !existing.contains(s.toLowerCase().trim()))
+        .toList();
+    return showRolePickerDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: KColors.surface,
-        title: const Text('Add Team Role',
-            style: TextStyle(color: KColors.text, fontSize: 14)),
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          style: const TextStyle(color: KColors.text, fontSize: 13),
-          decoration: const InputDecoration(labelText: 'Role name'),
-          onSubmitted: (v) => Navigator.of(context).pop(v.trim()),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel',
-                style: TextStyle(color: KColors.textDim, fontSize: 12)),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(ctrl.text.trim()),
-            child: const Text('Add'),
-          ),
-        ],
-      ),
+      title: 'Add Team Role',
+      suggestions: suggestions,
     );
   }
 }
@@ -269,8 +253,20 @@ class _TeamRoleRow extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           if (!_filled)
-            RoleSmallButton(
-                label: 'Assign', onTap: () => _assign(context))
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RoleSmallButton(
+                    label: 'Assign', onTap: () => _assign(context)),
+                const SizedBox(width: 6),
+                RoleMoreMenu(
+                  onMarkNA: () => _markNA(),
+                  onRemove: () => _removePerson(),
+                  onRename: () => _rename(context),
+                  onDelete: role.isScaffold ? null : () => _delete(context),
+                ),
+              ],
+            )
           else
             Row(
               mainAxisSize: MainAxisSize.min,
@@ -281,6 +277,8 @@ class _TeamRoleRow extends StatelessWidget {
                 RoleMoreMenu(
                   onMarkNA: () => _markNA(),
                   onRemove: () => _removePerson(),
+                  onRename: () => _rename(context),
+                  onDelete: role.isScaffold ? null : () => _delete(context),
                 ),
               ],
             ),
@@ -290,11 +288,12 @@ class _TeamRoleRow extends StatelessWidget {
   }
 
   Future<void> _assign(BuildContext context) async {
-    final person = await showPersonAssignPicker(
-      context,
+    final person = await showPersonPicker(
+      context: context,
       db: db,
       projectId: projectId,
-      existingPersons: persons,
+      persons: persons,
+      title: 'Assign Team Member',
     );
     if (person != null) {
       await db.teamRoleDao.updateRole(TeamRolesCompanion(
@@ -319,5 +318,21 @@ class _TeamRoleRow extends StatelessWidget {
       personId: const Value(null),
       updatedAt: Value(DateTime.now()),
     ));
+  }
+
+  Future<void> _rename(BuildContext context) async {
+    final name = await promptRenameRole(context, role.roleName);
+    if (name == null || name.isEmpty || name == role.roleName) return;
+    await db.teamRoleDao.updateRole(TeamRolesCompanion(
+      id: Value(role.id),
+      roleName: Value(name),
+      updatedAt: Value(DateTime.now()),
+    ));
+  }
+
+  Future<void> _delete(BuildContext context) async {
+    final confirmed = await confirmDeleteRole(context, role.roleName);
+    if (!confirmed) return;
+    await db.teamRoleDao.deleteRole(role.id);
   }
 }

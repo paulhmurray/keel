@@ -6,14 +6,15 @@ import 'package:uuid/uuid.dart';
 import '../../core/database/database.dart';
 import '../../providers/settings_provider.dart';
 import '../theme/keel_colors.dart';
+import 'entity_picker.dart';
+import 'role_picker_field.dart';
 
-const _kAddSentinel = '\x00__add__';
-const _kMeSentinel = '\x00__me__';
-
-/// A text field with autocomplete from the project's People list.
-/// Shows "Me — [name]" at the top when the user has set their name in Settings.
-/// Offers an "Add new person" option when typing an unknown name.
-class PersonPickerField extends StatefulWidget {
+/// Inline person picker for forms — autocomplete from the project's Persons
+/// table, with a pinned "Me — [name]" shortcut and an "Add new" affordance
+/// that opens the canonical [AddPersonDialog].
+///
+/// Backed by [EntityPickerField], shared with role/system/term pickers.
+class PersonPickerField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
   final List<Person> persons;
@@ -32,55 +33,108 @@ class PersonPickerField extends StatefulWidget {
   });
 
   @override
-  State<PersonPickerField> createState() => _PersonPickerFieldState();
+  Widget build(BuildContext context) {
+    final myName = context.watch<SettingsProvider>().settings.myName;
+    return EntityPickerField<Person>(
+      controller: controller,
+      label: label,
+      items: persons,
+      displayName: (p) => p.name,
+      secondaryLine: (p) => [p.role, p.organisation]
+          .where((s) => s != null && s.isNotEmpty)
+          .join(' · '),
+      itemIcon: Icons.person_outline,
+      addNewSuffix: 'as new person',
+      shortcut: myName.isEmpty
+          ? null
+          : EntityPickerShortcut<Person>(
+              label: 'Me — $myName',
+              icon: Icons.person_pin_outlined,
+              iconColor: KColors.phosphor,
+              textColor: KColors.phosphor,
+              displayString: myName,
+              onSelected: () async => null,
+              showFor: (q) {
+                final qq = q.toLowerCase().trim();
+                return qq.isEmpty ||
+                    myName.toLowerCase().contains(qq) ||
+                    'me'.contains(qq);
+              },
+            ),
+      onAddNew: (ctx, query) async {
+        final result = await showDialog<NewPersonResult>(
+          context: ctx,
+          builder: (_) =>
+              AddPersonDialog(name: query, db: db, projectId: projectId),
+        );
+        if (result == null) return null;
+        final now = DateTime.now();
+        final id = const Uuid().v4();
+        await db.peopleDao.upsertPerson(PersonsCompanion(
+          id: Value(id),
+          projectId: Value(projectId),
+          name: Value(result.name),
+          role: Value(result.role),
+          organisation: Value(result.organisation),
+          personType: Value(result.personType),
+          createdAt: Value(now),
+          updatedAt: Value(now),
+        ));
+        onPersonCreated();
+        // Refetch so the returned object has the freshly-persisted id.
+        final fetched = await db.peopleDao.getPersonsForProject(projectId);
+        return fetched.firstWhere(
+          (p) => p.id == id,
+          orElse: () => Person(
+            id: id,
+            projectId: projectId,
+            name: result.name,
+            role: result.role,
+            organisation: result.organisation,
+            personType: result.personType,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+      },
+    );
+  }
 }
 
-class _PersonPickerFieldState extends State<PersonPickerField> {
-  late final FocusNode _focusNode;
-
-  @override
-  void initState() {
-    super.initState();
-    _focusNode = FocusNode();
-  }
-
-  @override
-  void dispose() {
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  List<String> _optionsFor(String query, String myName) {
-    final q = query.toLowerCase().trim();
-    final opts = <String>[];
-
-    // "Me" shortcut at top if name is set and matches query (or query empty)
-    if (myName.isNotEmpty &&
-        (q.isEmpty || myName.toLowerCase().contains(q) || 'me'.contains(q))) {
-      opts.add(_kMeSentinel);
-    }
-
-    final matches = widget.persons
-        .where((p) => p.name.toLowerCase().contains(q))
-        .map((p) => p.name)
-        .take(6)
-        .toList();
-    opts.addAll(matches);
-
-    if (q.isNotEmpty) opts.add(_kAddSentinel);
-    return opts;
-  }
-
-  Future<void> _handleAddNew(String query) async {
-    final result = await showDialog<_NewPersonResult>(
-      context: context,
-      builder: (_) => _AddPersonDialog(name: query),
-    );
-    if (result != null && mounted) {
+/// Modal "find or create a person" dialog. Used for slot-assignment flows
+/// (e.g. assigning someone to a stakeholder role). Returns the picked
+/// Person, or null on cancel.
+Future<Person?> showPersonPicker({
+  required BuildContext context,
+  required AppDatabase db,
+  required String projectId,
+  required List<Person> persons,
+  String title = 'Assign Person',
+}) {
+  return showEntityPicker<Person>(
+    context: context,
+    title: title,
+    items: persons,
+    displayName: (p) => p.name,
+    secondaryLine: (p) => [p.role, p.organisation]
+        .where((s) => s != null && s.isNotEmpty)
+        .join(' · '),
+    itemIcon: Icons.person_outline,
+    itemIconColor: KColors.textDim,
+    addNewLabel: 'Add new person',
+    searchHint: 'Search people…',
+    onAddNew: (ctx, query) async {
+      final result = await showDialog<NewPersonResult>(
+        context: ctx,
+        builder: (_) =>
+            AddPersonDialog(name: query, db: db, projectId: projectId),
+      );
+      if (result == null) return null;
       final now = DateTime.now();
-      await widget.db.peopleDao.upsertPerson(PersonsCompanion(
-        id: Value(const Uuid().v4()),
-        projectId: Value(widget.projectId),
+      final id = const Uuid().v4();
+      await db.peopleDao.upsertPerson(PersonsCompanion(
+        id: Value(id),
+        projectId: Value(projectId),
         name: Value(result.name),
         role: Value(result.role),
         organisation: Value(result.organisation),
@@ -88,131 +142,31 @@ class _PersonPickerFieldState extends State<PersonPickerField> {
         createdAt: Value(now),
         updatedAt: Value(now),
       ));
-      widget.controller.text = result.name;
-      widget.onPersonCreated();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final myName = context.read<SettingsProvider>().settings.myName;
-
-    return RawAutocomplete<String>(
-      textEditingController: widget.controller,
-      focusNode: _focusNode,
-      optionsBuilder: (v) => _optionsFor(v.text, myName),
-      displayStringForOption: (opt) {
-        if (opt == _kMeSentinel) return myName;
-        if (opt == _kAddSentinel) return widget.controller.text;
-        return opt;
-      },
-      fieldViewBuilder: (ctx, ctrl, focusNode, onSubmitted) => TextFormField(
-        controller: ctrl,
-        focusNode: focusNode,
-        style: const TextStyle(color: KColors.text, fontSize: 12),
-        decoration: InputDecoration(
-          labelText: widget.label,
-          labelStyle: const TextStyle(color: KColors.textDim, fontSize: 11),
-          border: const OutlineInputBorder(),
-          isDense: true,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        ),
-        onFieldSubmitted: (_) => onSubmitted(),
-      ),
-      optionsViewBuilder: (ctx, onSelected, options) {
-        final query = widget.controller.text.trim();
-        return Align(
-          alignment: Alignment.topLeft,
-          child: Material(
-            color: KColors.surface2,
-            elevation: 6,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(4),
-              side: const BorderSide(color: KColors.border2),
-            ),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 220, maxWidth: 280),
-              child: ListView(
-                shrinkWrap: true,
-                padding: EdgeInsets.zero,
-                children: options.map((opt) {
-                  if (opt == _kMeSentinel) {
-                    return ListTile(
-                      dense: true,
-                      visualDensity: VisualDensity.compact,
-                      leading: const Icon(Icons.person_pin_outlined,
-                          size: 14, color: KColors.phosphor),
-                      title: Text(
-                        'Me — $myName',
-                        style: const TextStyle(
-                          color: KColors.phosphor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      onTap: () {
-                        widget.controller.text = myName;
-                        onSelected(opt);
-                      },
-                    );
-                  }
-                  if (opt == _kAddSentinel) {
-                    return ListTile(
-                      dense: true,
-                      visualDensity: VisualDensity.compact,
-                      leading: const Icon(Icons.person_add_outlined,
-                          size: 14, color: KColors.phosphor),
-                      title: Text(
-                        'Add "$query" as new person',
-                        style: const TextStyle(
-                          color: KColors.phosphor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      onTap: () {
-                        onSelected(opt);
-                        _handleAddNew(query);
-                      },
-                    );
-                  }
-                  return ListTile(
-                    dense: true,
-                    visualDensity: VisualDensity.compact,
-                    leading: const Icon(Icons.person_outline,
-                        size: 14, color: KColors.textDim),
-                    title: Text(opt,
-                        style: const TextStyle(color: KColors.text, fontSize: 12)),
-                    onTap: () => onSelected(opt),
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
-        );
-      },
-      onSelected: (opt) {
-        if (opt == _kMeSentinel) {
-          widget.controller.text = myName;
-        } else if (opt != _kAddSentinel) {
-          widget.controller.text = opt;
-        }
-      },
-    );
-  }
+      return Person(
+        id: id,
+        projectId: projectId,
+        name: result.name,
+        role: result.role,
+        organisation: result.organisation,
+        personType: result.personType,
+        createdAt: now,
+        updatedAt: now,
+      );
+    },
+  );
 }
 
 // ---------------------------------------------------------------------------
 // Add new person dialog (shared)
 // ---------------------------------------------------------------------------
 
-class _NewPersonResult {
+class NewPersonResult {
   final String name;
   final String? role;
   final String? organisation;
   final String personType;
 
-  const _NewPersonResult({
+  const NewPersonResult({
     required this.name,
     this.role,
     this.organisation,
@@ -220,15 +174,25 @@ class _NewPersonResult {
   });
 }
 
-class _AddPersonDialog extends StatefulWidget {
+/// Rich "Add Person" dialog — capture name, role (via [RolePickerField] so
+/// known roles are suggested), organisation, and person type.
+class AddPersonDialog extends StatefulWidget {
   final String name;
-  const _AddPersonDialog({required this.name});
+  final AppDatabase db;
+  final String projectId;
+
+  const AddPersonDialog({
+    super.key,
+    required this.name,
+    required this.db,
+    required this.projectId,
+  });
 
   @override
-  State<_AddPersonDialog> createState() => _AddPersonDialogState();
+  State<AddPersonDialog> createState() => _AddPersonDialogState();
 }
 
-class _AddPersonDialogState extends State<_AddPersonDialog> {
+class _AddPersonDialogState extends State<AddPersonDialog> {
   late TextEditingController _nameCtrl;
   final _roleCtrl = TextEditingController();
   final _orgCtrl = TextEditingController();
@@ -258,7 +222,7 @@ class _AddPersonDialogState extends State<_AddPersonDialog> {
   void _submit() {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) return;
-    Navigator.of(context).pop(_NewPersonResult(
+    Navigator.of(context).pop(NewPersonResult(
       name: name,
       role: _roleCtrl.text.trim().isEmpty ? null : _roleCtrl.text.trim(),
       organisation: _orgCtrl.text.trim().isEmpty ? null : _orgCtrl.text.trim(),
@@ -273,7 +237,7 @@ class _AddPersonDialogState extends State<_AddPersonDialog> {
       title: const Text('Add New Person',
           style: TextStyle(color: KColors.text, fontSize: 14)),
       content: SizedBox(
-        width: 340,
+        width: 360,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -286,17 +250,18 @@ class _AddPersonDialogState extends State<_AddPersonDialog> {
               onSubmitted: (_) => _submit(),
             ),
             const SizedBox(height: 10),
-            TextField(
+            RolePickerField(
               controller: _roleCtrl,
-              style: const TextStyle(color: KColors.text, fontSize: 13),
-              decoration: const InputDecoration(labelText: 'Role (optional)'),
-              onSubmitted: (_) => _submit(),
+              label: 'Role (optional)',
+              db: widget.db,
+              projectId: widget.projectId,
             ),
             const SizedBox(height: 10),
             TextField(
               controller: _orgCtrl,
               style: const TextStyle(color: KColors.text, fontSize: 13),
-              decoration: const InputDecoration(labelText: 'Organisation (optional)'),
+              decoration:
+                  const InputDecoration(labelText: 'Organisation (optional)'),
               onSubmitted: (_) => _submit(),
             ),
             const SizedBox(height: 14),

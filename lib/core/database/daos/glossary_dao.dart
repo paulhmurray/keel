@@ -29,6 +29,11 @@ class GlossaryDao extends DatabaseAccessor<AppDatabase>
     return into(glossaryEntries).insertOnConflictUpdate(entry);
   }
 
+  Future<GlossaryEntry?> getById(String id) {
+    return (select(glossaryEntries)..where((t) => t.id.equals(id)))
+        .getSingleOrNull();
+  }
+
   Future<void> deleteEntry(String id) {
     return (delete(glossaryEntries)..where((t) => t.id.equals(id))).go();
   }

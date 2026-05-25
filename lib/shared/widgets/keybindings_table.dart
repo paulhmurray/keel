@@ -8,9 +8,10 @@ class KeybindingsTable extends StatelessWidget {
     // --- Navigation ---
     ('Leader key (Spacebar)', 'SPC'),
     ('  → Programme overview', 'SPC SPC'),
-    ('  → Timeline / Schedule', 'SPC t'),
-    ('  → Plan (Gantt)', 'SPC l'),
+    ('  → Schedule', 'SPC t'),
+    ('  → Plan (Gantt)', 'SPC g'),
     ('  → Status', 'SPC s'),
+    ('  → Settings', 'SPC S'),
     ('  → Charter', 'SPC C'),
     ('  → RAID › Risks', 'SPC r r'),
     ('  → RAID › Risks › New', 'SPC r r n'),

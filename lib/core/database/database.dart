@@ -27,6 +27,8 @@ part 'daos/programme_gantt_dao.dart';
 part 'daos/status_snapshot_dao.dart';
 part 'daos/project_charter_dao.dart';
 part 'daos/programme_overview_state_dao.dart';
+part 'daos/action_comments_dao.dart';
+part 'daos/journal_series_dao.dart';
 
 // ---------------------------------------------------------------------------
 // Tables
@@ -114,6 +116,8 @@ class Risks extends Table {
   TextColumn get description => text()();
   TextColumn get likelihood => text().withDefault(const Constant('medium'))();
   TextColumn get impact => text().withDefault(const Constant('medium'))();
+  TextColumn get likelihoodRationale => text().nullable()();
+  TextColumn get impactRationale => text().nullable()();
   TextColumn get mitigation => text().nullable()();
   TextColumn get owner => text().nullable()();
   TextColumn get status => text().withDefault(const Constant('open'))();
@@ -360,6 +364,21 @@ class ProjectActions extends Table {
   TextColumn get categoryId => text().nullable()();
   TextColumn get recurrenceGroupId => text().nullable()();
   TextColumn get linkedActionId => text().nullable()();
+  TextColumn get planActivityId => text().nullable()(); // FK → TimelineActivities
+  TextColumn get parentActionId => text().nullable()(); // self-ref, one level deep
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class ActionComments extends Table {
+  TextColumn get id => text().named('id')();
+  TextColumn get actionId => text().references(ProjectActions, #id)();
+  TextColumn get content => text()();
+  BoolColumn get isCompletion => boolean().withDefault(const Constant(false))();
+  TextColumn get authorName => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
@@ -441,6 +460,30 @@ class JournalEntries extends Table {
   TextColumn get meetingContext => text().nullable()();
   BoolColumn get parsed => boolean().withDefault(const Constant(false))();
   DateTimeColumn get confirmedAt => dateTime().nullable()();
+  BoolColumn get isFavourite => boolean().withDefault(const Constant(false))();
+  TextColumn get seriesId => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Backing table for [JournalSeries] (the data class). Named with the
+/// '...Defs' suffix only because Drift's auto-pluraliser mangles "Series"
+/// into "Sery" — we name the row class explicitly via [DataClassName].
+@DataClassName('JournalSeries')
+class JournalSeriesDefs extends Table {
+  TextColumn get id => text().named('id')();
+  TextColumn get projectId => text().references(Projects, #id)();
+  TextColumn get name => text()();
+  TextColumn get description => text().nullable()();
+  /// Free-text hint like 'daily', 'weekly', 'fortnightly'. Informational
+  /// only — we don't schedule anything off it.
+  TextColumn get cadenceHint => text().nullable()();
+  /// Optional hex colour for series cards (e.g. '#3B82F6').
+  TextColumn get color => text().nullable()();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
@@ -529,6 +572,9 @@ class TimelineActivities extends Table {
   IntColumn get baselineEnd => integer().nullable()();
   TextColumn get cellLabel => text().nullable()();
   TextColumn get notes => text().nullable()();
+  // JSON arrays for secondary contributors e.g. '["Alice","Bob"]'
+  TextColumn get contributors => text().nullable()();
+  TextColumn get contributorIds => text().nullable()();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
@@ -636,6 +682,21 @@ class StatusSnapshots extends Table {
       integer().withDefault(const Constant(0))();
   IntColumn get openRisksCount => integer().withDefault(const Constant(0))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  // Rich-snapshot fields — added schema v19. All nullable so old snapshots
+  // (and snapshots taken without a configured narrative) round-trip cleanly.
+  // Stored as JSON so we don't need a relational schema for snapshot detail.
+  TextColumn get narrative => text().nullable()();
+  // [{id, name, rag}]
+  TextColumn get workstreamHealthJson => text().nullable()();
+  // [{id, ref, description, likelihood, impact}]
+  TextColumn get topRisksJson => text().nullable()();
+  // [{id, name, owner, dueLabel}]
+  TextColumn get upcomingMilestonesJson => text().nullable()();
+  // [{id, ref, description, dueDate, owner}]
+  TextColumn get pendingDecisionsJson => text().nullable()();
+  // {stageId, stageName, status}
+  TextColumn get playbookStageJson => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -832,6 +893,8 @@ class ProjectStageProgresses extends Table {
     StatusSnapshots,
     ProjectCharters,
     ProgrammeOverviewStates,
+    ActionComments,
+    JournalSeriesDefs,
   ],
   daos: [
     ProjectDao,
@@ -856,6 +919,8 @@ class ProjectStageProgresses extends Table {
     StatusSnapshotDao,
     ProjectCharterDao,
     ProgrammeOverviewStateDao,
+    ActionCommentsDao,
+    JournalSeriesDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -863,7 +928,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.memory() : super(openMemoryConnection());
 
   @override
-  int get schemaVersion => 16;
+  int get schemaVersion => 25;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -965,6 +1030,63 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(projectCharters);
             await m.createTable(programmeOverviewStates);
           }
+          if (from < 17) {
+            await m.addColumn(timelineActivities, timelineActivities.contributors);
+            await m.addColumn(timelineActivities, timelineActivities.contributorIds);
+          }
+          if (from < 18) {
+            await m.addColumn(projectActions, projectActions.planActivityId);
+          }
+          if (from < 19) {
+            // Rich-snapshot fields. All nullable; old snapshots stay valid.
+            await m.addColumn(statusSnapshots, statusSnapshots.narrative);
+            await m.addColumn(
+                statusSnapshots, statusSnapshots.workstreamHealthJson);
+            await m.addColumn(statusSnapshots, statusSnapshots.topRisksJson);
+            await m.addColumn(
+                statusSnapshots, statusSnapshots.upcomingMilestonesJson);
+            await m.addColumn(
+                statusSnapshots, statusSnapshots.pendingDecisionsJson);
+            await m.addColumn(
+                statusSnapshots, statusSnapshots.playbookStageJson);
+          }
+          if (from < 20) {
+            await m.addColumn(risks, risks.likelihoodRationale);
+            await m.addColumn(risks, risks.impactRationale);
+          }
+          if (from < 21) {
+            await m.addColumn(projectActions, projectActions.parentActionId);
+          }
+          if (from < 22) {
+            await m.createTable(actionComments);
+          }
+          if (from < 23) {
+            await m.addColumn(journalEntries, journalEntries.isFavourite);
+          }
+          if (from < 24) {
+            // Series feature was rolled back briefly. Drop the seriesId
+            // column and journal_series_defs table that were introduced in
+            // v23. Guarded because a fresh DB at v24 never created either.
+            try {
+              await customStatement(
+                  'ALTER TABLE journal_entries DROP COLUMN series_id');
+            } catch (_) {}
+            try {
+              await customStatement(
+                  'DROP TABLE IF EXISTS journal_series_defs');
+            } catch (_) {}
+          }
+          if (from < 25) {
+            // Series feature re-instated. Re-add the column + table that
+            // v24 dropped. Guarded so a DB that never ran v23/v24 (fresh
+            // install at v25) still works via createAll().
+            try {
+              await m.addColumn(journalEntries, journalEntries.seriesId);
+            } catch (_) {}
+            try {
+              await m.createTable(journalSeriesDefs);
+            } catch (_) {}
+          }
         },
       );
 
@@ -988,10 +1110,13 @@ class AppDatabase extends _$AppDatabase {
             .go();
       }
       await (delete(journalEntries)..where((t) => t.projectId.equals(projectId))).go();
+      await (delete(journalSeriesDefs)..where((t) => t.projectId.equals(projectId))).go();
       await (delete(contextEntries)..where((t) => t.projectId.equals(projectId))).go();
       await (delete(glossaryEntries)..where((t) => t.projectId.equals(projectId))).go();
       await (delete(inboxItems)..where((t) => t.projectId.equals(projectId))).go();
       await (delete(actionCategories)..where((t) => t.projectId.equals(projectId))).go();
+      // Action comments reference actions; delete them first.
+      await actionCommentsDao.deleteAllForProject(projectId);
       await (delete(projectActions)..where((t) => t.projectId.equals(projectId))).go();
       await (delete(documents)..where((t) => t.projectId.equals(projectId))).go();
       // Profiles reference persons — delete profiles first

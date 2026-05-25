@@ -6,6 +6,10 @@ Built with Flutter for Linux, macOS, and Windows.
 
 ![Keel screenshot](assets/screenshot-home.png)
 
+Keel demo:
+
+[![Keel demo](https://img.youtube.com/vi/_0Fi8mchGss/maxresdefault.jpg)](https://www.youtube.com/watch?v=_0Fi8mchGss)
+
 ---
 
 ## Features

@@ -19,6 +19,7 @@ import (
 	"github.com/keel/server/internal/inbox"
 	"github.com/keel/server/internal/middleware"
 	"github.com/keel/server/internal/sync"
+	"github.com/keel/server/internal/version"
 )
 
 //go:embed migrations/*.sql
@@ -81,24 +82,17 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
-	// Version endpoint — no auth required
-	// Set KEEL_LATEST_VERSION and KEEL_RELEASE_NOTES via fly secrets to update
-	// without redeploying. Download URLs point to GitHub Releases.
+	// Version endpoint — no auth required.
+	// Source of truth is GitHub Releases (paulhmurray/keel). Cached 10 min.
+	// Falls back to KEEL_LATEST_VERSION / KEEL_RELEASE_NOTES env vars if
+	// GitHub is unreachable on a cold start.
+	versionService := version.NewService()
 	router.GET("/version/latest", func(c *gin.Context) {
-		version := os.Getenv("KEEL_LATEST_VERSION")
-		if version == "" {
-			version = "1.0.0"
-		}
-		releaseNotes := os.Getenv("KEEL_RELEASE_NOTES")
-		baseURL := "https://github.com/paulhmurray/keel/releases/download/v" + version
+		info := versionService.Latest(c.Request.Context())
 		c.JSON(http.StatusOK, gin.H{
-			"version":       version,
-			"release_notes": releaseNotes,
-			"download_url": gin.H{
-				"linux":   baseURL + "/keel-linux.tar.gz",
-				"windows": baseURL + "/keel-windows-setup.exe",
-				"macos":   baseURL + "/keel-macos.dmg",
-			},
+			"version":         info.Version,
+			"release_notes":   info.ReleaseNotes,
+			"download_url":    version.DownloadURLs(info.Version),
 			"minimum_version": "1.0.0",
 			"critical":        false,
 		})

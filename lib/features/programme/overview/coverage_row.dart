@@ -145,8 +145,10 @@ class _PlaybookGauge extends StatelessWidget {
               label: 'PLAYBOOK',
               result: CoverageResult(
                 filled: done,
+                defined: done,
                 applicable: total,
                 percentage: pct,
+                definedPercentage: pct,
                 missingRoles: [],
               ),
               playbookStageInfo: inProgress != null
@@ -217,26 +219,20 @@ class _CoverageGauge extends StatelessWidget {
                     fontStyle: FontStyle.italic),
               )
             else ...[
-              // Progress bar
-              ClipRRect(
-                borderRadius: BorderRadius.circular(2),
-                child: LinearProgressIndicator(
-                  value: r.percentage,
-                  minHeight: 6,
-                  backgroundColor: KColors.border2,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    r.percentage >= 0.8
-                        ? const Color(0xFF22c55e)
-                        : r.percentage >= 0.5
-                            ? KColors.amber
-                            : KColors.red,
-                  ),
-                ),
+              // Two-tone progress bar:
+              //   - track (KColors.border2) = applicable but untouched
+              //   - light segment           = defined (custom-added or engaged)
+              //   - solid segment           = assigned (person on the role)
+              _TwoTonePercentBar(
+                assignedFraction: r.percentage,
+                definedFraction: r.definedPercentage,
               ),
               const SizedBox(height: 6),
               Text(
-                '${(r.percentage * 100).round()}%'
-                '  (${r.filled}/${r.applicable})',
+                playbookStageInfo != null
+                    ? '${(r.percentage * 100).round()}%'
+                        '  (${r.filled}/${r.applicable})'
+                    : '${r.filled} of ${r.applicable} assigned · ${r.defined} defined',
                 style: const TextStyle(
                     fontSize: 12, color: KColors.text),
               ),
@@ -258,6 +254,56 @@ class _CoverageGauge extends StatelessWidget {
                 ),
               ],
             ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Two-tone percent bar
+// ---------------------------------------------------------------------------
+
+class _TwoTonePercentBar extends StatelessWidget {
+  final double assignedFraction;
+  final double definedFraction;
+
+  const _TwoTonePercentBar({
+    required this.assignedFraction,
+    required this.definedFraction,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final assigned = assignedFraction.clamp(0.0, 1.0);
+    final defined = definedFraction.clamp(0.0, 1.0);
+    final ragColor = assigned >= 0.8
+        ? const Color(0xFF22c55e)
+        : assigned >= 0.5
+            ? KColors.amber
+            : KColors.red;
+    final definedColor = ragColor.withValues(alpha: 0.32);
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(2),
+      child: SizedBox(
+        height: 6,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Container(color: KColors.border2),
+            ),
+            FractionallySizedBox(
+              widthFactor: defined,
+              alignment: Alignment.centerLeft,
+              child: Container(color: definedColor),
+            ),
+            FractionallySizedBox(
+              widthFactor: assigned,
+              alignment: Alignment.centerLeft,
+              child: Container(color: ragColor),
+            ),
           ],
         ),
       ),

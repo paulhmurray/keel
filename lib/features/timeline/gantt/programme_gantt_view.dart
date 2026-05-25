@@ -11,17 +11,19 @@ import 'package:uuid/uuid.dart';
 
 import '../../../core/database/database.dart';
 import '../../../providers/project_provider.dart';
+import '../../../providers/settings_provider.dart';
 import '../../../shared/theme/keel_colors.dart';
 import '../../../shared/widgets/date_picker_field.dart';
 import '../../../shared/widgets/person_picker_field.dart';
+import '../../actions/action_form.dart';
 import 'milestone_tracker_view.dart';
 
 // ─── Layout constants ─────────────────────────────────────────────────────────
-const _kNameW = 240.0;
+const _kNameW = 350.0;
 const _kCellW = 56.0;
 const _kHeaderH = 40.0;
-const _kWpRowH = 32.0;
-const _kRowH = 32.0;
+const _kWpRowH = 38.0;
+const _kRowH = 38.0;
 
 // ─── WP theme colours ─────────────────────────────────────────────────────────
 Color _wpColor(String theme) => switch (theme) {
@@ -40,7 +42,7 @@ const _kThemeLabels = {
   'wp2': 'Emerald',
   'wp3': 'Purple',
   'wp4': 'Amber',
-  'mpower': 'Cyan (M-POWER)',
+  'mpower': 'Cyan',
   'governance': 'Grey (Governance)',
   'custom': 'Custom',
 };
@@ -187,6 +189,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
   List<String> _months = [];
   List<_GRow> _rows = [];
   bool _loading = true;
+  Map<String, ({int count, String urgency})> _actionSummary = {};
 
   AppDatabase get _db => context.read<AppDatabase>();
 
@@ -229,10 +232,11 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     final dao = _db.programmeGanttDao;
     final pid = widget.projectId;
 
-    final header  = await dao.getHeader(pid);
-    final wps     = await dao.getWorkPackages(pid);
-    final allActs = await dao.getActivitiesForProject(pid);
-    final deps    = await dao.getDependencies(pid);
+    final header        = await dao.getHeader(pid);
+    final wps           = await dao.getWorkPackages(pid);
+    final allActs       = await dao.getActivitiesForProject(pid);
+    final deps          = await dao.getDependencies(pid);
+    final actionSummary = await _db.actionsDao.getLinkedActionSummary(pid);
 
     final actsByWp = <String, List<TimelineActivity>>{};
     for (final a in allActs) {
@@ -264,8 +268,9 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
         _actMap  = actMap;
         _deps    = deps;
         _months  = months;
-        _rows    = rows;
-        _loading = false;
+        _rows          = rows;
+        _loading       = false;
+        _actionSummary = actionSummary;
       });
     }
   }
@@ -990,10 +995,14 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                                 color: KColors.text, fontSize: 11),
                             overflow: TextOverflow.ellipsis),
                         if (act.owner != null && act.owner!.isNotEmpty)
-                          Text(act.owner!,
-                              style: const TextStyle(
-                                  color: KColors.textDim, fontSize: 9),
-                              overflow: TextOverflow.ellipsis),
+                          Text(
+                            act.contributors != null
+                                ? '${act.owner!} +${(jsonDecode(act.contributors!) as List).length}'
+                                : act.owner!,
+                            style: const TextStyle(
+                                color: KColors.textDim, fontSize: 9),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                       ],
                     ),
                   ),
@@ -1013,7 +1022,25 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
             padding: EdgeInsets.only(right: 4),
             child: Icon(Icons.priority_high, size: 10, color: KColors.red),
           ),
+        // Actions badge
+        if (_actionSummary.containsKey(act.id))
+          _ActionsBadge(
+            summary: _actionSummary[act.id]!,
+            onTap: () => _showActionsPopover(context, act),
+          ),
       ]),
+    );
+  }
+
+  void _showActionsPopover(BuildContext context, TimelineActivity act) {
+    showDialog(
+      context: context,
+      builder: (_) => _ActionsPopoverDialog(
+        activity: act,
+        projectId: widget.projectId,
+        db: _db,
+        onActionSaved: _load,
+      ),
     );
   }
 
@@ -1071,13 +1098,14 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
       height: _kRowH,
       child: Row(
         children: List.generate(
-            cols.length, (ci) => _buildCell(row, cols[ci])),
+            cols.length, (ci) => _buildCell(row, cols[ci], cols, ci)),
       ),
     );
   }
 
   Widget _buildCell(_ActRow row,
-      ({String label, int start, int end}) col) {
+      ({String label, int start, int end}) col,
+      [List<({String label, int start, int end})>? cols, int ci = 0]) {
     final act = row.act;
     final c   = _wpColor(row.wp.colourTheme);
 
@@ -1096,6 +1124,21 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
             start <= col.end && end >= col.start);
 
     final isFirst = isActive && start >= col.start;
+
+    // Calculate how many cells the bar spans from this (first) cell onward,
+    // so we can size the label to fill the full bar width.
+    double barLabelWidth() {
+      if (cols == null || end == null) return _cellW;
+      int span = 0;
+      for (int i = ci; i < cols.length; i++) {
+        if (cols[i].start <= end && cols[i].end >= col.start) {
+          span++;
+        } else if (cols[i].start > end) {
+          break;
+        }
+      }
+      return (span.clamp(1, cols.length)) * _cellW;
+    }
 
     Color? bg;
     Widget child = const SizedBox.shrink();
@@ -1133,39 +1176,51 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
         case 'ongoing':
           bg = c.withValues(alpha: 0.14);
           if (isFirst) {
-            child = Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 3),
-              child: Text(act.cellLabel ?? act.name,
-                  style: TextStyle(
-                      color: c, fontSize: 8, fontWeight: FontWeight.w500),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1),
+            child = OverflowBox(
+              alignment: Alignment.centerLeft,
+              maxWidth: barLabelWidth(),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 3),
+                child: Text(act.cellLabel ?? act.name,
+                    style: TextStyle(
+                        color: c, fontSize: 8, fontWeight: FontWeight.w500),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1),
+              ),
             );
           }
 
         case 'dependency_marker':
           bg = const Color(0xFF8B5CF6).withValues(alpha: 0.22);
           if (isFirst && act.cellLabel != null) {
-            child = Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 3),
-              child: Text(act.cellLabel!,
-                  style: const TextStyle(
-                      color: Color(0xFF8B5CF6), fontSize: 8),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1),
+            child = OverflowBox(
+              alignment: Alignment.centerLeft,
+              maxWidth: barLabelWidth(),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 3),
+                child: Text(act.cellLabel!,
+                    style: const TextStyle(
+                        color: Color(0xFF8B5CF6), fontSize: 8),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1),
+              ),
             );
           }
 
         default: // 'activity'
           bg = c.withValues(alpha: 0.28);
           if (isFirst) {
-            child = Padding(
-              padding: const EdgeInsets.only(left: 4),
-              child: Text(act.cellLabel ?? act.name,
-                  style: TextStyle(
-                      color: c, fontSize: 8, fontWeight: FontWeight.w600),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1),
+            child = OverflowBox(
+              alignment: Alignment.centerLeft,
+              maxWidth: barLabelWidth(),
+              child: Padding(
+                padding: const EdgeInsets.only(left: 4),
+                child: Text(act.cellLabel ?? act.name,
+                    style: TextStyle(
+                        color: c, fontSize: 8, fontWeight: FontWeight.w600),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1),
+              ),
             );
           }
       }
@@ -1736,6 +1791,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
   bool     _saving     = false;
   String?  _ownerId;
   List<Person> _persons = [];
+  List<_Contributor> _contributors = [];
 
   bool get _isEdit => widget.activity != null;
   bool get _isSinglePoint =>
@@ -1755,6 +1811,17 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
     _endMonth   = a?.endMonth ?? widget.initialEndMonth;
     _isCritical = a?.isCritical ?? false;
     _ownerId    = a?.ownerId;
+    if (a?.contributors != null) {
+      final names = jsonDecode(a!.contributors!) as List;
+      final ids   = a.contributorIds != null
+          ? jsonDecode(a.contributorIds!) as List
+          : const [];
+      _contributors = List.generate(
+        names.length,
+        (i) => (name: names[i] as String,
+                 id: i < ids.length ? ids[i] as String? : null),
+      );
+    }
     _ownerCtrl.addListener(_resolveOwnerId);
     _loadPersons();
   }
@@ -1813,6 +1880,10 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
             ? null : _labelCtrl.text.trim()),
         notes:        Value(_notesCtrl.text.trim().isEmpty
             ? null : _notesCtrl.text.trim()),
+        contributors: Value(_contributors.isEmpty ? null
+            : jsonEncode(_contributors.map((c) => c.name).toList())),
+        contributorIds: Value(_contributors.isEmpty ? null
+            : jsonEncode(_contributors.map((c) => c.id).toList())),
         sortOrder:    Value(widget.sortOrder),
         updatedAt:    Value(now),
       ),
@@ -1956,6 +2027,16 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                   onPersonCreated: _loadPersons,
                 ),
                 const SizedBox(height: 10),
+                _MultiPersonPickerField(
+                  selected: _contributors,
+                  persons: _persons,
+                  db: widget.db,
+                  projectId: widget.projectId,
+                  onPersonsReloaded: _loadPersons,
+                  onChanged: (updated) =>
+                      setState(() => _contributors = updated),
+                ),
+                const SizedBox(height: 10),
                 DropdownButtonFormField<String>(
                   value: _status,
                   decoration: const InputDecoration(
@@ -2025,6 +2106,512 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ─── Actions badge ────────────────────────────────────────────────────────────
+
+class _ActionsBadge extends StatelessWidget {
+  final ({int count, String urgency}) summary;
+  final VoidCallback onTap;
+
+  const _ActionsBadge({required this.summary, required this.onTap});
+
+  Color get _color => switch (summary.urgency) {
+    'overdue' => KColors.red,
+    'soon'    => KColors.amber,
+    _         => KColors.phosphor,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Tooltip(
+        message: '${summary.count} linked action${summary.count == 1 ? '' : 's'}',
+        child: Container(
+          margin: const EdgeInsets.only(right: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+          decoration: BoxDecoration(
+            color: _color.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: _color.withValues(alpha: 0.5)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.bolt, size: 9, color: _color),
+              const SizedBox(width: 2),
+              Text('${summary.count}',
+                  style: TextStyle(
+                      color: _color,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Actions popover dialog ───────────────────────────────────────────────────
+
+class _ActionsPopoverDialog extends StatefulWidget {
+  final TimelineActivity activity;
+  final String projectId;
+  final AppDatabase db;
+  final VoidCallback onActionSaved;
+
+  const _ActionsPopoverDialog({
+    required this.activity,
+    required this.projectId,
+    required this.db,
+    required this.onActionSaved,
+  });
+
+  @override
+  State<_ActionsPopoverDialog> createState() => _ActionsPopoverDialogState();
+}
+
+class _ActionsPopoverDialogState extends State<_ActionsPopoverDialog> {
+  List<ProjectAction> _actions = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final actions = await widget.db.actionsDao.getActionsForActivity(widget.activity.id);
+    if (mounted) setState(() { _actions = actions; _loading = false; });
+  }
+
+  Color _statusColor(ProjectAction a) {
+    final today = DateTime.now().toIso8601String().substring(0, 10);
+    if (a.status == 'closed') return KColors.textMuted;
+    if (a.dueDate != null && a.dueDate!.compareTo(today) < 0) return KColors.red;
+    return KColors.phosphor;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: KColors.surface,
+      title: Row(children: [
+        const Icon(Icons.bolt, size: 14, color: KColors.amber),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            'Actions – ${widget.activity.name}',
+            style: const TextStyle(color: KColors.text, fontSize: 13),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ]),
+      content: SizedBox(
+        width: 420,
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (_actions.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: Text('No actions linked to this activity yet.',
+                          style: TextStyle(color: KColors.textDim, fontSize: 12)),
+                    )
+                  else
+                    ..._actions.map((a) => _ActionRow(
+                          action: a,
+                          statusColor: _statusColor(a),
+                          onTap: () async {
+                            await showDialog(
+                              context: context,
+                              builder: (_) => ActionFormDialog(
+                                projectId: widget.projectId,
+                                db: widget.db,
+                                action: a,
+                                startInViewMode: true,
+                              ),
+                            );
+                            await _load();
+                            widget.onActionSaved();
+                          },
+                        )),
+                ],
+              ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Close',
+              style: TextStyle(color: KColors.textDim, fontSize: 12)),
+        ),
+        ElevatedButton.icon(
+          icon: const Icon(Icons.add, size: 13),
+          label: const Text('Add Action', style: TextStyle(fontSize: 12)),
+          onPressed: () async {
+            await showDialog(
+              context: context,
+              builder: (_) => ActionFormDialog(
+                projectId: widget.projectId,
+                db: widget.db,
+                preLinkedActivityId: widget.activity.id,
+              ),
+            );
+            await _load();
+            widget.onActionSaved();
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _ActionRow extends StatelessWidget {
+  final ProjectAction action;
+  final Color statusColor;
+  final VoidCallback onTap;
+
+  const _ActionRow({
+    required this.action,
+    required this.statusColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(4),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+        child: Row(
+          children: [
+            Icon(Icons.circle, size: 7, color: statusColor),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(action.description,
+                  style: const TextStyle(color: KColors.text, fontSize: 12),
+                  overflow: TextOverflow.ellipsis),
+            ),
+            if (action.owner != null) ...[
+              const SizedBox(width: 6),
+              Text(action.owner!,
+                  style: const TextStyle(
+                      color: KColors.textDim, fontSize: 10)),
+            ],
+            if (action.dueDate != null) ...[
+              const SizedBox(width: 6),
+              Text(action.dueDate!.substring(5), // MM-DD
+                  style: TextStyle(color: statusColor, fontSize: 10)),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Multi-person contributor picker ─────────────────────────────────────────
+
+typedef _Contributor = ({String name, String? id});
+
+class _MultiPersonPickerField extends StatefulWidget {
+  final List<_Contributor> selected;
+  final List<Person> persons;
+  final AppDatabase db;
+  final String projectId;
+  final VoidCallback onPersonsReloaded;
+  final ValueChanged<List<_Contributor>> onChanged;
+
+  const _MultiPersonPickerField({
+    required this.selected,
+    required this.persons,
+    required this.db,
+    required this.projectId,
+    required this.onPersonsReloaded,
+    required this.onChanged,
+  });
+
+  @override
+  State<_MultiPersonPickerField> createState() =>
+      _MultiPersonPickerFieldState();
+}
+
+class _MultiPersonPickerFieldState extends State<_MultiPersonPickerField> {
+  final _ctrl = TextEditingController();
+  final _focusNode = FocusNode();
+  List<String> _lastOptions = [];
+  String _myName = '';
+
+  static const _kAddSentinel = '\x00__add__';
+  static const _kMeSentinel  = '\x00__me__';
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  List<String> _optionsFor(String query, String myName) {
+    final q = query.toLowerCase().trim();
+    final opts = <String>[];
+    final selectedNames =
+        widget.selected.map((c) => c.name.toLowerCase()).toSet();
+
+    if (myName.isNotEmpty &&
+        !selectedNames.contains(myName.toLowerCase()) &&
+        (q.isEmpty ||
+            myName.toLowerCase().contains(q) ||
+            'me'.contains(q))) {
+      opts.add(_kMeSentinel);
+    }
+
+    opts.addAll(widget.persons
+        .where((p) =>
+            !selectedNames.contains(p.name.toLowerCase()) &&
+            p.name.toLowerCase().contains(q))
+        .map((p) => p.name)
+        .take(6));
+
+    if (q.isNotEmpty) opts.add(_kAddSentinel);
+    return opts;
+  }
+
+  void _add(String name, String? id) {
+    if (name.isEmpty) return;
+    final already = widget.selected.any(
+        (c) => c.name.toLowerCase() == name.toLowerCase());
+    if (!already) {
+      widget.onChanged([...widget.selected, (name: name, id: id)]);
+    }
+    _ctrl.clear();
+    _focusNode.unfocus();
+  }
+
+  void _remove(int index) {
+    final updated = [...widget.selected]..removeAt(index);
+    widget.onChanged(updated);
+  }
+
+  Future<void> _handleAddNew(String query) async {
+    final result = await showDialog<NewPersonResult>(
+      context: context,
+      builder: (_) => AddPersonDialog(
+        name: query,
+        db: widget.db,
+        projectId: widget.projectId,
+      ),
+    );
+    if (result != null && mounted) {
+      final id = const Uuid().v4();
+      final now = DateTime.now();
+      await widget.db.peopleDao.upsertPerson(PersonsCompanion(
+        id: Value(id),
+        projectId: Value(widget.projectId),
+        name: Value(result.name),
+        role: Value(result.role),
+        organisation: Value(result.organisation),
+        personType: Value(result.personType),
+        createdAt: Value(now),
+        updatedAt: Value(now),
+      ));
+      widget.onPersonsReloaded();
+      _add(result.name, id);
+    }
+  }
+
+  String? _idForName(String name) {
+    final lower = name.toLowerCase();
+    return widget.persons
+        .cast<Person?>()
+        .firstWhere((p) => p!.name.toLowerCase() == lower, orElse: () => null)
+        ?.id;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _myName = context.read<SettingsProvider>().settings.myName;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('CONTRIBUTORS',
+            style: TextStyle(
+                color: KColors.textMuted,
+                fontSize: 9,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.5)),
+        const SizedBox(height: 4),
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: KColors.border2),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (widget.selected.isNotEmpty) ...[
+                Wrap(
+                  spacing: 4,
+                  runSpacing: 4,
+                  children: widget.selected.asMap().entries.map((e) {
+                    return Chip(
+                      label: Text(e.value.name,
+                          style: const TextStyle(
+                              color: KColors.text, fontSize: 11)),
+                      backgroundColor: KColors.surface2,
+                      side: const BorderSide(color: KColors.border2),
+                      deleteIcon: const Icon(Icons.close,
+                          size: 12, color: KColors.textDim),
+                      onDeleted: () => _remove(e.key),
+                      padding: EdgeInsets.zero,
+                      labelPadding:
+                          const EdgeInsets.symmetric(horizontal: 6),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 4),
+              ],
+              RawAutocomplete<String>(
+                textEditingController: _ctrl,
+                focusNode: _focusNode,
+                optionsBuilder: (v) {
+                  _lastOptions = _optionsFor(v.text, _myName);
+                  return _lastOptions;
+                },
+                displayStringForOption: (opt) {
+                  if (opt == _kMeSentinel) return _myName;
+                  if (opt == _kAddSentinel) return _ctrl.text;
+                  return opt;
+                },
+                fieldViewBuilder: (ctx, ctrl, fn, onSubmitted) =>
+                    TextField(
+                  controller: ctrl,
+                  focusNode: fn,
+                  style: const TextStyle(
+                      color: KColors.text, fontSize: 12),
+                  decoration: const InputDecoration(
+                    hintText: 'Add contributor…',
+                    hintStyle: TextStyle(
+                        color: KColors.textMuted, fontSize: 11),
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding:
+                        EdgeInsets.symmetric(vertical: 4),
+                  ),
+                  onSubmitted: (_) {
+                    final first = _lastOptions.firstWhere(
+                      (o) => o != _kAddSentinel,
+                      orElse: () => '',
+                    );
+                    if (first == _kMeSentinel) {
+                      _add(_myName, _idForName(_myName));
+                    } else if (first.isNotEmpty) {
+                      _add(first, _idForName(first));
+                    } else {
+                      final typed = _ctrl.text.trim();
+                      if (typed.isNotEmpty) _add(typed, _idForName(typed));
+                    }
+                  },
+                ),
+                optionsViewBuilder: (ctx, onSelected, options) =>
+                    Align(
+                  alignment: Alignment.topLeft,
+                  child: Material(
+                    color: KColors.surface2,
+                    elevation: 6,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                      side: const BorderSide(color: KColors.border2),
+                    ),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                          maxHeight: 200, maxWidth: 260),
+                      child: ListView(
+                        shrinkWrap: true,
+                        padding: EdgeInsets.zero,
+                        children: options.map((opt) {
+                          if (opt == _kMeSentinel) {
+                            return ListTile(
+                              dense: true,
+                              visualDensity: VisualDensity.compact,
+                              leading: const Icon(
+                                  Icons.person_pin_outlined,
+                                  size: 14,
+                                  color: KColors.phosphor),
+                              title: Text('Me — $_myName',
+                                  style: const TextStyle(
+                                      color: KColors.phosphor,
+                                      fontSize: 12)),
+                              onTap: () {
+                                onSelected(opt);
+                                _add(_myName, _idForName(_myName));
+                              },
+                            );
+                          }
+                          if (opt == _kAddSentinel) {
+                            final q = _ctrl.text.trim();
+                            return ListTile(
+                              dense: true,
+                              visualDensity: VisualDensity.compact,
+                              leading: const Icon(
+                                  Icons.person_add_outlined,
+                                  size: 14,
+                                  color: KColors.phosphor),
+                              title: Text('Add "$q" as new person',
+                                  style: const TextStyle(
+                                      color: KColors.phosphor,
+                                      fontSize: 12)),
+                              onTap: () {
+                                onSelected(opt);
+                                _handleAddNew(q);
+                              },
+                            );
+                          }
+                          return ListTile(
+                            dense: true,
+                            visualDensity: VisualDensity.compact,
+                            leading: const Icon(Icons.person_outline,
+                                size: 14, color: KColors.textDim),
+                            title: Text(opt,
+                                style: const TextStyle(
+                                    color: KColors.text,
+                                    fontSize: 12)),
+                            onTap: () {
+                              onSelected(opt);
+                              _add(opt, _idForName(opt));
+                            },
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                ),
+                onSelected: (opt) {
+                  if (opt == _kMeSentinel) {
+                    _add(_myName, _idForName(_myName));
+                  } else if (opt != _kAddSentinel) {
+                    _add(opt, _idForName(opt));
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

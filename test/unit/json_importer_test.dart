@@ -337,5 +337,123 @@ void main() {
       expect(decisions.length, 1);
       expect(decisions.first.ref, 'DC99');
     });
+
+    test('import without action_comments key (older export) is graceful',
+        () async {
+      // Pre-schema-22 export: no action_comments key at all. Should not
+      // throw and should leave the comments table untouched.
+      final now = DateTime(2025, 1, 1).toIso8601String();
+      final data = _baseExport(projectId: 'p-graceful');
+      data['actions'] = [
+        {
+          'id': 'a-graceful',
+          'ref': 'AC01',
+          'description': 'Legacy action',
+          'owner': null,
+          'due_date': null,
+          'status': 'open',
+          'priority': 'medium',
+          'source': 'manual',
+          'source_note': null,
+          'created_at': now,
+          'updated_at': now,
+        },
+      ];
+      final result =
+          await JsonImporter.importFromString(jsonEncode(data), db);
+      expect(result.actions, 1);
+      final comments =
+          await db.actionCommentsDao.getForAction('a-graceful');
+      expect(comments, isEmpty);
+    });
+
+    test('action_comments are persisted including the completion flag',
+        () async {
+      final now = DateTime(2025, 1, 1).toIso8601String();
+      final data = _baseExport(projectId: 'p-comments');
+      data['actions'] = [
+        {
+          'id': 'a-c',
+          'ref': 'AC02',
+          'description': 'Migrate users',
+          'owner': null,
+          'due_date': null,
+          'status': 'closed',
+          'priority': 'medium',
+          'source': 'manual',
+          'source_note': null,
+          'created_at': now,
+          'updated_at': now,
+        },
+      ];
+      data['action_comments'] = [
+        {
+          'id': 'c-1',
+          'action_id': 'a-c',
+          'content': 'Reason it was completed.',
+          'is_completion': true,
+          'author_name': 'Paul',
+          'created_at': now,
+          'updated_at': now,
+        },
+        {
+          'id': 'c-2',
+          'action_id': 'a-c',
+          'content': 'Just a regular note.',
+          'is_completion': false,
+          'author_name': null,
+          'created_at': now,
+          'updated_at': now,
+        },
+      ];
+      await JsonImporter.importFromString(jsonEncode(data), db);
+      final comments = await db.actionCommentsDao.getForAction('a-c');
+      expect(comments.length, 2);
+      final completion = comments.firstWhere((c) => c.isCompletion);
+      expect(completion.content, 'Reason it was completed.');
+      expect(completion.authorName, 'Paul');
+      final regular = comments.firstWhere((c) => !c.isCompletion);
+      expect(regular.content, 'Just a regular note.');
+    });
+
+    test('comments are cleared with their parent action on re-import',
+        () async {
+      final now = DateTime(2025, 1, 1).toIso8601String();
+      final data = _baseExport(projectId: 'p-reimp');
+      data['actions'] = [
+        {
+          'id': 'a-x',
+          'ref': 'AC03',
+          'description': 'Initial',
+          'owner': null,
+          'due_date': null,
+          'status': 'closed',
+          'priority': 'medium',
+          'source': 'manual',
+          'source_note': null,
+          'created_at': now,
+          'updated_at': now,
+        },
+      ];
+      data['action_comments'] = [
+        {
+          'id': 'c-stale',
+          'action_id': 'a-x',
+          'content': 'Stale',
+          'is_completion': false,
+          'created_at': now,
+          'updated_at': now,
+        },
+      ];
+      await JsonImporter.importFromString(jsonEncode(data), db);
+      expect((await db.actionCommentsDao.getForAction('a-x')).length, 1);
+
+      // Re-import the same project with NO comments in the payload.
+      // _clearSyncedTables should drop the prior comment so we don't end up
+      // with an orphan.
+      (data['action_comments'] as List).clear();
+      await JsonImporter.importFromString(jsonEncode(data), db);
+      expect((await db.actionCommentsDao.getForAction('a-x')).length, 0);
+    });
   });
 }

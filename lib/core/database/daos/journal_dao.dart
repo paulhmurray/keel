@@ -69,4 +69,34 @@ class JournalDao extends DatabaseAccessor<AppDatabase> with _$JournalDaoMixin {
         .map((row) => row.read(journalEntries.id.count()) ?? 0)
         .watchSingle();
   }
+
+  Stream<List<JournalEntry>> watchFavouritesForProject(String projectId) {
+    return (select(journalEntries)
+          ..where((t) =>
+              t.projectId.equals(projectId) & t.isFavourite.equals(true))
+          ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
+        .watch();
+  }
+
+  Stream<List<JournalEntry>> watchEntriesForSeries(String seriesId) {
+    return (select(journalEntries)
+          ..where((t) => t.seriesId.equals(seriesId))
+          ..orderBy([(t) => OrderingTerm.desc(t.entryDate)]))
+        .watch();
+  }
+
+  Future<List<JournalEntry>> getEntriesForSeries(String seriesId) {
+    return (select(journalEntries)
+          ..where((t) => t.seriesId.equals(seriesId))
+          ..orderBy([(t) => OrderingTerm.desc(t.entryDate)]))
+        .get();
+  }
+
+  Future<void> toggleFavourite(String entryId, bool isFavourite) {
+    return (update(journalEntries)..where((t) => t.id.equals(entryId)))
+        .write(JournalEntriesCompanion(
+      isFavourite: Value(isFavourite),
+      updatedAt: Value(DateTime.now()),
+    ));
+  }
 }

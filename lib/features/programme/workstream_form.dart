@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../shared/theme/keel_colors.dart';
+import '../../shared/widgets/person_picker_field.dart';
 import 'package:uuid/uuid.dart';
 import 'package:drift/drift.dart' show Value;
 
@@ -28,6 +29,7 @@ class _WorkstreamFormDialogState extends State<WorkstreamFormDialog> {
   late TextEditingController _leadCtrl;
   late TextEditingController _notesCtrl;
   String _status = 'green';
+  List<Person> _persons = const [];
 
   @override
   void initState() {
@@ -37,6 +39,12 @@ class _WorkstreamFormDialogState extends State<WorkstreamFormDialog> {
     _leadCtrl = TextEditingController(text: w?.lead ?? '');
     _notesCtrl = TextEditingController(text: w?.notes ?? '');
     _status = w?.status ?? 'green';
+    _loadPersons();
+  }
+
+  Future<void> _loadPersons() async {
+    final list = await widget.db.peopleDao.getPersonsForProject(widget.projectId);
+    if (mounted) setState(() => _persons = list);
   }
 
   @override
@@ -87,9 +95,13 @@ class _WorkstreamFormDialogState extends State<WorkstreamFormDialog> {
                     v == null || v.trim().isEmpty ? 'Name is required' : null,
               ),
               const SizedBox(height: 12),
-              TextFormField(
+              PersonPickerField(
                 controller: _leadCtrl,
-                decoration: const InputDecoration(labelText: 'Lead'),
+                label: 'Lead',
+                persons: _persons,
+                db: widget.db,
+                projectId: widget.projectId,
+                onPersonCreated: _loadPersons,
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(

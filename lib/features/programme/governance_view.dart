@@ -7,6 +7,8 @@ import 'package:drift/drift.dart' show Value;
 
 import '../../core/database/database.dart';
 import '../../providers/project_provider.dart';
+import '../../shared/widgets/person_picker_field.dart';
+import '../../shared/widgets/role_picker_field.dart';
 
 class GovernanceView extends StatelessWidget {
   const GovernanceView({super.key});
@@ -179,6 +181,7 @@ class _GovernanceFormDialogState extends State<_GovernanceFormDialog> {
   late TextEditingController _chairCtrl;
   late TextEditingController _roleCtrl;
   late TextEditingController _notesCtrl;
+  List<Person> _persons = const [];
 
   @override
   void initState() {
@@ -189,6 +192,12 @@ class _GovernanceFormDialogState extends State<_GovernanceFormDialog> {
     _chairCtrl = TextEditingController(text: g?.chair ?? '');
     _roleCtrl = TextEditingController(text: g?.myRole ?? '');
     _notesCtrl = TextEditingController(text: g?.notes ?? '');
+    _loadPersons();
+  }
+
+  Future<void> _loadPersons() async {
+    final list = await widget.db.peopleDao.getPersonsForProject(widget.projectId);
+    if (mounted) setState(() => _persons = list);
   }
 
   @override
@@ -253,16 +262,22 @@ class _GovernanceFormDialogState extends State<_GovernanceFormDialog> {
               Row(
                 children: [
                   Expanded(
-                    child: TextFormField(
+                    child: PersonPickerField(
                       controller: _chairCtrl,
-                      decoration: const InputDecoration(labelText: 'Chair'),
+                      label: 'Chair',
+                      persons: _persons,
+                      db: widget.db,
+                      projectId: widget.projectId,
+                      onPersonCreated: _loadPersons,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: TextFormField(
+                    child: RolePickerField(
                       controller: _roleCtrl,
-                      decoration: const InputDecoration(labelText: 'My Role'),
+                      label: 'My Role',
+                      db: widget.db,
+                      projectId: widget.projectId,
                     ),
                   ),
                 ],

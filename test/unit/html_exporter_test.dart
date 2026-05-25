@@ -28,6 +28,7 @@ void main() {
         body: 'Discussed the delivery roadmap.',
         entryDate: '2025-03-28',
         parsed: false,
+        isFavourite: false,
         createdAt: _now,
         updatedAt: _now,
       );
@@ -42,6 +43,7 @@ void main() {
         body: 'Body',
         entryDate: '2025-11-15',
         parsed: false,
+        isFavourite: false,
         createdAt: _now,
         updatedAt: _now,
       );
@@ -57,6 +59,7 @@ void main() {
         body: 'We reviewed sprint goals.',
         entryDate: '2025-03-01',
         parsed: false,
+        isFavourite: false,
         createdAt: _now,
         updatedAt: _now,
       );
@@ -71,6 +74,7 @@ void main() {
         body: 'Notes from meeting.',
         entryDate: '2025-02-01',
         parsed: false,
+        isFavourite: false,
         meetingContext: 'Weekly Governance Call',
         createdAt: _now,
         updatedAt: _now,
@@ -86,6 +90,7 @@ void main() {
         body: '<script>alert(1)</script>',
         entryDate: '2025-01-01',
         parsed: false,
+        isFavourite: false,
         createdAt: _now,
         updatedAt: _now,
       );
@@ -107,6 +112,7 @@ void main() {
             body: 'First entry',
             entryDate: '2025-01-01',
             parsed: false,
+        isFavourite: false,
             createdAt: _now,
             updatedAt: _now),
         JournalEntry(
@@ -115,6 +121,7 @@ void main() {
             body: 'Second entry',
             entryDate: '2025-01-02',
             parsed: false,
+        isFavourite: false,
             createdAt: _now,
             updatedAt: _now),
       ];

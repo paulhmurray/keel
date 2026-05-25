@@ -5,6 +5,7 @@ import 'package:drift/drift.dart' show Value;
 import '../../core/database/database.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/widgets/dropdown_field.dart';
+import '../../shared/widgets/person_picker_field.dart';
 
 class RiskFormDialog extends StatefulWidget {
   final String projectId;
@@ -31,11 +32,14 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
   late TextEditingController _mitigationCtrl;
   late TextEditingController _ownerCtrl;
   late TextEditingController _sourceNoteCtrl;
+  late TextEditingController _likelihoodWhyCtrl;
+  late TextEditingController _impactWhyCtrl;
 
   String _likelihood = 'medium';
   String _impact = 'medium';
   String _status = 'open';
   String _source = 'manual';
+  List<Person> _persons = const [];
 
   late bool _isViewing;
 
@@ -51,11 +55,20 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
     _mitigationCtrl = TextEditingController(text: r?.mitigation ?? '');
     _ownerCtrl = TextEditingController(text: r?.owner ?? '');
     _sourceNoteCtrl = TextEditingController(text: r?.sourceNote ?? '');
+    _likelihoodWhyCtrl =
+        TextEditingController(text: r?.likelihoodRationale ?? '');
+    _impactWhyCtrl = TextEditingController(text: r?.impactRationale ?? '');
     _likelihood = r?.likelihood ?? 'medium';
     _impact = r?.impact ?? 'medium';
     _status = r?.status ?? 'open';
     _source = r?.source ?? 'manual';
     _isViewing = widget.startInViewMode && r != null;
+    _loadPersons();
+  }
+
+  Future<void> _loadPersons() async {
+    final list = await widget.db.peopleDao.getPersonsForProject(widget.projectId);
+    if (mounted) setState(() => _persons = list);
   }
 
   @override
@@ -64,6 +77,8 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
     _mitigationCtrl.dispose();
     _ownerCtrl.dispose();
     _sourceNoteCtrl.dispose();
+    _likelihoodWhyCtrl.dispose();
+    _impactWhyCtrl.dispose();
     super.dispose();
   }
 
@@ -94,6 +109,12 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
         description: Value(_descCtrl.text.trim()),
         likelihood: Value(_likelihood),
         impact: Value(_impact),
+        likelihoodRationale: Value(_likelihoodWhyCtrl.text.trim().isEmpty
+            ? null
+            : _likelihoodWhyCtrl.text.trim()),
+        impactRationale: Value(_impactWhyCtrl.text.trim().isEmpty
+            ? null
+            : _impactWhyCtrl.text.trim()),
         mitigation: Value(_mitigationCtrl.text.trim().isEmpty
             ? null
             : _mitigationCtrl.text.trim()),
@@ -149,6 +170,24 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
                   Expanded(child: _viewField('Status', r.status)),
                 ],
               ),
+              if ((r.likelihoodRationale != null &&
+                      r.likelihoodRationale!.isNotEmpty) ||
+                  (r.impactRationale != null &&
+                      r.impactRationale!.isNotEmpty))
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: _viewField(
+                          'Why this likelihood', r.likelihoodRationale),
+                    ),
+                    Expanded(
+                      child:
+                          _viewField('Why this impact', r.impactRationale),
+                    ),
+                    const Spacer(),
+                  ],
+                ),
               if (r.owner != null && r.owner!.isNotEmpty)
                 _viewField('Owner', r.owner),
               if (r.mitigation != null && r.mitigation!.isNotEmpty)
@@ -233,9 +272,42 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                TextFormField(
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _likelihoodWhyCtrl,
+                        minLines: 2,
+                        maxLines: 4,
+                        decoration: const InputDecoration(
+                          labelText: 'Why this likelihood?',
+                          hintText: 'Optional — context for the rating',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _impactWhyCtrl,
+                        minLines: 2,
+                        maxLines: 4,
+                        decoration: const InputDecoration(
+                          labelText: 'Why this impact?',
+                          hintText: 'Optional — context for the rating',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                PersonPickerField(
                   controller: _ownerCtrl,
-                  decoration: const InputDecoration(labelText: 'Owner'),
+                  label: 'Owner',
+                  persons: _persons,
+                  db: widget.db,
+                  projectId: widget.projectId,
+                  onPersonCreated: _loadPersons,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(

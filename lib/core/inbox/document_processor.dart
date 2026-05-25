@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:archive/archive_io.dart';
+import 'package:pdfrx/pdfrx.dart';
 import 'package:xml/xml.dart';
 
 /// Extracts plain text content from document files.
@@ -10,6 +11,7 @@ import 'package:xml/xml.dart';
 /// - .docx       — unzip + parse word/document.xml
 /// - .pptx       — unzip + parse ppt/slides/slide*.xml
 /// - .xlsx       — unzip + parse xl/sharedStrings.xml + xl/worksheets/sheet*.xml
+/// - .pdf        — pdfrx (PDFium-backed) page-by-page text extraction
 class DocumentProcessor {
   const DocumentProcessor();
 
@@ -27,15 +29,10 @@ class DocumentProcessor {
       case 'xlsx':
         return _extractXlsx(filePath);
       case 'pdf':
-        return 'PDF text extraction is not supported in this version.\n\n'
-            'To add this document\'s content:\n'
-            '• Open the PDF in your PDF viewer\n'
-            '• Copy the text you want to capture\n'
-            '• Use the "Paste text" option when uploading, or add it as a '
-            'Context Entry manually.';
+        return _extractPdf(filePath);
       default:
         return 'Unsupported file type: .$type\n\n'
-            'Supported formats: .txt, .md, .docx, .pptx, .xlsx';
+            'Supported formats: .txt, .md, .pdf, .docx, .pptx, .xlsx';
     }
   }
 
@@ -54,6 +51,51 @@ class DocumentProcessor {
       return content;
     } catch (e) {
       return 'Error reading file: $e';
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // PDF — pdfrx / PDFium
+  // ---------------------------------------------------------------------------
+
+  Future<String> _extractPdf(String filePath) async {
+    PdfDocument? document;
+    try {
+      document = await PdfDocument.openFile(filePath);
+
+      final pageCount = document.pages.length;
+      if (pageCount == 0) return '(PDF has no pages)';
+
+      final buffer = StringBuffer();
+      for (var i = 0; i < pageCount; i++) {
+        final pageText = await document.pages[i].loadText();
+        final text = pageText.fullText.trim();
+        if (text.isEmpty) continue;
+        if (pageCount > 1) buffer.writeln('--- Page ${i + 1} ---');
+        buffer.writeln(text);
+        buffer.writeln();
+      }
+
+      final result = buffer.toString().trim();
+      if (result.isEmpty) {
+        return '(No extractable text found in PDF — the file may contain '
+            'only scanned images. To use this document with the LLM, copy '
+            'the relevant passages and use the "Paste text" option.)';
+      }
+      return result;
+    } catch (e) {
+      // Password-protected PDFs surface here too — pdfrx throws when no
+      // passwordProvider is supplied. We surface a friendly message rather
+      // than the raw exception.
+      final msg = e.toString();
+      if (msg.contains('password') || msg.contains('Password')) {
+        return 'This PDF is password-protected. Keel can\'t extract text '
+            'from it. Open it in your PDF viewer, copy the text you want, '
+            'and use the "Paste text" option.';
+      }
+      return 'Error extracting PDF: $e';
+    } finally {
+      await document?.dispose();
     }
   }
 

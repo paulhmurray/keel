@@ -7,6 +7,7 @@ import '../../core/database/database.dart';
 import '../../providers/project_provider.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/utils/date_utils.dart' as du;
+import '../../shared/widgets/mention_text_field.dart';
 import '../../shared/widgets/person_picker_field.dart';
 import 'checklist_widget.dart';
 import 'playbook_setup_view.dart';
@@ -276,11 +277,19 @@ class _PlaybookProgress extends StatefulWidget {
 
 class _PlaybookProgressState extends State<_PlaybookProgress> {
   List<Person> _persons = [];
+  List<GlossaryEntry> _glossaryEntries = [];
 
   @override
   void initState() {
     super.initState();
-    _loadPersons();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final projectId = widget.projectPlaybook.projectId;
+    final persons = await widget.db.peopleDao.getPersonsForProject(projectId);
+    final glossary = await widget.db.glossaryDao.getForProject(projectId);
+    if (mounted) setState(() { _persons = persons; _glossaryEntries = glossary; });
   }
 
   Future<void> _loadPersons() async {
@@ -364,6 +373,7 @@ class _PlaybookProgressState extends State<_PlaybookProgress> {
                           projectId: widget.projectPlaybook.projectId,
                           db: widget.db,
                           persons: _persons,
+                          glossaryEntries: _glossaryEntries,
                           onPersonCreated: _loadPersons,
                           onExpand: () => widget.onExpand(stages[i].id),
                         ),
@@ -419,6 +429,7 @@ class _StageRow extends StatefulWidget {
   final String projectId;
   final AppDatabase db;
   final List<Person> persons;
+  final List<GlossaryEntry> glossaryEntries;
   final VoidCallback onPersonCreated;
   final VoidCallback onExpand;
 
@@ -432,6 +443,7 @@ class _StageRow extends StatefulWidget {
     required this.projectId,
     required this.db,
     required this.persons,
+    required this.glossaryEntries,
     required this.onPersonCreated,
     required this.onExpand,
   });
@@ -766,13 +778,20 @@ class _StageRowState extends State<_StageRow> {
                             ),
                             const SizedBox(height: 12),
                           ],
-                          // Progress notes
-                          TextField(
+                          // Progress notes — supports @person and #glossary mentions
+                          MentionTextField(
                             controller: _notesCtrl,
-                            maxLines: 2,
+                            persons: widget.persons,
+                            glossaryEntries: widget.glossaryEntries,
+                            db: widget.db,
+                            projectId: widget.projectId,
+                            onPersonCreated: widget.onPersonCreated,
+                            maxLines: 3,
                             style: const TextStyle(color: KColors.text, fontSize: 12),
                             decoration: const InputDecoration(
                               labelText: 'Notes',
+                              hintText: '@ mention a person, # link a system…',
+                              hintStyle: TextStyle(color: KColors.textMuted, fontSize: 11),
                               labelStyle: TextStyle(color: KColors.textDim, fontSize: 11),
                               border: OutlineInputBorder(),
                               isDense: true,

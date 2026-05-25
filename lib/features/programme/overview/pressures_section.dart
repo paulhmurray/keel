@@ -70,7 +70,7 @@ class _PressuresSectionState extends State<PressuresSection> {
 
     // Priority 1: at-risk dependencies
     final deps = await db.raidDao.getDependenciesForProject(projectId);
-    for (final d in deps.where((d) => d.status == 'at_risk')) {
+    for (final d in deps.where((d) => d.status == 'blocked')) {
       int? daysBlocked;
       if (d.dueDate != null && d.dueDate!.isNotEmpty) {
         final due = DateTime.tryParse(d.dueDate!);

@@ -4,7 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../../../core/database/database.dart';
 import '../../../core/programme/scaffold_definitions.dart';
 import '../../../shared/theme/keel_colors.dart';
-import 'person_assign_picker.dart';
+import '../../../shared/widgets/person_picker_field.dart';
 import 'role_row_helpers.dart';
 
 // ─── Engagement status metadata ───────────────────────────────────────────────
@@ -203,32 +203,16 @@ class _TierGroup extends StatelessWidget {
   }
 
   Future<String?> _promptRoleName(BuildContext context) async {
-    final ctrl = TextEditingController();
-    return showDialog<String>(
+    final existing = roles
+        .map((r) => r.roleName.toLowerCase().trim())
+        .toSet();
+    final suggestions = (stakeholderSuggestions[tierType] ?? const <String>[])
+        .where((s) => !existing.contains(s.toLowerCase().trim()))
+        .toList();
+    return showRolePickerDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: KColors.surface,
-        title: const Text('Add Stakeholder Role',
-            style: TextStyle(color: KColors.text, fontSize: 14)),
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          style: const TextStyle(color: KColors.text, fontSize: 13),
-          decoration: const InputDecoration(labelText: 'Role name'),
-          onSubmitted: (v) => Navigator.of(context).pop(v.trim()),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel',
-                style: TextStyle(color: KColors.textDim, fontSize: 12)),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(ctrl.text.trim()),
-            child: const Text('Add'),
-          ),
-        ],
-      ),
+      title: 'Add Stakeholder Role',
+      suggestions: suggestions,
     );
   }
 }
@@ -377,9 +361,22 @@ class _StakeholderRoleRow extends StatelessWidget {
           const SizedBox(width: 8),
           // Actions
           if (!_filled)
-            RoleSmallButton(
-              label: 'Assign',
-              onTap: () => _assign(context),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RoleSmallButton(
+                  label: 'Assign',
+                  onTap: () => _assign(context),
+                ),
+                const SizedBox(width: 6),
+                RoleMoreMenu(
+                  onMarkNA: () => _markNA(),
+                  onRemove: () => _removePerson(),
+                  onEditDetails: () => _editDetails(context),
+                  onRename: () => _rename(context),
+                  onDelete: role.isScaffold ? null : () => _delete(context),
+                ),
+              ],
             )
           else
             Row(
@@ -394,6 +391,8 @@ class _StakeholderRoleRow extends StatelessWidget {
                   onMarkNA: () => _markNA(),
                   onRemove: () => _removePerson(),
                   onEditDetails: () => _editDetails(context),
+                  onRename: () => _rename(context),
+                  onDelete: role.isScaffold ? null : () => _delete(context),
                 ),
               ],
             ),
@@ -403,11 +402,12 @@ class _StakeholderRoleRow extends StatelessWidget {
   }
 
   Future<void> _assign(BuildContext context) async {
-    final person = await showPersonAssignPicker(
-      context,
+    final person = await showPersonPicker(
+      context: context,
       db: db,
       projectId: projectId,
-      existingPersons: persons,
+      persons: persons,
+      title: 'Assign Stakeholder',
     );
     if (person != null) {
       await db.stakeholderRoleDao.updateRole(StakeholderRolesCompanion(
@@ -439,6 +439,22 @@ class _StakeholderRoleRow extends StatelessWidget {
       context: context,
       builder: (_) => _StakeholderDetailsDialog(role: role, db: db),
     );
+  }
+
+  Future<void> _rename(BuildContext context) async {
+    final name = await promptRenameRole(context, role.roleName);
+    if (name == null || name.isEmpty || name == role.roleName) return;
+    await db.stakeholderRoleDao.updateRole(StakeholderRolesCompanion(
+      id: Value(role.id),
+      roleName: Value(name),
+      updatedAt: Value(DateTime.now()),
+    ));
+  }
+
+  Future<void> _delete(BuildContext context) async {
+    final confirmed = await confirmDeleteRole(context, role.roleName);
+    if (!confirmed) return;
+    await db.stakeholderRoleDao.deleteRole(role.id);
   }
 }
 

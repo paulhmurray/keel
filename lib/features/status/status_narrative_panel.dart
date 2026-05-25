@@ -162,33 +162,33 @@ class _StatusNarrativePanelState extends State<StatusNarrativePanel> {
           Text(_error!,
               style: const TextStyle(color: KColors.red, fontSize: 11)),
         ],
-        if (_ctrl.text.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          Container(
-            decoration: BoxDecoration(
-              color: KColors.surface,
-              border: Border.all(
-                  color:
-                      _accepted ? KColors.phosphor : KColors.border),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: TextField(
-              controller: _ctrl,
-              minLines: 5,
-              maxLines: null,
-              style: const TextStyle(
-                  color: KColors.text, fontSize: 13, height: 1.6),
-              decoration: const InputDecoration(
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.all(12),
-              ),
-              onChanged: (v) {
-                widget.onNarrativeChanged(v.isEmpty ? null : v);
-                setState(() => _accepted = false);
-              },
-            ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: KColors.surface,
+            border: Border.all(
+                color: _accepted ? KColors.phosphor : KColors.border),
+            borderRadius: BorderRadius.circular(4),
           ),
-        ],
+          child: TextField(
+            controller: _ctrl,
+            minLines: 5,
+            maxLines: null,
+            style: const TextStyle(
+                color: KColors.text, fontSize: 13, height: 1.6),
+            decoration: const InputDecoration(
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.all(12),
+              hintText: 'Write a narrative, or click "Draft narrative" to '
+                  'have AI generate one based on the current programme state.',
+              hintStyle: TextStyle(color: KColors.textDim, fontSize: 13),
+            ),
+            onChanged: (v) {
+              widget.onNarrativeChanged(v.isEmpty ? null : v);
+              setState(() => _accepted = false);
+            },
+          ),
+        ),
       ],
     );
   }

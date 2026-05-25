@@ -38,14 +38,14 @@ class _VelocityData {
         .length;
     final actionsClosedThisWeek = actions
         .where((a) =>
-            a.status == 'complete' && a.updatedAt.isAfter(cutoff))
+            a.status == 'closed' && a.updatedAt.isAfter(cutoff))
         .length;
 
     final decisions =
         await db.decisionsDao.getDecisionsForProject(projectId);
     final decisionsMadeThisWeek = decisions
         .where((d) =>
-            d.status == 'complete' && d.updatedAt.isAfter(cutoff))
+            d.status != 'pending' && d.updatedAt.isAfter(cutoff))
         .length;
     final decisionsPending =
         decisions.where((d) => d.status == 'pending').length;
@@ -55,17 +55,18 @@ class _VelocityData {
         risks.where((r) => r.createdAt.isAfter(cutoff)).length;
     final risksResolvedThisWeek = risks
         .where((r) =>
-            (r.status == 'mitigated' || r.status == 'closed') &&
+            (r.status == 'closed' || r.status == 'accepted') &&
             r.updatedAt.isAfter(cutoff))
         .length;
 
     final deps =
         await db.raidDao.getDependenciesForProject(projectId);
     final depsAtRisk =
-        deps.where((d) => d.status == 'at_risk').length;
+        deps.where((d) => d.status == 'blocked').length;
     final depsConfirmedThisWeek = deps
         .where((d) =>
-            d.status == 'confirmed' && d.updatedAt.isAfter(cutoff))
+            (d.status == 'resolved' || d.status == 'closed') &&
+            d.updatedAt.isAfter(cutoff))
         .length;
 
     return _VelocityData(

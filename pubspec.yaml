@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.1.8+12
+version: 1.1.9+13
 
 environment:
   sdk: ^3.11.1
@@ -58,6 +58,12 @@ dependencies:
   intl: ^0.20.2
   file_selector: ^1.1.0
   pdf: ^3.11.0
+  # pdfrx is pinned to the 1.x line. From 2.x onward it splits into pdfrx +
+  # pdfrx_engine, where pdfrx_engine pulls in archive ^4.0.7 (via pdfium_dart)
+  # — that conflicts with `excel`'s pinned archive ^3.6.1. The 1.x line bundles
+  # PDFium directly with no archive dep. When we replace `excel` (it's
+  # unmaintained — no release in 20+ months), bump pdfrx to the latest 2.x.
+  pdfrx: 1.3.5
   archive: ^3.6.1
   xml: ^6.5.0
   google_fonts: ^8.0.2

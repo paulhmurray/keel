@@ -6,6 +6,7 @@ import '../../core/database/database.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/widgets/dropdown_field.dart';
 import '../../shared/widgets/date_picker_field.dart';
+import '../../shared/widgets/person_picker_field.dart';
 
 class DependencyFormDialog extends StatefulWidget {
   final String projectId;
@@ -36,6 +37,7 @@ class _DependencyFormDialogState extends State<DependencyFormDialog> {
   String _dependencyType = 'inbound';
   String _status = 'open';
   String _source = 'manual';
+  List<Person> _persons = const [];
 
   late bool _isViewing;
 
@@ -55,6 +57,12 @@ class _DependencyFormDialogState extends State<DependencyFormDialog> {
     _status = d?.status ?? 'open';
     _source = d?.source ?? 'manual';
     _isViewing = widget.startInViewMode && d != null;
+    _loadPersons();
+  }
+
+  Future<void> _loadPersons() async {
+    final list = await widget.db.peopleDao.getPersonsForProject(widget.projectId);
+    if (mounted) setState(() => _persons = list);
   }
 
   @override
@@ -216,9 +224,13 @@ class _DependencyFormDialogState extends State<DependencyFormDialog> {
               Row(
                 children: [
                   Expanded(
-                    child: TextFormField(
+                    child: PersonPickerField(
                       controller: _ownerCtrl,
-                      decoration: const InputDecoration(labelText: 'Owner'),
+                      label: 'Owner',
+                      persons: _persons,
+                      db: widget.db,
+                      projectId: widget.projectId,
+                      onPersonCreated: _loadPersons,
                     ),
                   ),
                   const SizedBox(width: 12),

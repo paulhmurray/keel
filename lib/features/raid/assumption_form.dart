@@ -5,6 +5,7 @@ import 'package:drift/drift.dart' show Value;
 import '../../core/database/database.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/widgets/dropdown_field.dart';
+import '../../shared/widgets/person_picker_field.dart';
 
 class AssumptionFormDialog extends StatefulWidget {
   final String projectId;
@@ -33,6 +34,7 @@ class _AssumptionFormDialogState extends State<AssumptionFormDialog> {
 
   String _status = 'open';
   String _source = 'manual';
+  List<Person> _persons = const [];
 
   late bool _isViewing;
 
@@ -49,6 +51,12 @@ class _AssumptionFormDialogState extends State<AssumptionFormDialog> {
     _status = a?.status ?? 'open';
     _source = a?.source ?? 'manual';
     _isViewing = widget.startInViewMode && a != null;
+    _loadPersons();
+  }
+
+  Future<void> _loadPersons() async {
+    final list = await widget.db.peopleDao.getPersonsForProject(widget.projectId);
+    if (mounted) setState(() => _persons = list);
   }
 
   @override
@@ -175,9 +183,13 @@ class _AssumptionFormDialogState extends State<AssumptionFormDialog> {
                     v == null || v.trim().isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: 12),
-              TextFormField(
+              PersonPickerField(
                 controller: _ownerCtrl,
-                decoration: const InputDecoration(labelText: 'Owner'),
+                label: 'Owner',
+                persons: _persons,
+                db: widget.db,
+                projectId: widget.projectId,
+                onPersonCreated: _loadPersons,
               ),
               const SizedBox(height: 12),
               Row(

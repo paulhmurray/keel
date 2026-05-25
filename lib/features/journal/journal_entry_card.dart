@@ -8,6 +8,8 @@ class JournalEntryCard extends StatelessWidget {
   final int linkCount;
   final VoidCallback onTap;
   final VoidCallback? onDelete;
+  final VoidCallback? onToggleFavourite;
+  final String? seriesName;
 
   const JournalEntryCard({
     super.key,
@@ -15,6 +17,8 @@ class JournalEntryCard extends StatelessWidget {
     required this.linkCount,
     required this.onTap,
     this.onDelete,
+    this.onToggleFavourite,
+    this.seriesName,
   });
 
   @override
@@ -49,6 +53,26 @@ class JournalEntryCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
+                        if (onToggleFavourite != null) ...[
+                          InkWell(
+                            onTap: onToggleFavourite,
+                            borderRadius: BorderRadius.circular(2),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 2, vertical: 2),
+                              child: Icon(
+                                entry.isFavourite
+                                    ? Icons.star
+                                    : Icons.star_border,
+                                size: 14,
+                                color: entry.isFavourite
+                                    ? KColors.amber
+                                    : KColors.textMuted,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                        ],
                         Expanded(
                           child: Text(
                             title,
@@ -60,6 +84,33 @@ class JournalEntryCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        if (seriesName != null) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: KColors.blueDim,
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.repeat,
+                                    size: 9, color: KColors.blue),
+                                const SizedBox(width: 3),
+                                Text(
+                                  seriesName!,
+                                  style: const TextStyle(
+                                    color: KColors.blue,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                         if (linkCount > 0) ...[
                           const SizedBox(width: 8),
                           Container(

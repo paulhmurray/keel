@@ -46,6 +46,13 @@ jobs:
             liblzma-dev libglib2.0-dev \
             libsecret-1-dev
 
+      # pdfrx (PDF text extraction) uses symbolic links during the Windows
+      # build — that requires Developer Mode. Affects build only, not the
+      # compiled binary; end users are unaffected.
+      - name: Enable Windows Developer Mode
+        if: matrix.platform == 'windows'
+        run: reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" /t REG_DWORD /f /v "AllowDevelopmentWithoutDevLicense" /d "1"
+
       - name: Flutter pub get
         run: flutter pub get
 

@@ -7,9 +7,11 @@ import '../../providers/project_provider.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/widgets/status_chip.dart';
 import '../../shared/widgets/source_badge.dart';
+import '../../shared/utils/avatar_utils.dart';
 import '../../shared/utils/date_utils.dart' as du;
 import '../timeline/timeline_chart.dart' show parseHexColor;
 import 'action_form.dart';
+import 'action_grouping.dart';
 import 'actions_kanban.dart';
 
 class ActionsView extends StatefulWidget {
@@ -21,9 +23,13 @@ class ActionsView extends StatefulWidget {
 
 class _ActionsViewState extends State<ActionsView> {
   bool _showBoard = false;
-  String? _ownerFilter; // null = All
-  List<Person> _persons = [];
+  bool _showOldClosed = false;
+  String? _ownerFilter; // null = All; _kUnassignedKey = no owner
   String? _projectId;
+  Map<String, String> _planTagMap = {}; // activityId → "[WP] Activity name"
+  final Set<String> _collapsedParents = {};
+
+  static const int _closedHideAfterDays = 14;
 
   @override
   void didChangeDependencies() {
@@ -33,7 +39,7 @@ class _ActionsViewState extends State<ActionsView> {
       _projectId = projectId;
       if (projectId != null) {
         _loadPrefs(projectId);
-        _loadPersons(projectId);
+        _loadPlanTags(projectId);
       }
     }
   }
@@ -41,18 +47,175 @@ class _ActionsViewState extends State<ActionsView> {
   Future<void> _loadPrefs(String projectId) async {
     final prefs = await SharedPreferences.getInstance();
     final board = prefs.getBool('keel_actions_view_board_$projectId') ?? false;
-    if (mounted) setState(() => _showBoard = board);
+    final showOld =
+        prefs.getBool('keel_actions_show_old_closed_$projectId') ?? false;
+    if (mounted) {
+      setState(() {
+        _showBoard = board;
+        _showOldClosed = showOld;
+      });
+    }
   }
 
   Future<void> _savePrefs(String projectId) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('keel_actions_view_board_$projectId', _showBoard);
+    await prefs.setBool(
+        'keel_actions_show_old_closed_$projectId', _showOldClosed);
   }
 
-  Future<void> _loadPersons(String projectId) async {
+  bool _isOldClosed(ProjectAction a) =>
+      isOldClosed(a, hideAfterDays: _closedHideAfterDays);
+
+  void _toggleShowOldClosed() {
+    setState(() => _showOldClosed = !_showOldClosed);
+    if (_projectId != null) _savePrefs(_projectId!);
+  }
+
+  Future<void> _loadPlanTags(String projectId) async {
     final db = context.read<AppDatabase>();
-    final persons = await db.peopleDao.getPersonsForProject(projectId);
-    if (mounted) setState(() => _persons = persons);
+    final wps = await db.programmeGanttDao.getWorkPackages(projectId);
+    final acts = await db.programmeGanttDao.getActivitiesForProject(projectId);
+    if (!mounted) return;
+    final tagMap = <String, String>{};
+    for (final act in acts) {
+      final wp = wps.cast<TimelineWorkPackage?>()
+          .firstWhere((w) => w?.id == act.workPackageId, orElse: () => null);
+      final label = wp != null ? '[${wp.shortCode ?? wp.name}] ${act.name}' : act.name;
+      tagMap[act.id] = label;
+    }
+    setState(() => _planTagMap = tagMap);
+  }
+
+  bool _matchesOwnerFilter(ProjectAction a) {
+    if (_ownerFilter == null) return true;
+    if (_ownerFilter == _kUnassignedKey) {
+      return a.owner == null || a.owner!.trim().isEmpty;
+    }
+    return a.owner == _ownerFilter;
+  }
+
+  Widget _buildBody({
+    required BuildContext context,
+    required String projectId,
+    required AppDatabase db,
+    required List<ProjectAction> allActions,
+    required Map<String, ActionCategory> catMap,
+  }) {
+    final part = partitionByParent(allActions);
+    final visible = _visibleListItems(part);
+
+    if (visible.isEmpty && !_showBoard) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.check_circle_outline,
+                size: 40, color: KColors.textMuted),
+            const SizedBox(height: 12),
+            Text(
+              _ownerFilter == null
+                  ? 'No actions yet.'
+                  : 'No actions for this filter.',
+              style: const TextStyle(color: KColors.textDim),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              onPressed: () => showDialog(
+                context: context,
+                builder: (_) =>
+                    ActionFormDialog(projectId: projectId, db: db),
+              ),
+              icon: const Icon(Icons.add, size: 14),
+              label: const Text('Add Action'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_showBoard) {
+      return ActionsKanban(
+        actions: allActions,
+        catMap: catMap,
+        db: db,
+        projectId: projectId,
+        planTagMap: _planTagMap,
+        ownerMatches: _matchesOwnerFilter,
+        ownerFilterActive: _ownerFilter != null,
+      );
+    }
+
+    return ListView.separated(
+      itemCount: visible.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 6),
+      itemBuilder: (ctx, i) {
+        final entry = visible[i];
+        return _ActionCard(
+          action: entry.action,
+          db: db,
+          projectId: projectId,
+          category: entry.action.categoryId != null
+              ? catMap[entry.action.categoryId!]
+              : null,
+          planTag: entry.action.planActivityId != null
+              ? _planTagMap[entry.action.planActivityId!]
+              : null,
+          isParent: entry.isParent,
+          isChild: entry.isChild,
+          rollup: entry.rollup,
+          isExpanded: entry.isParent
+              ? !_collapsedParents.contains(entry.action.id)
+              : null,
+          onToggleExpand: entry.isParent
+              ? () => setState(() {
+                    if (_collapsedParents.contains(entry.action.id)) {
+                      _collapsedParents.remove(entry.action.id);
+                    } else {
+                      _collapsedParents.add(entry.action.id);
+                    }
+                  })
+              : null,
+        );
+      },
+    );
+  }
+
+  /// Flattens the partition into the visible list order:
+  /// for each visible root, the root card; then if it has children and the
+  /// owner filter shows any of them, the matching children indented under it
+  /// (unless the parent is collapsed).
+  List<_ListEntry> _visibleListItems(
+    ({
+      List<ProjectAction> roots,
+      Map<String, List<ProjectAction>> childrenByParent
+    }) part,
+  ) {
+    final out = <_ListEntry>[];
+    for (final root in part.roots) {
+      final allChildren = part.childrenByParent[root.id] ?? const [];
+      final matchingChildren =
+          allChildren.where(_matchesOwnerFilter).toList();
+      final rootMatches = _matchesOwnerFilter(root);
+      final isParent = allChildren.isNotEmpty;
+      // Parent visible if it matches OR has any matching children.
+      // Non-parent root visible only if it matches.
+      if (!rootMatches && matchingChildren.isEmpty && isParent) continue;
+      if (!isParent && !rootMatches) continue;
+
+      out.add(_ListEntry(
+        action: root,
+        isParent: isParent,
+        isChild: false,
+        rollup: isParent ? rollupFor(allChildren) : null,
+      ));
+      if (isParent && !_collapsedParents.contains(root.id)) {
+        for (final c in matchingChildren) {
+          out.add(_ListEntry(action: c, isParent: false, isChild: true));
+        }
+      }
+    }
+    return out;
   }
 
   void _toggleView(bool board) {
@@ -99,22 +262,6 @@ class _ActionsViewState extends State<ActionsView> {
             ],
           ),
           const SizedBox(height: 10),
-          // Filter / view row
-          Row(
-            children: [
-              _OwnerFilter(
-                persons: _persons,
-                selected: _ownerFilter,
-                onChanged: (v) => setState(() => _ownerFilter = v),
-              ),
-              const SizedBox(width: 10),
-              _ViewToggle(
-                showBoard: _showBoard,
-                onChanged: _toggleView,
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
           Expanded(
             child: StreamBuilder<List<ActionCategory>>(
               stream: db.actionCategoriesDao.watchForProject(projectId),
@@ -128,58 +275,50 @@ class _ActionsViewState extends State<ActionsView> {
                     if (!snap.hasData) {
                       return const Center(child: CircularProgressIndicator());
                     }
-                    // Apply owner filter
-                    final items = _ownerFilter == null
-                        ? snap.data!
-                        : snap.data!
-                            .where((a) => a.owner == _ownerFilter)
-                            .toList();
+                    final all = snap.data!;
+                    final hiddenOldClosed =
+                        all.where(_isOldClosed).length;
+                    final visible = _showOldClosed
+                        ? all
+                        : all.where((a) => !_isOldClosed(a)).toList();
 
-                    if (items.isEmpty && !_showBoard) {
-                      return Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            const Icon(Icons.check_circle_outline,
-                                size: 40, color: KColors.textMuted),
-                            const SizedBox(height: 12),
-                            const Text('No actions yet.',
-                                style: TextStyle(color: KColors.textDim)),
-                            const SizedBox(height: 12),
-                            ElevatedButton.icon(
-                              onPressed: () => showDialog(
-                                context: context,
-                                builder: (_) => ActionFormDialog(
-                                    projectId: projectId, db: db),
+                            Expanded(
+                              child: _OwnerAvatarFilter(
+                                actions: visible,
+                                selected: _ownerFilter,
+                                onChanged: (v) =>
+                                    setState(() => _ownerFilter = v),
                               ),
-                              icon: const Icon(Icons.add, size: 14),
-                              label: const Text('Add Action'),
+                            ),
+                            const SizedBox(width: 10),
+                            _ClosedToggle(
+                              showOld: _showOldClosed,
+                              hiddenCount: hiddenOldClosed,
+                              onTap: _toggleShowOldClosed,
+                            ),
+                            const SizedBox(width: 10),
+                            _ViewToggle(
+                              showBoard: _showBoard,
+                              onChanged: _toggleView,
                             ),
                           ],
                         ),
-                      );
-                    }
-
-                    if (_showBoard) {
-                      return ActionsKanban(
-                        actions: items,
-                        catMap: catMap,
-                        db: db,
-                        projectId: projectId,
-                      );
-                    }
-
-                    return ListView.separated(
-                      itemCount: items.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 6),
-                      itemBuilder: (ctx, i) => _ActionCard(
-                        action: items[i],
-                        db: db,
-                        projectId: projectId,
-                        category: items[i].categoryId != null
-                            ? catMap[items[i].categoryId!]
-                            : null,
-                      ),
+                        const SizedBox(height: 12),
+                        Expanded(
+                          child: _buildBody(
+                            context: context,
+                            projectId: projectId,
+                            db: db,
+                            allActions: visible,
+                            catMap: catMap,
+                          ),
+                        ),
+                      ],
                     );
                   },
                 );
@@ -187,6 +326,89 @@ class _ActionsViewState extends State<ActionsView> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Closed-action toggle ──────────────────────────────────────────────────────
+
+class _ClosedToggle extends StatelessWidget {
+  final bool showOld;
+  final int hiddenCount;
+  final VoidCallback onTap;
+
+  const _ClosedToggle({
+    required this.showOld,
+    required this.hiddenCount,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final activeColor = showOld ? KColors.amber : KColors.textDim;
+    return Tooltip(
+      message: showOld
+          ? 'Click to hide closed actions older than 2 weeks'
+          : hiddenCount == 0
+              ? 'No old closed actions to show'
+              : 'Click to show $hiddenCount closed action${hiddenCount == 1 ? '' : 's'} older than 2 weeks',
+      waitDuration: const Duration(milliseconds: 350),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(3),
+        child: Container(
+          height: 28,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          decoration: BoxDecoration(
+            color: showOld
+                ? KColors.amber.withValues(alpha: 0.15)
+                : KColors.surface2,
+            border: Border.all(
+              color: showOld ? KColors.amber : KColors.border2,
+            ),
+            borderRadius: BorderRadius.circular(3),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                showOld ? Icons.visibility : Icons.visibility_off_outlined,
+                size: 13,
+                color: activeColor,
+              ),
+              const SizedBox(width: 5),
+              Text(
+                showOld ? 'Showing old closed' : 'Hiding old closed',
+                style: TextStyle(
+                  color: activeColor,
+                  fontSize: 11,
+                  fontWeight:
+                      showOld ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+              if (!showOld && hiddenCount > 0) ...[
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 5, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: KColors.border2,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '$hiddenCount',
+                    style: const TextStyle(
+                      color: KColors.textMuted,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -283,55 +505,238 @@ class _ToggleButton extends StatelessWidget {
   }
 }
 
-// ── Owner filter ──────────────────────────────────────────────────────────────
+// ── Owner avatar filter ───────────────────────────────────────────────────────
 
-class _OwnerFilter extends StatelessWidget {
-  final List<Person> persons;
+const String _kUnassignedKey = '__unassigned__';
+
+class _OwnerAvatarFilter extends StatelessWidget {
+  final List<ProjectAction> actions;
   final String? selected;
   final ValueChanged<String?> onChanged;
 
-  const _OwnerFilter({
-    required this.persons,
+  const _OwnerAvatarFilter({
+    required this.actions,
     required this.selected,
     required this.onChanged,
   });
 
   @override
   Widget build(BuildContext context) {
-    final names = persons.map((p) => p.name).toSet().toList()..sort();
-    return Container(
-      height: 28,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      decoration: BoxDecoration(
-        color: KColors.surface2,
-        border: Border.all(color: KColors.border2),
-        borderRadius: BorderRadius.circular(3),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String?>(
-          value: selected,
-          isDense: true,
-          style: const TextStyle(color: KColors.textDim, fontSize: 11),
-          dropdownColor: KColors.surface2,
-          icon: const Icon(Icons.expand_more, size: 14, color: KColors.textDim),
-          items: [
-            const DropdownMenuItem<String?>(
-              value: null,
-              child: Text('All owners',
-                  style: TextStyle(color: KColors.textDim, fontSize: 11)),
+    final counts = <String, int>{};
+    int unassigned = 0;
+    for (final a in actions) {
+      final owner = a.owner?.trim();
+      if (owner == null || owner.isEmpty) {
+        unassigned++;
+      } else {
+        counts[owner] = (counts[owner] ?? 0) + 1;
+      }
+    }
+    final owners = counts.keys.toList()
+      ..sort((a, b) {
+        final byCount = counts[b]!.compareTo(counts[a]!);
+        if (byCount != 0) return byCount;
+        return a.toLowerCase().compareTo(b.toLowerCase());
+      });
+
+    return SizedBox(
+      height: 34,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          _AllPill(
+            selected: selected == null,
+            count: actions.length,
+            onTap: () => onChanged(null),
+          ),
+          for (final name in owners) ...[
+            const SizedBox(width: 6),
+            _OwnerAvatarBubble(
+              name: name,
+              count: counts[name]!,
+              isSelected: selected == name,
+              onTap: () => onChanged(selected == name ? null : name),
             ),
-            ...names.map((n) => DropdownMenuItem<String?>(
-                  value: n,
-                  child: Text(n,
-                      style:
-                          const TextStyle(color: KColors.text, fontSize: 11)),
-                )),
           ],
-          onChanged: onChanged,
+          if (unassigned > 0) ...[
+            const SizedBox(width: 6),
+            _UnassignedBubble(
+              count: unassigned,
+              isSelected: selected == _kUnassignedKey,
+              onTap: () => onChanged(
+                  selected == _kUnassignedKey ? null : _kUnassignedKey),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _AllPill extends StatelessWidget {
+  final bool selected;
+  final int count;
+  final VoidCallback onTap;
+
+  const _AllPill({
+    required this.selected,
+    required this.count,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: selected ? 'Showing all actions' : 'Show all actions',
+      waitDuration: const Duration(milliseconds: 350),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          height: 28,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          decoration: BoxDecoration(
+            color: selected
+                ? KColors.amber.withValues(alpha: 0.18)
+                : KColors.surface2,
+            border: Border.all(
+              color: selected ? KColors.amber : KColors.border2,
+            ),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.groups_outlined,
+                size: 13,
+                color: selected ? KColors.amber : KColors.textDim,
+              ),
+              const SizedBox(width: 5),
+              Text(
+                'All · $count',
+                style: TextStyle(
+                  color: selected ? KColors.amber : KColors.textDim,
+                  fontSize: 11,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+}
+
+class _OwnerAvatarBubble extends StatelessWidget {
+  final String name;
+  final int count;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _OwnerAvatarBubble({
+    required this.name,
+    required this.count,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = colorFromName(name);
+    return Tooltip(
+      message: '$name · $count action${count == 1 ? '' : 's'}',
+      waitDuration: const Duration(milliseconds: 350),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: isSelected ? 0.55 : 0.28),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: isSelected ? KColors.amber : color.withValues(alpha: 0.6),
+              width: isSelected ? 2 : 1,
+            ),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            initialsFromName(name),
+            style: const TextStyle(
+              color: KColors.text,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.3,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _UnassignedBubble extends StatelessWidget {
+  final int count;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _UnassignedBubble({
+    required this.count,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: 'Unassigned · $count action${count == 1 ? '' : 's'}',
+      waitDuration: const Duration(milliseconds: 350),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: isSelected
+                ? KColors.textMuted.withValues(alpha: 0.35)
+                : KColors.surface2,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: isSelected ? KColors.amber : KColors.border2,
+              width: isSelected ? 2 : 1,
+              style: isSelected ? BorderStyle.solid : BorderStyle.solid,
+            ),
+          ),
+          alignment: Alignment.center,
+          child: const Icon(
+            Icons.person_off_outlined,
+            size: 14,
+            color: KColors.textMuted,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── List entry helper ─────────────────────────────────────────────────────────
+
+class _ListEntry {
+  final ProjectAction action;
+  final bool isParent;
+  final bool isChild;
+  final GroupRollup? rollup;
+
+  const _ListEntry({
+    required this.action,
+    required this.isParent,
+    required this.isChild,
+    this.rollup,
+  });
 }
 
 // ── Action card (list view) ───────────────────────────────────────────────────
@@ -353,12 +758,24 @@ class _ActionCard extends StatelessWidget {
   final AppDatabase db;
   final String projectId;
   final ActionCategory? category;
+  final String? planTag;
+  final bool isParent;
+  final bool isChild;
+  final GroupRollup? rollup;
+  final bool? isExpanded;
+  final VoidCallback? onToggleExpand;
 
   const _ActionCard({
     required this.action,
     required this.db,
     required this.projectId,
     required this.category,
+    this.planTag,
+    this.isParent = false,
+    this.isChild = false,
+    this.rollup,
+    this.isExpanded,
+    this.onToggleExpand,
   });
 
   bool get _isOverdue {
@@ -371,10 +788,13 @@ class _ActionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final barColor = _actionBarColor(action, category);
 
-    return Container(
+    final card = Container(
       decoration: BoxDecoration(
         color: KColors.surface,
-        border: Border.all(color: KColors.border),
+        border: Border.all(
+          color: isParent ? KColors.phosphor.withValues(alpha: 0.5) : KColors.border,
+          width: isParent ? 1.3 : 1.0,
+        ),
         borderRadius: BorderRadius.circular(4),
       ),
       child: InkWell(
@@ -392,6 +812,24 @@ class _ActionCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (isParent && onToggleExpand != null) ...[
+                InkWell(
+                  onTap: onToggleExpand,
+                  borderRadius: BorderRadius.circular(2),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 2, vertical: 2),
+                    child: Icon(
+                      (isExpanded ?? true)
+                          ? Icons.expand_more
+                          : Icons.chevron_right,
+                      size: 18,
+                      color: KColors.phosphor,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+              ],
               // Category / status colour bar
               Container(
                 width: 3,
@@ -405,6 +843,11 @@ class _ActionCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
+                        if (isParent) ...[
+                          const Icon(Icons.account_tree_outlined,
+                              size: 12, color: KColors.phosphor),
+                          const SizedBox(width: 5),
+                        ],
                         if (action.ref != null) ...[
                           Text(action.ref!,
                               style: const TextStyle(
@@ -501,6 +944,14 @@ class _ActionCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         SourceBadge(source: action.source),
+                        if (planTag != null) ...[
+                          const SizedBox(width: 4),
+                          _PlanTag(label: planTag!),
+                        ],
+                        if (isParent && rollup != null) ...[
+                          const SizedBox(width: 6),
+                          _GroupRollupChip(rollup: rollup!),
+                        ],
                       ],
                     ),
                   ],
@@ -527,7 +978,15 @@ class _ActionCard extends StatelessWidget {
                       ),
                     );
                   } else if (val == 'delete') {
-                    db.actionsDao.deleteAction(action.id);
+                    if (isParent) {
+                      final ok = await _confirmDeleteParent(
+                          context, action, rollup?.total ?? 0);
+                      if (!ok) return;
+                      await db.actionsDao
+                          .deleteParentAndOrphanChildren(action.id);
+                    } else {
+                      await db.actionsDao.deleteAction(action.id);
+                    }
                   } else if (val == 'delete_series') {
                     db.actionsDao
                         .deleteByRecurrenceGroup(action.recurrenceGroupId!);
@@ -547,6 +1006,144 @@ class _ActionCard extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+
+    if (!isChild) return card;
+
+    // Children: subtle vertical guide-line on the left + indent.
+    return Padding(
+      padding: const EdgeInsets.only(left: 28),
+      child: Stack(
+        children: [
+          Positioned(
+            left: -16,
+            top: 0,
+            bottom: 0,
+            child: Container(width: 1, color: KColors.border2),
+          ),
+          card,
+        ],
+      ),
+    );
+  }
+}
+
+// ── Group rollup chip ─────────────────────────────────────────────────────────
+
+class _GroupRollupChip extends StatelessWidget {
+  final GroupRollup rollup;
+  const _GroupRollupChip({required this.rollup});
+
+  @override
+  Widget build(BuildContext context) {
+    final parts = <(String, Color)>[
+      if (rollup.todo > 0) ('${rollup.todo} open', KColors.textDim),
+      if (rollup.inProgress > 0)
+        ('${rollup.inProgress} in prog', KColors.amber),
+      if (rollup.overdue > 0) ('${rollup.overdue} overdue', KColors.red),
+      if (rollup.done > 0) ('${rollup.done} done', KColors.phosphor),
+    ];
+    if (parts.isEmpty) {
+      return const Text('no children',
+          style: TextStyle(color: KColors.textMuted, fontSize: 10));
+    }
+    return Tooltip(
+      message: '${rollup.total} child action${rollup.total == 1 ? '' : 's'}'
+          ' · ${rollup.done}/${rollup.total} done',
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: KColors.surface2,
+          border: Border.all(color: KColors.border2),
+          borderRadius: BorderRadius.circular(3),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (var i = 0; i < parts.length; i++) ...[
+              if (i > 0)
+                const Text(' · ',
+                    style: TextStyle(color: KColors.textMuted, fontSize: 10)),
+              Text(parts[i].$1,
+                  style: TextStyle(
+                      color: parts[i].$2,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600)),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+Future<bool> _confirmDeleteParent(
+    BuildContext context, ProjectAction parent, int childCount) async {
+  final result = await showDialog<bool>(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: const Text('Delete group parent?'),
+      content: Text(
+        childCount == 0
+            ? 'Delete "${parent.description}"? This cannot be undone.'
+            : 'Delete "${parent.description}"? Its $childCount child '
+                'action${childCount == 1 ? '' : 's'} will be kept and '
+                'moved to top-level.',
+        style: const TextStyle(color: KColors.textDim, fontSize: 12),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(backgroundColor: KColors.red),
+          onPressed: () => Navigator.of(context).pop(true),
+          child: const Text('Delete'),
+        ),
+      ],
+    ),
+  );
+  return result ?? false;
+}
+
+// ── Plan tag pill ─────────────────────────────────────────────────────────────
+
+class _PlanTag extends StatelessWidget {
+  final String label;
+  const _PlanTag({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: label,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+        decoration: BoxDecoration(
+          color: KColors.phosphor.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(3),
+          border: Border.all(color: KColors.phosphor.withValues(alpha: 0.35)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.account_tree_outlined,
+                size: 9, color: KColors.phosphor),
+            const SizedBox(width: 3),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 100),
+              child: Text(
+                label,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                    color: KColors.phosphor,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
         ),
       ),
     );

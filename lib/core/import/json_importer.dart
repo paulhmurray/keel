@@ -151,6 +151,8 @@ class JsonImporter {
           description: Value(rm['description'] as String),
           likelihood: Value(rm['likelihood'] as String? ?? 'medium'),
           impact: Value(rm['impact'] as String? ?? 'medium'),
+          likelihoodRationale: Value(rm['likelihood_rationale'] as String?),
+          impactRationale: Value(rm['impact_rationale'] as String?),
           mitigation: Value(rm['mitigation'] as String?),
           owner: Value(rm['owner'] as String?),
           status: Value(rm['status'] as String? ?? 'open'),
@@ -359,8 +361,31 @@ class JsonImporter {
         categoryId: Value(am['category_id'] as String?),
         recurrenceGroupId: Value(am['recurrence_group_id'] as String?),
         linkedActionId: Value(am['linked_action_id'] as String?),
+        planActivityId: Value(am['plan_activity_id'] as String?),
+        parentActionId: Value(am['parent_action_id'] as String?),
       ));
       actionCount++;
+    }
+
+    // Action comments — gracefully ignored when the source export pre-dates
+    // schema_version 22 (the key will be missing).
+    for (final c in (data['action_comments'] as List? ?? [])) {
+      final cm = c as Map<String, dynamic>;
+      final createdAtStr = cm['created_at'] as String?;
+      final updatedAtStr = cm['updated_at'] as String?;
+      await db.actionCommentsDao.upsertComment(ActionCommentsCompanion(
+        id: Value(cm['id'] as String),
+        actionId: Value(cm['action_id'] as String),
+        content: Value(cm['content'] as String),
+        isCompletion: Value(cm['is_completion'] as bool? ?? false),
+        authorName: Value(cm['author_name'] as String?),
+        createdAt: createdAtStr != null
+            ? Value(DateTime.tryParse(createdAtStr) ?? DateTime.now())
+            : const Value.absent(),
+        updatedAt: updatedAtStr != null
+            ? Value(DateTime.tryParse(updatedAtStr) ?? DateTime.now())
+            : const Value.absent(),
+      ));
     }
 
     // Context entries
@@ -418,6 +443,20 @@ class JsonImporter {
     int journalCount = 0;
     final journalData = data['journal'] as Map<String, dynamic>?;
     if (journalData != null) {
+      // Series first so entries can reference them via seriesId.
+      // Missing key on older exports is fine (loop becomes a no-op).
+      for (final s in (journalData['series'] as List? ?? [])) {
+        final sm = s as Map<String, dynamic>;
+        await db.journalSeriesDao.upsert(JournalSeriesDefsCompanion(
+          id: Value(sm['id'] as String),
+          projectId: Value(projectId),
+          name: Value(sm['name'] as String),
+          description: Value(sm['description'] as String?),
+          cadenceHint: Value(sm['cadence_hint'] as String?),
+          color: Value(sm['color'] as String?),
+          sortOrder: Value(sm['sort_order'] as int? ?? 0),
+        ));
+      }
       for (final e in (journalData['entries'] as List? ?? [])) {
         final em = e as Map<String, dynamic>;
         await db.journalDao.upsertEntry(JournalEntriesCompanion(
@@ -428,6 +467,8 @@ class JsonImporter {
           entryDate: Value(em['entry_date'] as String),
           meetingContext: Value(em['meeting_context'] as String?),
           parsed: Value(em['parsed'] as bool? ?? false),
+          isFavourite: Value(em['is_favourite'] as bool? ?? false),
+          seriesId: Value(em['series_id'] as String?),
         ));
         journalCount++;
       }
@@ -667,6 +708,8 @@ class JsonImporter {
           baselineEnd: Value(am['baseline_end'] as int?),
           cellLabel: Value(am['cell_label'] as String?),
           notes: Value(am['notes'] as String?),
+          contributors: Value(am['contributors'] as String?),
+          contributorIds: Value(am['contributor_ids'] as String?),
           sortOrder: Value(am['sort_order'] as int? ?? 0),
         ));
       }
@@ -786,6 +829,8 @@ class JsonImporter {
     await (db.delete(db.actionCategories)
           ..where((t) => t.projectId.equals(id)))
         .go();
+    // Comments depend on actions; clear them first.
+    await db.actionCommentsDao.deleteAllForProject(id);
     await (db.delete(db.projectActions)..where((t) => t.projectId.equals(id)))
         .go();
     await (db.delete(db.contextEntries)..where((t) => t.projectId.equals(id)))
@@ -816,6 +861,9 @@ class JsonImporter {
           .go();
     }
     await (db.delete(db.journalEntries)..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.journalSeriesDefs)
+          ..where((t) => t.projectId.equals(id)))
         .go();
 
     // Milestones

@@ -124,7 +124,7 @@ class _ShellLayoutState extends State<ShellLayout> {
   _MenuNode _buildRootMenu() {
     return _MenuNode('Navigate to…', {
       ' ':  _ActionNode('Overview',   () { _selectedIndex = 0; }),
-      't':  _ActionNode('Timeline',   () { _selectedIndex = 1; }),
+      't':  _ActionNode('Schedule',   () { _selectedIndex = 1; }),
       'R':  _ActionNode('Reports',     () { _selectedIndex = 8; }),
       'd':  _MenuNode('Decisions', {
         'n': _ActionNode('New decision', () {
@@ -191,8 +191,9 @@ class _ShellLayoutState extends State<ShellLayout> {
       }),
       'j':  _ActionNode('Journal',    () { _selectedIndex = 10; }),
       'P':  _ActionNode('Playbook',   () { _selectedIndex = 11; }),
-      'l':  _ActionNode('Plan',       () { _selectedIndex = 12; }),
+      'g':  _ActionNode('Plan',       () { _selectedIndex = 12; }),
       's':  _ActionNode('Status',     () { _selectedIndex = 13; }),
+      'S':  _ActionNode('Settings',   () { _selectedIndex = 9; }),
       'C':  _ActionNode('Charter',    () { _selectedIndex = 14; }),
     });
   }
@@ -1186,41 +1187,53 @@ class _KeybindingsButton extends StatelessWidget {
     }
     return Tooltip(
       message: 'Keyboard shortcuts',
-      child: InkWell(
-        borderRadius: BorderRadius.circular(4),
-        onTap: () => showDialog(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Row(
-              children: [
-                Icon(Icons.keyboard_outlined, size: 16, color: KColors.amber),
-                SizedBox(width: 8),
-                Text('Keyboard Shortcuts'),
+      // ExcludeFocus prevents this InkWell from grabbing keyboard focus —
+      // otherwise pressing SPC (the leader key) activates this button at
+      // the same time as triggering the leader chord, opening the dialog
+      // unintentionally. Mouse interaction still works.
+      child: ExcludeFocus(
+        child: InkWell(
+          borderRadius: BorderRadius.circular(4),
+          onTap: () => showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              title: const Row(
+                children: [
+                  Icon(Icons.keyboard_outlined, size: 16, color: KColors.amber),
+                  SizedBox(width: 8),
+                  Text('Keyboard Shortcuts'),
+                ],
+              ),
+              // Scrollable + height-constrained — the keybindings list is
+              // ~38 rows; without scrolling it overflows the dialog on
+              // anything smaller than a 24" monitor.
+              content: const SizedBox(
+                width: 420,
+                height: 500,
+                child: SingleChildScrollView(
+                  child: KeybindingsTable(),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Close'),
+                ),
               ],
             ),
-            content: const SizedBox(
-              width: 420,
-              child: KeybindingsTable(),
+          ),
+          child: Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: KColors.surface2,
+              border: Border.all(color: KColors.border2),
+              borderRadius: BorderRadius.circular(4),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Close'),
-              ),
-            ],
+            alignment: Alignment.center,
+            child: const Icon(Icons.keyboard_outlined,
+                size: 14, color: KColors.textDim),
           ),
-        ),
-        child: Container(
-          width: 28,
-          height: 28,
-          decoration: BoxDecoration(
-            color: KColors.surface2,
-            border: Border.all(color: KColors.border2),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          alignment: Alignment.center,
-          child: const Icon(Icons.keyboard_outlined,
-              size: 14, color: KColors.textDim),
         ),
       ),
     );
@@ -1252,63 +1265,68 @@ class _TopBarProjectSelector extends StatelessWidget {
               border: Border.all(color: KColors.border2),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: current?.id,
-                isExpanded: true,
-                dropdownColor: KColors.surface2,
-                style: GoogleFonts.jetBrainsMono(
-                  color: KColors.text,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-                hint: Text(
-                  'Select project…',
+            // ExcludeFocus prevents Material's DropdownButton from grabbing
+            // keyboard focus and responding to SPC/Enter — that would steal
+            // the SPC leader key. Mouse interaction still works.
+            child: ExcludeFocus(
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: current?.id,
+                  isExpanded: true,
+                  dropdownColor: KColors.surface2,
                   style: GoogleFonts.jetBrainsMono(
-                      color: KColors.textDim, fontSize: 14),
+                    color: KColors.text,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  hint: Text(
+                    'Select project…',
+                    style: GoogleFonts.jetBrainsMono(
+                        color: KColors.textDim, fontSize: 14),
+                  ),
+                  items: [
+                    ...projects.map((p) => DropdownMenuItem(
+                          value: p.id,
+                          child: Text(p.name,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.jetBrainsMono(fontSize: 14, fontWeight: FontWeight.w600)),
+                        )),
+                    DropdownMenuItem(
+                      value: '__new__',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.add, size: 14, color: KColors.amber),
+                          const SizedBox(width: 4),
+                          Text('New Project',
+                              style: GoogleFonts.jetBrainsMono(
+                                  color: KColors.amber, fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                    DropdownMenuItem(
+                      value: '__demo__',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.science_outlined,
+                              size: 14, color: KColors.phosphor),
+                          const SizedBox(width: 4),
+                          Text('Load Demo Data',
+                              style: GoogleFonts.jetBrainsMono(
+                                  color: KColors.phosphor, fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                  ],
+                  onChanged: (val) {
+                    if (val == '__new__') {
+                      _showNewProjectDialog(context, projectProvider);
+                    } else if (val == '__demo__') {
+                      _loadDemo(context, projectProvider);
+                    } else if (val != null) {
+                      projectProvider.selectProjectById(val);
+                    }
+                  },
                 ),
-                items: [
-                  ...projects.map((p) => DropdownMenuItem(
-                        value: p.id,
-                        child: Text(p.name,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.jetBrainsMono(fontSize: 14, fontWeight: FontWeight.w600)),
-                      )),
-                  DropdownMenuItem(
-                    value: '__new__',
-                    child: Row(
-                      children: [
-                        const Icon(Icons.add, size: 14, color: KColors.amber),
-                        const SizedBox(width: 4),
-                        Text('New Project',
-                            style: GoogleFonts.jetBrainsMono(
-                                color: KColors.amber, fontSize: 12)),
-                      ],
-                    ),
-                  ),
-                  DropdownMenuItem(
-                    value: '__demo__',
-                    child: Row(
-                      children: [
-                        const Icon(Icons.science_outlined,
-                            size: 14, color: KColors.phosphor),
-                        const SizedBox(width: 4),
-                        Text('Load Demo Data',
-                            style: GoogleFonts.jetBrainsMono(
-                                color: KColors.phosphor, fontSize: 12)),
-                      ],
-                    ),
-                  ),
-                ],
-                onChanged: (val) {
-                  if (val == '__new__') {
-                    _showNewProjectDialog(context, projectProvider);
-                  } else if (val == '__demo__') {
-                    _loadDemo(context, projectProvider);
-                  } else if (val != null) {
-                    projectProvider.selectProjectById(val);
-                  }
-                },
               ),
             ),
           ),

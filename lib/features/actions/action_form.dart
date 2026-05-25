@@ -8,8 +8,10 @@ import '../../providers/settings_provider.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/widgets/dropdown_field.dart';
 import '../../shared/widgets/date_picker_field.dart';
+import '../../shared/widgets/person_picker_field.dart';
 import '../../shared/utils/date_utils.dart' as du;
 import '../timeline/timeline_chart.dart' show parseHexColor;
+import 'action_grouping.dart';
 
 // ---------------------------------------------------------------------------
 // Color helper
@@ -30,6 +32,8 @@ class ActionFormDialog extends StatefulWidget {
   final AppDatabase db;
   final ProjectAction? action;
   final bool startInViewMode;
+  /// Pre-link to a specific plan activity (e.g. when opened from the Plan view).
+  final String? preLinkedActivityId;
 
   const ActionFormDialog({
     super.key,
@@ -37,6 +41,7 @@ class ActionFormDialog extends StatefulWidget {
     required this.db,
     this.action,
     this.startInViewMode = false,
+    this.preLinkedActivityId,
   });
 
   @override
@@ -59,12 +64,16 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
   String _recurrence = 'none';
   String? _recurrenceEndDate;
   String? _linkedActionId;
+  String? _planActivityId;
+  String? _parentActionId;
 
   late bool _isViewing;
 
   List<Person> _persons = [];
   List<ActionCategory> _categories = [];
   List<ProjectAction> _allActions = [];
+  List<TimelineWorkPackage> _workPackages = [];
+  List<TimelineActivity> _planActivities = [];
 
   final _statuses = ['open', 'in progress', 'closed', 'blocked'];
   final _priorities = ['low', 'medium', 'high', 'critical'];
@@ -84,6 +93,8 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
     _source = a?.source ?? 'manual';
     _categoryId = a?.categoryId;
     _linkedActionId = a?.linkedActionId;
+    _planActivityId = a?.planActivityId ?? widget.preLinkedActivityId;
+    _parentActionId = a?.parentActionId;
     _isViewing = widget.startInViewMode && a != null;
     _loadData();
   }
@@ -93,11 +104,15 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
     final cats = await widget.db.actionCategoriesDao.getForProject(widget.projectId);
     final persons = await widget.db.peopleDao.getPersonsForProject(widget.projectId);
     final actions = await widget.db.actionsDao.getActionsForProject(widget.projectId);
+    final wps = await widget.db.programmeGanttDao.getWorkPackages(widget.projectId);
+    final activities = await widget.db.programmeGanttDao.getActivitiesForProject(widget.projectId);
     if (!mounted) return;
     setState(() {
       _categories = cats;
       _persons = persons;
       _allActions = actions.where((a) => a.id != widget.action?.id).toList();
+      _workPackages = wps;
+      _planActivities = activities;
     });
   }
 
@@ -165,6 +180,7 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
           categoryId: Value(_categoryId),
           recurrenceGroupId: Value(groupId),
           linkedActionId: Value(_linkedActionId),
+          planActivityId: Value(_planActivityId),
           updatedAt: Value(DateTime.now()),
         ));
       }
@@ -185,11 +201,23 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
             : _sourceNoteCtrl.text.trim()),
         categoryId: Value(_categoryId),
         linkedActionId: Value(_linkedActionId),
+        planActivityId: Value(_planActivityId),
+        parentActionId: Value(_parentActionId),
         updatedAt: Value(DateTime.now()),
       ));
     }
 
     if (mounted) Navigator.of(context).pop();
+  }
+
+  String _planActivityLabel(String activityId) {
+    final act = _planActivities.cast<TimelineActivity?>()
+        .firstWhere((a) => a?.id == activityId, orElse: () => null);
+    if (act == null) return activityId;
+    final wp = _workPackages.cast<TimelineWorkPackage?>()
+        .firstWhere((w) => w?.id == act.workPackageId, orElse: () => null);
+    final prefix = wp != null ? '[${wp.shortCode ?? wp.name}] ' : '';
+    return '$prefix${act.name}';
   }
 
   // ── Read/view mode ─────────────────────────────────────────────────────────
@@ -250,6 +278,10 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (cat != null) _viewField('Category', cat.name),
+              if (a.planActivityId != null) _viewField(
+                'Plan Activity',
+                _planActivityLabel(a.planActivityId!),
+              ),
               _viewField('Description', a.description, large: true),
               Row(children: [
                 Expanded(child: _viewField('Status', a.status)),
@@ -272,6 +304,10 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
                 if (a.sourceNote != null && a.sourceNote!.isNotEmpty)
                   Expanded(child: _viewField('Source Note', a.sourceNote)),
               ]),
+              const SizedBox(height: 4),
+              const Divider(color: KColors.border, height: 1),
+              const SizedBox(height: 12),
+              _CommentsThread(action: a, db: widget.db),
             ],
           ),
         ),
@@ -371,56 +407,14 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
                 // ── Owner + Due Date ───────────────────────────────────
                 Row(children: [
                   Expanded(
-                    child: Builder(builder: (context) {
-                      final myName = context.read<SettingsProvider>().settings.myName;
-                      final currentOwner = _ownerCtrl.text.isEmpty ? null : _ownerCtrl.text;
-                      // All known names (persons + current owner if free-text)
-                      final personNames = _persons.map((p) => p.name).toSet();
-                      return DropdownButtonFormField<String>(
-                        value: currentOwner,
-                        decoration: const InputDecoration(labelText: 'Owner'),
-                        items: [
-                          const DropdownMenuItem(
-                              value: null, child: Text('— none —')),
-                          // "Me" shortcut at the top
-                          if (myName.isNotEmpty)
-                            DropdownMenuItem(
-                              value: myName,
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.person,
-                                      size: 13, color: KColors.phosphor),
-                                  const SizedBox(width: 6),
-                                  Text('Me — $myName',
-                                      style: const TextStyle(
-                                          color: KColors.phosphor,
-                                          fontWeight: FontWeight.w600)),
-                                ],
-                              ),
-                            ),
-                          // Free-text owner not in persons list
-                          if (currentOwner != null &&
-                              !personNames.contains(currentOwner) &&
-                              currentOwner != myName)
-                            DropdownMenuItem(
-                              value: currentOwner,
-                              child: Text(currentOwner),
-                            ),
-                          ..._persons
-                              .where((p) => p.name != myName)
-                              .map((p) => DropdownMenuItem(
-                                    value: p.name,
-                                    child: Text(p.name),
-                                  )),
-                          // If myName isn't a person record, still show them
-                          // once above; but if they ARE in _persons, deduplicate
-                          if (myName.isNotEmpty && personNames.contains(myName))
-                            ...[],
-                        ],
-                        onChanged: (v) =>
-                            setState(() => _ownerCtrl.text = v ?? ''),
-                      );
-                    }),
+                    child: PersonPickerField(
+                      controller: _ownerCtrl,
+                      label: 'Owner',
+                      persons: _persons,
+                      db: widget.db,
+                      projectId: widget.projectId,
+                      onPersonCreated: _loadData,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -471,6 +465,15 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
                   const SizedBox(height: 12),
                 ],
 
+                // ── Parent action (group) ──────────────────────────────
+                _ParentActionPicker(
+                  editing: widget.action,
+                  allActions: _allActions,
+                  value: _parentActionId,
+                  onChanged: (v) => setState(() => _parentActionId = v),
+                ),
+                const SizedBox(height: 12),
+
                 // ── Link to action ─────────────────────────────────────
                 DropdownButtonFormField<String?>(
                   value: _linkedActionId,
@@ -492,6 +495,17 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
                       setState(() => _linkedActionId = v),
                 ),
                 const SizedBox(height: 12),
+
+                // ── Link to plan activity ──────────────────────────────
+                if (_workPackages.isNotEmpty) ...[
+                  _PlanActivityPicker(
+                    value: _planActivityId,
+                    workPackages: _workPackages,
+                    activities: _planActivities,
+                    onChanged: (v) => setState(() => _planActivityId = v),
+                  ),
+                  const SizedBox(height: 12),
+                ],
 
                 // ── Source ─────────────────────────────────────────────
                 Row(children: [
@@ -731,6 +745,414 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
           child: const Text('Add'),
         ),
       ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Plan activity picker
+// ---------------------------------------------------------------------------
+
+class _PlanActivityPicker extends StatelessWidget {
+  final String? value;
+  final List<TimelineWorkPackage> workPackages;
+  final List<TimelineActivity> activities;
+  final ValueChanged<String?> onChanged;
+
+  const _PlanActivityPicker({
+    required this.value,
+    required this.workPackages,
+    required this.activities,
+    required this.onChanged,
+  });
+
+  static const _kTypeIcons = {
+    'milestone': '◆ ',
+    'hard_deadline': '⚠ ',
+    'gate': '◈ ',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    // Build grouped items: null option + one item per activity under its WP header
+    final items = <DropdownMenuItem<String?>>[];
+    items.add(const DropdownMenuItem<String?>(
+        value: null,
+        child: Text('— none —',
+            style: TextStyle(color: KColors.textDim))));
+
+    for (final wp in workPackages) {
+      final wpActs = activities.where((a) => a.workPackageId == wp.id).toList();
+      if (wpActs.isEmpty) continue;
+      // Header (disabled item used as visual group label)
+      items.add(DropdownMenuItem<String?>(
+        enabled: false,
+        value: '__header__${wp.id}',
+        child: Text(
+          '${wp.shortCode ?? wp.name}',
+          style: const TextStyle(
+              color: KColors.textMuted,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5),
+        ),
+      ));
+      for (final act in wpActs) {
+        final prefix = _kTypeIcons[act.activityType] ?? '';
+        items.add(DropdownMenuItem<String?>(
+          value: act.id,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 8),
+            child: Text(
+              '$prefix${act.name}',
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 12),
+            ),
+          ),
+        ));
+      }
+    }
+
+    return DropdownButtonFormField<String?>(
+      value: value,
+      isExpanded: true,
+      decoration: const InputDecoration(labelText: 'Plan Activity (optional)'),
+      items: items,
+      onChanged: onChanged,
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Parent action picker (Epic-style grouping)
+// ---------------------------------------------------------------------------
+
+class _ParentActionPicker extends StatelessWidget {
+  final ProjectAction? editing;
+  final List<ProjectAction> allActions;
+  final String? value;
+  final ValueChanged<String?> onChanged;
+
+  const _ParentActionPicker({
+    required this.editing,
+    required this.allActions,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final candidates =
+        eligibleParentCandidates(editing: editing, all: allActions);
+    final hasChildren = editing != null &&
+        allActions.any((a) => a.parentActionId == editing!.id);
+
+    if (hasChildren) {
+      final childCount =
+          allActions.where((a) => a.parentActionId == editing!.id).length;
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: KColors.surface2,
+          border: Border.all(color: KColors.border2),
+          borderRadius: BorderRadius.circular(3),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.account_tree_outlined,
+                size: 13, color: KColors.phosphor),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Group parent · $childCount child action${childCount == 1 ? '' : 's'}',
+                style: const TextStyle(
+                    color: KColors.phosphor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600),
+              ),
+            ),
+            const Text(
+              "Can't be nested under another action",
+              style: TextStyle(color: KColors.textMuted, fontSize: 10),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return DropdownButtonFormField<String?>(
+      value: value,
+      isExpanded: true,
+      decoration: const InputDecoration(
+        labelText: 'Parent action (group under…)',
+      ),
+      items: [
+        const DropdownMenuItem<String?>(
+            value: null, child: Text('— none (top level) —')),
+        ...candidates.map((a) => DropdownMenuItem<String?>(
+              value: a.id,
+              child: Text(
+                '${a.ref != null ? '${a.ref} ' : ''}${a.description}',
+                overflow: TextOverflow.ellipsis,
+              ),
+            )),
+      ],
+      onChanged: onChanged,
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Comments thread (view mode)
+// ---------------------------------------------------------------------------
+
+class _CommentsThread extends StatefulWidget {
+  final ProjectAction action;
+  final AppDatabase db;
+
+  const _CommentsThread({required this.action, required this.db});
+
+  @override
+  State<_CommentsThread> createState() => _CommentsThreadState();
+}
+
+class _CommentsThreadState extends State<_CommentsThread> {
+  final _ctrl = TextEditingController();
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _addComment() async {
+    final text = _ctrl.text.trim();
+    if (text.isEmpty || _saving) return;
+    setState(() => _saving = true);
+    final author = context.read<SettingsProvider>().settings.myName;
+    final now = DateTime.now();
+    await widget.db.actionCommentsDao.upsertComment(ActionCommentsCompanion(
+      id: Value(const Uuid().v4()),
+      actionId: Value(widget.action.id),
+      content: Value(text),
+      isCompletion: const Value(false),
+      authorName: Value(author.isEmpty ? null : author),
+      createdAt: Value(now),
+      updatedAt: Value(now),
+    ));
+    if (mounted) {
+      _ctrl.clear();
+      setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('COMMENTS',
+            style: TextStyle(
+                color: KColors.textMuted,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.1)),
+        const SizedBox(height: 8),
+        StreamBuilder<List<ActionComment>>(
+          stream:
+              widget.db.actionCommentsDao.watchForAction(widget.action.id),
+          builder: (context, snap) {
+            final comments = snap.data ?? const <ActionComment>[];
+            final hasRealCompletion =
+                comments.any((c) => c.isCompletion);
+            // Legacy fallback: synthesise a completion-comment view when the
+            // action has an outcome but no completion comment row yet.
+            final synth = (!hasRealCompletion &&
+                    widget.action.outcome != null &&
+                    widget.action.outcome!.isNotEmpty)
+                ? _SyntheticCompletion(
+                    content: widget.action.outcome!,
+                    when: widget.action.updatedAt,
+                  )
+                : null;
+            if (comments.isEmpty && synth == null) {
+              return const Padding(
+                padding: EdgeInsets.only(bottom: 12),
+                child: Text('No comments yet.',
+                    style: TextStyle(
+                        color: KColors.textMuted,
+                        fontSize: 11,
+                        fontStyle: FontStyle.italic)),
+              );
+            }
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (synth != null)
+                  _CompletionTile(
+                    content: synth.content,
+                    author: null,
+                    when: synth.when,
+                    isSynthetic: true,
+                  ),
+                for (final c in comments)
+                  c.isCompletion
+                      ? _CompletionTile(
+                          content: c.content,
+                          author: c.authorName,
+                          when: c.createdAt,
+                          isSynthetic: false,
+                        )
+                      : _CommentTile(comment: c),
+              ],
+            );
+          },
+        ),
+        const SizedBox(height: 10),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _ctrl,
+                minLines: 1,
+                maxLines: 4,
+                style: const TextStyle(color: KColors.text, fontSize: 12),
+                decoration: const InputDecoration(
+                  hintText: 'Add a comment…',
+                  isDense: true,
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                ),
+                onSubmitted: (_) => _addComment(),
+              ),
+            ),
+            const SizedBox(width: 6),
+            ElevatedButton(
+              onPressed: _saving ? null : _addComment,
+              child: const Text('Post'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _SyntheticCompletion {
+  final String content;
+  final DateTime when;
+  _SyntheticCompletion({required this.content, required this.when});
+}
+
+class _CompletionTile extends StatelessWidget {
+  final String content;
+  final String? author;
+  final DateTime when;
+  final bool isSynthetic;
+
+  const _CompletionTile({
+    required this.content,
+    required this.author,
+    required this.when,
+    required this.isSynthetic,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+      decoration: BoxDecoration(
+        color: KColors.phosDim.withValues(alpha: 0.5),
+        border: Border(
+          left: BorderSide(
+              color: KColors.phosphor.withValues(alpha: 0.7), width: 3),
+        ),
+        borderRadius: BorderRadius.circular(3),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.check_circle_outline,
+                  size: 12, color: KColors.phosphor),
+              const SizedBox(width: 6),
+              Text(
+                'REASON COMPLETED${isSynthetic ? ' · legacy' : ''}',
+                style: const TextStyle(
+                    color: KColors.phosphor,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5),
+              ),
+              const Spacer(),
+              if (author != null && author!.isNotEmpty) ...[
+                Text(author!,
+                    style: const TextStyle(
+                        color: KColors.textDim, fontSize: 10)),
+                const SizedBox(width: 6),
+              ],
+              Text(du.formatDate(when.toIso8601String().substring(0, 10)),
+                  style: const TextStyle(
+                      color: KColors.textMuted, fontSize: 10)),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(content,
+              style: const TextStyle(
+                  color: KColors.text, fontSize: 12, height: 1.45)),
+        ],
+      ),
+    );
+  }
+}
+
+class _CommentTile extends StatelessWidget {
+  final ActionComment comment;
+  const _CommentTile({required this.comment});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+      decoration: BoxDecoration(
+        color: KColors.surface2,
+        border: Border.all(color: KColors.border2),
+        borderRadius: BorderRadius.circular(3),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              if (comment.authorName != null &&
+                  comment.authorName!.isNotEmpty) ...[
+                Text(comment.authorName!,
+                    style: const TextStyle(
+                        color: KColors.textDim,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600)),
+                const SizedBox(width: 6),
+              ],
+              const Spacer(),
+              Text(
+                du.formatDate(
+                    comment.createdAt.toIso8601String().substring(0, 10)),
+                style:
+                    const TextStyle(color: KColors.textMuted, fontSize: 10),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(comment.content,
+              style: const TextStyle(
+                  color: KColors.text, fontSize: 12, height: 1.45)),
+        ],
+      ),
     );
   }
 }

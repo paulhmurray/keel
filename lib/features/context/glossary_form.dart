@@ -11,11 +11,17 @@ class GlossaryFormDialog extends StatefulWidget {
   final AppDatabase db;
   final GlossaryEntry? entry;
 
+  /// Seed values for create-mode (ignored when [entry] is provided).
+  final String? initialName;
+  final String? initialType;
+
   const GlossaryFormDialog({
     super.key,
     required this.projectId,
     required this.db,
     this.entry,
+    this.initialName,
+    this.initialType,
   });
 
   @override
@@ -39,11 +45,11 @@ class _GlossaryFormDialogState extends State<GlossaryFormDialog> {
   void initState() {
     super.initState();
     final e = widget.entry;
-    _nameCtrl = TextEditingController(text: e?.name ?? '');
+    _nameCtrl = TextEditingController(text: e?.name ?? widget.initialName ?? '');
     _acronymCtrl = TextEditingController(text: e?.acronym ?? '');
     _descriptionCtrl = TextEditingController(text: e?.description ?? '');
     _ownerCtrl = TextEditingController(text: e?.owner ?? '');
-    _type = e?.type ?? 'term';
+    _type = e?.type ?? widget.initialType ?? 'term';
     _environment = e?.environment ?? 'production';
     _status = e?.status ?? 'active';
   }
@@ -60,21 +66,33 @@ class _GlossaryFormDialogState extends State<GlossaryFormDialog> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     final id = widget.entry?.id ?? const Uuid().v4();
+    final now = DateTime.now();
+    final owner = (_type == 'system' && _ownerCtrl.text.trim().isNotEmpty)
+        ? _ownerCtrl.text.trim()
+        : null;
+    final environment = _type == 'system' ? _environment : null;
+    final status = _type == 'system' ? _status : null;
+    final acronym =
+        _acronymCtrl.text.trim().isEmpty ? null : _acronymCtrl.text.trim();
+    final description = _descriptionCtrl.text.trim().isEmpty
+        ? null
+        : _descriptionCtrl.text.trim();
     await widget.db.glossaryDao.upsert(GlossaryEntriesCompanion(
       id: Value(id),
       projectId: Value(widget.projectId),
       type: Value(_type),
       name: Value(_nameCtrl.text.trim()),
-      acronym: Value(_acronymCtrl.text.trim().isEmpty ? null : _acronymCtrl.text.trim()),
-      description: Value(_descriptionCtrl.text.trim().isEmpty ? null : _descriptionCtrl.text.trim()),
-      owner: Value(_type == 'system' && _ownerCtrl.text.trim().isNotEmpty
-          ? _ownerCtrl.text.trim()
-          : null),
-      environment: Value(_type == 'system' ? _environment : null),
-      status: Value(_type == 'system' ? _status : null),
-      updatedAt: Value(DateTime.now()),
+      acronym: Value(acronym),
+      description: Value(description),
+      owner: Value(owner),
+      environment: Value(environment),
+      status: Value(status),
+      updatedAt: Value(now),
     ));
-    if (mounted) Navigator.of(context).pop();
+    if (!mounted) return;
+    // Return the saved entry so picker callers can use it without a re-fetch.
+    final saved = await widget.db.glossaryDao.getById(id);
+    if (mounted) Navigator.of(context).pop(saved);
   }
 
   @override

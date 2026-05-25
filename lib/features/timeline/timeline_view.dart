@@ -31,6 +31,7 @@ class _TimelineEvent {
   final Object item;
   final Color? categoryColor;
   final String? linkedActionId;
+  final String? planTag;
 
   const _TimelineEvent({
     this.id,
@@ -43,6 +44,7 @@ class _TimelineEvent {
     required this.item,
     this.categoryColor,
     this.linkedActionId,
+    this.planTag,
   });
 }
 
@@ -369,6 +371,18 @@ class _TimelineContentState extends State<_TimelineContent> {
     final catMap = {for (final c in categories) c.id: c};
     final personMap = {for (final p in persons) p.id: p};
 
+    // Build plan tag map for actions
+    final planWps = await db.programmeGanttDao.getWorkPackages(widget.projectId);
+    final planActs = await db.programmeGanttDao.getActivitiesForProject(widget.projectId);
+    final planTagMap = <String, String>{};
+    for (final act in planActs) {
+      final wp = planWps.cast<TimelineWorkPackage?>()
+          .firstWhere((w) => w?.id == act.workPackageId, orElse: () => null);
+      planTagMap[act.id] = wp != null
+          ? '[${wp.shortCode ?? wp.name}] ${act.name}'
+          : act.name;
+    }
+
     final events = <_TimelineEvent>[];
 
     for (final a in actions) {
@@ -388,6 +402,7 @@ class _TimelineContentState extends State<_TimelineContent> {
         item: a,
         categoryColor: cat != null ? parseHexColor(cat.color) : null,
         linkedActionId: a.linkedActionId,
+        planTag: a.planActivityId != null ? planTagMap[a.planActivityId!] : null,
       ));
     }
 
@@ -674,7 +689,8 @@ class _TimelineContentState extends State<_TimelineContent> {
                   ...overdue.map((e) => _EventRow(
                       event: e,
                       projectId: widget.projectId,
-                      db: context.read<AppDatabase>())),
+                      db: context.read<AppDatabase>(),
+                      planTag: e.planTag)),
                   const SizedBox(height: 20),
                 ],
                 if (thisWeek.isNotEmpty) ...[
@@ -684,7 +700,8 @@ class _TimelineContentState extends State<_TimelineContent> {
                   ...thisWeek.map((e) => _EventRow(
                       event: e,
                       projectId: widget.projectId,
-                      db: context.read<AppDatabase>())),
+                      db: context.read<AppDatabase>(),
+                      planTag: e.planTag)),
                   const SizedBox(height: 20),
                 ],
                 if (thisMonth.isNotEmpty) ...[
@@ -695,7 +712,8 @@ class _TimelineContentState extends State<_TimelineContent> {
                   ...thisMonth.map((e) => _EventRow(
                       event: e,
                       projectId: widget.projectId,
-                      db: context.read<AppDatabase>())),
+                      db: context.read<AppDatabase>(),
+                      planTag: e.planTag)),
                   const SizedBox(height: 20),
                 ],
                 if (future.isNotEmpty) ...[
@@ -705,7 +723,8 @@ class _TimelineContentState extends State<_TimelineContent> {
                   ...future.map((e) => _EventRow(
                       event: e,
                       projectId: widget.projectId,
-                      db: context.read<AppDatabase>())),
+                      db: context.read<AppDatabase>(),
+                      planTag: e.planTag)),
                   const SizedBox(height: 20),
                 ],
                 if (noDate.isNotEmpty) ...[
@@ -715,7 +734,8 @@ class _TimelineContentState extends State<_TimelineContent> {
                   ...noDate.map((e) => _EventRow(
                       event: e,
                       projectId: widget.projectId,
-                      db: context.read<AppDatabase>())),
+                      db: context.read<AppDatabase>(),
+                      planTag: e.planTag)),
                 ],
               ],
             ),
@@ -1196,11 +1216,13 @@ class _EventRow extends StatelessWidget {
   final _TimelineEvent event;
   final String projectId;
   final AppDatabase db;
+  final String? planTag;
 
   const _EventRow({
     required this.event,
     required this.projectId,
     required this.db,
+    this.planTag,
   });
 
   void _openDetail(BuildContext context) {
@@ -1393,6 +1415,40 @@ class _EventRow extends StatelessWidget {
                     fontWeight: event.isOverdue
                         ? FontWeight.w600
                         : FontWeight.normal,
+                  ),
+                ),
+              ),
+            ],
+            if (planTag != null) ...[
+              const SizedBox(width: 6),
+              Tooltip(
+                message: planTag!,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: KColors.phosphor.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(2),
+                    border: Border.all(
+                        color: KColors.phosphor.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.account_tree_outlined,
+                          size: 9, color: KColors.phosphor),
+                      const SizedBox(width: 3),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 90),
+                        child: Text(
+                          planTag!,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              color: KColors.phosphor,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),

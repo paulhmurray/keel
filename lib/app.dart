@@ -102,17 +102,24 @@ class _KeelAppState extends State<KeelApp> {
         home: Consumer<SettingsProvider>(
           builder: (context, settingsProvider, _) {
             final scale = settingsProvider.settings.uiScale;
-            if (scale == 1.0) return const ShellLayout();
             return LayoutBuilder(
-              builder: (context, constraints) => Transform.scale(
-                scale: scale,
-                alignment: Alignment.topLeft,
-                child: SizedBox(
-                  width: constraints.maxWidth / scale,
-                  height: constraints.maxHeight / scale,
-                  child: const ShellLayout(),
-                ),
-              ),
+              builder: (context, constraints) {
+                final w = constraints.maxWidth / scale;
+                final h = constraints.maxHeight / scale;
+                final mq = MediaQuery.of(context);
+                return FittedBox(
+                  fit: BoxFit.fill,
+                  alignment: Alignment.topLeft,
+                  child: SizedBox(
+                    width: w,
+                    height: h,
+                    child: MediaQuery(
+                      data: mq.copyWith(size: Size(w, h)),
+                      child: const ShellLayout(),
+                    ),
+                  ),
+                );
+              },
             );
           },
         ),
