@@ -22,6 +22,13 @@ class PersonPickerField extends StatelessWidget {
   final String projectId;
   final VoidCallback onPersonCreated;
 
+  /// Optional styling pass-through. When set, the underlying
+  /// EntityPickerField gets the roomier text/label/padding — useful for
+  /// dialogs that want a less compact field.
+  final TextStyle? textStyle;
+  final TextStyle? labelStyle;
+  final EdgeInsetsGeometry? contentPadding;
+
   const PersonPickerField({
     super.key,
     required this.controller,
@@ -30,6 +37,9 @@ class PersonPickerField extends StatelessWidget {
     required this.db,
     required this.projectId,
     required this.onPersonCreated,
+    this.textStyle,
+    this.labelStyle,
+    this.contentPadding,
   });
 
   @override
@@ -40,6 +50,9 @@ class PersonPickerField extends StatelessWidget {
       label: label,
       items: persons,
       displayName: (p) => p.name,
+      textStyle: textStyle,
+      labelStyle: labelStyle,
+      contentPadding: contentPadding,
       secondaryLine: (p) => [p.role, p.organisation]
           .where((s) => s != null && s.isNotEmpty)
           .join(' · '),
@@ -77,6 +90,7 @@ class PersonPickerField extends StatelessWidget {
           role: Value(result.role),
           organisation: Value(result.organisation),
           personType: Value(result.personType),
+          isStakeholder: Value(result.isStakeholder),
           createdAt: Value(now),
           updatedAt: Value(now),
         ));
@@ -92,6 +106,7 @@ class PersonPickerField extends StatelessWidget {
             role: result.role,
             organisation: result.organisation,
             personType: result.personType,
+            isStakeholder: result.isStakeholder,
             createdAt: now,
             updatedAt: now,
           ),
@@ -139,6 +154,7 @@ Future<Person?> showPersonPicker({
         role: Value(result.role),
         organisation: Value(result.organisation),
         personType: Value(result.personType),
+        isStakeholder: Value(result.isStakeholder),
         createdAt: Value(now),
         updatedAt: Value(now),
       ));
@@ -149,6 +165,7 @@ Future<Person?> showPersonPicker({
         role: result.role,
         organisation: result.organisation,
         personType: result.personType,
+        isStakeholder: result.isStakeholder,
         createdAt: now,
         updatedAt: now,
       );
@@ -165,12 +182,14 @@ class NewPersonResult {
   final String? role;
   final String? organisation;
   final String personType;
+  final bool isStakeholder;
 
   const NewPersonResult({
     required this.name,
     this.role,
     this.organisation,
     required this.personType,
+    this.isStakeholder = false,
   });
 }
 
@@ -180,12 +199,16 @@ class AddPersonDialog extends StatefulWidget {
   final String name;
   final AppDatabase db;
   final String projectId;
+  final String? initialType;
+  final bool initialIsStakeholder;
 
   const AddPersonDialog({
     super.key,
     required this.name,
     required this.db,
     required this.projectId,
+    this.initialType,
+    this.initialIsStakeholder = false,
   });
 
   @override
@@ -196,11 +219,11 @@ class _AddPersonDialogState extends State<AddPersonDialog> {
   late TextEditingController _nameCtrl;
   final _roleCtrl = TextEditingController();
   final _orgCtrl = TextEditingController();
-  String _personType = 'stakeholder';
+  late String _personType;
+  late bool _isStakeholder;
 
   static const _types = [
-    ('stakeholder', 'Stakeholder'),
-    ('colleague', 'Colleague'),
+    ('colleague', 'Team / Colleague'),
     ('exec', 'Executive'),
     ('vendor', 'Vendor'),
   ];
@@ -209,6 +232,14 @@ class _AddPersonDialogState extends State<AddPersonDialog> {
   void initState() {
     super.initState();
     _nameCtrl = TextEditingController(text: widget.name);
+    _personType = _normaliseType(widget.initialType);
+    _isStakeholder = widget.initialIsStakeholder;
+  }
+
+  // Legacy 'stakeholder' default folds into colleague + isStakeholder=true.
+  String _normaliseType(String? raw) {
+    if (raw == null || raw == 'stakeholder') return 'colleague';
+    return raw;
   }
 
   @override
@@ -227,6 +258,9 @@ class _AddPersonDialogState extends State<AddPersonDialog> {
       role: _roleCtrl.text.trim().isEmpty ? null : _roleCtrl.text.trim(),
       organisation: _orgCtrl.text.trim().isEmpty ? null : _orgCtrl.text.trim(),
       personType: _personType,
+      isStakeholder: _isStakeholder
+          // Auto-flip on if the caller asked for a stakeholder by legacy default.
+          || widget.initialType == 'stakeholder',
     ));
   }
 
@@ -265,7 +299,7 @@ class _AddPersonDialogState extends State<AddPersonDialog> {
               onSubmitted: (_) => _submit(),
             ),
             const SizedBox(height: 14),
-            const Text('TYPE',
+            const Text('CATEGORY',
                 style: TextStyle(
                     color: KColors.textMuted,
                     fontSize: 10,
@@ -290,6 +324,28 @@ class _AddPersonDialogState extends State<AddPersonDialog> {
                   onSelected: (_) => setState(() => _personType = value),
                 );
               }).toList(),
+            ),
+            const SizedBox(height: 12),
+            // Stakeholder is orthogonal to category — anyone (colleague, exec
+            // or vendor) can additionally be tracked as a project stakeholder.
+            InkWell(
+              onTap: () =>
+                  setState(() => _isStakeholder = !_isStakeholder),
+              child: Row(
+                children: [
+                  Checkbox(
+                    value: _isStakeholder,
+                    onChanged: (v) =>
+                        setState(() => _isStakeholder = v ?? false),
+                    activeColor: KColors.amber,
+                    checkColor: KColors.bg,
+                  ),
+                  const Text(
+                    'Track as project stakeholder',
+                    style: TextStyle(color: KColors.text, fontSize: 12),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

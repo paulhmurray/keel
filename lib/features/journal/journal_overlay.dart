@@ -610,7 +610,8 @@ class _QuickPersonDialogState extends State<_QuickPersonDialog> {
           _orgCtrl.text.trim().isEmpty ? null : _orgCtrl.text.trim(),
       phone: null,
       teamsHandle: null,
-      personType: 'stakeholder',
+      personType: 'colleague',
+      isStakeholder: false,
       createdAt: now,
       updatedAt: now,
     );

@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
 // Conditional dart:io import — only used on non-web platforms.
 import '_settings_io.dart' if (dart.library.html) '_settings_web.dart';
@@ -61,6 +62,13 @@ class AppSettings {
   final bool hasSeenThreeViewTour;
   final bool hasSeenCharterMigrationNotice;
 
+  // Analytics — opt-in product telemetry. Off by default; install ID is
+  // lazily generated on first opt-in so users who never opt in have NO
+  // identifier on disk. See lib/core/analytics for details on what is
+  // (and is not) sent.
+  final bool analyticsEnabled;
+  final String? analyticsInstallId;
+
   const AppSettings({
     this.llmProvider = LLMProvider.claudeApi,
     this.claudeApiKey = '',
@@ -87,6 +95,8 @@ class AppSettings {
     this.vimEscapeSequence = '',
     this.hasSeenThreeViewTour = false,
     this.hasSeenCharterMigrationNotice = false,
+    this.analyticsEnabled = false,
+    this.analyticsInstallId,
   });
 
   bool get hasApiKey {
@@ -132,6 +142,9 @@ class AppSettings {
     String? vimEscapeSequence,
     bool? hasSeenThreeViewTour,
     bool? hasSeenCharterMigrationNotice,
+    bool? analyticsEnabled,
+    // Sentinel-based so callers can null out the install ID on clear.
+    Object? analyticsInstallId = _kUnchanged,
   }) {
     return AppSettings(
       llmProvider: llmProvider ?? this.llmProvider,
@@ -159,6 +172,10 @@ class AppSettings {
       vimEscapeSequence: vimEscapeSequence ?? this.vimEscapeSequence,
       hasSeenThreeViewTour: hasSeenThreeViewTour ?? this.hasSeenThreeViewTour,
       hasSeenCharterMigrationNotice: hasSeenCharterMigrationNotice ?? this.hasSeenCharterMigrationNotice,
+      analyticsEnabled: analyticsEnabled ?? this.analyticsEnabled,
+      analyticsInstallId: identical(analyticsInstallId, _kUnchanged)
+          ? this.analyticsInstallId
+          : analyticsInstallId as String?,
     );
   }
 
@@ -188,6 +205,9 @@ class AppSettings {
         'vimEscapeSequence': vimEscapeSequence,
         'hasSeenThreeViewTour': hasSeenThreeViewTour,
         'hasSeenCharterMigrationNotice': hasSeenCharterMigrationNotice,
+        'analyticsEnabled': analyticsEnabled,
+        if (analyticsInstallId != null)
+          'analyticsInstallId': analyticsInstallId,
       };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) {
@@ -224,9 +244,16 @@ class AppSettings {
       vimEscapeSequence: json['vimEscapeSequence'] as String? ?? '',
       hasSeenThreeViewTour: json['hasSeenThreeViewTour'] as bool? ?? false,
       hasSeenCharterMigrationNotice: json['hasSeenCharterMigrationNotice'] as bool? ?? false,
+      analyticsEnabled: json['analyticsEnabled'] as bool? ?? false,
+      analyticsInstallId: json['analyticsInstallId'] as String?,
     );
   }
 }
+
+// Sentinel for copyWith — distinguishes "caller didn't pass anything"
+// from "caller passed null to clear the field". Required for
+// `analyticsInstallId` which legitimately needs to be cleared on opt-out.
+const Object _kUnchanged = Object();
 
 // ---------------------------------------------------------------------------
 // Settings storage key (used by both IO and web backends)
@@ -327,5 +354,29 @@ class SettingsProvider extends ChangeNotifier {
   Future<void> markCharterMigrationNoticeSeen() async {
     if (_settings.hasSeenCharterMigrationNotice) return;
     await save(_settings.copyWith(hasSeenCharterMigrationNotice: true));
+  }
+
+  /// Flip analytics on/off. Opting in lazily generates the anonymous
+  /// install ID if one isn't already on disk — users who never opt in
+  /// have NO identifier persisted. Opting out keeps the install ID
+  /// around (so re-opting-in resumes the same anonymous identity); use
+  /// [clearAnalyticsInstallId] to fully reset.
+  Future<void> setAnalyticsEnabled(bool enabled) async {
+    if (enabled && _settings.analyticsInstallId == null) {
+      await save(_settings.copyWith(
+        analyticsEnabled: true,
+        analyticsInstallId: const Uuid().v4(),
+      ));
+    } else {
+      await save(_settings.copyWith(analyticsEnabled: enabled));
+    }
+  }
+
+  /// Wipes the persisted install ID — used by the Settings "Clear"
+  /// affordance. If the user is still opted in, the next event call
+  /// regenerates a fresh ID via [setAnalyticsEnabled]; if not, the
+  /// device drops back to having no analytics identifier at all.
+  Future<void> clearAnalyticsInstallId() async {
+    await save(_settings.copyWith(analyticsInstallId: null));
   }
 }

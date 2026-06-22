@@ -1,17 +1,112 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/cascade/cascade_service.dart';
+import '../../core/cascade/sync_cascade_gateway.dart';
 import '../../core/database/database.dart';
+import '../../core/sync/sync_client.dart';
 import '../../providers/project_provider.dart';
+import '../../providers/sync_provider.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/utils/date_utils.dart' as du;
 import '../../shared/widgets/compass_empty_state.dart';
 import '../../shared/widgets/status_chip.dart';
 import '../../shared/widgets/source_badge.dart';
+import '../canvas/canvas_drag_source.dart';
+import '../canvas/in_canvas_indicator.dart';
 import 'risk_form.dart';
 import 'assumption_form.dart';
 import 'issue_form.dart';
 import 'dependency_form.dart';
+
+// ── Escalation helpers (Phase C.2) ─────────────────────────────────────────
+//
+// The four RAID row widgets share the same escalate / unescalate
+// affordance: an extra item in their popup menu + a small "↑ ESC"
+// badge when escalatedAt is non-null. Centralising the logic here so
+// the four rows don't each grow their own cascade plumbing.
+
+/// Builds a [CascadeService] from the live providers. Returns a
+/// service with a null gateway when the user isn't signed in — push
+/// then no-ops, so the UI doesn't need to branch.
+CascadeService _cascadeFor(BuildContext context, AppDatabase db) {
+  final sync = context.read<SyncProvider>();
+  final token = sync.accessToken;
+  return CascadeService(
+    db,
+    gateway: token == null
+        ? null
+        : SyncCascadeGateway(
+            client: SyncClient(baseUrl: sync.serverUrl),
+            accessToken: token,
+          ),
+  );
+}
+
+/// Cascaded rows are read-only on the programme side — sourceProjectId
+/// non-null means this row arrived from a linked project.
+bool _isCascaded(String? sourceProjectId) => sourceProjectId != null;
+
+/// Small badge rendered next to the source badge when a row is
+/// escalated. Distinct visual so escalated rows pop without crowding.
+class _EscalatedBadge extends StatelessWidget {
+  const _EscalatedBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+      margin: const EdgeInsets.only(left: 4),
+      decoration: BoxDecoration(
+        color: KColors.amberDim,
+        border: Border.all(color: KColors.amber, width: 0.5),
+        borderRadius: BorderRadius.circular(2),
+      ),
+      child: Tooltip(
+        message: 'Escalated — visible to linked programmes',
+        child: const Text(
+          '↑ ESC',
+          style: TextStyle(
+            color: KColors.amber,
+            fontSize: 9,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.4,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// "Cascaded from project" badge for the programme side.
+class _CascadedBadge extends StatelessWidget {
+  const _CascadedBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+      margin: const EdgeInsets.only(left: 4),
+      decoration: BoxDecoration(
+        color: KColors.surface2,
+        border: Border.all(color: KColors.border2, width: 0.5),
+        borderRadius: BorderRadius.circular(2),
+      ),
+      child: Tooltip(
+        message: 'Cascaded from a linked project — read-only',
+        child: const Text(
+          'PROJ',
+          style: TextStyle(
+            color: KColors.textMuted,
+            fontSize: 9,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.4,
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Column width constants
@@ -425,7 +520,12 @@ class _RiskRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return CanvasDragSource(
+      itemType: 'risk',
+      itemId: risk.id,
+      title: risk.description,
+      body: risk.mitigation,
+      child: InkWell(
       onTap: () => showDialog(
         context: context,
         builder: (_) => RiskFormDialog(
@@ -482,32 +582,93 @@ class _RiskRow extends StatelessWidget {
             // Status
             SizedBox(width: _kStatusW, child: StatusChip(status: risk.status)),
             // Source
-            SizedBox(width: _kSourceW, child: SourceBadge(source: risk.source)),
+            SizedBox(
+              width: _kSourceW,
+              child: Wrap(
+                runSpacing: 2,
+                children: [
+                  SourceBadge(source: risk.source),
+                  if (risk.escalatedAt != null &&
+                      !_isCascaded(risk.sourceProjectId))
+                    const _EscalatedBadge(),
+                  if (_isCascaded(risk.sourceProjectId))
+                    const _CascadedBadge(),
+                ],
+              ),
+            ),
+            // Canvas indicator
+            InCanvasIndicator(itemType: 'risk', itemId: risk.id),
             // Actions
             SizedBox(
               width: _kMenuW,
-              child: PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, size: 16, color: KColors.textMuted),
-                onSelected: (val) {
-                  if (val == 'edit') {
-                    showDialog(
-                      context: context,
-                      builder: (_) =>
-                          RiskFormDialog(projectId: projectId, db: db, risk: risk),
-                    );
-                  } else if (val == 'delete') {
-                    db.raidDao.deleteRisk(risk.id);
-                  }
-                },
-                itemBuilder: (_) => const [
-                  PopupMenuItem(value: 'edit', child: Text('Edit')),
-                  PopupMenuItem(value: 'delete', child: Text('Delete')),
-                ],
-              ),
+              child: _isCascaded(risk.sourceProjectId)
+                  ? const SizedBox.shrink()
+                  : PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert,
+                          size: 16, color: KColors.textMuted),
+                      onSelected: (val) async {
+                        if (val == 'edit') {
+                          await showDialog(
+                            context: context,
+                            builder: (_) => RiskFormDialog(
+                                projectId: projectId, db: db, risk: risk),
+                          );
+                          if (context.mounted && risk.escalatedAt != null) {
+                            final fresh =
+                                await db.raidDao.getRiskById(risk.id);
+                            if (fresh != null && context.mounted) {
+                              await _cascadeFor(context, db).pushRisk(fresh);
+                            }
+                          }
+                        } else if (val == 'delete') {
+                          if (risk.escalatedAt != null && context.mounted) {
+                            await _cascadeFor(context, db).tombstoneRaidItem(
+                              projectId: projectId,
+                              itemKind: CascadeKinds.risk,
+                              itemId: risk.id,
+                            );
+                          }
+                          await db.raidDao.deleteRisk(risk.id);
+                        } else if (val == 'escalate') {
+                          await db.raidDao
+                              .setRiskEscalated(risk.id, true);
+                          final fresh =
+                              await db.raidDao.getRiskById(risk.id);
+                          if (fresh != null && context.mounted) {
+                            await _cascadeFor(context, db).pushRisk(fresh);
+                          }
+                        } else if (val == 'unescalate') {
+                          if (context.mounted) {
+                            await _cascadeFor(context, db).tombstoneRaidItem(
+                              projectId: projectId,
+                              itemKind: CascadeKinds.risk,
+                              itemId: risk.id,
+                            );
+                          }
+                          await db.raidDao
+                              .setRiskEscalated(risk.id, false);
+                        }
+                      },
+                      itemBuilder: (_) => [
+                        const PopupMenuItem(
+                            value: 'edit', child: Text('Edit')),
+                        if (risk.escalatedAt == null)
+                          const PopupMenuItem(
+                              value: 'escalate',
+                              child: Text('Escalate to programme'))
+                        else
+                          const PopupMenuItem(
+                              value: 'unescalate',
+                              child: Text('Stop escalating')),
+                        const PopupMenuItem(
+                            value: 'delete', child: Text('Delete')),
+                      ],
+                    ),
             ),
           ],
         ),
       ),
+    ),
     );
   }
 }
@@ -614,7 +775,11 @@ class _AssumptionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return CanvasDragSource(
+      itemType: 'assumption',
+      itemId: assumption.id,
+      title: assumption.description,
+      child: InkWell(
       onTap: () => showDialog(
         context: context,
         builder: (_) => AssumptionFormDialog(
@@ -648,31 +813,97 @@ class _AssumptionRow extends StatelessWidget {
             ),
             SizedBox(width: _kOwnerW, child: _OwnerChip(name: assumption.owner)),
             SizedBox(width: _kStatusW, child: StatusChip(status: assumption.status)),
-            SizedBox(width: _kSourceW, child: SourceBadge(source: assumption.source)),
             SizedBox(
-              width: _kMenuW,
-              child: PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, size: 16, color: KColors.textMuted),
-                onSelected: (val) {
-                  if (val == 'edit') {
-                    showDialog(
-                      context: context,
-                      builder: (_) => AssumptionFormDialog(
-                          projectId: projectId, db: db, assumption: assumption),
-                    );
-                  } else if (val == 'delete') {
-                    db.raidDao.deleteAssumption(assumption.id);
-                  }
-                },
-                itemBuilder: (_) => const [
-                  PopupMenuItem(value: 'edit', child: Text('Edit')),
-                  PopupMenuItem(value: 'delete', child: Text('Delete')),
+              width: _kSourceW,
+              child: Wrap(
+                runSpacing: 2,
+                children: [
+                  SourceBadge(source: assumption.source),
+                  if (assumption.escalatedAt != null &&
+                      !_isCascaded(assumption.sourceProjectId))
+                    const _EscalatedBadge(),
+                  if (_isCascaded(assumption.sourceProjectId))
+                    const _CascadedBadge(),
                 ],
               ),
+            ),
+            InCanvasIndicator(itemType: 'assumption', itemId: assumption.id),
+            SizedBox(
+              width: _kMenuW,
+              child: _isCascaded(assumption.sourceProjectId)
+                  ? const SizedBox.shrink()
+                  : PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert,
+                          size: 16, color: KColors.textMuted),
+                      onSelected: (val) async {
+                        if (val == 'edit') {
+                          await showDialog(
+                            context: context,
+                            builder: (_) => AssumptionFormDialog(
+                                projectId: projectId,
+                                db: db,
+                                assumption: assumption),
+                          );
+                          if (context.mounted &&
+                              assumption.escalatedAt != null) {
+                            final fresh = await db.raidDao
+                                .getAssumptionById(assumption.id);
+                            if (fresh != null && context.mounted) {
+                              await _cascadeFor(context, db)
+                                  .pushAssumption(fresh);
+                            }
+                          }
+                        } else if (val == 'delete') {
+                          if (assumption.escalatedAt != null &&
+                              context.mounted) {
+                            await _cascadeFor(context, db).tombstoneRaidItem(
+                              projectId: projectId,
+                              itemKind: CascadeKinds.assumption,
+                              itemId: assumption.id,
+                            );
+                          }
+                          await db.raidDao.deleteAssumption(assumption.id);
+                        } else if (val == 'escalate') {
+                          await db.raidDao
+                              .setAssumptionEscalated(assumption.id, true);
+                          final fresh = await db.raidDao
+                              .getAssumptionById(assumption.id);
+                          if (fresh != null && context.mounted) {
+                            await _cascadeFor(context, db)
+                                .pushAssumption(fresh);
+                          }
+                        } else if (val == 'unescalate') {
+                          if (context.mounted) {
+                            await _cascadeFor(context, db).tombstoneRaidItem(
+                              projectId: projectId,
+                              itemKind: CascadeKinds.assumption,
+                              itemId: assumption.id,
+                            );
+                          }
+                          await db.raidDao
+                              .setAssumptionEscalated(assumption.id, false);
+                        }
+                      },
+                      itemBuilder: (_) => [
+                        const PopupMenuItem(
+                            value: 'edit', child: Text('Edit')),
+                        if (assumption.escalatedAt == null)
+                          const PopupMenuItem(
+                              value: 'escalate',
+                              child: Text('Escalate to programme'))
+                        else
+                          const PopupMenuItem(
+                              value: 'unescalate',
+                              child: Text('Stop escalating')),
+                        const PopupMenuItem(
+                            value: 'delete', child: Text('Delete')),
+                      ],
+                    ),
             ),
           ],
         ),
       ),
+    ),
     );
   }
 }
@@ -793,7 +1024,12 @@ class _IssueRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return CanvasDragSource(
+      itemType: 'issue',
+      itemId: issue.id,
+      title: issue.description,
+      body: issue.resolution,
+      child: InkWell(
       onTap: () => showDialog(
         context: context,
         builder: (_) => IssueFormDialog(
@@ -834,31 +1070,96 @@ class _IssueRow extends StatelessWidget {
               child: Text(issue.priority, style: _kMetaStyle, overflow: TextOverflow.ellipsis),
             ),
             SizedBox(width: _kStatusW, child: StatusChip(status: issue.status)),
-            SizedBox(width: _kSourceW, child: SourceBadge(source: issue.source)),
             SizedBox(
-              width: _kMenuW,
-              child: PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, size: 16, color: KColors.textMuted),
-                onSelected: (val) {
-                  if (val == 'edit') {
-                    showDialog(
-                      context: context,
-                      builder: (_) =>
-                          IssueFormDialog(projectId: projectId, db: db, issue: issue),
-                    );
-                  } else if (val == 'delete') {
-                    db.raidDao.deleteIssue(issue.id);
-                  }
-                },
-                itemBuilder: (_) => const [
-                  PopupMenuItem(value: 'edit', child: Text('Edit')),
-                  PopupMenuItem(value: 'delete', child: Text('Delete')),
+              width: _kSourceW,
+              child: Wrap(
+                runSpacing: 2,
+                children: [
+                  SourceBadge(source: issue.source),
+                  if (issue.escalatedAt != null &&
+                      !_isCascaded(issue.sourceProjectId))
+                    const _EscalatedBadge(),
+                  if (_isCascaded(issue.sourceProjectId))
+                    const _CascadedBadge(),
                 ],
               ),
+            ),
+            InCanvasIndicator(itemType: 'issue', itemId: issue.id),
+            SizedBox(
+              width: _kMenuW,
+              child: _isCascaded(issue.sourceProjectId)
+                  ? const SizedBox.shrink()
+                  : PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert,
+                          size: 16, color: KColors.textMuted),
+                      onSelected: (val) async {
+                        if (val == 'edit') {
+                          await showDialog(
+                            context: context,
+                            builder: (_) => IssueFormDialog(
+                                projectId: projectId,
+                                db: db,
+                                issue: issue),
+                          );
+                          if (context.mounted &&
+                              issue.escalatedAt != null) {
+                            final fresh =
+                                await db.raidDao.getIssueById(issue.id);
+                            if (fresh != null && context.mounted) {
+                              await _cascadeFor(context, db)
+                                  .pushIssue(fresh);
+                            }
+                          }
+                        } else if (val == 'delete') {
+                          if (issue.escalatedAt != null &&
+                              context.mounted) {
+                            await _cascadeFor(context, db).tombstoneRaidItem(
+                              projectId: projectId,
+                              itemKind: CascadeKinds.issue,
+                              itemId: issue.id,
+                            );
+                          }
+                          await db.raidDao.deleteIssue(issue.id);
+                        } else if (val == 'escalate') {
+                          await db.raidDao
+                              .setIssueEscalated(issue.id, true);
+                          final fresh =
+                              await db.raidDao.getIssueById(issue.id);
+                          if (fresh != null && context.mounted) {
+                            await _cascadeFor(context, db).pushIssue(fresh);
+                          }
+                        } else if (val == 'unescalate') {
+                          if (context.mounted) {
+                            await _cascadeFor(context, db).tombstoneRaidItem(
+                              projectId: projectId,
+                              itemKind: CascadeKinds.issue,
+                              itemId: issue.id,
+                            );
+                          }
+                          await db.raidDao
+                              .setIssueEscalated(issue.id, false);
+                        }
+                      },
+                      itemBuilder: (_) => [
+                        const PopupMenuItem(
+                            value: 'edit', child: Text('Edit')),
+                        if (issue.escalatedAt == null)
+                          const PopupMenuItem(
+                              value: 'escalate',
+                              child: Text('Escalate to programme'))
+                        else
+                          const PopupMenuItem(
+                              value: 'unescalate',
+                              child: Text('Stop escalating')),
+                        const PopupMenuItem(
+                            value: 'delete', child: Text('Delete')),
+                      ],
+                    ),
             ),
           ],
         ),
       ),
+    ),
     );
   }
 }
@@ -967,7 +1268,11 @@ class _DependencyRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return CanvasDragSource(
+      itemType: 'dependency',
+      itemId: dep.id,
+      title: dep.description,
+      child: InkWell(
       onTap: () => showDialog(
         context: context,
         builder: (_) => DependencyFormDialog(
@@ -1009,31 +1314,95 @@ class _DependencyRow extends StatelessWidget {
               child: Text(du.formatDate(dep.dueDate), style: _kMetaStyle),
             ),
             SizedBox(width: _kStatusW, child: StatusChip(status: dep.status)),
-            SizedBox(width: _kSourceW, child: SourceBadge(source: dep.source)),
             SizedBox(
-              width: _kMenuW,
-              child: PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, size: 16, color: KColors.textMuted),
-                onSelected: (val) {
-                  if (val == 'edit') {
-                    showDialog(
-                      context: context,
-                      builder: (_) => DependencyFormDialog(
-                          projectId: projectId, db: db, dependency: dep),
-                    );
-                  } else if (val == 'delete') {
-                    db.raidDao.deleteDependency(dep.id);
-                  }
-                },
-                itemBuilder: (_) => const [
-                  PopupMenuItem(value: 'edit', child: Text('Edit')),
-                  PopupMenuItem(value: 'delete', child: Text('Delete')),
+              width: _kSourceW,
+              child: Wrap(
+                runSpacing: 2,
+                children: [
+                  SourceBadge(source: dep.source),
+                  if (dep.escalatedAt != null &&
+                      !_isCascaded(dep.sourceProjectId))
+                    const _EscalatedBadge(),
+                  if (_isCascaded(dep.sourceProjectId))
+                    const _CascadedBadge(),
                 ],
               ),
+            ),
+            InCanvasIndicator(itemType: 'dependency', itemId: dep.id),
+            SizedBox(
+              width: _kMenuW,
+              child: _isCascaded(dep.sourceProjectId)
+                  ? const SizedBox.shrink()
+                  : PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert,
+                          size: 16, color: KColors.textMuted),
+                      onSelected: (val) async {
+                        if (val == 'edit') {
+                          await showDialog(
+                            context: context,
+                            builder: (_) => DependencyFormDialog(
+                                projectId: projectId,
+                                db: db,
+                                dependency: dep),
+                          );
+                          if (context.mounted && dep.escalatedAt != null) {
+                            final fresh =
+                                await db.raidDao.getDependencyById(dep.id);
+                            if (fresh != null && context.mounted) {
+                              await _cascadeFor(context, db)
+                                  .pushDependency(fresh);
+                            }
+                          }
+                        } else if (val == 'delete') {
+                          if (dep.escalatedAt != null && context.mounted) {
+                            await _cascadeFor(context, db).tombstoneRaidItem(
+                              projectId: projectId,
+                              itemKind: CascadeKinds.dependency,
+                              itemId: dep.id,
+                            );
+                          }
+                          await db.raidDao.deleteDependency(dep.id);
+                        } else if (val == 'escalate') {
+                          await db.raidDao
+                              .setDependencyEscalated(dep.id, true);
+                          final fresh =
+                              await db.raidDao.getDependencyById(dep.id);
+                          if (fresh != null && context.mounted) {
+                            await _cascadeFor(context, db)
+                                .pushDependency(fresh);
+                          }
+                        } else if (val == 'unescalate') {
+                          if (context.mounted) {
+                            await _cascadeFor(context, db).tombstoneRaidItem(
+                              projectId: projectId,
+                              itemKind: CascadeKinds.dependency,
+                              itemId: dep.id,
+                            );
+                          }
+                          await db.raidDao
+                              .setDependencyEscalated(dep.id, false);
+                        }
+                      },
+                      itemBuilder: (_) => [
+                        const PopupMenuItem(
+                            value: 'edit', child: Text('Edit')),
+                        if (dep.escalatedAt == null)
+                          const PopupMenuItem(
+                              value: 'escalate',
+                              child: Text('Escalate to programme'))
+                        else
+                          const PopupMenuItem(
+                              value: 'unescalate',
+                              child: Text('Stop escalating')),
+                        const PopupMenuItem(
+                            value: 'delete', child: Text('Delete')),
+                      ],
+                    ),
             ),
           ],
         ),
       ),
+    ),
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:drift/drift.dart' show Value;
 
+import '../../core/analytics/keel_events.dart';
 import '../../core/database/database.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/widgets/dropdown_field.dart';
@@ -80,6 +81,7 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final isNew = widget.decision == null;
     final existing = await widget.db.decisionsDao.getDecisionsForProject(widget.projectId);
     final nums = existing
         .where((d) => d.ref != null && d.ref!.startsWith('DC'))
@@ -115,6 +117,12 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
       ),
     );
 
+    if (isNew && mounted) {
+      context.analytics.track(
+        KeelEvents.decisionCreated,
+        props: {KeelEventProps.source: 'decision_form'},
+      );
+    }
     if (mounted) Navigator.of(context).pop();
   }
 

@@ -289,7 +289,8 @@ void main() {
       id: 'per1',
       projectId: 'p1',
       name: 'Alice Smith',
-      personType: 'stakeholder',
+      personType: 'colleague',
+      isStakeholder: true,
       createdAt: _now,
       updatedAt: _now,
     );
@@ -327,7 +328,8 @@ void main() {
         projectId: 'p1',
         name: 'Bob Jones',
         role: 'Programme Director',
-        personType: 'stakeholder',
+        personType: 'colleague',
+        isStakeholder: true,
         createdAt: _now,
         updatedAt: _now,
       );
@@ -351,7 +353,8 @@ void main() {
         id: 'per3',
         projectId: 'p1',
         name: 'O\'<script>Brien',
-        personType: 'stakeholder',
+        personType: 'colleague',
+        isStakeholder: true,
         createdAt: _now,
         updatedAt: _now,
       );

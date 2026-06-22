@@ -7,15 +7,21 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/analytics/keel_events.dart';
+import '../../core/cascade/cascade_service.dart';
+import '../../core/cascade/sync_cascade_gateway.dart';
 import '../../core/database/database.dart';
+import '../../core/sync/links_gateway.dart';
+import '../../core/sync/sync_client.dart';
 import '../../providers/project_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/sync_provider.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/widgets/date_picker_field.dart';
 import '../../shared/widgets/keybindings_table.dart';
+import '../../shared/widgets/sync_password_dialog.dart';
 import '../programme/programme_view.dart';
-import '../timeline/timeline_view.dart';
+import '../canvas/canvas_view.dart';
 import '../timeline/gantt/programme_gantt_view.dart';
 import '../raid/raid_view.dart';
 import '../decisions/decisions_view.dart';
@@ -25,9 +31,12 @@ import '../inbox/inbox_view.dart';
 import '../context/context_view.dart';
 import '../reports/reports_view.dart';
 import '../settings/settings_view.dart';
+import '../actions/action_form.dart';
+import '../decisions/decision_form.dart';
 import '../journal/journal_history_view.dart';
 import '../journal/journal_overlay.dart';
 import '../playbook/playbook_view.dart';
+import '../raid/risk_form.dart';
 import '../status/status_view.dart';
 import '../charter/charter_view.dart';
 import '../charter/charter_migration_notice.dart';
@@ -93,6 +102,17 @@ class _ShellLayoutState extends State<ShellLayout> {
   int _contextNavSeq = 0;
   int _decisionsNavSeq = 0;
 
+  // Playbook stage to expand on next PlaybookView build — set when the
+  // user clicks a stage row in the sidebar. Consumed (cleared) by the
+  // view dispatcher after one render.
+  String? _playbookFocusStageId;
+
+  // Canvas remount + initial-mode triggers. Bumped by the SPC t leader
+  // chord so the view remounts (clean state) and, when SPC t n is used,
+  // opens the quick-capture overlay on first build.
+  int _canvasNavSeq = 0;
+  bool _canvasInitialQuickCapture = false;
+
   // Leader key state — null = inactive, non-null = active at this menu node
   _MenuNode? _currentLeaderMenu;
   String _leaderPrefix = 'SPC';
@@ -113,18 +133,126 @@ class _ShellLayoutState extends State<ShellLayout> {
     if (!kIsWeb) {
       HardwareKeyboard.instance.addHandler(_handleGlobalKey);
     }
-    // Watch for any DB write and mark as pending sync
+    // Watch for any DB write and mark the currently-viewed entity as
+    // having pending changes (sync state is tracked per project/programme).
     final db = context.read<AppDatabase>();
     final syncProvider = context.read<SyncProvider>();
     _dbChangeSub = db.watchAnyChange().listen((_) {
-      syncProvider.markLocalChange();
+      if (!mounted) return;
+      syncProvider.markLocalChange(
+          context.read<ProjectProvider>().currentProjectId);
     });
+
+    // Best-effort: refresh any pending programme links on launch so a
+    // PM who paired their project last night sees the connection light
+    // up this morning without having to touch settings.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshProgrammeLinks();
+    });
+  }
+
+  /// Background refresh of pending_remote programme links + cascade
+  /// pull for any active programme. Silent — failures don't surface
+  /// to the user; the manual Refresh button in settings exists for
+  /// explicit re-checks.
+  Future<void> _refreshProgrammeLinks() async {
+    if (!mounted) return;
+    final sync = context.read<SyncProvider>();
+    final token = sync.accessToken;
+    if (token == null) return;
+    final db = context.read<AppDatabase>();
+    final client = SyncClient(baseUrl: sync.serverUrl);
+    try {
+      // 1) Activate any links whose remote side joined while we were
+      // offline.
+      await db.programmeLinksDao.refreshPendingLinks(
+        remoteUserId: sync.userId,
+        remote: SyncLinksGateway(
+            client: client, accessToken: token),
+      );
+      // 2) On the programme side, pull cascaded items from every
+      // active link so the Plan view reflects the latest portfolio
+      // state on next render.
+      if (!mounted) return;
+      final project = context.read<ProjectProvider>().currentProject;
+      if (project != null && project.kind == 'programme') {
+        final cascade = CascadeService(
+          db,
+          gateway: SyncCascadeGateway(
+              client: client, accessToken: token),
+        );
+        await cascade.pullForProgramme(project.id);
+      }
+    } catch (_) {
+      // Quietly drop — manual refresh + next launch will retry.
+    }
+  }
+
+  /// Fires [KeelEvents.sectionOpened] with a stable section tag — used
+  /// to answer "which sections do users actually open?" without leaking
+  /// per-user navigation patterns. Index → tag mapping lives here
+  /// (rather than in the nav rail) so adding a new view requires just
+  /// one new case.
+  void _trackSectionOpened(int index) {
+    final tag = _sectionTagFor(index);
+    if (tag == null) return;
+    context.analytics.track(
+      KeelEvents.sectionOpened,
+      props: {KeelEventProps.section: tag},
+    );
+  }
+
+  String? _sectionTagFor(int index) {
+    switch (index) {
+      case 0:
+        return null; // Programme overview — not a primary surface yet.
+      case 1:
+        return KeelSection.canvas;
+      case 2:
+        return KeelSection.raid;
+      case 3:
+        return KeelSection.decisions;
+      case 4:
+        return KeelSection.people;
+      case 5:
+        return KeelSection.actions;
+      case 6:
+        return KeelSection.inbox;
+      case 7:
+        return null; // Context — internal hosting page, not user-facing.
+      case 8:
+        return KeelSection.reports;
+      case 9:
+        return KeelSection.settings;
+      case 10:
+        return KeelSection.journal;
+      case 11:
+        return null; // Playbook — secondary surface.
+      case 12:
+        return KeelSection.plan;
+      case 13:
+        return KeelSection.status;
+      case 14:
+        return KeelSection.charter;
+      default:
+        return null;
+    }
   }
 
   _MenuNode _buildRootMenu() {
     return _MenuNode('Navigate to…', {
       ' ':  _ActionNode('Overview',   () { _selectedIndex = 0; }),
-      't':  _ActionNode('Schedule',   () { _selectedIndex = 1; }),
+      't':  _MenuNode('Canvas', {
+        'n': _ActionNode('Quick-capture', () {
+          _selectedIndex = 1;
+          _canvasInitialQuickCapture = true;
+          _canvasNavSeq++;
+        }),
+      }, onEnter: () {
+        _selectedIndex = 1;
+        _canvasInitialQuickCapture = false;
+        _canvasNavSeq++;
+      }),
       'R':  _ActionNode('Reports',     () { _selectedIndex = 8; }),
       'd':  _MenuNode('Decisions', {
         'n': _ActionNode('New decision', () {
@@ -433,6 +561,30 @@ class _ShellLayoutState extends State<ShellLayout> {
 
   void _goToSettings() => setState(() => _selectedIndex = 9);
 
+  /// Quick-sync straight from the header "Sync needed" pill: prompts for
+  /// the encryption password and pushes the current entity. Saves a PM a
+  /// trip to Settings. Falls back to Settings when sync isn't usable yet
+  /// (no Solo plan), where the upgrade/sign-in UI lives.
+  Future<void> _quickSync() async {
+    final sync = context.read<SyncProvider>();
+    final db = context.read<AppDatabase>();
+    final projectId = context.read<ProjectProvider>().currentProjectId;
+    if (projectId == null) return;
+    if (sync.plan != 'solo') {
+      _goToSettings();
+      return;
+    }
+    final pwd = await showSyncPasswordDialog(context);
+    if (pwd == null || pwd.isEmpty) return;
+    await sync.syncProject(projectId, pwd, db);
+    if (!mounted) return;
+    if (sync.status == SyncStatus.error) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Sync failed: ${sync.lastError ?? 'unknown error'}'),
+      ));
+    }
+  }
+
   void _openJournalOverlay() {
     final projectId = context.read<ProjectProvider>().currentProjectId;
     if (projectId == null) return;
@@ -448,6 +600,93 @@ class _ShellLayoutState extends State<ShellLayout> {
         settings: settings,
       ),
     );
+  }
+
+  // ── Sidebar "open this item" actions ──────────────────────────────────
+  // Each one navigates to the relevant section (so the user lands there
+  // after dismissing the dialog) and then opens the form in view mode.
+
+  void _openRiskFromSidebar(Risk r) {
+    final projectId = context.read<ProjectProvider>().currentProjectId;
+    if (projectId == null) return;
+    final db = context.read<AppDatabase>();
+    setState(() {
+      _selectedIndex = 2;
+      _raidInitialTab = 0; // Risks tab
+      _raidNavSeq++;
+    });
+    showDialog(
+      context: context,
+      builder: (_) => RiskFormDialog(
+        projectId: projectId,
+        db: db,
+        risk: r,
+        startInViewMode: true,
+      ),
+    );
+  }
+
+  void _openDecisionFromSidebar(Decision d) {
+    final projectId = context.read<ProjectProvider>().currentProjectId;
+    if (projectId == null) return;
+    final db = context.read<AppDatabase>();
+    setState(() {
+      _selectedIndex = 3;
+      _decisionsNavSeq++;
+    });
+    showDialog(
+      context: context,
+      builder: (_) => DecisionFormDialog(
+        projectId: projectId,
+        db: db,
+        decision: d,
+        startInViewMode: true,
+      ),
+    );
+  }
+
+  void _openActionFromSidebar(ProjectAction a) {
+    final projectId = context.read<ProjectProvider>().currentProjectId;
+    if (projectId == null) return;
+    final db = context.read<AppDatabase>();
+    setState(() => _selectedIndex = 5);
+    showDialog(
+      context: context,
+      builder: (_) => ActionFormDialog(
+        projectId: projectId,
+        db: db,
+        action: a,
+        startInViewMode: true,
+      ),
+    );
+  }
+
+  void _openJournalFromSidebar(JournalEntry entry) {
+    final projectId = context.read<ProjectProvider>().currentProjectId;
+    if (projectId == null) return;
+    final db = context.read<AppDatabase>();
+    final settings = context.read<SettingsProvider>().settings;
+    setState(() => _selectedIndex = 10);
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black.withValues(alpha: 0.7),
+      pageBuilder: (_, __, ___) => JournalOverlay(
+        projectId: projectId,
+        db: db,
+        settings: settings,
+        existingEntry: entry,
+      ),
+    );
+  }
+
+  /// Playbook stages aren't a dialog — instead, navigate to the playbook
+  /// view and ask it to expand the named stage on its first render.
+  void _openPlaybookStageFromSidebar(String stageId) {
+    setState(() {
+      _selectedIndex = 11;
+      _playbookFocusStageId = stageId;
+    });
   }
 
   void _showNewProjectDialog(BuildContext context) {
@@ -506,7 +745,7 @@ class _ShellLayoutState extends State<ShellLayout> {
     switch (_selectedIndex) {
       case 0:
         return ProgrammeView(
-          onNavigateToTimeline: () => setState(() => _selectedIndex = 1),
+          onNavigateToCanvas: () => setState(() => _selectedIndex = 1),
           onNavigateToCharter: () => setState(() => _selectedIndex = 14),
           onNavigateToActions: () => setState(() => _selectedIndex = 5),
           onNavigateToDecisions: () => setState(() => _selectedIndex = 3),
@@ -515,7 +754,14 @@ class _ShellLayoutState extends State<ShellLayout> {
           onNavigateToPlaybook: () => setState(() => _selectedIndex = 11),
         );
       case 1:
-        return const TimelineView();
+        // Consume the one-shot quick-capture flag so re-renders don't
+        // keep popping the overlay back open.
+        final qc = _canvasInitialQuickCapture;
+        _canvasInitialQuickCapture = false;
+        return CanvasView(
+          key: ValueKey(_canvasNavSeq),
+          initialQuickCapture: qc,
+        );
       case 2:
         final tab = _raidInitialTab;
         final doNew = _raidTriggerNew;
@@ -546,7 +792,10 @@ class _ShellLayoutState extends State<ShellLayout> {
       case 10:
         return const JournalHistoryView();
       case 11:
-        return const PlaybookView();
+        final focus = _playbookFocusStageId;
+        // Consume so re-renders don't keep re-expanding.
+        _playbookFocusStageId = null;
+        return PlaybookView(focusStageId: focus);
       case 12:
         return ProgrammeGanttView(
           isExpanded: _ganttMode == _GanttLayoutMode.expanded,
@@ -560,7 +809,7 @@ class _ShellLayoutState extends State<ShellLayout> {
         return const CharterView();
       default:
         return ProgrammeView(
-          onNavigateToTimeline: () => setState(() => _selectedIndex = 1),
+          onNavigateToCanvas: () => setState(() => _selectedIndex = 1),
           onNavigateToCharter: () => setState(() => _selectedIndex = 14),
           onNavigateToActions: () => setState(() => _selectedIndex = 5),
           onNavigateToDecisions: () => setState(() => _selectedIndex = 3),
@@ -593,7 +842,7 @@ class _ShellLayoutState extends State<ShellLayout> {
       body: Column(
         children: [
           const CriticalUpdateBanner(),
-          _TopBar(onSyncTap: _goToSettings),
+          _TopBar(onSyncTap: () => _quickSync()),
           Expanded(
             child: LayoutBuilder(
               builder: (context, constraints) {
@@ -637,6 +886,16 @@ class _ShellLayoutState extends State<ShellLayout> {
                                     setState(() => _selectedIndex = 11),
                                 onNavigateToProgramme: () =>
                                     setState(() => _selectedIndex = 0),
+                                onOpenRisk: (r) =>
+                                    _openRiskFromSidebar(r),
+                                onOpenDecision: (d) =>
+                                    _openDecisionFromSidebar(d),
+                                onOpenAction: (a) =>
+                                    _openActionFromSidebar(a),
+                                onOpenJournal: (e) =>
+                                    _openJournalFromSidebar(e),
+                                onOpenPlaybookStage: (sid) =>
+                                    _openPlaybookStageFromSidebar(sid),
                               ),
                             )
                           : const SizedBox.shrink(),
@@ -656,10 +915,15 @@ class _ShellLayoutState extends State<ShellLayout> {
                     // Navigation rail
                     KeelNavRail(
                       selectedIndex: _selectedIndex,
-                      onDestinationSelected: (i) => setState(() {
-                        _selectedIndex = i;
-                        if (i != 12) _ganttMode = _GanttLayoutMode.normal;
-                      }),
+                      isProgramme:
+                          context.watch<ProjectProvider>().isProgramme,
+                      onDestinationSelected: (i) {
+                        setState(() {
+                          _selectedIndex = i;
+                          if (i != 12) _ganttMode = _GanttLayoutMode.normal;
+                        });
+                        _trackSectionOpened(i);
+                      },
                     ),
 
                     Container(width: 1, color: KColors.border),
@@ -909,12 +1173,13 @@ class _ThreeViewTourDialog extends StatelessWidget {
           children: [
             const SizedBox(height: 4),
             _TourItem(
-              icon: Icons.calendar_today_outlined,
-              label: 'SCHED — Schedule',
+              icon: Icons.bubble_chart_outlined,
+              label: 'CANVAS — Strategic Thinking',
               description:
-                  'Your operational view. What needs your attention today '
-                  'or this week. Deliverables, milestones and dependencies '
-                  'in time order.',
+                  'Your strategic thinking surface. Sequence ideas, plan '
+                  'moves before they need to happen, and pull formal items '
+                  'in for active thought. Three bands: this week, next 30 '
+                  'days, horizon.',
             ),
             const SizedBox(height: 12),
             _TourItem(
@@ -1147,7 +1412,7 @@ class _TopBar extends StatelessWidget {
             _PendingDecisionsPill(projectId: projectId, db: db),
             const SizedBox(width: 10),
           ],
-          if (syncProvider.hasPendingChanges) ...[
+          if (syncProvider.hasPendingChangesFor(projectId)) ...[
             _SyncNeededPill(onTap: onSyncTap),
             const SizedBox(width: 10),
           ],
@@ -1285,19 +1550,73 @@ class _TopBarProjectSelector extends StatelessWidget {
                         color: KColors.textDim, fontSize: 14),
                   ),
                   items: [
-                    ...projects.map((p) => DropdownMenuItem(
-                          value: p.id,
-                          child: Text(p.name,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.jetBrainsMono(fontSize: 14, fontWeight: FontWeight.w600)),
-                        )),
+                    ...projects.map((p) {
+                      final isProg = p.kind == 'programme';
+                      return DropdownMenuItem(
+                        value: p.id,
+                        child: Row(
+                          children: [
+                            // Small PROG/PROJ tag so the user always
+                            // knows which kind they're switching to.
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 4, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: isProg
+                                    ? KColors.amberDim.withValues(alpha: 0.7)
+                                    : KColors.surface,
+                                borderRadius: BorderRadius.circular(2),
+                                border: Border.all(
+                                  color: isProg
+                                      ? KColors.amber
+                                      : KColors.border2,
+                                  width: 0.5,
+                                ),
+                              ),
+                              child: Text(
+                                isProg ? 'PROG' : 'PROJ',
+                                style: GoogleFonts.jetBrainsMono(
+                                  color: isProg
+                                      ? KColors.amber
+                                      : KColors.textMuted,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.6,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(p.name,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.jetBrainsMono(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600)),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
                     DropdownMenuItem(
-                      value: '__new__',
+                      value: '__new_project__',
                       child: Row(
                         children: [
                           const Icon(Icons.add, size: 14, color: KColors.amber),
                           const SizedBox(width: 4),
                           Text('New Project',
+                              style: GoogleFonts.jetBrainsMono(
+                                  color: KColors.amber, fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                    DropdownMenuItem(
+                      value: '__new_programme__',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.workspaces_outlined,
+                              size: 14, color: KColors.amber),
+                          const SizedBox(width: 4),
+                          Text('New Programme',
                               style: GoogleFonts.jetBrainsMono(
                                   color: KColors.amber, fontSize: 12)),
                         ],
@@ -1318,8 +1637,12 @@ class _TopBarProjectSelector extends StatelessWidget {
                     ),
                   ],
                   onChanged: (val) {
-                    if (val == '__new__') {
-                      _showNewProjectDialog(context, projectProvider);
+                    if (val == '__new_project__') {
+                      _showNewProjectDialog(context, projectProvider,
+                          kind: 'project');
+                    } else if (val == '__new_programme__') {
+                      _showNewProjectDialog(context, projectProvider,
+                          kind: 'programme');
                     } else if (val == '__demo__') {
                       _loadDemo(context, projectProvider);
                     } else if (val != null) {
@@ -1362,26 +1685,53 @@ class _TopBarProjectSelector extends StatelessWidget {
   }
 
   void _showNewProjectDialog(
-      BuildContext context, ProjectProvider projectProvider) {
+      BuildContext context, ProjectProvider projectProvider,
+      {String kind = 'project'}) {
     final nameCtrl = TextEditingController();
     String? startDate;
+    String? copyFromId;
+    // Existing entries to source people from — both kinds are valid
+    // donors, so a brand-new programme can inherit from a project the
+    // PM has already built up, and vice versa.
+    final existingProjects = projectProvider.projects;
+    final isProgramme = kind == 'programme';
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('New Project'),
+          title: Text(isProgramme ? 'New Programme' : 'New Project'),
           content: SizedBox(
             width: 360,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                if (isProgramme) ...[
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Programmes are containers that receive cascaded '
+                      'work packages, risks, and reports from linked '
+                      'projects. You can link projects in Phase B.',
+                      style: TextStyle(
+                          color: KColors.textDim,
+                          fontSize: 12,
+                          height: 1.4),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 TextField(
                   controller: nameCtrl,
                   autofocus: true,
-                  decoration:
-                      const InputDecoration(labelText: 'Project name'),
-                  onSubmitted: (_) =>
-                      _create(ctx, nameCtrl, startDate, projectProvider),
+                  decoration: InputDecoration(
+                    labelText: isProgramme
+                        ? 'Programme name'
+                        : 'Project name',
+                  ),
+                  onSubmitted: (_) => _create(
+                      ctx, nameCtrl, startDate, copyFromId,
+                      projectProvider,
+                      kind: kind),
                 ),
                 const SizedBox(height: 12),
                 DatePickerField(
@@ -1389,6 +1739,35 @@ class _TopBarProjectSelector extends StatelessWidget {
                   isoValue: startDate,
                   onChanged: (v) => setDialogState(() => startDate = v),
                 ),
+                if (existingProjects.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    value: copyFromId,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Copy people from (optional)',
+                      helperText:
+                          'Shares team, executives, vendors and stakeholders',
+                    ),
+                    items: [
+                      const DropdownMenuItem<String>(
+                        value: null,
+                        child: Text('— None (start blank) —'),
+                      ),
+                      ...existingProjects.map((p) {
+                        final isProg = p.kind == 'programme';
+                        return DropdownMenuItem<String>(
+                          value: p.id,
+                          child: Text(
+                            isProg ? '[PROG] ${p.name}' : p.name,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        );
+                      }),
+                    ],
+                    onChanged: (v) => setDialogState(() => copyFromId = v),
+                  ),
+                ],
               ],
             ),
           ),
@@ -1398,8 +1777,10 @@ class _TopBarProjectSelector extends StatelessWidget {
               child: const Text('Cancel'),
             ),
             ElevatedButton(
-              onPressed: () =>
-                  _create(ctx, nameCtrl, startDate, projectProvider),
+              onPressed: () => _create(
+                  ctx, nameCtrl, startDate, copyFromId,
+                  projectProvider,
+                  kind: kind),
               child: const Text('Create'),
             ),
           ],
@@ -1408,11 +1789,21 @@ class _TopBarProjectSelector extends StatelessWidget {
     );
   }
 
-  void _create(BuildContext ctx, TextEditingController controller,
-      String? startDate, ProjectProvider projectProvider) {
+  void _create(
+      BuildContext ctx,
+      TextEditingController controller,
+      String? startDate,
+      String? copyFromId,
+      ProjectProvider projectProvider,
+      {String kind = 'project'}) {
     final name = controller.text.trim();
     if (name.isNotEmpty) {
-      projectProvider.createProject(name, startDate: startDate);
+      projectProvider.createProject(
+        name,
+        startDate: startDate,
+        copyPeopleFromProjectId: copyFromId,
+        kind: kind,
+      );
       Navigator.of(ctx).pop();
     }
   }
@@ -1504,13 +1895,16 @@ class _SyncNeededPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Tooltip(
-      message: 'Local changes not yet synced — click to go to Settings',
-      child: GestureDetector(
-        onTap: onTap,
-        child: _StatusPill(
-          label: 'Sync needed',
-          fg: KColors.blue,
-          bg: KColors.blueDim,
+      message: 'Local changes not yet synced — click to sync now',
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: onTap,
+          child: _StatusPill(
+            label: 'Sync needed',
+            fg: KColors.blue,
+            bg: KColors.blueDim,
+          ),
         ),
       ),
     );

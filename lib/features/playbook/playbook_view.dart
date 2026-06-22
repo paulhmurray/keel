@@ -41,7 +41,11 @@ String _statusLabel(String status) => switch (status) {
 // ---------------------------------------------------------------------------
 
 class PlaybookView extends StatefulWidget {
-  const PlaybookView({super.key});
+  /// When non-null, the named stage is auto-expanded on first build.
+  /// Used by the left-panel "Playbook Stage" row to navigate-and-focus.
+  final String? focusStageId;
+
+  const PlaybookView({super.key, this.focusStageId});
 
   @override
   State<PlaybookView> createState() => _PlaybookViewState();
@@ -49,6 +53,12 @@ class PlaybookView extends StatefulWidget {
 
 class _PlaybookViewState extends State<PlaybookView> {
   String? _expandedStageId;
+
+  @override
+  void initState() {
+    super.initState();
+    _expandedStageId = widget.focusStageId;
+  }
 
   @override
   Widget build(BuildContext context) {

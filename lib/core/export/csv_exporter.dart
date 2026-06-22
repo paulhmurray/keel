@@ -195,7 +195,7 @@ class CsvExporter {
 
   static String _peopleCsv(List<Person> items) {
     final rows = [
-      ['name', 'role', 'organisation', 'email', 'phone', 'type'],
+      ['name', 'role', 'organisation', 'email', 'phone', 'type', 'stakeholder'],
       ...items.map((p) => [
             p.name,
             p.role ?? '',
@@ -203,6 +203,7 @@ class CsvExporter {
             p.email ?? '',
             p.phone ?? '',
             p.personType,
+            p.isStakeholder ? 'yes' : 'no',
           ]),
     ];
     return buildCsv(rows);

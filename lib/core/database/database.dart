@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
@@ -7,6 +8,7 @@ import 'connection.dart';
 part 'database.g.dart';
 part 'daos/project_dao.dart';
 part 'daos/programme_dao.dart';
+part 'daos/programme_links_dao.dart';
 part 'daos/raid_dao.dart';
 part 'daos/decisions_dao.dart';
 part 'daos/people_dao.dart';
@@ -29,6 +31,8 @@ part 'daos/project_charter_dao.dart';
 part 'daos/programme_overview_state_dao.dart';
 part 'daos/action_comments_dao.dart';
 part 'daos/journal_series_dao.dart';
+part 'daos/canvas_cards_dao.dart';
+part 'daos/canvas_templates_dao.dart';
 
 // ---------------------------------------------------------------------------
 // Tables
@@ -40,8 +44,63 @@ class Projects extends Table {
   TextColumn get description => text().nullable()();
   TextColumn get startDate => text().nullable()();
   TextColumn get status => text().withDefault(const Constant('active'))();
+  // Distinguishes a regular project from a programme. Programmes have
+  // the same surfaces but bespoke UI in places (status reports show
+  // project RAGs, charter lists linked projects, etc.) and accept
+  // cascaded items from linked child projects.
+  //   'project'   — default for existing rows
+  //   'programme' — manages a portfolio of linked projects
+  TextColumn get kind =>
+      text().withDefault(const Constant('project'))();
+  // Set on a project row to indicate which programme it cascades up to.
+  // Always null for programme-kind rows. Populated in Phase B when the
+  // linking flow lands.
+  TextColumn get parentProgrammeId => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// One side of a programme ↔ project link. Each side of a link stores
+/// its own row pointing at the shared [code]. On a single-machine
+/// install (programme + project both local), one logical link is two
+/// rows in the same DB — [partnerLocalId] is populated and the link
+/// activates as soon as the second side redeems the code. On a
+/// multi-machine install, only the local side has a row until the
+/// server-side handshake lands (Phase C); the row sits at
+/// `status='pending_remote'` until then.
+class ProgrammeLinks extends Table {
+  TextColumn get id => text()();
+  // The local entity (this side of the link) — a project or programme
+  // row on this machine.
+  TextColumn get ownerEntityId => text().references(Projects, #id)();
+  TextColumn get ownerKind => text()(); // 'project' | 'programme'
+  // The partner kind is the opposite of [ownerKind]. Stored explicitly
+  // so a programme row can quickly enumerate its linked projects (and
+  // vice versa) without a JOIN on Projects.
+  TextColumn get partnerKind => text()(); // 'project' | 'programme'
+  // Cached partner name for display when the partner is remote and we
+  // don't have a row to read from.
+  TextColumn get partnerName => text().nullable()();
+  // Populated when the partner exists on this machine — the project or
+  // programme row's id. Null while we're waiting for the other machine
+  // to redeem the code.
+  TextColumn get partnerLocalId => text().nullable()();
+  // Shared identifier — what fly.io will route on in Phase C.
+  TextColumn get code => text()();
+  // 'pending_remote' — waiting for the other machine to redeem
+  // 'active'         — both sides confirmed (single-machine link or
+  //                    successful cross-machine handshake)
+  // 'revoked'        — manually broken from either side
+  TextColumn get status =>
+      text().withDefault(const Constant('pending_remote'))();
+  // True when this side generated the code (vs received it). Cosmetic
+  // — lets settings show the host/joiner distinction.
+  BoolColumn get generatedHere =>
+      boolean().withDefault(const Constant(false))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -123,6 +182,12 @@ class Risks extends Table {
   TextColumn get status => text().withDefault(const Constant('open'))();
   TextColumn get source => text().withDefault(const Constant('manual'))();
   TextColumn get sourceNote => text().nullable()();
+  // Programme-cascade markers (Phase C.2). escalatedAt non-null
+  // means the PM has flagged this risk as a candidate to push up to
+  // any linked programme. sourceProjectId non-null means this row
+  // arrived via cascade on the programme side — read-only.
+  DateTimeColumn get escalatedAt => dateTime().nullable()();
+  TextColumn get sourceProjectId => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
@@ -141,6 +206,9 @@ class Assumptions extends Table {
   DateTimeColumn get validatedAt => dateTime().nullable()();
   TextColumn get source => text().withDefault(const Constant('manual'))();
   TextColumn get sourceNote => text().nullable()();
+  // See Risks for the same markers + semantics.
+  DateTimeColumn get escalatedAt => dateTime().nullable()();
+  TextColumn get sourceProjectId => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
@@ -160,6 +228,8 @@ class Issues extends Table {
   TextColumn get resolution => text().nullable()();
   TextColumn get source => text().withDefault(const Constant('manual'))();
   TextColumn get sourceNote => text().nullable()();
+  DateTimeColumn get escalatedAt => dateTime().nullable()();
+  TextColumn get sourceProjectId => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
@@ -178,6 +248,8 @@ class ProgramDependencies extends Table {
   TextColumn get dueDate => text().nullable()();
   TextColumn get source => text().withDefault(const Constant('manual'))();
   TextColumn get sourceNote => text().nullable()();
+  DateTimeColumn get escalatedAt => dateTime().nullable()();
+  TextColumn get sourceProjectId => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
@@ -197,6 +269,11 @@ class Decisions extends Table {
   TextColumn get outcome => text().nullable()();
   TextColumn get source => text().withDefault(const Constant('manual'))();
   TextColumn get sourceNote => text().nullable()();
+  // Cascade markers (Phase C.6). escalatedAt non-null = PM has
+  // flagged for programme visibility; sourceProjectId non-null =
+  // arrived via cascade and is read-only on this side.
+  DateTimeColumn get escalatedAt => dateTime().nullable()();
+  TextColumn get sourceProjectId => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
@@ -213,8 +290,20 @@ class Persons extends Table {
   TextColumn get organisation => text().nullable()();
   TextColumn get phone => text().nullable()();
   TextColumn get teamsHandle => text().nullable()();
+  // Category of person within this project — colleague | exec | vendor.
+  // (Legacy databases may contain 'stakeholder'; the v26 migration converts
+  // those to 'colleague' and sets isStakeholder = true.)
   TextColumn get personType =>
-      text().withDefault(const Constant('stakeholder'))();
+      text().withDefault(const Constant('colleague'))();
+  // Orthogonal flag: is this person a project stakeholder (someone whose
+  // engagement we want to track in influence/interest/stance terms)?
+  BoolColumn get isStakeholder =>
+      boolean().withDefault(const Constant(false))();
+  // Cascade origin marker (Phase C.5). Non-null = this person arrived
+  // from a linked project; read-only on this side. The cached source
+  // name labels them in lists without a cross-machine join.
+  TextColumn get sourceProjectId => text().nullable()();
+  TextColumn get sourceProjectName => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
@@ -366,6 +455,11 @@ class ProjectActions extends Table {
   TextColumn get linkedActionId => text().nullable()();
   TextColumn get planActivityId => text().nullable()(); // FK → TimelineActivities
   TextColumn get parentActionId => text().nullable()(); // self-ref, one level deep
+  // Cascade markers (Phase C.6). Same semantics as Decisions /
+  // RAID — PM-flagged escalations push to linked programmes; the
+  // source pointer makes the row read-only on the receiving side.
+  DateTimeColumn get escalatedAt => dateTime().nullable()();
+  TextColumn get sourceProjectId => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
@@ -503,6 +597,115 @@ class JournalEntryLinks extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+// ---------------------------------------------------------------------------
+// Canvas — PM's strategic thinking surface (replaces Schedule)
+// ---------------------------------------------------------------------------
+
+/// A single card on the Canvas. Cards are loose by design — most have just
+/// a title and a few notes. Some link to formal items (RAID, action,
+/// decision, milestone, activity) or carry a colour/size, but none of
+/// that is required.
+class CanvasCards extends Table {
+  TextColumn get id => text().named('id')();
+  TextColumn get projectId => text().references(Projects, #id)();
+
+  TextColumn get title => text()();
+  TextColumn get body => text().nullable()();
+
+  /// this_week | next_30_days | horizon
+  TextColumn get band =>
+      text().withDefault(const Constant('this_week'))();
+
+  /// Free positioning within band (pixels from band origin).
+  IntColumn get positionX => integer().withDefault(const Constant(16))();
+  IntColumn get positionY => integer().withDefault(const Constant(16))();
+
+  /// Optional visual grouping. null = default (no colour band).
+  /// Allowed values: amber | green | red | blue | purple
+  TextColumn get colour => text().nullable()();
+
+  /// small | medium | large
+  TextColumn get size =>
+      text().withDefault(const Constant('medium'))();
+
+  /// Optional self-dated range. ISO YYYY-MM-DD strings, both nullable.
+  /// When [startDate] is set without [endDate], the card is treated as
+  /// a single-point card on the calendar. When both are set, the card
+  /// renders as a bar across the inclusive range.
+  TextColumn get startDate => text().nullable()();
+  TextColumn get endDate => text().nullable()();
+
+  /// How long this piece of work is expected to take, in calendar days.
+  /// Used when the user drags an undated card onto the calendar to
+  /// pre-populate a sensible range. Null = no estimate (the drop UI
+  /// falls back to a 7-day default).
+  IntColumn get effortDays => integer().nullable()();
+
+  /// Tags derived from `#tagname` patterns in the body, stored as a
+  /// JSON-serialised array of lowercased strings. Updated by the editor
+  /// save flow; the body remains the source of truth.
+  TextColumn get tags => text().nullable()();
+
+  /// Optional link to a formal item.
+  /// linkedItemType ∈ risk | assumption | issue | dependency
+  ///                 | decision | action | milestone | activity | journal
+  TextColumn get linkedItemType => text().nullable()();
+  TextColumn get linkedItemId => text().nullable()();
+
+  /// Set when the card has been promoted to a formal programme item.
+  /// promotedToType uses the same enum as linkedItemType (no 'journal').
+  DateTimeColumn get promotedAt => dateTime().nullable()();
+  TextColumn get promotedToType => text().nullable()();
+  TextColumn get promotedToId => text().nullable()();
+
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// A template instance — a SWOT, pre-mortem, retrospective, etc. — that
+/// the user has created for a project. The structure varies per type
+/// (stored as JSON in [content]); the registry in
+/// `lib/features/canvas/templates/template_registry.dart` defines the
+/// schema for each type.
+class CanvasTemplates extends Table {
+  TextColumn get id => text().named('id')();
+  TextColumn get projectId => text().references(Projects, #id)();
+
+  /// One of: pre_mortem | swot | retrospective | stakeholder_map |
+  /// raci_matrix | user_story_map. See TemplateRegistry.
+  TextColumn get templateType => text()();
+
+  /// User-given name (e.g. "Q3 SWOT", "TAC Integration User Story Map").
+  TextColumn get name => text()();
+
+  /// Template-specific JSON-serialised content. Each template type
+  /// owns its own JSON schema; see TemplateRegistry for shape.
+  TextColumn get content => text()();
+
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Directional arrows between two Canvas cards (A → B means A precedes B).
+class CanvasSequences extends Table {
+  TextColumn get id => text().named('id')();
+  TextColumn get projectId => text().references(Projects, #id)();
+  @ReferenceName('outgoingSequences')
+  TextColumn get fromCardId => text().references(CanvasCards, #id)();
+  @ReferenceName('incomingSequences')
+  TextColumn get toCardId => text().references(CanvasCards, #id)();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 class StatusReports extends Table {
   TextColumn get id => text().named('id')();
   TextColumn get projectId => text().references(Projects, #id)();
@@ -515,6 +718,13 @@ class StatusReports extends Table {
   TextColumn get risksHighlighted => text().nullable()();
   TextColumn get content => text().nullable()();
   DateTimeColumn get reportDate => dateTime().nullable()();
+  // Cascade origin marker (Phase C.3). Status reports cascade
+  // automatically on save — saving a status report IS the publish
+  // moment — so this column is the programme-side flag that says
+  // "this report came from a linked project; the canonical version
+  // lives on the source PM's machine". Read-only on the programme
+  // side; locally-authored programme reports leave it null.
+  TextColumn get sourceProjectId => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
@@ -539,6 +749,13 @@ class TimelineWorkPackages extends Table {
   // green | amber | red | not_started
   TextColumn get ragStatus =>
       text().withDefault(const Constant('not_started'))();
+  // Populated when this WP cascaded into the row from a linked
+  // upstream project (programme-side rows only). Holds the SOURCE
+  // project's id — i.e. the project the cascade originated from on
+  // the other PM's machine. Null = native WP authored on this
+  // install; cascaded rows are rendered read-only and tagged with the
+  // upstream project's name in the Plan view.
+  TextColumn get sourceProjectId => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
@@ -586,12 +803,21 @@ class TimelineActivities extends Table {
 class TimelineDependencies extends Table {
   TextColumn get id => text()();
   TextColumn get projectId => text().references(Projects, #id)();
+  // For internal deps this is the upstream activity id. For external
+  // deps (dependencyType == 'external') the upstream activity isn't in
+  // the plan, so this column stores an empty string and the human label
+  // lives in [externalLabel] instead.
   TextColumn get fromActivityId => text()();
   TextColumn get toActivityId => text()();
   // finish_to_start | start_to_start | finish_to_finish | external
   TextColumn get dependencyType =>
       text().withDefault(const Constant('finish_to_start'))();
   TextColumn get notes => text().nullable()();
+  // Free-text label for external dependencies, e.g. "Vendor X delivery"
+  // or "Legal sign-off". Non-null implies an external dep; the painter
+  // anchors the arrow to the left of the target row rather than to a
+  // source row that doesn't exist.
+  TextColumn get externalLabel => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
   @override
@@ -717,6 +943,14 @@ class ProjectCharters extends Table {
   TextColumn get successCriteria => text().nullable()();
   TextColumn get keyConstraints => text().nullable()();
   TextColumn get assumptions => text().nullable()();
+  // Cascade origin marker (Phase C.4). Non-null = this row arrived
+  // from a linked project; on the programme side it sits alongside
+  // the programme's own native charter (which has sourceProjectId
+  // NULL). Read-only on this side. Plus a cached source name so the
+  // programme-side UI can label the cascaded card without joining
+  // back to the Projects table on a different machine.
+  TextColumn get sourceProjectId => text().nullable()();
+  TextColumn get sourceProjectName => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
@@ -852,6 +1086,7 @@ class ProjectStageProgresses extends Table {
 @DriftDatabase(
   tables: [
     Projects,
+    ProgrammeLinks,
     ProgrammeOverviews,
     Workstreams,
     WorkstreamLinks,
@@ -895,10 +1130,14 @@ class ProjectStageProgresses extends Table {
     ProgrammeOverviewStates,
     ActionComments,
     JournalSeriesDefs,
+    CanvasCards,
+    CanvasSequences,
+    CanvasTemplates,
   ],
   daos: [
     ProjectDao,
     ProgrammeDao,
+    ProgrammeLinksDao,
     RaidDao,
     DecisionsDao,
     PeopleDao,
@@ -921,6 +1160,8 @@ class ProjectStageProgresses extends Table {
     ProgrammeOverviewStateDao,
     ActionCommentsDao,
     JournalSeriesDao,
+    CanvasCardsDao,
+    CanvasTemplatesDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -928,7 +1169,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.memory() : super(openMemoryConnection());
 
   @override
-  int get schemaVersion => 25;
+  int get schemaVersion => 40;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1087,6 +1328,114 @@ class AppDatabase extends _$AppDatabase {
               await m.createTable(journalSeriesDefs);
             } catch (_) {}
           }
+          if (from < 26) {
+            // Split 'stakeholder' out of personType. Existing stakeholder
+            // rows become colleague + isStakeholder=true so their data and
+            // any StakeholderProfile rows remain valid.
+            await m.addColumn(persons, persons.isStakeholder);
+            await customStatement(
+              "UPDATE persons SET person_type = 'colleague', "
+              "is_stakeholder = 1 WHERE person_type = 'stakeholder'",
+            );
+          }
+          if (from < 27) {
+            // Canvas tables — replaces the old Schedule view. No data to
+            // migrate: Schedule was a read-through projection of RAID /
+            // Actions / Decisions / Plan, all of which already exist.
+            await m.createTable(canvasCards);
+            await m.createTable(canvasSequences);
+          }
+          if (from < 28) {
+            // Native date range on Canvas cards — lets a card sit on the
+            // calendar without needing a linked dated item.
+            await m.addColumn(canvasCards, canvasCards.startDate);
+            await m.addColumn(canvasCards, canvasCards.endDate);
+          }
+          if (from < 29) {
+            // Effort estimate (days) — used when dragging an undated
+            // card onto the calendar to pre-populate a sensible range.
+            await m.addColumn(canvasCards, canvasCards.effortDays);
+          }
+          if (from < 30) {
+            // Tags column — parsed from `#tag` patterns in card bodies
+            // and stored as a JSON array string. Phase 1 of Canvas v2.
+            await m.addColumn(canvasCards, canvasCards.tags);
+          }
+          if (from < 31) {
+            // CanvasTemplates — SWOT, pre-mortem, etc. Phase 2 of v2.
+            await m.createTable(canvasTemplates);
+          }
+          if (from < 32) {
+            // External dependencies — nullable label on dep rows so the
+            // upstream "activity" can live outside the plan (vendor
+            // deliveries, regulatory approvals, other teams' milestones).
+            await m.addColumn(
+                timelineDependencies, timelineDependencies.externalLabel);
+          }
+          if (from < 33) {
+            // Programme-vs-project distinction. Existing rows all
+            // become kind='project' by the column's default; Phase B
+            // populates parentProgrammeId via the linking flow.
+            await m.addColumn(projects, projects.kind);
+            await m.addColumn(projects, projects.parentProgrammeId);
+          }
+          if (from < 34) {
+            // Programme ↔ project links. Each side of a link stores
+            // its own row keyed by a shared code.
+            await m.createTable(programmeLinks);
+          }
+          if (from < 35) {
+            // Cascade origin marker on work packages — populated when
+            // a WP arrives via a programme link (read-only on the
+            // programme side); null for native rows.
+            await m.addColumn(
+                timelineWorkPackages, timelineWorkPackages.sourceProjectId);
+          }
+          if (from < 36) {
+            // RAID cascade markers (Phase C.2). escalatedAt = PM has
+            // flagged this row for programme visibility; sourceProjectId
+            // = row arrived via cascade and is read-only on this side.
+            await m.addColumn(risks, risks.escalatedAt);
+            await m.addColumn(risks, risks.sourceProjectId);
+            await m.addColumn(assumptions, assumptions.escalatedAt);
+            await m.addColumn(assumptions, assumptions.sourceProjectId);
+            await m.addColumn(issues, issues.escalatedAt);
+            await m.addColumn(issues, issues.sourceProjectId);
+            await m.addColumn(
+                programDependencies, programDependencies.escalatedAt);
+            await m.addColumn(programDependencies,
+                programDependencies.sourceProjectId);
+          }
+          if (from < 37) {
+            // Status-report cascade marker (Phase C.3). Auto-cascade
+            // on save; column flags cascaded rows on the programme
+            // side as read-only.
+            await m.addColumn(
+                statusReports, statusReports.sourceProjectId);
+          }
+          if (from < 38) {
+            // Charter cascade markers (Phase C.4). The cached source
+            // name lets the programme-side card render attribution
+            // without a cross-machine join.
+            await m.addColumn(
+                projectCharters, projectCharters.sourceProjectId);
+            await m.addColumn(
+                projectCharters, projectCharters.sourceProjectName);
+          }
+          if (from < 39) {
+            // Person cascade markers (Phase C.5). Same pattern as
+            // charter — cached source name avoids cross-machine joins.
+            await m.addColumn(persons, persons.sourceProjectId);
+            await m.addColumn(persons, persons.sourceProjectName);
+          }
+          if (from < 40) {
+            // Actions + Decisions cascade markers (Phase C.6).
+            await m.addColumn(projectActions, projectActions.escalatedAt);
+            await m.addColumn(
+                projectActions, projectActions.sourceProjectId);
+            await m.addColumn(decisions, decisions.escalatedAt);
+            await m.addColumn(decisions, decisions.sourceProjectId);
+          }
         },
       );
 
@@ -1098,6 +1447,10 @@ class AppDatabase extends _$AppDatabase {
   /// Deletes a project and all its associated data across every table.
   Future<void> deleteProjectCascade(String projectId) async {
     await transaction(() async {
+      // Canvas — sequences reference cards, so delete sequences first.
+      await (delete(canvasSequences)..where((t) => t.projectId.equals(projectId))).go();
+      await (delete(canvasCards)..where((t) => t.projectId.equals(projectId))).go();
+      await (delete(canvasTemplates)..where((t) => t.projectId.equals(projectId))).go();
       await (delete(statusReports)..where((t) => t.projectId.equals(projectId))).go();
       // Delete journal entry links first (FK reference to journalEntries)
       final journalIds = await (select(journalEntries)
@@ -1168,6 +1521,121 @@ class AppDatabase extends _$AppDatabase {
       }
       await (delete(projectPlaybooks)..where((t) => t.projectId.equals(projectId))).go();
       await (delete(projects)..where((t) => t.id.equals(projectId))).go();
+    });
+  }
+
+  /// Copies people-related data from [sourceProjectId] into [targetProjectId].
+  /// Copies Persons (all types — stakeholder, colleague, exec, vendor),
+  /// StakeholderProfiles, StakeholderRoles, TeamRoles and ColleagueProfiles.
+  /// New IDs are generated and FK references are rewritten. Source project
+  /// is not modified.
+  Future<void> copyPeopleToProject({
+    required String sourceProjectId,
+    required String targetProjectId,
+  }) async {
+    const uuid = Uuid();
+    await transaction(() async {
+      // Persons → build oldId → newId map for FK rewrites.
+      final sourcePersons = await (select(persons)
+            ..where((t) => t.projectId.equals(sourceProjectId)))
+          .get();
+      final personIdMap = <String, String>{};
+      for (final p in sourcePersons) {
+        final newId = uuid.v4();
+        personIdMap[p.id] = newId;
+        await into(persons).insert(PersonsCompanion.insert(
+          id: newId,
+          projectId: targetProjectId,
+          name: p.name,
+          email: Value(p.email),
+          role: Value(p.role),
+          organisation: Value(p.organisation),
+          phone: Value(p.phone),
+          teamsHandle: Value(p.teamsHandle),
+          personType: Value(p.personType),
+          isStakeholder: Value(p.isStakeholder),
+        ));
+      }
+
+      final sps = await (select(stakeholderProfiles)
+            ..where((t) => t.projectId.equals(sourceProjectId)))
+          .get();
+      for (final sp in sps) {
+        final newPersonId = personIdMap[sp.personId];
+        if (newPersonId == null) continue;
+        await into(stakeholderProfiles)
+            .insert(StakeholderProfilesCompanion.insert(
+          id: uuid.v4(),
+          projectId: targetProjectId,
+          personId: newPersonId,
+          influence: Value(sp.influence),
+          interest: Value(sp.interest),
+          stance: Value(sp.stance),
+          engagementStrategy: Value(sp.engagementStrategy),
+          notes: Value(sp.notes),
+        ));
+      }
+
+      final srs = await (select(stakeholderRoles)
+            ..where((t) => t.projectId.equals(sourceProjectId)))
+          .get();
+      for (final sr in srs) {
+        await into(stakeholderRoles).insert(StakeholderRolesCompanion.insert(
+          id: uuid.v4(),
+          projectId: targetProjectId,
+          roleName: sr.roleName,
+          roleType: sr.roleType,
+          personId: Value(
+              sr.personId == null ? null : personIdMap[sr.personId]),
+          isScaffold: Value(sr.isScaffold),
+          isApplicable: Value(sr.isApplicable),
+          sortOrder: Value(sr.sortOrder),
+          notes: Value(sr.notes),
+          functionalArea: Value(sr.functionalArea),
+          integrationRelevance: Value(sr.integrationRelevance),
+          priority: Value(sr.priority),
+          engagementStatus: Value(sr.engagementStatus),
+          gapFlag: Value(sr.gapFlag),
+          gapDescription: Value(sr.gapDescription),
+        ));
+      }
+
+      final trs = await (select(teamRoles)
+            ..where((t) => t.projectId.equals(sourceProjectId)))
+          .get();
+      for (final tr in trs) {
+        await into(teamRoles).insert(TeamRolesCompanion.insert(
+          id: uuid.v4(),
+          projectId: targetProjectId,
+          roleName: tr.roleName,
+          teamGroup: tr.teamGroup,
+          personId: Value(
+              tr.personId == null ? null : personIdMap[tr.personId]),
+          isScaffold: Value(tr.isScaffold),
+          isApplicable: Value(tr.isApplicable),
+          sortOrder: Value(tr.sortOrder),
+          notes: Value(tr.notes),
+        ));
+      }
+
+      final cps = await (select(colleagueProfiles)
+            ..where((t) => t.projectId.equals(sourceProjectId)))
+          .get();
+      for (final cp in cps) {
+        final newPersonId = personIdMap[cp.personId];
+        if (newPersonId == null) continue;
+        await into(colleagueProfiles)
+            .insert(ColleagueProfilesCompanion.insert(
+          id: uuid.v4(),
+          projectId: targetProjectId,
+          personId: newPersonId,
+          workingStyle: Value(cp.workingStyle),
+          preferences: Value(cp.preferences),
+          notes: Value(cp.notes),
+          team: Value(cp.team),
+          directReport: Value(cp.directReport),
+        ));
+      }
     });
   }
 }

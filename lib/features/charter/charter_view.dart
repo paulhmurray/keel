@@ -3,8 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../core/cascade/cascade_service.dart';
+import '../../core/cascade/sync_cascade_gateway.dart';
 import '../../core/database/database.dart';
+import '../../core/sync/sync_client.dart';
 import '../../providers/project_provider.dart';
+import '../../providers/sync_provider.dart';
 import '../../shared/theme/keel_colors.dart';
 import 'charter_export_dialog.dart';
 import 'charter_section.dart';
@@ -142,7 +146,38 @@ class _CharterBodyState extends State<_CharterBody> {
         updatedAt: Value(DateTime.now()),
       ),
     );
+
+    // Cascade to active programme links — same auto-publish pattern
+    // as status reports. The cached projectName rides along in the
+    // payload so the programme-side card can label attribution
+    // without a cross-machine join.
+    if (mounted) {
+      final fresh =
+          await widget.db.projectCharterDao.getForProject(widget.projectId);
+      if (fresh != null && mounted) {
+        // ignore: use_build_context_synchronously
+        await _cascadeFor(context).pushCharter(
+          fresh,
+          sourceProjectName: widget.projectName,
+        );
+      }
+    }
+
     setState(() => _editing = false);
+  }
+
+  CascadeService _cascadeFor(BuildContext context) {
+    final sync = context.read<SyncProvider>();
+    final token = sync.accessToken;
+    return CascadeService(
+      widget.db,
+      gateway: token == null
+          ? null
+          : SyncCascadeGateway(
+              client: SyncClient(baseUrl: sync.serverUrl),
+              accessToken: token,
+            ),
+    );
   }
 
   void _cancel() {
@@ -301,6 +336,150 @@ class _CharterBodyState extends State<_CharterBody> {
               value: widget.charter?.assumptions,
             ),
           ],
+          // Linked-project charters. Shown only when the active
+          // project is a programme — gives the programme manager
+          // strategic context for every PM cascading up to them.
+          if (context.watch<ProjectProvider>().isProgramme) ...[
+            const SizedBox(height: 32),
+            _LinkedProjectCharters(
+              programmeId: widget.projectId,
+              db: widget.db,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Programme-side section showing cascaded charters from every linked
+/// project. Each row is an expandable card so the programme manager
+/// can scan the list and drill into any project's strategic context
+/// without leaving the page.
+class _LinkedProjectCharters extends StatelessWidget {
+  final String programmeId;
+  final AppDatabase db;
+
+  const _LinkedProjectCharters({
+    required this.programmeId,
+    required this.db,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<ProjectCharter>>(
+      stream:
+          db.projectCharterDao.watchCascadedForProgramme(programmeId),
+      builder: (context, snap) {
+        final charters = snap.data ?? const <ProjectCharter>[];
+        if (charters.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.account_tree_outlined,
+                    color: KColors.amber, size: 16),
+                const SizedBox(width: 8),
+                Text(
+                  'LINKED PROJECT CHARTERS · ${charters.length}',
+                  style: const TextStyle(
+                    color: KColors.amber,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.4,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Read-only summaries cascaded from each linked project. '
+              'Edits happen on the source PM\'s machine.',
+              style:
+                  TextStyle(color: KColors.textMuted, fontSize: 11),
+            ),
+            const SizedBox(height: 12),
+            for (final c in charters)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _LinkedCharterCard(charter: c),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _LinkedCharterCard extends StatelessWidget {
+  final ProjectCharter charter;
+  const _LinkedCharterCard({required this.charter});
+
+  @override
+  Widget build(BuildContext context) {
+    final name = charter.sourceProjectName ?? '(unnamed project)';
+    return Card(
+      child: ExpansionTile(
+        leading: Container(
+          padding:
+              const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+          decoration: BoxDecoration(
+            color: KColors.surface2,
+            border: Border.all(color: KColors.border2, width: 0.5),
+            borderRadius: BorderRadius.circular(2),
+          ),
+          child: const Text(
+            'PROJ',
+            style: TextStyle(
+              color: KColors.textMuted,
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.6,
+            ),
+          ),
+        ),
+        title: Text(name,
+            style: const TextStyle(
+                fontSize: 14, fontWeight: FontWeight.w600)),
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (charter.vision != null)
+                  CharterSection(label: 'VISION', value: charter.vision),
+                if (charter.objectives != null)
+                  CharterSection(
+                      label: 'OBJECTIVES', value: charter.objectives),
+                if (charter.scopeIn != null)
+                  CharterSection(
+                      label: 'IN SCOPE', value: charter.scopeIn),
+                if (charter.scopeOut != null)
+                  CharterSection(
+                      label: 'OUT OF SCOPE', value: charter.scopeOut),
+                if (charter.deliveryApproach != null)
+                  CharterSection(
+                      label: 'DELIVERY APPROACH',
+                      value: charter.deliveryApproach),
+                if (charter.successCriteria != null)
+                  CharterSection(
+                      label: 'SUCCESS CRITERIA',
+                      value: charter.successCriteria),
+                if (charter.keyConstraints != null)
+                  CharterSection(
+                      label: 'KEY CONSTRAINTS',
+                      value: charter.keyConstraints),
+                if (charter.assumptions != null)
+                  CharterSection(
+                      label: 'ASSUMPTIONS',
+                      value: charter.assumptions),
+              ],
+            ),
+          ),
         ],
       ),
     );

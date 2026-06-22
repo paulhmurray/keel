@@ -174,6 +174,7 @@ class _MentionTextFieldState extends State<MentionTextField> {
         role: Value(result.role),
         organisation: Value(result.organisation),
         personType: Value(result.personType),
+        isStakeholder: Value(result.isStakeholder),
         createdAt: Value(now),
         updatedAt: Value(now),
       ));
@@ -186,6 +187,7 @@ class _MentionTextFieldState extends State<MentionTextField> {
           role: result.role,
           organisation: result.organisation,
           personType: result.personType,
+          isStakeholder: result.isStakeholder,
           createdAt: now,
           updatedAt: now,
         );

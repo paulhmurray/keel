@@ -8,7 +8,8 @@ class KeybindingsTable extends StatelessWidget {
     // --- Navigation ---
     ('Leader key (Spacebar)', 'SPC'),
     ('  → Programme overview', 'SPC SPC'),
-    ('  → Schedule', 'SPC t'),
+    ('  → Canvas', 'SPC t'),
+    ('  → Canvas › Quick-capture', 'SPC t n'),
     ('  → Plan (Gantt)', 'SPC g'),
     ('  → Status', 'SPC s'),
     ('  → Settings', 'SPC S'),
@@ -41,6 +42,11 @@ class KeybindingsTable extends StatelessWidget {
     ('Save journal entry', 'Ctrl+Enter'),
     ('Open Inbox', 'Ctrl+i'),
     ('Toggle Claude panel', 'Ctrl+Shift+c'),
+    // --- Canvas ---
+    ('Quick-capture overlay', 'n  (on canvas)'),
+    ('  → Save card, keep capturing', 'Enter'),
+    ('  → Close overlay', 'Esc'),
+    ('Paste lines as cards', 'Ctrl+v / Cmd+v  (on canvas)'),
     // --- Inbox ---
     ('Accept inbox item', 'y  (in inbox)'),
     ('Reject inbox item', 'n  (in inbox)'),

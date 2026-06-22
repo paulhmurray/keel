@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:drift/drift.dart' show Value;
 
+import '../../core/analytics/keel_events.dart';
 import '../../core/database/database.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/widgets/dropdown_field.dart';
@@ -76,6 +77,7 @@ class _DependencyFormDialogState extends State<DependencyFormDialog> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final isNew = widget.dependency == null;
     final existing = await widget.db.raidDao.getDependenciesForProject(widget.projectId);
     final nums = existing
         .where((d) => d.ref != null && d.ref!.startsWith('D'))
@@ -105,6 +107,12 @@ class _DependencyFormDialogState extends State<DependencyFormDialog> {
       ),
     );
 
+    if (isNew && mounted) {
+      context.analytics.track(
+        KeelEvents.dependencyCreated,
+        props: {KeelEventProps.source: 'dependency_form'},
+      );
+    }
     if (mounted) Navigator.of(context).pop();
   }
 

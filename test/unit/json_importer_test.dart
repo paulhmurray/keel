@@ -1,7 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:keel/core/database/database.dart';
+import 'package:keel/core/export/json_exporter.dart';
 import 'package:keel/core/import/json_importer.dart';
 
 // ---------------------------------------------------------------------------
@@ -454,6 +456,103 @@ void main() {
       (data['action_comments'] as List).clear();
       await JsonImporter.importFromString(jsonEncode(data), db);
       expect((await db.actionCommentsDao.getForAction('a-x')).length, 0);
+    });
+  });
+
+  // --- Escalation / cascade round-trip (export → import) ---
+  //
+  // Regression guard: a Pull clears + re-imports the project from its
+  // exported JSON. Before escalated_at / source_project_id were
+  // serialized, that round-trip silently wiped escalation and turned
+  // read-only cascaded rows into plain editable ones.
+
+  group('escalation + cascade survive an export→import round-trip', () {
+    test('escalatedAt persists on a natively-escalated risk', () async {
+      const projectId = 'rt-proj';
+      await db.projectDao.insertProject(
+          ProjectsCompanion.insert(id: projectId, name: 'Round Trip'));
+      final escalatedAt = DateTime(2026, 5, 1, 9, 30);
+      await db.raidDao.upsertRisk(RisksCompanion.insert(
+        id: 'r-esc',
+        projectId: projectId,
+        ref: const Value('R1'),
+        description: 'Escalated risk',
+        escalatedAt: Value(escalatedAt),
+      ));
+
+      // Export → wipe → import into a fresh DB, exactly like a Pull.
+      final jsonStr = await JsonExporter.exportProjectToString(
+          projectId: projectId, db: db);
+      final fresh = AppDatabase.memory();
+      addTearDown(fresh.close);
+      await JsonImporter.importFromString(jsonStr, fresh);
+
+      final risk = await fresh.raidDao.getRiskById('r-esc');
+      expect(risk, isNotNull);
+      expect(risk!.escalatedAt, escalatedAt);
+      expect(risk.sourceProjectId, isNull);
+    });
+
+    test(
+        'a cascaded risk keeps its sourceProjectId (stays read-only, not '
+        'demoted to a native row)', () async {
+      const programmeId = 'rt-prog';
+      await db.projectDao.insertProject(ProjectsCompanion.insert(
+        id: programmeId,
+        name: 'Programme',
+        kind: const Value('programme'),
+      ));
+      await db.raidDao.upsertRisk(RisksCompanion.insert(
+        id: 'cascade:risk:child:r-9',
+        projectId: programmeId,
+        description: 'Cascaded up from a project',
+        source: const Value('cascade'),
+        escalatedAt: Value(DateTime(2026, 4, 2)),
+        sourceProjectId: const Value('child'),
+      ));
+
+      final jsonStr = await JsonExporter.exportProjectToString(
+          projectId: programmeId, db: db);
+      final fresh = AppDatabase.memory();
+      addTearDown(fresh.close);
+      await JsonImporter.importFromString(jsonStr, fresh);
+
+      final risk =
+          await fresh.raidDao.getRiskById('cascade:risk:child:r-9');
+      expect(risk, isNotNull);
+      expect(risk!.sourceProjectId, 'child');
+      expect(risk.source, 'cascade');
+    });
+
+    test('escalatedAt + sourceProjectId round-trip for actions + decisions',
+        () async {
+      const projectId = 'rt-deliv';
+      await db.projectDao.insertProject(
+          ProjectsCompanion.insert(id: projectId, name: 'Delivery'));
+      final esc = DateTime(2026, 6, 6, 12);
+      await db.actionsDao.upsertAction(ProjectActionsCompanion.insert(
+        id: 'a-esc',
+        projectId: projectId,
+        description: 'Escalated action',
+        escalatedAt: Value(esc),
+      ));
+      await db.decisionsDao.upsertDecision(DecisionsCompanion.insert(
+        id: 'd-esc',
+        projectId: projectId,
+        description: 'Escalated decision',
+        escalatedAt: Value(esc),
+      ));
+
+      final jsonStr = await JsonExporter.exportProjectToString(
+          projectId: projectId, db: db);
+      final fresh = AppDatabase.memory();
+      addTearDown(fresh.close);
+      await JsonImporter.importFromString(jsonStr, fresh);
+
+      final action = await fresh.actionsDao.getActionById('a-esc');
+      expect(action!.escalatedAt, esc);
+      final decision = await fresh.decisionsDao.getDecisionById('d-esc');
+      expect(decision!.escalatedAt, esc);
     });
   });
 }

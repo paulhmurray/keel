@@ -2,13 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/cascade/cascade_service.dart';
+import '../../core/cascade/sync_cascade_gateway.dart';
 import '../../core/database/database.dart';
+import '../../core/sync/sync_client.dart';
 import '../../providers/project_provider.dart';
+import '../../providers/sync_provider.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/widgets/status_chip.dart';
 import '../../shared/widgets/source_badge.dart';
 import '../../shared/utils/avatar_utils.dart';
 import '../../shared/utils/date_utils.dart' as du;
+import '../canvas/canvas_drag_source.dart';
+import '../canvas/in_canvas_indicator.dart';
+import '../programme/overdue_cascade_panel.dart';
 import '../timeline/timeline_chart.dart' show parseHexColor;
 import 'action_form.dart';
 import 'action_grouping.dart';
@@ -262,6 +269,11 @@ class _ActionsViewState extends State<ActionsView> {
             ],
           ),
           const SizedBox(height: 10),
+          // Programme-only roll-up. Hidden on project-kind installs;
+          // hidden on programme installs with no overdue cascaded
+          // actions. Surfaces what's slipping across the portfolio at
+          // a glance, above the per-row list.
+          const OverdueCascadePanel(kind: OverdueCascadeKind.action),
           Expanded(
             child: StreamBuilder<List<ActionCategory>>(
               stream: db.actionCategoriesDao.watchForProject(projectId),
@@ -944,6 +956,11 @@ class _ActionCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         SourceBadge(source: action.source),
+                        const SizedBox(width: 4),
+                        InCanvasIndicator(
+                          itemType: 'action',
+                          itemId: action.id,
+                        ),
                         if (planTag != null) ...[
                           const SizedBox(width: 4),
                           _PlanTag(label: planTag!),
@@ -957,60 +974,143 @@ class _ActionCard extends StatelessWidget {
                   ],
                 ),
               ),
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert,
-                    size: 16, color: KColors.textMuted),
-                onSelected: (val) async {
-                  if (val == 'edit') {
-                    showDialog(
-                      context: context,
-                      builder: (_) => ActionFormDialog(
-                          projectId: projectId, db: db, action: action),
-                    );
-                  } else if (val == 'close') {
-                    db.actionsDao.upsertAction(
-                      ProjectActionsCompanion(
-                        id: Value(action.id),
-                        projectId: Value(action.projectId),
-                        description: Value(action.description),
-                        status: const Value('closed'),
-                        updatedAt: Value(DateTime.now()),
-                      ),
-                    );
-                  } else if (val == 'delete') {
-                    if (isParent) {
-                      final ok = await _confirmDeleteParent(
-                          context, action, rollup?.total ?? 0);
-                      if (!ok) return;
+              if (action.sourceProjectId != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 5, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: KColors.surface2,
+                    border: Border.all(color: KColors.border2, width: 0.5),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                  child: const Tooltip(
+                    message:
+                        'Cascaded from a linked project — read-only',
+                    child: Text('PROJ',
+                        style: TextStyle(
+                          color: KColors.textMuted,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.6,
+                        )),
+                  ),
+                )
+              else
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert,
+                      size: 16, color: KColors.textMuted),
+                  onSelected: (val) async {
+                    if (val == 'edit') {
+                      await showDialog(
+                        context: context,
+                        builder: (_) => ActionFormDialog(
+                            projectId: projectId, db: db, action: action),
+                      );
+                      // Re-push after edit when escalated.
+                      if (context.mounted && action.escalatedAt != null) {
+                        final fresh =
+                            await db.actionsDao.getActionById(action.id);
+                        if (fresh != null && context.mounted) {
+                          await _cascadeFor(context, db)
+                              .pushAction(fresh);
+                        }
+                      }
+                    } else if (val == 'close') {
+                      await db.actionsDao.upsertAction(
+                        ProjectActionsCompanion(
+                          id: Value(action.id),
+                          projectId: Value(action.projectId),
+                          description: Value(action.description),
+                          status: const Value('closed'),
+                          updatedAt: Value(DateTime.now()),
+                        ),
+                      );
+                      if (context.mounted &&
+                          action.escalatedAt != null) {
+                        final fresh =
+                            await db.actionsDao.getActionById(action.id);
+                        if (fresh != null && context.mounted) {
+                          await _cascadeFor(context, db)
+                              .pushAction(fresh);
+                        }
+                      }
+                    } else if (val == 'escalate') {
                       await db.actionsDao
-                          .deleteParentAndOrphanChildren(action.id);
-                    } else {
-                      await db.actionsDao.deleteAction(action.id);
+                          .setActionEscalated(action.id, true);
+                      final fresh =
+                          await db.actionsDao.getActionById(action.id);
+                      if (fresh != null && context.mounted) {
+                        await _cascadeFor(context, db).pushAction(fresh);
+                      }
+                    } else if (val == 'unescalate') {
+                      if (context.mounted) {
+                        await _cascadeFor(context, db).tombstoneRaidItem(
+                          projectId: projectId,
+                          itemKind: CascadeKinds.action,
+                          itemId: action.id,
+                        );
+                      }
+                      await db.actionsDao
+                          .setActionEscalated(action.id, false);
+                    } else if (val == 'delete') {
+                      if (action.escalatedAt != null && context.mounted) {
+                        await _cascadeFor(context, db).tombstoneRaidItem(
+                          projectId: projectId,
+                          itemKind: CascadeKinds.action,
+                          itemId: action.id,
+                        );
+                      }
+                      if (isParent) {
+                        if (!context.mounted) return;
+                        final ok = await _confirmDeleteParent(
+                            context, action, rollup?.total ?? 0);
+                        if (!ok) return;
+                        await db.actionsDao
+                            .deleteParentAndOrphanChildren(action.id);
+                      } else {
+                        await db.actionsDao.deleteAction(action.id);
+                      }
+                    } else if (val == 'delete_series') {
+                      db.actionsDao
+                          .deleteByRecurrenceGroup(
+                              action.recurrenceGroupId!);
                     }
-                  } else if (val == 'delete_series') {
-                    db.actionsDao
-                        .deleteByRecurrenceGroup(action.recurrenceGroupId!);
-                  }
-                },
-                itemBuilder: (_) => [
-                  const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                  const PopupMenuItem(
-                      value: 'close', child: Text('Mark Closed')),
-                  const PopupMenuItem(
-                      value: 'delete', child: Text('Delete this')),
-                  if (action.recurrenceGroupId != null)
+                  },
+                  itemBuilder: (_) => [
+                    const PopupMenuItem(value: 'edit', child: Text('Edit')),
                     const PopupMenuItem(
-                        value: 'delete_series',
-                        child: Text('Delete all in series')),
-                ],
-              ),
+                        value: 'close', child: Text('Mark Closed')),
+                    if (action.escalatedAt == null)
+                      const PopupMenuItem(
+                          value: 'escalate',
+                          child: Text('Escalate to programme'))
+                    else
+                      const PopupMenuItem(
+                          value: 'unescalate',
+                          child: Text('Stop escalating')),
+                    const PopupMenuItem(
+                        value: 'delete', child: Text('Delete this')),
+                    if (action.recurrenceGroupId != null)
+                      const PopupMenuItem(
+                          value: 'delete_series',
+                          child: Text('Delete all in series')),
+                  ],
+                ),
             ],
           ),
         ),
       ),
     );
 
-    if (!isChild) return card;
+    if (!isChild) {
+      return CanvasDragSource(
+        itemType: 'action',
+        itemId: action.id,
+        title: action.description,
+        body: action.outcome,
+        child: card,
+      );
+    }
 
     // Children: subtle vertical guide-line on the left + indent.
     return Padding(
@@ -1077,6 +1177,23 @@ class _GroupRollupChip extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Resolves a CascadeService from the live providers. Shared between
+/// the action row's escalate / unescalate / delete handlers so they
+/// don't each duplicate the gateway resolution.
+CascadeService _cascadeFor(BuildContext context, AppDatabase db) {
+  final sync = context.read<SyncProvider>();
+  final token = sync.accessToken;
+  return CascadeService(
+    db,
+    gateway: token == null
+        ? null
+        : SyncCascadeGateway(
+            client: SyncClient(baseUrl: sync.serverUrl),
+            accessToken: token,
+          ),
+  );
 }
 
 Future<bool> _confirmDeleteParent(

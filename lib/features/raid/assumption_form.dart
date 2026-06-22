@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:drift/drift.dart' show Value;
 
+import '../../core/analytics/keel_events.dart';
 import '../../core/database/database.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/widgets/dropdown_field.dart';
@@ -70,6 +71,7 @@ class _AssumptionFormDialogState extends State<AssumptionFormDialog> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final isNew = widget.assumption == null;
     String ref = widget.assumption?.ref ??
         _nextRef(await widget.db.raidDao.getAssumptionsForProject(widget.projectId));
 
@@ -91,6 +93,12 @@ class _AssumptionFormDialogState extends State<AssumptionFormDialog> {
       ),
     );
 
+    if (isNew && mounted) {
+      context.analytics.track(
+        KeelEvents.assumptionCreated,
+        props: {KeelEventProps.source: 'assumption_form'},
+      );
+    }
     if (mounted) Navigator.of(context).pop();
   }
 

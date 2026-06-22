@@ -71,6 +71,19 @@ class EntityPickerField<T> extends StatefulWidget {
   /// Max items shown in the dropdown (excluding shortcut and add-new).
   final int maxItems;
 
+  /// Optional text style for the typed-in input. When null, falls back
+  /// to the field's compact default (fontSize 12). Callers wanting a
+  /// roomier field (e.g. larger dialogs) can pass a bigger style.
+  final TextStyle? textStyle;
+
+  /// Optional label style override. When null, uses the compact default.
+  final TextStyle? labelStyle;
+
+  /// Optional content padding for the underlying TextFormField. Larger
+  /// padding combined with a larger [textStyle] makes the field feel
+  /// roomier without re-laying-out the dropdown.
+  final EdgeInsetsGeometry? contentPadding;
+
   const EntityPickerField({
     super.key,
     required this.controller,
@@ -85,6 +98,9 @@ class EntityPickerField<T> extends StatefulWidget {
     this.onSelected,
     this.shortcut,
     this.maxItems = 6,
+    this.textStyle,
+    this.labelStyle,
+    this.contentPadding,
   });
 
   @override
@@ -165,13 +181,15 @@ class _EntityPickerFieldState<T> extends State<EntityPickerField<T>> {
       fieldViewBuilder: (ctx, ctrl, focusNode, onSubmitted) => TextFormField(
         controller: ctrl,
         focusNode: focusNode,
-        style: const TextStyle(color: KColors.text, fontSize: 12),
+        style: widget.textStyle ??
+            const TextStyle(color: KColors.text, fontSize: 12),
         decoration: InputDecoration(
           labelText: widget.label,
-          labelStyle: const TextStyle(color: KColors.textDim, fontSize: 11),
+          labelStyle: widget.labelStyle ??
+              const TextStyle(color: KColors.textDim, fontSize: 11),
           border: const OutlineInputBorder(),
-          isDense: true,
-          contentPadding:
+          isDense: widget.contentPadding == null,
+          contentPadding: widget.contentPadding ??
               const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         ),
         onFieldSubmitted: (_) => onSubmitted(),

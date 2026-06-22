@@ -3,8 +3,12 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:drift/drift.dart' show Value;
 
+import '../../core/cascade/cascade_service.dart';
+import '../../core/cascade/sync_cascade_gateway.dart';
 import '../../core/database/database.dart';
 import '../../core/export/html_exporter.dart';
+import '../../core/sync/sync_client.dart';
+import '../../providers/sync_provider.dart';
 import '../../core/export/pdf_exporter.dart';
 import '../../core/export/handover_exporter.dart';
 import '../../core/export/programme_workbook_exporter.dart';
@@ -192,6 +196,23 @@ class _ReportCard extends StatelessWidget {
     return proj?.name ?? 'Project';
   }
 
+  /// Build a CascadeService for the delete-tombstone path. Mirrors
+  /// the helper in _ReportFormDialogState so both flows share the
+  /// same gateway resolution.
+  CascadeService _cascadeFor(BuildContext context) {
+    final sync = context.read<SyncProvider>();
+    final token = sync.accessToken;
+    return CascadeService(
+      db,
+      gateway: token == null
+          ? null
+          : SyncCascadeGateway(
+              client: SyncClient(baseUrl: sync.serverUrl),
+              accessToken: token,
+            ),
+    );
+  }
+
   void _exportHtml(BuildContext context) async {
     final name = await _projectName();
     try {
@@ -240,6 +261,7 @@ class _ReportCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isCascaded = report.sourceProjectId != null;
     return Card(
       child: InkWell(
         onTap: () => showDialog(
@@ -261,6 +283,32 @@ class _ReportCard extends StatelessWidget {
                         style: const TextStyle(
                             fontWeight: FontWeight.w600, fontSize: 14)),
                   ),
+                  if (isCascaded) ...[
+                    Tooltip(
+                      message:
+                          'Cascaded from a linked project — read-only',
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: KColors.surface2,
+                          border: Border.all(
+                              color: KColors.border2, width: 0.5),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                        child: const Text(
+                          'PROJ',
+                          style: TextStyle(
+                            color: KColors.textMuted,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.6,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
                   if (report.period != null) ...[
                     Flexible(
                       child: Text(report.period!,
@@ -272,7 +320,7 @@ class _ReportCard extends StatelessWidget {
                   ],
                   PopupMenuButton<String>(
                     icon: const Icon(Icons.more_vert, size: 18),
-                    onSelected: (val) {
+                    onSelected: (val) async {
                       if (val == 'edit') {
                         showDialog(
                           context: context,
@@ -288,10 +336,43 @@ class _ReportCard extends StatelessWidget {
                       } else if (val == 'pdf') {
                         _exportPdf(context);
                       } else if (val == 'delete') {
-                        db.reportsDao.deleteReport(report.id);
+                        // Tombstone the cascade copies BEFORE the
+                        // local delete so the programme sees the
+                        // removal reliably.
+                        if (!isCascaded) {
+                          // ignore: use_build_context_synchronously
+                          await _cascadeFor(context).deleteStatusReport(
+                            projectId: projectId,
+                            reportId: report.id,
+                          );
+                        }
+                        await db.reportsDao.deleteReport(report.id);
                       }
                     },
-                    itemBuilder: (_) => const [
+                    itemBuilder: (_) => isCascaded
+                        ? const [
+                            // Cascaded rows are read-only — only the
+                            // export + (local) delete options remain.
+                            PopupMenuItem(
+                                value: 'html',
+                                child: Row(children: [
+                                  Icon(Icons.code, size: 16),
+                                  SizedBox(width: 8),
+                                  Text('Export HTML'),
+                                ])),
+                            PopupMenuItem(
+                                value: 'pdf',
+                                child: Row(children: [
+                                  Icon(Icons.picture_as_pdf, size: 16),
+                                  SizedBox(width: 8),
+                                  Text('Export PDF'),
+                                ])),
+                            PopupMenuItem(
+                                value: 'delete',
+                                child:
+                                    Text('Remove from programme')),
+                          ]
+                        : const [
                       PopupMenuItem(value: 'edit', child: Text('Edit')),
                       PopupMenuItem(
                           value: 'html',
@@ -640,7 +721,39 @@ class _ReportFormDialogState extends State<_ReportFormDialog> {
     );
 
     await widget.db.reportsDao.upsertReport(companion);
+
+    // Auto-cascade to any active programme links. Saving a status
+    // report IS the publish moment — there's no separate "share with
+    // programme" toggle. CascadeService handles the "no links / not
+    // signed in / cascaded row" cases internally.
+    if (mounted) {
+      final saved = await widget.db.reportsDao
+          .getReportsForProject(widget.projectId);
+      final fresh = saved.firstWhere(
+          (r) => r.id == companion.id.value,
+          orElse: () => saved.first);
+      // ignore: use_build_context_synchronously
+      await _cascadeFor(context).pushStatusReport(fresh);
+    }
+
     if (mounted) Navigator.of(context).pop();
+  }
+
+  /// Build a CascadeService using the live providers. Same idiom as
+  /// the WP form and RAID view — the service treats a missing
+  /// gateway as no-op so call sites stay branch-free.
+  CascadeService _cascadeFor(BuildContext context) {
+    final sync = context.read<SyncProvider>();
+    final token = sync.accessToken;
+    return CascadeService(
+      widget.db,
+      gateway: token == null
+          ? null
+          : SyncCascadeGateway(
+              client: SyncClient(baseUrl: sync.serverUrl),
+              accessToken: token,
+            ),
+    );
   }
 
   @override

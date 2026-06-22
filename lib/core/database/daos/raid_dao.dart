@@ -165,4 +165,84 @@ class RaidDao extends DatabaseAccessor<AppDatabase> with _$RaidDaoMixin {
   Future<void> upsertDependency(ProgramDependenciesCompanion entry) {
     return into(programDependencies).insertOnConflictUpdate(entry);
   }
+
+  // ── Escalation (Phase C.2) ────────────────────────────────────────────
+  //
+  // Each RAID kind has the same shape: setting `escalatedAt` to a
+  // non-null timestamp marks the item as a candidate for cascade to
+  // linked programmes; clearing it (`null`) tells the cascade pusher
+  // to tombstone the item on the programme side.
+  //
+  // Listing escalated items per project is what the cascade pusher
+  // needs at link-activation time to seed the programme with the
+  // existing escalated portfolio.
+
+  Future<void> setRiskEscalated(String id, bool escalated) {
+    return (update(risks)..where((t) => t.id.equals(id))).write(
+      RisksCompanion(
+        escalatedAt: Value(escalated ? DateTime.now() : null),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  Future<void> setAssumptionEscalated(String id, bool escalated) {
+    return (update(assumptions)..where((t) => t.id.equals(id))).write(
+      AssumptionsCompanion(
+        escalatedAt: Value(escalated ? DateTime.now() : null),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  Future<void> setIssueEscalated(String id, bool escalated) {
+    return (update(issues)..where((t) => t.id.equals(id))).write(
+      IssuesCompanion(
+        escalatedAt: Value(escalated ? DateTime.now() : null),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  Future<void> setDependencyEscalated(String id, bool escalated) {
+    return (update(programDependencies)..where((t) => t.id.equals(id)))
+        .write(ProgramDependenciesCompanion(
+      escalatedAt: Value(escalated ? DateTime.now() : null),
+      updatedAt: Value(DateTime.now()),
+    ));
+  }
+
+  Future<List<Risk>> getEscalatedRisksForProject(String projectId) =>
+      (select(risks)
+            ..where((t) =>
+                t.projectId.equals(projectId) &
+                t.escalatedAt.isNotNull() &
+                t.sourceProjectId.isNull()))
+          .get();
+
+  Future<List<Assumption>> getEscalatedAssumptionsForProject(
+          String projectId) =>
+      (select(assumptions)
+            ..where((t) =>
+                t.projectId.equals(projectId) &
+                t.escalatedAt.isNotNull() &
+                t.sourceProjectId.isNull()))
+          .get();
+
+  Future<List<Issue>> getEscalatedIssuesForProject(String projectId) =>
+      (select(issues)
+            ..where((t) =>
+                t.projectId.equals(projectId) &
+                t.escalatedAt.isNotNull() &
+                t.sourceProjectId.isNull()))
+          .get();
+
+  Future<List<ProgramDependency>> getEscalatedDependenciesForProject(
+          String projectId) =>
+      (select(programDependencies)
+            ..where((t) =>
+                t.projectId.equals(projectId) &
+                t.escalatedAt.isNotNull() &
+                t.sourceProjectId.isNull()))
+          .get();
 }

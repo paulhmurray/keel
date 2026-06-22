@@ -179,6 +179,8 @@ class JsonExporter {
                   'status': r.status,
                   'source': r.source,
                   'source_note': r.sourceNote,
+                  'escalated_at': r.escalatedAt?.toIso8601String(),
+                  'source_project_id': r.sourceProjectId,
                   'created_at': r.createdAt.toIso8601String(),
                   'updated_at': r.updatedAt.toIso8601String(),
                 })
@@ -194,6 +196,8 @@ class JsonExporter {
                   'validated_at': a.validatedAt?.toIso8601String(),
                   'source': a.source,
                   'source_note': a.sourceNote,
+                  'escalated_at': a.escalatedAt?.toIso8601String(),
+                  'source_project_id': a.sourceProjectId,
                   'created_at': a.createdAt.toIso8601String(),
                   'updated_at': a.updatedAt.toIso8601String(),
                 })
@@ -210,6 +214,8 @@ class JsonExporter {
                   'resolution': i.resolution,
                   'source': i.source,
                   'source_note': i.sourceNote,
+                  'escalated_at': i.escalatedAt?.toIso8601String(),
+                  'source_project_id': i.sourceProjectId,
                   'created_at': i.createdAt.toIso8601String(),
                   'updated_at': i.updatedAt.toIso8601String(),
                 })
@@ -225,6 +231,8 @@ class JsonExporter {
                   'due_date': d.dueDate,
                   'source': d.source,
                   'source_note': d.sourceNote,
+                  'escalated_at': d.escalatedAt?.toIso8601String(),
+                  'source_project_id': d.sourceProjectId,
                   'created_at': d.createdAt.toIso8601String(),
                   'updated_at': d.updatedAt.toIso8601String(),
                 })
@@ -242,6 +250,8 @@ class JsonExporter {
                 'outcome': d.outcome,
                 'source': d.source,
                 'source_note': d.sourceNote,
+                'escalated_at': d.escalatedAt?.toIso8601String(),
+                'source_project_id': d.sourceProjectId,
                 'created_at': d.createdAt.toIso8601String(),
                 'updated_at': d.updatedAt.toIso8601String(),
               })
@@ -257,6 +267,9 @@ class JsonExporter {
                   'phone': p.phone,
                   'teams_handle': p.teamsHandle,
                   'person_type': p.personType,
+                  'is_stakeholder': p.isStakeholder,
+                  'source_project_id': p.sourceProjectId,
+                  'source_project_name': p.sourceProjectName,
                   'created_at': p.createdAt.toIso8601String(),
                   'updated_at': p.updatedAt.toIso8601String(),
                 })
@@ -352,6 +365,8 @@ class JsonExporter {
                 'priority': a.priority,
                 'source': a.source,
                 'source_note': a.sourceNote,
+                'escalated_at': a.escalatedAt?.toIso8601String(),
+                'source_project_id': a.sourceProjectId,
                 'outcome': a.outcome,
                 'category_id': a.categoryId,
                 'recurrence_group_id': a.recurrenceGroupId,
@@ -451,6 +466,7 @@ class JsonExporter {
                 'accomplishments': r.accomplishments,
                 'next_steps': r.nextSteps,
                 'risks_highlighted': r.risksHighlighted,
+                'source_project_id': r.sourceProjectId,
                 'created_at': r.createdAt.toIso8601String(),
                 'updated_at': r.updatedAt.toIso8601String(),
               })
@@ -480,6 +496,8 @@ class JsonExporter {
               'success_criteria': charter.successCriteria,
               'key_constraints': charter.keyConstraints,
               'assumptions': charter.assumptions,
+              'source_project_id': charter.sourceProjectId,
+              'source_project_name': charter.sourceProjectName,
               'created_at': charter.createdAt.toIso8601String(),
               'updated_at': charter.updatedAt.toIso8601String(),
             },
@@ -529,6 +547,7 @@ class JsonExporter {
                   'colour_theme': wp.colourTheme,
                   'sort_order': wp.sortOrder,
                   'rag_status': wp.ragStatus,
+                  'source_project_id': wp.sourceProjectId,
                   'created_at': wp.createdAt.toIso8601String(),
                   'updated_at': wp.updatedAt.toIso8601String(),
                 })

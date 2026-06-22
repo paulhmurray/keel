@@ -447,87 +447,90 @@ class SeedService {
     // -------------------------------------------------------------------------
     // People
     // -------------------------------------------------------------------------
+    // Each tuple: (id, name, role, org, email, phone, teams, category, isStakeholder).
+    // Category is one of: colleague | exec | vendor. isStakeholder is orthogonal.
     final persons = [
       (
         'seed-p-001', 'Helena Cross', 'CTO', 'FinCo Ltd',
         'helena.cross@finco.com', '+44 7700 900123', '@helena.cross',
-        'stakeholder',
+        'exec', true,
       ),
       (
         'seed-p-002', 'Richard Okafor', 'CFO', 'FinCo Ltd',
         'r.okafor@finco.com', '+44 7700 900456', '@richard.okafor',
-        'stakeholder',
+        'exec', true,
       ),
       (
         'seed-p-003', 'Amara Osei', 'Core Banking Lead', 'FinCo Ltd',
         'a.osei@finco.com', null, '@amara.osei',
-        'colleague',
+        'colleague', false,
       ),
       (
         'seed-p-004', 'Raj Patel', 'Data Platform Architect', 'FinCo Ltd',
         'raj.patel@finco.com', null, '@raj.patel',
-        'colleague',
+        'colleague', false,
       ),
       (
         'seed-p-005', 'Sophie Chen', 'Mobile Engineering Lead', 'FinCo Ltd',
         's.chen@finco.com', null, '@sophie.chen',
-        'colleague',
+        'colleague', false,
       ),
       (
         'seed-p-006', 'Marcus Webb', 'Head of Security', 'FinCo Ltd',
         'm.webb@finco.com', '+44 7700 900789', '@marcus.webb',
-        'colleague',
+        'colleague', false,
       ),
       (
         'seed-p-007', 'Priya Sharma', 'Change Manager', 'FinCo Ltd',
         'p.sharma@finco.com', null, '@priya.sharma',
-        'colleague',
+        'colleague', false,
       ),
       (
         'seed-p-008', 'James Farrow', 'Chief Architect', 'FinCo Ltd',
         'j.farrow@finco.com', null, '@james.farrow',
-        'stakeholder',
+        'colleague', true,
       ),
       // Executives
       (
         'seed-p-009', 'Diana Holt', 'CEO', 'FinCo Ltd',
         'diana.holt@finco.com', null, '@diana.holt',
-        'exec',
+        'exec', true,
       ),
       (
         'seed-p-010', 'Olivia Pierce', 'COO', 'FinCo Ltd',
         'o.pierce@finco.com', null, '@olivia.pierce',
-        'exec',
+        'exec', false,
       ),
       (
         'seed-p-011', 'Kwame Mensah', 'Chair, Audit Committee',
         'FinCo Ltd Board', 'k.mensah@finco-board.com', null, null,
-        'exec',
+        'exec', true,
       ),
       // Vendors
       (
         'seed-p-012', 'Stefan Blau', 'Engagement Director', 'Temenos',
         'stefan.blau@temenos.com', '+41 22 555 0140', null,
-        'vendor',
+        'vendor', true,
       ),
       (
         'seed-p-013', 'Elena Vasquez', 'Senior Solutions Architect',
         'AWS', 'evasquez@amazon.com', null, null,
-        'vendor',
+        'vendor', false,
       ),
       (
         'seed-p-014', 'Hugo Reinhardt', 'Audit Partner', 'BDO LLP',
         'h.reinhardt@bdo.co.uk', null, null,
-        'vendor',
+        'vendor', false,
       ),
       (
         'seed-p-015', 'Naomi Kim', 'Senior Manager', 'Accenture',
         'naomi.kim@accenture.com', null, null,
-        'vendor',
+        'vendor', false,
       ),
     ];
 
-    for (final (id, name, role, org, email, phone, teams, type) in persons) {
+    for (final (id, name, role, org, email, phone, teams, type, stakeholder)
+        in persons) {
       await db.peopleDao.upsertPerson(
         PersonsCompanion(
           id: Value(id),
@@ -539,6 +542,7 @@ class SeedService {
           phone: Value(phone),
           teamsHandle: Value(teams),
           personType: Value(type),
+          isStakeholder: Value(stakeholder),
           updatedAt: Value(DateTime.now()),
         ),
       );

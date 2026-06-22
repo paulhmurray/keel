@@ -11,7 +11,7 @@ import 'overview/coverage_row.dart';
 import 'overview/overview_narrative_panel.dart';
 
 class ProgrammeView extends StatelessWidget {
-  final VoidCallback? onNavigateToTimeline;
+  final VoidCallback? onNavigateToCanvas;
   final VoidCallback? onNavigateToCharter;
   final VoidCallback? onNavigateToActions;
   final VoidCallback? onNavigateToDecisions;
@@ -21,7 +21,7 @@ class ProgrammeView extends StatelessWidget {
 
   const ProgrammeView({
     super.key,
-    this.onNavigateToTimeline,
+    this.onNavigateToCanvas,
     this.onNavigateToCharter,
     this.onNavigateToActions,
     this.onNavigateToDecisions,

@@ -21,6 +21,18 @@ class PeopleDao extends DatabaseAccessor<AppDatabase> with _$PeopleDaoMixin {
         .watch();
   }
 
+  /// Watches everyone in the project flagged as a stakeholder, regardless of
+  /// category (colleague / exec / vendor). The "stakeholder" status is
+  /// orthogonal to category — it indicates we're tracking the person's
+  /// influence/interest/stance for the project.
+  Stream<List<Person>> watchStakeholderPersons(String projectId) {
+    return (select(persons)
+          ..where((t) =>
+              t.projectId.equals(projectId) & t.isStakeholder.equals(true))
+          ..orderBy([(t) => OrderingTerm.asc(t.name)]))
+        .watch();
+  }
+
   Future<List<Person>> getPersonsForProject(String projectId) {
     return (select(persons)
           ..where((t) => t.projectId.equals(projectId))

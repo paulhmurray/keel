@@ -17,6 +17,7 @@ import (
 	"github.com/keel/server/internal/billing"
 	serverdb "github.com/keel/server/internal/db"
 	"github.com/keel/server/internal/inbox"
+	"github.com/keel/server/internal/links"
 	"github.com/keel/server/internal/middleware"
 	"github.com/keel/server/internal/sync"
 	"github.com/keel/server/internal/version"
@@ -103,6 +104,7 @@ func main() {
 	syncHandler := sync.NewHandler(db)
 	billingHandler := billing.NewHandler(db)
 	inboxHandler := inbox.NewHandler(db)
+	linksHandler := links.NewHandler(db)
 
 	// Auth routes (no JWT required)
 	authGroup := router.Group("/auth")
@@ -139,6 +141,21 @@ func main() {
 		protected.GET("/inbox", inboxHandler.List)
 		protected.GET("/inbox/:id/image", inboxHandler.GetImage)
 		protected.PATCH("/inbox/:id", inboxHandler.UpdateStatus)
+
+		// Programme links (Phase B). Bearer-code based: anyone with
+		// the code can claim the opposite side, the server enforces
+		// kind-complementarity + party limits.
+		linksGroup := protected.Group("/links")
+		{
+			linksGroup.PUT("/:code/me", linksHandler.ClaimSide)
+			linksGroup.GET("/:code", linksHandler.GetLink)
+			linksGroup.DELETE("/:code/me", linksHandler.RevokeSide)
+			// Cascade items (Phase C) — structural project data
+			// flowing into the link channel.
+			linksGroup.PUT("/:code/items", linksHandler.PushCascadeItem)
+			linksGroup.GET("/:code/items", linksHandler.PullCascadeItems)
+			linksGroup.DELETE("/:code/items/:kind/:id", linksHandler.DeleteCascadeItem)
+		}
 	}
 
 	port := os.Getenv("PORT")

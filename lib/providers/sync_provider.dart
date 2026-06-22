@@ -4,10 +4,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../core/cascade/cascade_service.dart';
+import '../core/cascade/cascade_sync.dart';
+import '../core/cascade/sync_cascade_gateway.dart';
 import '../core/database/database.dart';
 import '../core/export/json_exporter.dart';
 import '../core/import/json_importer.dart';
 import '../core/sync/encryption_service.dart';
+import '../core/sync/links_gateway.dart';
 import '../core/sync/sync_client.dart';
 
 const _kSecureRefreshToken = 'keel_refresh_token';
@@ -30,8 +34,13 @@ class SyncProvider extends ChangeNotifier {
 
   SyncStatus _status = SyncStatus.idle;
   String? _lastError;
-  DateTime? _lastSyncAt;
-  DateTime? _lastLocalChangeAt;
+  // Per-entity sync state. Sync is account-wide for auth, but each
+  // project/programme is a separate server slot, so "last synced" and
+  // "has pending changes" are tracked per entity id — switching the
+  // current project shows that entity's own state, not whatever was
+  // synced most recently.
+  final Map<String, DateTime> _lastSyncByProject = {};
+  final Map<String, DateTime> _lastChangeByProject = {};
   bool _importing = false; // suppresses markLocalChange during pull
 
   // Persisted settings (loaded/saved by caller via SettingsProvider)
@@ -42,44 +51,88 @@ class SyncProvider extends ChangeNotifier {
   // --- Getters ---
 
   bool get isAuthenticated => _accessToken != null && _userId != null;
+  /// In-memory access token — exposed so peer services (e.g.
+  /// ProgrammeLinksDao) can call sync endpoints without re-doing the
+  /// auth dance. Null when the user isn't signed in.
+  String? get accessToken => _accessToken;
   String? get userId => _userId;
   String? get plan => _plan;
   String? get userEmail => email;
   SyncStatus get status => _status;
   String? get lastError => _lastError;
-  DateTime? get lastSyncAt => _lastSyncAt;
 
-  /// True when the user has unsynced local changes and is authenticated.
-  bool get hasPendingChanges {
-    if (!isAuthenticated) return false;
-    if (_lastLocalChangeAt == null) return false;
-    if (_lastSyncAt == null) return true;
-    return _lastLocalChangeAt!.isAfter(_lastSyncAt!);
+  /// When [projectId] was last synced to the server, or null if never
+  /// (or no project is selected).
+  DateTime? lastSyncAtFor(String? projectId) =>
+      projectId == null ? null : _lastSyncByProject[projectId];
+
+  /// True when [projectId] has local edits made since its last sync and
+  /// the user is authenticated. Per-entity so the project's pending
+  /// state doesn't bleed into the programme (or vice versa).
+  bool hasPendingChangesFor(String? projectId) {
+    if (!isAuthenticated || projectId == null) return false;
+    return pendingFrom(
+        _lastChangeByProject[projectId], _lastSyncByProject[projectId]);
   }
 
-  void markLocalChange() {
+  /// Pure pending-state rule: there are unsynced changes when a change
+  /// exists and it's newer than the last sync (or there's been no sync).
+  /// Extracted so it can be unit-tested without faking auth.
+  static bool pendingFrom(DateTime? lastChange, DateTime? lastSync) {
+    if (lastChange == null) return false;
+    if (lastSync == null) return true;
+    return lastChange.isAfter(lastSync);
+  }
+
+  /// Records a local edit against [projectId] (the entity currently
+  /// being viewed). No-op during pull import and when no project is in
+  /// context.
+  void markLocalChange(String? projectId) {
     if (_importing) return; // don't flag pull-imported data as a local change
-    _lastLocalChangeAt = DateTime.now();
+    if (projectId == null) return;
+    _lastChangeByProject[projectId] = DateTime.now();
     notifyListeners();
     _saveTimestamps();
   }
 
+  /// Serialises an id→timestamp map to a JSON string for SharedPreferences.
+  static String encodeTimestamps(Map<String, DateTime> m) => jsonEncode(
+      m.map((k, v) => MapEntry(k, v.toIso8601String())));
+
+  /// Inverse of [encodeTimestamps]. Tolerates null/blank/garbage by
+  /// returning an empty map, so a corrupt pref never crashes startup.
+  static Map<String, DateTime> decodeTimestamps(String? raw) {
+    if (raw == null || raw.isEmpty) return {};
+    try {
+      final decoded = jsonDecode(raw) as Map<String, dynamic>;
+      final out = <String, DateTime>{};
+      decoded.forEach((k, v) {
+        final dt = DateTime.tryParse(v as String);
+        if (dt != null) out[k] = dt;
+      });
+      return out;
+    } catch (_) {
+      return {};
+    }
+  }
+
   Future<void> _saveTimestamps() async {
     final prefs = await SharedPreferences.getInstance();
-    if (_lastLocalChangeAt != null) {
-      await prefs.setString('keel_sync_lastLocalChangeAt', _lastLocalChangeAt!.toIso8601String());
-    }
-    if (_lastSyncAt != null) {
-      await prefs.setString('keel_sync_lastSyncAt', _lastSyncAt!.toIso8601String());
-    }
+    await prefs.setString(
+        'keel_sync_lastSyncByProject', encodeTimestamps(_lastSyncByProject));
+    await prefs.setString('keel_sync_lastChangeByProject',
+        encodeTimestamps(_lastChangeByProject));
   }
 
   Future<void> loadTimestamps() async {
     final prefs = await SharedPreferences.getInstance();
-    final changeStr = prefs.getString('keel_sync_lastLocalChangeAt') ?? '';
-    final syncStr = prefs.getString('keel_sync_lastSyncAt') ?? '';
-    _lastLocalChangeAt = changeStr.isNotEmpty ? DateTime.tryParse(changeStr) : null;
-    _lastSyncAt = syncStr.isNotEmpty ? DateTime.tryParse(syncStr) : null;
+    _lastSyncByProject
+      ..clear()
+      ..addAll(decodeTimestamps(prefs.getString('keel_sync_lastSyncByProject')));
+    _lastChangeByProject
+      ..clear()
+      ..addAll(
+          decodeTimestamps(prefs.getString('keel_sync_lastChangeByProject')));
     notifyListeners();
   }
 
@@ -134,7 +187,8 @@ class SyncProvider extends ChangeNotifier {
     _plan = null;
     _status = SyncStatus.idle;
     _lastError = null;
-    _lastSyncAt = null;
+    _lastSyncByProject.clear();
+    _lastChangeByProject.clear();
     await _clearStoredSession();
     notifyListeners();
   }
@@ -177,8 +231,12 @@ class SyncProvider extends ChangeNotifier {
       // Push to server
       final updatedAt =
           await _getClient().pushSync(token, projectId, encryptedBlob);
-      _lastSyncAt = updatedAt;
+      _lastSyncByProject[projectId] = updatedAt;
       _saveTimestamps();
+      // Cascade rides on the same sync gesture: replay escalated items /
+      // cascaded data up to (or down from) any linked programme. Separate
+      // channel from the project blob above, best-effort, never blocks.
+      await _reconcileCascade(projectId, token, db);
       _setStatus(SyncStatus.success);
     } on SyncApiException catch (e) {
       _setError(e.message);
@@ -214,16 +272,80 @@ class SyncProvider extends ChangeNotifier {
       } finally {
         _importing = false;
       }
-      _lastSyncAt = result.updatedAt;
+      _lastSyncByProject[projectId] = result.updatedAt;
       // Align local-change timestamp so pull doesn't look like pending changes
-      _lastLocalChangeAt = _lastSyncAt;
+      _lastChangeByProject[projectId] = result.updatedAt;
       _saveTimestamps();
+      // Reconcile cascade too — a programme pulling its own blob also wants
+      // the latest cascaded items from its linked projects in the same go.
+      await _reconcileCascade(projectId, token, db);
       _setStatus(SyncStatus.success);
     } on SyncApiException catch (e) {
       _setError(e.message);
     } catch (e) {
       _setError(e.toString());
     }
+  }
+
+  /// Best-effort cascade reconcile run as part of a project sync/pull.
+  /// Activates any freshly-paired links, then pushes this project's
+  /// escalated/cascade-eligible content up to linked programmes (project
+  /// side) or pulls cascaded items down (programme side). Wrapped so a
+  /// cascade hiccup never flips the core project sync into an error.
+  Future<void> _reconcileCascade(
+    String projectId,
+    String token,
+    AppDatabase db,
+  ) async {
+    final client = _getClient();
+    final cascade = CascadeService(
+      db,
+      gateway: SyncCascadeGateway(client: client, accessToken: token),
+    );
+    try {
+      await reconcileCascade(
+        db: db,
+        cascade: cascade,
+        projectId: projectId,
+        linksGateway: SyncLinksGateway(client: client, accessToken: token),
+        remoteUserId: _userId,
+      );
+    } catch (_) {
+      // Best-effort — canonical data lives locally; next sync retries.
+    }
+  }
+
+  /// Reconciles cascade for [projectId] outside of a blob sync. Needed
+  /// because a programme that hasn't been pushed to the server yet still
+  /// has to pull escalated items down from its links — the blob Pull
+  /// can't target it, but cascade lives on a separate link channel.
+  /// Best-effort; no-op when not authenticated.
+  Future<void> reconcileCascadeNow(String projectId, AppDatabase db) async {
+    if (!isAuthenticated) return;
+    final String token;
+    try {
+      token = await _ensureValidToken();
+    } catch (_) {
+      return;
+    }
+    await _reconcileCascade(projectId, token, db);
+  }
+
+  /// Chooses which server project a Pull should import. Prefers the
+  /// project the user is currently viewing ([currentId]); falls back to
+  /// the first server project only when that id isn't on the server
+  /// (e.g. a seeded demo with a non-UUID id, or a device that hasn't
+  /// pushed yet). Pulling the wrong entity clears + re-imports it, so
+  /// getting this right avoids clobbering an unrelated project.
+  ///
+  /// [serverProjects] must be non-empty.
+  static String resolvePullTarget(
+    String? currentId,
+    List<ProjectSummary> serverProjects,
+  ) {
+    return serverProjects.any((p) => p.id == currentId)
+        ? currentId!
+        : serverProjects.first.id;
   }
 
   /// Lists projects from the server. Returns empty list on error.
@@ -265,8 +387,8 @@ class SyncProvider extends ChangeNotifier {
         'syncServerUrl': serverUrl,
         'syncEnabled': syncEnabled,
         'syncEmail': email ?? '',
-        'lastSyncAt': _lastSyncAt?.toIso8601String() ?? '',
-        'lastLocalChangeAt': _lastLocalChangeAt?.toIso8601String() ?? '',
+        // Per-entity sync timestamps live in SharedPreferences
+        // (see loadTimestamps); only config belongs in settings JSON.
       };
 
   void loadFromSettings(Map<String, dynamic> json) {
@@ -274,10 +396,6 @@ class SyncProvider extends ChangeNotifier {
     syncEnabled = json['syncEnabled'] as bool? ?? false;
     email = json['syncEmail'] as String? ?? '';
     if (email!.isEmpty) email = null;
-    final lastSyncStr = json['lastSyncAt'] as String? ?? '';
-    _lastSyncAt = lastSyncStr.isNotEmpty ? DateTime.tryParse(lastSyncStr) : null;
-    final lastChangeStr = json['lastLocalChangeAt'] as String? ?? '';
-    _lastLocalChangeAt = lastChangeStr.isNotEmpty ? DateTime.tryParse(lastChangeStr) : null;
     // Do not load tokens from settings — security boundary
   }
 

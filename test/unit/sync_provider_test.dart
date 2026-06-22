@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:keel/core/sync/sync_client.dart';
 import 'package:keel/providers/sync_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -46,8 +47,8 @@ void main() {
       expect(SyncProvider().isAuthenticated, isFalse);
     });
 
-    test('hasPendingChanges is false before login', () {
-      expect(SyncProvider().hasPendingChanges, isFalse);
+    test('hasPendingChangesFor is false before login', () {
+      expect(SyncProvider().hasPendingChangesFor('p-1'), isFalse);
     });
 
     test('status starts idle', () {
@@ -119,17 +120,76 @@ void main() {
     });
   });
 
-  // --- markLocalChange / hasPendingChanges ---
+  // --- markLocalChange / hasPendingChangesFor ---
 
-  group('hasPendingChanges', () {
-    test('is false when not authenticated', () {
+  group('hasPendingChangesFor', () {
+    test('is false when not authenticated even after a local change', () {
       final sp = SyncProvider();
-      sp.markLocalChange();
-      expect(sp.hasPendingChanges, isFalse);
+      sp.markLocalChange('p-1');
+      expect(sp.hasPendingChangesFor('p-1'), isFalse);
     });
 
-    test('lastSyncAt is null initially', () {
-      expect(SyncProvider().lastSyncAt, isNull);
+    test('is false when no project id is given', () {
+      expect(SyncProvider().hasPendingChangesFor(null), isFalse);
+    });
+
+    test('lastSyncAtFor is null initially for any entity', () {
+      final sp = SyncProvider();
+      expect(sp.lastSyncAtFor('p-1'), isNull);
+      expect(sp.lastSyncAtFor(null), isNull);
+    });
+  });
+
+  // --- pendingFrom (pure pending-state rule) ---
+
+  group('pendingFrom', () {
+    test('no change → not pending', () {
+      expect(SyncProvider.pendingFrom(null, DateTime(2026)), isFalse);
+    });
+
+    test('change but never synced → pending', () {
+      expect(SyncProvider.pendingFrom(DateTime(2026), null), isTrue);
+    });
+
+    test('change after last sync → pending', () {
+      expect(
+        SyncProvider.pendingFrom(DateTime(2026, 6, 2), DateTime(2026, 6, 1)),
+        isTrue,
+      );
+    });
+
+    test('change at/before last sync → not pending', () {
+      expect(
+        SyncProvider.pendingFrom(DateTime(2026, 6, 1), DateTime(2026, 6, 2)),
+        isFalse,
+      );
+    });
+  });
+
+  // --- encode/decode per-entity timestamps ---
+
+  group('timestamp map serialization', () {
+    test('round-trips an id→timestamp map', () {
+      final map = {
+        'tac-integration': DateTime(2026, 6, 18, 9, 30),
+        'digital-toolkit': DateTime(2026, 6, 19, 14, 15),
+      };
+      final decoded =
+          SyncProvider.decodeTimestamps(SyncProvider.encodeTimestamps(map));
+      expect(decoded, map);
+    });
+
+    test('decodes null / blank / garbage to an empty map', () {
+      expect(SyncProvider.decodeTimestamps(null), isEmpty);
+      expect(SyncProvider.decodeTimestamps(''), isEmpty);
+      expect(SyncProvider.decodeTimestamps('not json'), isEmpty);
+    });
+
+    test('skips unparseable timestamp values but keeps valid ones', () {
+      final decoded = SyncProvider.decodeTimestamps(
+          '{"good":"2026-06-18T09:30:00.000","bad":"nope"}');
+      expect(decoded.keys, ['good']);
+      expect(decoded['good'], DateTime(2026, 6, 18, 9, 30));
     });
   });
 
@@ -198,6 +258,30 @@ void main() {
 
     test('getBillingPortalUrl returns null', () async {
       expect(await SyncProvider().getBillingPortalUrl(), isNull);
+    });
+  });
+
+  // --- resolvePullTarget ---
+
+  group('resolvePullTarget', () {
+    ProjectSummary summary(String id) =>
+        ProjectSummary(id: id, name: id, updatedAt: DateTime(2026));
+
+    test('pulls the current project when it exists on the server', () {
+      final servers = [summary('proj-a'), summary('prog-b')];
+      expect(SyncProvider.resolvePullTarget('prog-b', servers), 'prog-b');
+    });
+
+    test('falls back to the first server project when current id is absent',
+        () {
+      // e.g. a seeded demo project whose non-UUID id was never pushed.
+      final servers = [summary('proj-a'), summary('prog-b')];
+      expect(SyncProvider.resolvePullTarget('seed-local', servers), 'proj-a');
+    });
+
+    test('falls back to first when there is no current project', () {
+      final servers = [summary('proj-a')];
+      expect(SyncProvider.resolvePullTarget(null, servers), 'proj-a');
     });
   });
 }

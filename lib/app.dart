@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'core/database/database.dart';
 import 'core/inbox/watcher_service.dart';
+import 'providers/analytics_provider.dart';
 import 'providers/project_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/sync_provider.dart';
@@ -42,6 +43,13 @@ class _KeelAppState extends State<KeelApp> {
         // Settings
         ChangeNotifierProvider<SettingsProvider>(
           create: (_) => SettingsProvider(),
+        ),
+
+        // Analytics — listens to Settings and swaps Noop ↔ real impl
+        // when the user toggles opt-in. Noop by default.
+        ChangeNotifierProvider<AnalyticsProvider>(
+          create: (ctx) =>
+              AnalyticsProvider(ctx.read<SettingsProvider>()),
         ),
 
         // Project state — depends on database

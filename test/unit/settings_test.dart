@@ -81,6 +81,60 @@ void main() {
     });
   });
 
+  group('AppSettings — analytics fields', () {
+    test('defaults: analytics opted out, no install ID', () {
+      const s = AppSettings();
+      expect(s.analyticsEnabled, isFalse);
+      expect(s.analyticsInstallId, isNull);
+    });
+
+    test('copyWith can set analytics fields independently', () {
+      const s = AppSettings();
+      final updated =
+          s.copyWith(analyticsEnabled: true, analyticsInstallId: 'inst-1');
+      expect(updated.analyticsEnabled, isTrue);
+      expect(updated.analyticsInstallId, 'inst-1');
+      // Other fields untouched.
+      expect(updated.claudeApiKey, s.claudeApiKey);
+    });
+
+    test('copyWith install-id sentinel: passing null actually clears it',
+        () {
+      const s = AppSettings(
+          analyticsEnabled: true, analyticsInstallId: 'inst-1');
+      // Omitting the field keeps it (sentinel != null).
+      expect(s.copyWith().analyticsInstallId, 'inst-1');
+      // Explicit null clears it.
+      expect(s.copyWith(analyticsInstallId: null).analyticsInstallId,
+          isNull);
+    });
+
+    test('JSON round-trip preserves opt-in + install ID', () {
+      const original = AppSettings(
+        analyticsEnabled: true,
+        analyticsInstallId: 'inst-42',
+      );
+      final restored = AppSettings.fromJson(original.toJson());
+      expect(restored.analyticsEnabled, isTrue);
+      expect(restored.analyticsInstallId, 'inst-42');
+    });
+
+    test('toJson omits install ID when it is null (no opted-in user)', () {
+      const s = AppSettings();
+      final json = s.toJson();
+      expect(json.containsKey('analyticsInstallId'), isFalse);
+      // But the opted-in flag is always serialised so its default flips
+      // across versions are explicit.
+      expect(json['analyticsEnabled'], isFalse);
+    });
+
+    test('fromJson with missing analytics keys uses defaults', () {
+      final s = AppSettings.fromJson({});
+      expect(s.analyticsEnabled, isFalse);
+      expect(s.analyticsInstallId, isNull);
+    });
+  });
+
   group('AppSettings — hasApiKey check (via SettingsProvider logic)', () {
     test('non-empty key is considered set', () {
       const s = AppSettings(claudeApiKey: 'sk-ant-xxxx');

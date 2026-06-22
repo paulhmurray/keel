@@ -95,13 +95,19 @@ class ContextBuilder {
         final org = p.organisation != null && p.organisation!.isNotEmpty
             ? ' (${p.organisation})'
             : '';
-        final type = p.personType == 'colleague' ? 'Colleague' : 'Stakeholder';
+        final category = switch (p.personType) {
+          'exec' => 'Exec',
+          'vendor' => 'Vendor',
+          'colleague' => 'Colleague',
+          _ => 'Colleague',
+        };
+        final type = p.isStakeholder ? '$category · Stakeholder' : category;
         buffer.write('- [$type] ${p.name}$role$org');
         if (p.email != null && p.email!.isNotEmpty) {
           buffer.write(' <${p.email}>');
         }
         // Fetch stakeholder profile for influence/stance
-        if (p.personType == 'stakeholder') {
+        if (p.isStakeholder) {
           final profile =
               await db.peopleDao.getStakeholderByPersonId(p.id);
           if (profile != null) {
@@ -194,6 +200,57 @@ class ContextBuilder {
             ? ' ⚠ OVERDUE'
             : '';
         buffer.writeln('- $ref${a.description}$owner$due$overdue');
+      }
+      buffer.writeln();
+    }
+
+    // --- Canvas (strategic thinking) ---
+    // This Week: full content. Next 30 Days: top 10 titles. Horizon: top 5
+    // titles. This is the PM's private thinking surface so we surface it
+    // for narrative-style requests but never for stakeholder docs.
+    final canvasCards =
+        await db.canvasCardsDao.getCardsForProject(projectId);
+    final thisWeek = canvasCards
+        .where((c) => c.band == 'this_week')
+        .toList();
+    final next30 = canvasCards
+        .where((c) => c.band == 'next_30_days')
+        .toList();
+    final horizon = canvasCards
+        .where((c) => c.band == 'horizon')
+        .toList();
+    if (thisWeek.isNotEmpty || next30.isNotEmpty || horizon.isNotEmpty) {
+      buffer.writeln('## Canvas — Strategic Thinking');
+      buffer.writeln(
+          '(The PM\'s private strategic thinking surface. Treat as '
+          'context for your responses but never quote verbatim in '
+          'stakeholder-facing output.)');
+      if (thisWeek.isNotEmpty) {
+        buffer.writeln('### This Week');
+        for (final c in thisWeek) {
+          final linked = c.linkedItemType != null
+              ? ' [${c.linkedItemType}]'
+              : '';
+          buffer.writeln('- ${c.title}$linked');
+          if (c.body != null && c.body!.isNotEmpty) {
+            final preview = c.body!.length > 240
+                ? '${c.body!.substring(0, 240)}…'
+                : c.body!;
+            buffer.writeln('  $preview');
+          }
+        }
+      }
+      if (next30.isNotEmpty) {
+        buffer.writeln('### Next 30 Days');
+        for (final c in next30.take(10)) {
+          buffer.writeln('- ${c.title}');
+        }
+      }
+      if (horizon.isNotEmpty) {
+        buffer.writeln('### Horizon');
+        for (final c in horizon.take(5)) {
+          buffer.writeln('- ${c.title}');
+        }
       }
       buffer.writeln();
     }
@@ -310,6 +367,12 @@ class ContextBuilder {
     final allActions = await db.actionsDao.getActionsForProject(projectId);
     final openActions = allActions.where((a) => a.status == 'open').length;
     if (openActions > 0) sections.add(('Open actions', openActions.clamp(0, 8)));
+
+    final canvasCards =
+        await db.canvasCardsDao.getCardsForProject(projectId);
+    if (canvasCards.isNotEmpty) {
+      sections.add(('Canvas cards', canvasCards.length));
+    }
 
     final entries = await db.contextDao.getEntriesForProject(projectId);
     if (entries.isNotEmpty) sections.add(('Context entries', entries.length.clamp(0, 10)));

@@ -4,16 +4,21 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/analytics/analytics_service.dart';
 import '../../core/database/database.dart';
+import '../../core/sync/links_gateway.dart';
+import '../../core/sync/sync_client.dart';
 import '../../core/export/csv_exporter.dart';
 import '../../core/export/json_exporter.dart';
 import '../../core/import/json_importer.dart';
 import '../../core/inbox/watcher_service.dart';
+import '../../providers/analytics_provider.dart';
 import '../../providers/project_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/sync_provider.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/widgets/keybindings_table.dart';
+import '../../shared/widgets/sync_password_dialog.dart';
 import 'llm_settings_view.dart';
 
 class SettingsView extends StatelessWidget {
@@ -90,6 +95,9 @@ class SettingsView extends StatelessWidget {
           _SyncSection(),
 
           const SizedBox(height: 16),
+          _ProgrammeLinksSection(),
+
+          const SizedBox(height: 16),
           _DataSection(),
 
           const SizedBox(height: 16),
@@ -102,6 +110,9 @@ class SettingsView extends StatelessWidget {
               icon: Icons.keyboard_outlined,
               child: const KeybindingsTable(),
             ),
+
+          const SizedBox(height: 16),
+          _AnalyticsSection(),
 
           const SizedBox(height: 16),
           _SettingsSection(
@@ -586,7 +597,6 @@ class _SyncSection extends StatefulWidget {
 class _SyncSectionState extends State<_SyncSection> {
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
-  final _syncPasswordCtrl = TextEditingController();
   final _serverUrlCtrl = TextEditingController();
   bool _showServerUrl = false;
 
@@ -603,7 +613,6 @@ class _SyncSectionState extends State<_SyncSection> {
   void dispose() {
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
-    _syncPasswordCtrl.dispose();
     _serverUrlCtrl.dispose();
     super.dispose();
   }
@@ -661,67 +670,32 @@ class _SyncSectionState extends State<_SyncSection> {
       return;
     }
 
-    // Always pull based on what's on the server, not the local project ID,
-    // since the local project may be a seeded demo with a non-UUID id.
     final serverProjects = await sync.listServerProjects();
     if (serverProjects.isEmpty) {
       _showSnack('No projects found on server.');
       return;
     }
 
+    // Prefer the project the user is actually viewing — pulling the wrong
+    // entity here clears + re-imports it, which used to silently overwrite
+    // an unrelated project (and wipe its escalation state).
+    final currentId = projectProvider.currentProjectId;
+    final target = SyncProvider.resolvePullTarget(currentId, serverProjects);
+
     final syncPwd = await _askSyncPassword();
     if (syncPwd == null || syncPwd.isEmpty) return;
-    await sync.pullProject(serverProjects.first.id, syncPwd, db);
+    await sync.pullProject(target, syncPwd, db);
+    // pullProject reconciles cascade for `target`. When the entity we're
+    // actually viewing differs (e.g. a programme not yet pushed to the
+    // server, so the blob pull fell back to a project), reconcile it too —
+    // that's what pulls a programme's escalated items down from its links.
+    if (currentId != null && currentId != target) {
+      await sync.reconcileCascadeNow(currentId, db);
+    }
     await projectProvider.refreshProjects();
   }
 
-  /// Shows an inline password dialog via a bottom sheet-style dialog.
-  Future<String?> _askSyncPassword() async {
-    _syncPasswordCtrl.clear();
-    return showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: KColors.surface,
-        title: const Text('Sync Password',
-            style: TextStyle(color: KColors.text, fontSize: 15)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Enter your sync password to encrypt/decrypt data.\n'
-              'This can be the same as your account password.',
-              style: TextStyle(color: KColors.textDim, fontSize: 12),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _syncPasswordCtrl,
-              obscureText: true,
-              autofocus: true,
-              decoration: const InputDecoration(
-                labelText: 'Sync password',
-                hintText: 'Enter encryption password',
-              ),
-              onSubmitted: (_) =>
-                  Navigator.of(ctx).pop(_syncPasswordCtrl.text),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(null),
-            child: const Text('Cancel',
-                style: TextStyle(color: KColors.textDim)),
-          ),
-          ElevatedButton(
-            onPressed: () =>
-                Navigator.of(ctx).pop(_syncPasswordCtrl.text),
-            child: const Text('Continue'),
-          ),
-        ],
-      ),
-    );
-  }
+  Future<String?> _askSyncPassword() => showSyncPasswordDialog(context);
 
   Future<void> _showBillingPortal() async {
     final sync = context.read<SyncProvider>();
@@ -757,6 +731,10 @@ class _SyncSectionState extends State<_SyncSection> {
   Widget build(BuildContext context) {
     final sync = context.watch<SyncProvider>();
     final isSyncing = sync.status == SyncStatus.syncing;
+    // Per-entity: "last synced" reflects the project/programme currently
+    // selected, not whatever was synced most recently.
+    final projectId = context.watch<ProjectProvider>().currentProjectId;
+    final lastSyncAt = sync.lastSyncAtFor(projectId);
 
     return _SettingsSection(
       title: 'Sync (Beta)',
@@ -883,10 +861,10 @@ class _SyncSectionState extends State<_SyncSection> {
                 ),
               ],
             ),
-            if (sync.lastSyncAt != null) ...[
+            if (lastSyncAt != null) ...[
               const SizedBox(height: 8),
               Text(
-                'Last synced: ${_formatDate(sync.lastSyncAt!.toLocal())}',
+                'Last synced: ${_formatDate(lastSyncAt.toLocal())}',
                 style: const TextStyle(
                     color: KColors.textDim, fontSize: 12),
               ),
@@ -1193,6 +1171,509 @@ class _EditorSectionState extends State<_EditorSection> {
   @override
   Widget build(BuildContext context) {
     return const SizedBox.shrink();
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Analytics & Telemetry section
+// ---------------------------------------------------------------------------
+
+class _AnalyticsSection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final settings = context.watch<SettingsProvider>().settings;
+    final enabled = settings.analyticsEnabled;
+    final installId = settings.analyticsInstallId;
+    // When the active sink is the LoggingAnalyticsService (debug-mode
+    // opt-in), surface its in-memory event history so the user can
+    // self-audit exactly what's been emitted this session.
+    final sink = context.watch<AnalyticsProvider>().service;
+    final recentEvents = sink is LoggingAnalyticsService
+        ? sink.history.reversed.take(10).toList()
+        : const <LoggedEvent>[];
+
+    return _SettingsSection(
+      title: 'Analytics & Telemetry',
+      icon: Icons.insights_outlined,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Opt-in product telemetry — counts and category labels only. '
+            'Helps decide which features to invest in.',
+            style: TextStyle(color: KColors.textDim, fontSize: 12),
+          ),
+          const SizedBox(height: 10),
+          // The opt-in toggle.
+          InkWell(
+            onTap: () => context
+                .read<SettingsProvider>()
+                .setAnalyticsEnabled(!enabled),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Switch(
+                    value: enabled,
+                    onChanged: (v) => context
+                        .read<SettingsProvider>()
+                        .setAnalyticsEnabled(v),
+                    activeColor: KColors.amber,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      enabled
+                          ? 'Sharing anonymous usage data — thank you'
+                          : 'Not sharing usage data',
+                      style: const TextStyle(
+                          color: KColors.text, fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          // What we collect / don't collect — kept short so it's actually
+          // read. The full event list will live in a README link later.
+          const Text(
+            'WHAT WE COLLECT',
+            style: TextStyle(
+              color: KColors.textMuted,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.4,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            '• Which sections you open and how often\n'
+            '• Counts of cards, risks, actions, decisions, etc.\n'
+            '• Which templates you create (type only, not content)\n'
+            '• Which promotion + export flows you use\n'
+            '• Caught error categories (no stack traces, no messages)',
+            style: TextStyle(
+                color: KColors.textDim, fontSize: 12, height: 1.5),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'WHAT WE DO NOT COLLECT',
+            style: TextStyle(
+              color: KColors.textMuted,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.4,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            '• Card / journal / template / person / project text\n'
+            '• Search queries or AI prompts\n'
+            '• File paths or hostnames\n'
+            '• IP addresses (anonymous install ID only)',
+            style: TextStyle(
+                color: KColors.textDim, fontSize: 12, height: 1.5),
+          ),
+          if (installId != null) ...[
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: _SettingsRow(
+                    label: 'Install ID',
+                    value: installId,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => context
+                      .read<SettingsProvider>()
+                      .clearAnalyticsInstallId(),
+                  child: const Text(
+                    'Clear',
+                    style: TextStyle(color: KColors.amber, fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          if (recentEvents.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            const Text(
+              'RECENT EVENTS (THIS SESSION)',
+              style: TextStyle(
+                color: KColors.textMuted,
+                fontSize: 10.5,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.4,
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Live snapshot of what the analytics sink has captured in '
+              'this run. Useful for self-auditing what gets sent. Cleared '
+              'on opt-out.',
+              style: TextStyle(
+                  color: KColors.textDim, fontSize: 11.5, height: 1.4),
+            ),
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: KColors.surface2,
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: KColors.border),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (final e in recentEvents)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: Text(
+                        e.props.isEmpty
+                            ? e.name
+                            : '${e.name}  ${e.props}',
+                        style: const TextStyle(
+                          color: KColors.text,
+                          fontFamily: 'monospace',
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Programme Links section
+// ---------------------------------------------------------------------------
+
+class _ProgrammeLinksSection extends StatefulWidget {
+  @override
+  State<_ProgrammeLinksSection> createState() =>
+      _ProgrammeLinksSectionState();
+}
+
+class _ProgrammeLinksSectionState extends State<_ProgrammeLinksSection> {
+  final _redeemCtrl = TextEditingController();
+  String? _generatedCode;
+
+  @override
+  void dispose() {
+    _redeemCtrl.dispose();
+    super.dispose();
+  }
+
+  RemoteLinksGateway? _remoteGateway(BuildContext context) {
+    final sync = context.read<SyncProvider>();
+    final token = sync.accessToken;
+    if (token == null) return null;
+    return SyncLinksGateway(
+      client: SyncClient(baseUrl: sync.serverUrl),
+      accessToken: token,
+    );
+  }
+
+  Future<void> _generateCode(BuildContext context) async {
+    final project = context.read<ProjectProvider>().currentProject;
+    if (project == null) return;
+    final db = context.read<AppDatabase>();
+    final code = await db.programmeLinksDao.generateCodeWithRemote(
+      ownerEntityId: project.id,
+      ownerKind: project.kind,
+      ownerName: project.name,
+      remote: _remoteGateway(context),
+    );
+    if (!mounted) return;
+    setState(() => _generatedCode = code);
+  }
+
+  Future<void> _redeemCode(BuildContext context) async {
+    final project = context.read<ProjectProvider>().currentProject;
+    if (project == null) return;
+    final code = _redeemCtrl.text.trim();
+    if (code.isEmpty) return;
+    final db = context.read<AppDatabase>();
+    final sync = context.read<SyncProvider>();
+    final result = await db.programmeLinksDao.redeemCodeWithRemote(
+      code: code,
+      ownerEntityId: project.id,
+      ownerKind: project.kind,
+      ownerName: project.name,
+      remoteUserId: sync.userId,
+      remote: _remoteGateway(context),
+    );
+    if (!mounted) return;
+    _redeemCtrl.clear();
+    final messenger = ScaffoldMessenger.of(context);
+    switch (result.outcome) {
+      case RedeemOutcome.activatedLocally:
+        messenger.showSnackBar(const SnackBar(
+            content: Text('Link active — both sides connected.')));
+      case RedeemOutcome.pendingRemote:
+        messenger.showSnackBar(const SnackBar(
+            content: Text(
+                'Code accepted. Waiting for the other side to claim '
+                'it — tap Refresh to check, or it activates '
+                'automatically next launch.')));
+      case RedeemOutcome.alreadyLinked:
+        messenger.showSnackBar(const SnackBar(
+            content: Text('This entity already has a link for that code.')));
+    }
+  }
+
+  Future<void> _refresh(BuildContext context) async {
+    final db = context.read<AppDatabase>();
+    final sync = context.read<SyncProvider>();
+    final activated = await db.programmeLinksDao.refreshPendingLinks(
+      remoteUserId: sync.userId,
+      remote: _remoteGateway(context),
+    );
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(SnackBar(
+      content: Text(activated == 0
+          ? 'Nothing new — pending links are still waiting.'
+          : '$activated link${activated == 1 ? '' : 's'} '
+              'just activated.'),
+    ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final project = context.watch<ProjectProvider>().currentProject;
+    if (project == null) return const SizedBox.shrink();
+    final db = context.read<AppDatabase>();
+    final isProgramme = project.kind == 'programme';
+
+    return _SettingsSection(
+      title: 'Programme Links',
+      icon: Icons.workspaces_outlined,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            isProgramme
+                ? 'Generate a code and share it with project managers — '
+                    'they\'ll paste it in their project\'s settings to '
+                    'connect. Or paste a code one of them sent you.'
+                : 'Generate a code and share it with your programme '
+                    'manager — they\'ll paste it in the programme\'s '
+                    'settings to connect. Or paste a code they sent you.',
+            style: const TextStyle(color: KColors.textDim, fontSize: 12),
+          ),
+          const SizedBox(height: 12),
+
+          // Generate-code row.
+          Row(
+            children: [
+              ElevatedButton.icon(
+                onPressed: () => _generateCode(context),
+                icon: const Icon(Icons.add_link, size: 14),
+                label: const Text('Generate code'),
+              ),
+              const SizedBox(width: 12),
+              if (_generatedCode != null)
+                Expanded(
+                  child: SelectableText(
+                    _generatedCode!,
+                    style: const TextStyle(
+                      color: KColors.amber,
+                      fontFamily: 'monospace',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                )
+              else
+                // Refresh affordance lives next to Generate so the user
+                // doesn't have to hunt for it. Pulls server state for
+                // every pending_remote link in one shot.
+                TextButton.icon(
+                  onPressed: () => _refresh(context),
+                  icon: const Icon(Icons.refresh, size: 14),
+                  label: const Text('Refresh'),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Redeem-code row.
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _redeemCtrl,
+                  style: const TextStyle(
+                      color: KColors.text,
+                      fontFamily: 'monospace',
+                      fontSize: 13),
+                  decoration: const InputDecoration(
+                    labelText: 'Enter a code…',
+                    hintText: 'KL-XXXX-XXXX-XXXX',
+                    isDense: true,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              ElevatedButton(
+                onPressed: () => _redeemCode(context),
+                child: const Text('Redeem'),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 14),
+          // Existing links list — bound to a stream so revoking from
+          // elsewhere refreshes the section live.
+          StreamBuilder<List<ProgrammeLink>>(
+            stream: db.programmeLinksDao
+                .watchLinksForEntity(project.id),
+            builder: (context, snap) {
+              final links = snap.data ?? const <ProgrammeLink>[];
+              if (links.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 6),
+                  child: Text(
+                    'No active links yet.',
+                    style: TextStyle(
+                        color: KColors.textMuted, fontSize: 12),
+                  ),
+                );
+              }
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'EXISTING LINKS',
+                    style: TextStyle(
+                      color: KColors.textMuted,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  for (final link in links) _LinkRow(link: link),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LinkRow extends StatelessWidget {
+  final ProgrammeLink link;
+  const _LinkRow({required this.link});
+
+  RemoteLinksGateway? _gateway(BuildContext context) {
+    final sync = context.read<SyncProvider>();
+    final token = sync.accessToken;
+    if (token == null) return null;
+    return SyncLinksGateway(
+      client: SyncClient(baseUrl: sync.serverUrl),
+      accessToken: token,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final db = context.read<AppDatabase>();
+    final isPending = link.status == 'pending_remote';
+    final isRevoked = link.status == 'revoked';
+    final partnerLabel = link.partnerName ??
+        (isPending
+            ? '(awaiting the other side)'
+            : '(unknown partner)');
+    final partnerTag =
+        link.partnerKind == 'programme' ? 'PROG' : 'PROJ';
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          // Status dot
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isRevoked
+                  ? KColors.red
+                  : isPending
+                      ? KColors.amber
+                      : KColors.phosphor,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: 4, vertical: 1),
+            decoration: BoxDecoration(
+              color: KColors.surface2,
+              border: Border.all(color: KColors.border2, width: 0.5),
+              borderRadius: BorderRadius.circular(2),
+            ),
+            child: Text(partnerTag,
+                style: const TextStyle(
+                    color: KColors.textMuted,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700)),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(partnerLabel,
+                style: const TextStyle(
+                    color: KColors.text, fontSize: 12),
+                overflow: TextOverflow.ellipsis),
+          ),
+          Text(
+            link.code,
+            style: const TextStyle(
+                color: KColors.textMuted,
+                fontFamily: 'monospace',
+                fontSize: 10),
+          ),
+          const SizedBox(width: 8),
+          if (isPending)
+            IconButton(
+              icon: const Icon(Icons.delete_outline,
+                  size: 14, color: KColors.textMuted),
+              tooltip: 'Cancel invitation',
+              padding: EdgeInsets.zero,
+              visualDensity: VisualDensity.compact,
+              constraints:
+                  const BoxConstraints(minWidth: 24, minHeight: 24),
+              onPressed: () => db.programmeLinksDao
+                  .revokeLinkWithRemote(
+                      linkId: link.id, remote: _gateway(context)),
+            )
+          else
+            IconButton(
+              icon: const Icon(Icons.link_off,
+                  size: 14, color: KColors.textMuted),
+              tooltip: 'Revoke link',
+              padding: EdgeInsets.zero,
+              visualDensity: VisualDensity.compact,
+              constraints:
+                  const BoxConstraints(minWidth: 24, minHeight: 24),
+              onPressed: () => db.programmeLinksDao
+                  .revokeLinkWithRemote(
+                      linkId: link.id, remote: _gateway(context)),
+            ),
+        ],
+      ),
+    );
   }
 }
 

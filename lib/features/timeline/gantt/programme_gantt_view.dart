@@ -5,11 +5,16 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' as intl;
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../core/cascade/cascade_service.dart';
+import '../../../core/cascade/sync_cascade_gateway.dart';
 import '../../../core/database/database.dart';
+import '../../../core/sync/sync_client.dart';
+import '../../../providers/sync_provider.dart';
+import 'dependency_chains.dart';
 import '../../../providers/project_provider.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../shared/theme/keel_colors.dart';
@@ -88,6 +93,21 @@ class _ActRow extends _GRow {
   final TimelineWorkPackage wp;
   _ActRow(this.act, this.wp);
   @override double get height => _kRowH;
+}
+
+/// Drag payload for reorder drags inside the name column. Two kinds:
+/// `wp` carries the work package id; `activity` carries the activity id
+/// plus its parent WP id so the drop logic can reject cross-WP drops
+/// without an extra DB lookup.
+class _ReorderPayload {
+  final String kind; // 'wp' | 'activity'
+  final String id;
+  final String? parentWpId; // only set when kind == 'activity'
+  const _ReorderPayload({
+    required this.kind,
+    required this.id,
+    this.parentWpId,
+  });
 }
 
 // ─── Outer wrapper (reads project ID) ────────────────────────────────────────
@@ -175,6 +195,9 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
 
   // ── Dependency arrows ────────────────────────────────────────────────────
   List<TimelineDependency> _deps = [];
+  // When non-null, the painter spotlights the upstream + downstream
+  // chains for this activity and dims everything else.
+  String? _hoveredActivityId;
   Map<String, TimelineActivity> _actMap = {};
   bool _showDependencies = true;
 
@@ -368,8 +391,13 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     final dur   = _dragOrigEnd - _dragOrigStart;
     final newStart = (_dragOrigStart + delta).clamp(0, maxM);
     final newEnd   = (newStart + dur).clamp(0, maxM);
-    setState(() { _draggingActId = null; _dragMonthDelta = 0; });
-    if (delta == 0) return;
+    if (delta == 0) {
+      setState(() { _draggingActId = null; _dragMonthDelta = 0; });
+      return;
+    }
+    // Keep _draggingActId set until the reload completes so the bar continues
+    // to render at the previewed position. Clearing it earlier would let the
+    // bar briefly render from the still-stale _actMap before fresh data lands.
     await _db.programmeGanttDao.patchActivity(
       id,
       TimelineActivitiesCompanion(
@@ -378,7 +406,9 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
         updatedAt:  Value(DateTime.now()),
       ),
     );
-    _load();
+    await _load();
+    if (!mounted) return;
+    setState(() { _draggingActId = null; _dragMonthDelta = 0; });
   }
 
   /// Returns the effective start/end months for a cell render, accounting
@@ -451,6 +481,39 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
       ),
     );
     _load();
+  }
+
+  /// Reorders work packages so [srcId] lands immediately above [targetId]
+  /// in the project's WP list. No-op if src == target. Persists via the
+  /// DAO and reloads; the next stream tick repopulates [_wps] / [_rows].
+  Future<void> _movePackageAbove(String srcId, String targetId) async {
+    if (srcId == targetId) return;
+    final ids = _wps.map((w) => w.id).toList();
+    ids.remove(srcId);
+    final at = ids.indexOf(targetId);
+    if (at == -1) return;
+    ids.insert(at, srcId);
+    await _db.programmeGanttDao
+        .reorderWorkPackages(widget.projectId, ids);
+    await _load();
+  }
+
+  /// Reorders activities within [wpId] so [srcId] lands immediately above
+  /// [targetId]. Both ids MUST belong to the same WP — callers gate this
+  /// via the DragTarget's onWillAccept. No-op when src == target.
+  Future<void> _moveActivityAbove(
+      String wpId, String srcId, String targetId) async {
+    if (srcId == targetId) return;
+    final siblings = (_acts[wpId] ?? const <TimelineActivity>[])
+        .map((a) => a.id)
+        .toList();
+    siblings.remove(srcId);
+    final at = siblings.indexOf(targetId);
+    if (at == -1) return;
+    siblings.insert(at, srcId);
+    await _db.programmeGanttDao
+        .reorderActivitiesWithinWp(wpId, siblings);
+    await _load();
   }
 
   Future<void> _openEditWp(TimelineWorkPackage wp) async {
@@ -870,6 +933,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                             ? _vertBody.offset : 0,
                         cellW:       _cellW,
                         quarterMode: _quarterMode,
+                        hoveredActivityId: _hoveredActivityId,
                       ),
                       child: const SizedBox.expand(),
                     ),
@@ -887,38 +951,66 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
   Widget _buildNameCell(_GRow row) {
     if (row is _WpRow) {
       final c = _wpColor(row.wp.colourTheme);
-      return GestureDetector(
-        onTap: () => _openEditWp(row.wp),
-        child: Container(
-          height: _kWpRowH,
-          decoration: BoxDecoration(
-            color: c.withValues(alpha: 0.12),
-            border: Border(
-              left: BorderSide(color: c, width: 3),
-              bottom: const BorderSide(color: KColors.border),
-            ),
-          ),
-          padding: const EdgeInsets.only(left: 8, right: 6),
-          child: Row(children: [
-            Expanded(
-              child: Text(
-                row.wp.shortCode != null
-                    ? '${row.wp.shortCode} — ${row.wp.name}'
-                    : row.wp.name,
-                style: TextStyle(
-                    color: c, fontSize: 11, fontWeight: FontWeight.w700),
-                overflow: TextOverflow.ellipsis,
+      final isCascaded = row.wp.sourceProjectId != null;
+      final payload = _ReorderPayload(kind: 'wp', id: row.wp.id);
+      // Cascaded WPs are read-only on the programme side — the
+      // canonical row lives on the source PM's machine. Disable edit
+      // tap, the activity-add button, and reorder drops; show a
+      // small PROJ tag instead so the user knows where it came from.
+      return _ReorderDropTarget(
+        accepts: (p) => !isCascaded && p.kind == 'wp' && p.id != row.wp.id,
+        onAccept: (p) => _movePackageAbove(p.id, row.wp.id),
+        child: GestureDetector(
+          onTap: isCascaded ? null : () => _openEditWp(row.wp),
+          child: Container(
+            height: _kWpRowH,
+            decoration: BoxDecoration(
+              color: c.withValues(alpha: isCascaded ? 0.06 : 0.12),
+              border: Border(
+                left: BorderSide(color: c, width: 3),
+                bottom: const BorderSide(color: KColors.border),
               ),
             ),
-            _RagDot(row.wp.ragStatus),
-            const SizedBox(width: 4),
-            GestureDetector(
-              onTap: () => _openAddActivity(row.wp),
-              child: Icon(Icons.add_circle_outline,
-                  size: 14, color: c.withValues(alpha: 0.7)),
-            ),
-            const SizedBox(width: 2),
-          ]),
+            padding: const EdgeInsets.only(left: 4, right: 6),
+            child: Row(children: [
+              if (isCascaded)
+                // Reserve the same width as the drag handle would
+                // occupy so cascaded + native rows stay aligned.
+                const SizedBox(width: 16)
+              else
+                _DragHandle(
+                  payload: payload,
+                  feedbackLabel: row.wp.shortCode != null
+                      ? '${row.wp.shortCode} — ${row.wp.name}'
+                      : row.wp.name,
+                  colour: c,
+                ),
+              Expanded(
+                child: Text(
+                  row.wp.shortCode != null
+                      ? '${row.wp.shortCode} — ${row.wp.name}'
+                      : row.wp.name,
+                  style: TextStyle(
+                      color: c, fontSize: 11, fontWeight: FontWeight.w700),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (isCascaded) ...[
+                _CascadedFromTag(sourceProjectId: row.wp.sourceProjectId!),
+                const SizedBox(width: 4),
+              ],
+              _RagDot(row.wp.ragStatus),
+              const SizedBox(width: 4),
+              if (!isCascaded) ...[
+                GestureDetector(
+                  onTap: () => _openAddActivity(row.wp),
+                  child: Icon(Icons.add_circle_outline,
+                      size: 14, color: c.withValues(alpha: 0.7)),
+                ),
+                const SizedBox(width: 2),
+              ],
+            ]),
+          ),
         ),
       );
     }
@@ -936,8 +1028,34 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     };
 
     final isEditing = _editingNameId == act.id;
+    final payload = _ReorderPayload(
+      kind: 'activity',
+      id: act.id,
+      parentWpId: row.wp.id,
+    );
 
-    return Container(
+    return _ReorderDropTarget(
+      // Activities reorder only within their parent WP — cross-WP drops
+      // would silently change the row's parent, which is not what the
+      // user is asking for here.
+      accepts: (p) =>
+          p.kind == 'activity' &&
+          p.parentWpId == row.wp.id &&
+          p.id != act.id,
+      onAccept: (p) =>
+          _moveActivityAbove(row.wp.id, p.id, act.id),
+      child: MouseRegion(
+        onEnter: (_) {
+          if (_hoveredActivityId != act.id) {
+            setState(() => _hoveredActivityId = act.id);
+          }
+        },
+        onExit: (_) {
+          if (_hoveredActivityId == act.id) {
+            setState(() => _hoveredActivityId = null);
+          }
+        },
+        child: Container(
       height: _kRowH,
       clipBehavior: Clip.hardEdge,
       decoration: BoxDecoration(
@@ -947,8 +1065,17 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
         ),
       ),
       child: Row(children: [
-        // Indent + type indicator
-        const SizedBox(width: 14),
+        // Drag handle in the indent gutter — keeps the visual indent
+        // intact (handle replaces what was a SizedBox of similar width)
+        // while making the row reorderable.
+        _DragHandle(
+          payload: payload,
+          feedbackLabel: act.name,
+          colour: c,
+          // Activity rows are denser so a slightly smaller hit area is
+          // fine; the gutter is only 14 px wide.
+          width: 14,
+        ),
         Container(width: 2, height: 14, color: c.withValues(alpha: 0.4)),
         const SizedBox(width: 6),
         if (typeIcon != null) ...[
@@ -1029,6 +1156,8 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
             onTap: () => _showActionsPopover(context, act),
           ),
       ]),
+    ),
+    ),
     );
   }
 
@@ -1232,8 +1361,10 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
         ? BorderSide(color: c, width: 2)
         : const BorderSide(color: Colors.transparent);
 
-    // Bar types support drag-to-move
-    final isDraggable = isActive &&
+    // Bar types support drag-to-move. Keep the cell draggable while a drag
+    // on this activity is in progress so the gesture recogniser isn't
+    // disposed when the preview shifts the bar off the originating cell.
+    final isDraggable = (isActive || isDragging) &&
         (act.activityType == 'activity' ||
          act.activityType == 'ongoing' ||
          act.activityType == 'dependency_marker');
@@ -1321,6 +1452,137 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
 }
 
 // ─── RAG dot ──────────────────────────────────────────────────────────────────
+/// Small ≡ drag handle in the name-column gutter. Initiates a
+/// [Draggable<_ReorderPayload>] which the matching [_ReorderDropTarget]s
+/// pick up. Uses the regular [Draggable] (not LongPress) since this is
+/// a desktop app — click-and-drag is the expected gesture.
+class _DragHandle extends StatelessWidget {
+  final _ReorderPayload payload;
+  final String feedbackLabel;
+  final Color colour;
+  final double width;
+
+  const _DragHandle({
+    required this.payload,
+    required this.feedbackLabel,
+    required this.colour,
+    this.width = 16,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.grab,
+      child: Draggable<_ReorderPayload>(
+        data: payload,
+        dragAnchorStrategy: pointerDragAnchorStrategy,
+        feedback: Material(
+          color: Colors.transparent,
+          child: Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: KColors.surface,
+              border: Border.all(color: colour.withValues(alpha: 0.6)),
+              borderRadius: BorderRadius.circular(3),
+            ),
+            child: Text(
+              feedbackLabel,
+              style: TextStyle(
+                color: colour,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+        child: SizedBox(
+          width: width,
+          height: _kRowH,
+          child: Icon(Icons.drag_indicator,
+              size: 12, color: KColors.textMuted.withValues(alpha: 0.7)),
+        ),
+      ),
+    );
+  }
+}
+
+/// Drop target for reorder drags. Wraps a row's name cell, highlighting
+/// the row when a compatible payload hovers and invoking [onAccept] on
+/// drop. Pure layout/no-data — the parent decides what "compatible"
+/// means via [accepts].
+class _ReorderDropTarget extends StatelessWidget {
+  final bool Function(_ReorderPayload) accepts;
+  final void Function(_ReorderPayload) onAccept;
+  final Widget child;
+
+  const _ReorderDropTarget({
+    required this.accepts,
+    required this.onAccept,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DragTarget<_ReorderPayload>(
+      onWillAcceptWithDetails: (d) => accepts(d.data),
+      onAcceptWithDetails: (d) => onAccept(d.data),
+      builder: (ctx, candidate, rejected) {
+        final hovering = candidate.isNotEmpty;
+        return Stack(
+          children: [
+            child,
+            if (hovering)
+              // Thin amber bar at the top of the row showing exactly
+              // where the dropped item will land (it inserts above).
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Container(height: 2, color: KColors.amber),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Tiny "PROJ · <name>" tag attached to cascaded WP rows on the
+/// programme side. Looks up the source project's name via the live
+/// project list so it stays accurate if the PM renames the project.
+class _CascadedFromTag extends StatelessWidget {
+  final String sourceProjectId;
+  const _CascadedFromTag({required this.sourceProjectId});
+
+  @override
+  Widget build(BuildContext context) {
+    final projects = context.watch<ProjectProvider>().projects;
+    final source = projects.cast<Project?>().firstWhere(
+          (p) => p?.id == sourceProjectId,
+          orElse: () => null,
+        );
+    final label = source?.name ?? 'project';
+    return Tooltip(
+      message: 'Cascaded from project: $label',
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+        decoration: BoxDecoration(
+          color: KColors.surface2,
+          border: Border.all(color: KColors.border2, width: 0.5),
+          borderRadius: BorderRadius.circular(2),
+        ),
+        child: Text('PROJ',
+            style: const TextStyle(
+                color: KColors.textMuted,
+                fontSize: 8.5,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.6)),
+      ),
+    );
+  }
+}
+
 class _RagDot extends StatelessWidget {
   final String status;
   const _RagDot(this.status);
@@ -1337,6 +1599,358 @@ class _RagDot extends StatelessWidget {
       width: 6, height: 6,
       margin: const EdgeInsets.only(right: 4),
       decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    );
+  }
+}
+
+/// "Depends on" editor used inside the activity dialog. Shows each
+/// existing predecessor (internal activity or external label) as a row
+/// and offers two add affordances: an internal-activity picker and a
+/// free-text external dialog.
+class _DependsOnEditor extends StatelessWidget {
+  static const _typeOptions = [
+    ('finish_to_start', 'FS'),
+    ('start_to_start', 'SS'),
+    ('finish_to_finish', 'FF'),
+  ];
+
+  final List<({TimelineActivity act, TimelineWorkPackage wp})>
+      allActivities;
+  final List<DependencySpec> predecessors;
+  final ValueChanged<List<DependencySpec>> onChanged;
+
+  const _DependsOnEditor({
+    required this.allActivities,
+    required this.predecessors,
+    required this.onChanged,
+  });
+
+  void _addPredecessor(BuildContext ctx) async {
+    final takenInternal = {
+      for (final p in predecessors)
+        if (!p.isExternal) p.fromActivityId!,
+    };
+    final available = allActivities
+        .where((p) => !takenInternal.contains(p.act.id))
+        .toList();
+    if (available.isEmpty) return;
+    final pickedId = await showDialog<String>(
+      context: ctx,
+      builder: (_) => _DependsOnPicker(available: available),
+    );
+    if (pickedId == null) return;
+    onChanged([
+      ...predecessors,
+      DependencySpec.internal(
+        fromActivityId: pickedId,
+        dependencyType: 'finish_to_start',
+      ),
+    ]);
+  }
+
+  void _addExternal(BuildContext ctx) async {
+    final takenLabels = {
+      for (final p in predecessors)
+        if (p.isExternal) p.externalLabel!.toLowerCase(),
+    };
+    final label = await showDialog<String>(
+      context: ctx,
+      builder: (_) => const _AddExternalDependencyDialog(),
+    );
+    final trimmed = label?.trim();
+    if (trimmed == null || trimmed.isEmpty) return;
+    if (takenLabels.contains(trimmed.toLowerCase())) return;
+    onChanged([
+      ...predecessors,
+      DependencySpec.external(trimmed),
+    ]);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final actById = {for (final p in allActivities) p.act.id: p};
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Text('DEPENDS ON',
+                style: TextStyle(
+                  color: KColors.textMuted,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.4,
+                )),
+            const Spacer(),
+            TextButton.icon(
+              onPressed: () => _addPredecessor(context),
+              icon: const Icon(Icons.add, size: 14),
+              label: const Text('Add predecessor',
+                  style: TextStyle(fontSize: 11)),
+              style: TextButton.styleFrom(
+                foregroundColor: KColors.amber,
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                minimumSize: const Size(0, 28),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
+            const SizedBox(width: 4),
+            TextButton.icon(
+              onPressed: () => _addExternal(context),
+              icon: const Icon(Icons.language, size: 14),
+              label: const Text('Add external',
+                  style: TextStyle(fontSize: 11)),
+              style: TextButton.styleFrom(
+                foregroundColor: KColors.amber,
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                minimumSize: const Size(0, 28),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
+          ],
+        ),
+        if (predecessors.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 4),
+            child: Text(
+              'No predecessors. Use "Add predecessor" for activities in '
+              'this plan, or "Add external" for vendor deliveries, '
+              'approvals, etc. that live outside the plan.',
+              style: TextStyle(
+                  color: KColors.textDim, fontSize: 11, height: 1.4),
+            ),
+          )
+        else
+          ...List.generate(predecessors.length, (i) {
+            final p = predecessors[i];
+            final removeBtn = IconButton(
+              icon: const Icon(Icons.close,
+                  size: 14, color: KColors.textMuted),
+              visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero,
+              constraints:
+                  const BoxConstraints(minWidth: 24, minHeight: 24),
+              onPressed: () {
+                final next = [...predecessors]..removeAt(i);
+                onChanged(next);
+              },
+            );
+
+            if (p.isExternal) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Row(
+                  children: [
+                    const Icon(Icons.language,
+                        size: 14, color: KColors.textDim),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text('EXT · ${p.externalLabel}',
+                          style: const TextStyle(
+                              color: KColors.text, fontSize: 12),
+                          overflow: TextOverflow.ellipsis),
+                    ),
+                    removeBtn,
+                  ],
+                ),
+              );
+            }
+
+            final pair = actById[p.fromActivityId];
+            final label = pair == null
+                ? '(missing activity)'
+                : pair.wp.shortCode != null
+                    ? '${pair.wp.shortCode} · ${pair.act.name}'
+                    : '${pair.wp.name} · ${pair.act.name}';
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(label,
+                        style: const TextStyle(
+                            color: KColors.text, fontSize: 12),
+                        overflow: TextOverflow.ellipsis),
+                  ),
+                  const SizedBox(width: 6),
+                  // Type dropdown — FS / SS / FF. External isn't here:
+                  // those go through the dedicated "Add external" flow.
+                  SizedBox(
+                    width: 64,
+                    child: DropdownButton<String>(
+                      value: p.dependencyType,
+                      isDense: true,
+                      isExpanded: true,
+                      dropdownColor: KColors.surface2,
+                      style: const TextStyle(
+                          color: KColors.text, fontSize: 11),
+                      items: _typeOptions
+                          .map((t) => DropdownMenuItem(
+                                value: t.$1,
+                                child: Text(t.$2,
+                                    style: const TextStyle(fontSize: 11)),
+                              ))
+                          .toList(),
+                      onChanged: (v) {
+                        if (v == null) return;
+                        final next = [...predecessors];
+                        next[i] = DependencySpec.internal(
+                          fromActivityId: p.fromActivityId!,
+                          dependencyType: v,
+                        );
+                        onChanged(next);
+                      },
+                    ),
+                  ),
+                  removeBtn,
+                ],
+              ),
+            );
+          }),
+      ],
+    );
+  }
+}
+
+/// Tiny modal for entering an external dependency label. Returns the
+/// trimmed text on submit, or null on cancel / empty.
+class _AddExternalDependencyDialog extends StatefulWidget {
+  const _AddExternalDependencyDialog();
+
+  @override
+  State<_AddExternalDependencyDialog> createState() =>
+      _AddExternalDependencyDialogState();
+}
+
+class _AddExternalDependencyDialogState
+    extends State<_AddExternalDependencyDialog> {
+  final _ctrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final t = _ctrl.text.trim();
+    if (t.isEmpty) return;
+    Navigator.of(context).pop(t);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: KColors.surface,
+      title: const Text('External dependency',
+          style: TextStyle(color: KColors.text, fontSize: 14)),
+      content: SizedBox(
+        width: 360,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Something this activity depends on that lives outside '
+              'the plan — e.g. a vendor delivery, legal sign-off, or '
+              'another team\'s milestone.',
+              style: TextStyle(
+                  color: KColors.textDim, fontSize: 12, height: 1.4),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _ctrl,
+              autofocus: true,
+              style: const TextStyle(color: KColors.text, fontSize: 14),
+              decoration: const InputDecoration(
+                labelText: 'Label',
+                hintText: 'e.g. Vendor API release, Legal sign-off',
+              ),
+              onSubmitted: (_) => _submit(),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel',
+              style: TextStyle(color: KColors.textDim, fontSize: 12)),
+        ),
+        ElevatedButton(
+          onPressed: _submit,
+          child: const Text('Add', style: TextStyle(fontSize: 12)),
+        ),
+      ],
+    );
+  }
+}
+
+/// Simple picker dialog for choosing one predecessor activity from the
+/// project. Grouped by Work Package. Returns the activity id, or null
+/// on cancel.
+class _DependsOnPicker extends StatelessWidget {
+  final List<({TimelineActivity act, TimelineWorkPackage wp})> available;
+
+  const _DependsOnPicker({required this.available});
+
+  @override
+  Widget build(BuildContext context) {
+    // Group by WP id, preserving the input order.
+    final groups =
+        <String, List<({TimelineActivity act, TimelineWorkPackage wp})>>{};
+    final wpOrder = <String>[];
+    for (final p in available) {
+      groups.putIfAbsent(p.wp.id, () {
+        wpOrder.add(p.wp.id);
+        return [];
+      }).add(p);
+    }
+    return AlertDialog(
+      backgroundColor: KColors.surface,
+      title: const Text('Pick a predecessor',
+          style: TextStyle(color: KColors.text, fontSize: 14)),
+      content: SizedBox(
+        width: 360,
+        height: 360,
+        child: ListView(
+          children: [
+            for (final wpId in wpOrder) ...[
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                child: Text(
+                  groups[wpId]!.first.wp.shortCode != null
+                      ? '${groups[wpId]!.first.wp.shortCode} · ${groups[wpId]!.first.wp.name}'
+                      : groups[wpId]!.first.wp.name,
+                  style: const TextStyle(
+                    color: KColors.textMuted,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ),
+              for (final pair in groups[wpId]!)
+                ListTile(
+                  dense: true,
+                  visualDensity: VisualDensity.compact,
+                  title: Text(pair.act.name,
+                      style: const TextStyle(
+                          color: KColors.text, fontSize: 12)),
+                  onTap: () => Navigator.of(context).pop(pair.act.id),
+                ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel',
+              style: TextStyle(color: KColors.textDim)),
+        ),
+      ],
     );
   }
 }
@@ -1401,7 +2015,7 @@ class _HeaderSettingsDialogState extends State<_HeaderSettingsDialog> {
     }
     try {
       final base = DateTime.parse(_month0Date!);
-      final fmt  = DateFormat('MMM yy');
+      final fmt  = intl.DateFormat('MMM yy');
       return List.generate(
           count, (i) => fmt.format(DateTime(base.year, base.month + i, 1)));
     } catch (_) {
@@ -1584,7 +2198,34 @@ class _WpFormDialogState extends State<_WpFormDialog> {
       ),
     );
 
+    // Best-effort cascade to any active programme links. Service
+    // handles "no links / offline / cascaded row" cases internally.
+    if (mounted) {
+      final saved = await widget.db.programmeGanttDao
+          .getWorkPackages(widget.projectId);
+      final wp = saved.firstWhere((w) => w.id == id, orElse: () => saved.first);
+      // ignore: use_build_context_synchronously
+      await _cascadeFor(context).pushWorkPackage(wp);
+    }
+
     if (mounted) Navigator.of(context).pop();
+  }
+
+  /// Builds a [CascadeService] from the live providers. Returns a
+  /// service with a null gateway when the user isn't signed in — the
+  /// service treats that as "no-op", so the UI doesn't need to branch.
+  CascadeService _cascadeFor(BuildContext context) {
+    final sync = context.read<SyncProvider>();
+    final token = sync.accessToken;
+    return CascadeService(
+      widget.db,
+      gateway: token == null
+          ? null
+          : SyncCascadeGateway(
+              client: SyncClient(baseUrl: sync.serverUrl),
+              accessToken: token,
+            ),
+    );
   }
 
   Future<void> _delete() async {
@@ -1612,8 +2253,18 @@ class _WpFormDialogState extends State<_WpFormDialog> {
     if (confirm != true || !mounted) return;
     setState(() => _deleting = true);
 
-    await widget.db.programmeGanttDao.deleteActivitiesForWP(widget.wp!.id);
-    await widget.db.programmeGanttDao.deleteWorkPackage(widget.wp!.id);
+    final deletedId = widget.wp!.id;
+    await widget.db.programmeGanttDao.deleteActivitiesForWP(deletedId);
+    await widget.db.programmeGanttDao.deleteWorkPackage(deletedId);
+
+    // Tombstone the cascade so programme-side rows disappear too.
+    if (mounted) {
+      // ignore: use_build_context_synchronously
+      await _cascadeFor(context).deleteWorkPackage(
+        projectId: widget.projectId,
+        workPackageId: deletedId,
+      );
+    }
 
     if (mounted) Navigator.of(context).pop();
   }
@@ -1793,6 +2444,15 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
   List<Person> _persons = [];
   List<_Contributor> _contributors = [];
 
+  // Inbound dependency state — list of predecessors of this activity.
+  // Mix of internal predecessors (point at another activity) and
+  // external ones (free-text label, no upstream activity row).
+  List<DependencySpec> _predecessors = [];
+  // All other activities in the project — populated once on form open
+  // so the picker has something to enumerate.
+  List<({TimelineActivity act, TimelineWorkPackage wp})> _allActivities =
+      [];
+
   bool get _isEdit => widget.activity != null;
   bool get _isSinglePoint =>
       _type == 'milestone' || _type == 'hard_deadline' || _type == 'gate';
@@ -1824,6 +2484,44 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
     }
     _ownerCtrl.addListener(_resolveOwnerId);
     _loadPersons();
+    _loadDependencies();
+  }
+
+  Future<void> _loadDependencies() async {
+    // Load all activities + WPs in the project for the picker, and the
+    // existing predecessors for this activity (if editing).
+    final acts = await widget.db.programmeGanttDao
+        .getActivitiesForProject(widget.projectId);
+    final wps = await widget.db.programmeGanttDao
+        .getWorkPackages(widget.projectId);
+    final wpById = {for (final w in wps) w.id: w};
+    final pairs = <({TimelineActivity act, TimelineWorkPackage wp})>[];
+    for (final a in acts) {
+      final wp = wpById[a.workPackageId];
+      if (wp == null) continue;
+      if (widget.activity != null && a.id == widget.activity!.id) continue;
+      pairs.add((act: a, wp: wp));
+    }
+
+    final inbound = widget.activity == null
+        ? const <TimelineDependency>[]
+        : await widget.db.programmeGanttDao
+            .getInboundDependenciesFor(widget.activity!.id);
+
+    if (!mounted) return;
+    setState(() {
+      _allActivities = pairs;
+      _predecessors = [
+        for (final d in inbound)
+          if (d.externalLabel != null)
+            DependencySpec.external(d.externalLabel!)
+          else
+            DependencySpec.internal(
+              fromActivityId: d.fromActivityId,
+              dependencyType: d.dependencyType,
+            ),
+      ];
+    });
   }
 
   void _resolveOwnerId() {
@@ -1889,6 +2587,15 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
       ),
     );
 
+    // Sync the inbound-dependency rows for this activity. Done after
+    // the upsert so a newly-created activity has its row in place
+    // before the FK-style links land.
+    await widget.db.programmeGanttDao.replaceInboundDependencies(
+      projectId: widget.projectId,
+      activityId: id,
+      desired: _predecessors,
+    );
+
     if (mounted) Navigator.of(context).pop();
   }
 
@@ -1940,19 +2647,19 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
     return AlertDialog(
       backgroundColor: KColors.surface,
       title: Row(children: [
-        Container(width: 3, height: 16, color: c,
-            margin: const EdgeInsets.only(right: 8)),
+        Container(width: 3, height: 20, color: c,
+            margin: const EdgeInsets.only(right: 10)),
         Expanded(
           child: Text(_isEdit ? 'Edit Activity' : 'Add Activity',
-              style: const TextStyle(color: KColors.text, fontSize: 14)),
+              style: const TextStyle(color: KColors.text, fontSize: 16)),
         ),
         Text(widget.wp.shortCode ?? widget.wp.name,
-            style: TextStyle(color: c, fontSize: 11,
+            style: TextStyle(color: c, fontSize: 12,
                 fontWeight: FontWeight.w600)),
       ]),
       content: SizedBox(
-        width: 460,
-        height: 560,
+        width: 640,
+        height: 760,
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
@@ -1962,35 +2669,48 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                 TextFormField(
                   controller: _nameCtrl,
                   autofocus: !_isEdit,
-                  decoration:
-                      const InputDecoration(labelText: 'Activity name *'),
-                  style: const TextStyle(color: KColors.text, fontSize: 13),
+                  decoration: const InputDecoration(
+                    labelText: 'Activity name *',
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  ),
+                  style: const TextStyle(color: KColors.text, fontSize: 14),
                   validator: (v) =>
                       v == null || v.trim().isEmpty ? 'Required' : null,
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 // Activity type
                 DropdownButtonFormField<String>(
                   value: _type,
-                  decoration:
-                      const InputDecoration(labelText: 'Activity type'),
+                  decoration: const InputDecoration(
+                    labelText: 'Activity type',
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  ),
+                  style: const TextStyle(color: KColors.text, fontSize: 14),
                   dropdownColor: KColors.surface2,
                   items: _kActivityTypes.map((t) => DropdownMenuItem(
                         value: t,
                         child: Text(_kActivityTypeLabels[t]!,
-                            style: const TextStyle(fontSize: 13)),
+                            style: const TextStyle(fontSize: 14)),
                       )).toList(),
                   onChanged: (v) =>
                       setState(() => _type = v ?? 'activity'),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 // Month range
                 Row(children: [
                   Expanded(
                     child: DropdownButtonFormField<int?>(
                       value: _startMonth,
                       decoration: InputDecoration(
-                          labelText: _isSinglePoint ? 'Month' : 'Start month'),
+                        labelText:
+                            _isSinglePoint ? 'Month' : 'Start month',
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
+                      ),
+                      style: const TextStyle(
+                          color: KColors.text, fontSize: 14),
                       dropdownColor: KColors.surface2,
                       items: _monthItems,
                       onChanged: (v) => setState(() {
@@ -2005,11 +2725,17 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                     ),
                   ),
                   if (!_isSinglePoint) ...[
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: DropdownButtonFormField<int?>(
                         value: _endMonth,
-                        decoration: const InputDecoration(labelText: 'End month'),
+                        decoration: const InputDecoration(
+                          labelText: 'End month',
+                          contentPadding: EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 10),
+                        ),
+                        style: const TextStyle(
+                            color: KColors.text, fontSize: 14),
                         dropdownColor: KColors.surface2,
                         items: _monthItems,
                         onChanged: (v) => setState(() => _endMonth = v),
@@ -2017,7 +2743,9 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                     ),
                   ],
                 ]),
-                const SizedBox(height: 10),
+                const SizedBox(height: 14),
+                // Owner — roomier styling pass-through so the field
+                // doesn't feel compressed at this larger dialog size.
                 PersonPickerField(
                   controller: _ownerCtrl,
                   label: 'Owner',
@@ -2025,8 +2753,14 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                   db: widget.db,
                   projectId: widget.projectId,
                   onPersonCreated: _loadPersons,
+                  textStyle: const TextStyle(
+                      color: KColors.text, fontSize: 14),
+                  labelStyle: const TextStyle(
+                      color: KColors.textDim, fontSize: 13),
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 14),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 14),
                 _MultiPersonPickerField(
                   selected: _contributors,
                   persons: _persons,
@@ -2035,38 +2769,55 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                   onPersonsReloaded: _loadPersons,
                   onChanged: (updated) =>
                       setState(() => _contributors = updated),
+                  larger: true,
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   value: _status,
                   decoration: const InputDecoration(
-                      labelText: 'Status', isDense: true),
+                    labelText: 'Status',
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  ),
+                  style:
+                      const TextStyle(color: KColors.text, fontSize: 14),
                   dropdownColor: KColors.surface2,
                   items: milestoneTrackerStatuses.map((s) => DropdownMenuItem(
                     value: s,
                     child: Text(milestoneTrackerStatusLabels[s]!,
-                        style: const TextStyle(fontSize: 13)),
+                        style: const TextStyle(fontSize: 14)),
                   )).toList(),
                   onChanged: (v) => setState(() => _status = v ?? 'not_started'),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 TextFormField(
                   controller: _labelCtrl,
                   decoration: const InputDecoration(
-                      labelText: 'Cell label (optional)',
-                      hintText: 'Text shown in Gantt cell',
-                      isDense: true),
-                  style: const TextStyle(color: KColors.text, fontSize: 12),
+                    labelText: 'Cell label (optional)',
+                    hintText: 'Text shown in Gantt cell',
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  ),
+                  style: const TextStyle(color: KColors.text, fontSize: 14),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 14),
+                // Notes — generous multi-line, larger font, label
+                // anchored to the top so a long note doesn't push the
+                // label out of view.
                 TextFormField(
                   controller: _notesCtrl,
-                  maxLines: 2,
+                  minLines: 4,
+                  maxLines: 10,
                   decoration: const InputDecoration(
-                      labelText: 'Notes (optional)', isDense: true),
-                  style: const TextStyle(color: KColors.text, fontSize: 12),
+                    labelText: 'Notes (optional)',
+                    alignLabelWithHint: true,
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  ),
+                  style: const TextStyle(
+                      color: KColors.text, fontSize: 14, height: 1.4),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 CheckboxListTile(
                   value: _isCritical,
                   onChanged: (v) => setState(() => _isCritical = v ?? false),
@@ -2075,6 +2826,13 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                   controlAffinity: ListTileControlAffinity.leading,
                   contentPadding: EdgeInsets.zero,
                   dense: true,
+                ),
+                const SizedBox(height: 10),
+                _DependsOnEditor(
+                  allActivities: _allActivities,
+                  predecessors: _predecessors,
+                  onChanged: (next) =>
+                      setState(() => _predecessors = next),
                 ),
                 const SizedBox(height: 16),
                 // Action buttons inline — avoids OverflowBar issues
@@ -2330,6 +3088,10 @@ class _MultiPersonPickerField extends StatefulWidget {
   final String projectId;
   final VoidCallback onPersonsReloaded;
   final ValueChanged<List<_Contributor>> onChanged;
+  /// When true, renders with the same roomier proportions as the host
+  /// activity dialog (larger header, bigger chips + input). Default
+  /// keeps the compact rendering used by every other caller.
+  final bool larger;
 
   const _MultiPersonPickerField({
     required this.selected,
@@ -2338,6 +3100,7 @@ class _MultiPersonPickerField extends StatefulWidget {
     required this.projectId,
     required this.onPersonsReloaded,
     required this.onChanged,
+    this.larger = false,
   });
 
   @override
@@ -2421,6 +3184,7 @@ class _MultiPersonPickerFieldState extends State<_MultiPersonPickerField> {
         role: Value(result.role),
         organisation: Value(result.organisation),
         personType: Value(result.personType),
+        isStakeholder: Value(result.isStakeholder),
         createdAt: Value(now),
         updatedAt: Value(now),
       ));
@@ -2440,50 +3204,60 @@ class _MultiPersonPickerFieldState extends State<_MultiPersonPickerField> {
   @override
   Widget build(BuildContext context) {
     _myName = context.read<SettingsProvider>().settings.myName;
+    // Pre-pick the size knobs so the build tree stays readable.
+    final headerSize = widget.larger ? 11.0 : 9.0;
+    final chipFont = widget.larger ? 13.0 : 11.0;
+    final chipPadH = widget.larger ? 8.0 : 6.0;
+    final inputFont = widget.larger ? 14.0 : 12.0;
+    final hintFont = widget.larger ? 13.0 : 11.0;
+    final outerPadV = widget.larger ? 10.0 : 4.0;
+    final outerPadH = widget.larger ? 10.0 : 6.0;
+    final chipDeleteSize = widget.larger ? 14.0 : 12.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('CONTRIBUTORS',
+        Text('CONTRIBUTORS',
             style: TextStyle(
                 color: KColors.textMuted,
-                fontSize: 9,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5)),
-        const SizedBox(height: 4),
+                fontSize: headerSize,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.0)),
+        const SizedBox(height: 6),
         Container(
           decoration: BoxDecoration(
             border: Border.all(color: KColors.border2),
             borderRadius: BorderRadius.circular(4),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+          padding: EdgeInsets.symmetric(
+              horizontal: outerPadH, vertical: outerPadV),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
               if (widget.selected.isNotEmpty) ...[
                 Wrap(
-                  spacing: 4,
-                  runSpacing: 4,
+                  spacing: 6,
+                  runSpacing: 6,
                   children: widget.selected.asMap().entries.map((e) {
                     return Chip(
                       label: Text(e.value.name,
-                          style: const TextStyle(
-                              color: KColors.text, fontSize: 11)),
+                          style: TextStyle(
+                              color: KColors.text, fontSize: chipFont)),
                       backgroundColor: KColors.surface2,
                       side: const BorderSide(color: KColors.border2),
-                      deleteIcon: const Icon(Icons.close,
-                          size: 12, color: KColors.textDim),
+                      deleteIcon: Icon(Icons.close,
+                          size: chipDeleteSize, color: KColors.textDim),
                       onDeleted: () => _remove(e.key),
                       padding: EdgeInsets.zero,
                       labelPadding:
-                          const EdgeInsets.symmetric(horizontal: 6),
+                          EdgeInsets.symmetric(horizontal: chipPadH),
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       visualDensity: VisualDensity.compact,
                     );
                   }).toList(),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
               ],
               RawAutocomplete<String>(
                 textEditingController: _ctrl,
@@ -2501,16 +3275,16 @@ class _MultiPersonPickerFieldState extends State<_MultiPersonPickerField> {
                     TextField(
                   controller: ctrl,
                   focusNode: fn,
-                  style: const TextStyle(
-                      color: KColors.text, fontSize: 12),
-                  decoration: const InputDecoration(
+                  style: TextStyle(
+                      color: KColors.text, fontSize: inputFont),
+                  decoration: InputDecoration(
                     hintText: 'Add contributor…',
                     hintStyle: TextStyle(
-                        color: KColors.textMuted, fontSize: 11),
+                        color: KColors.textMuted, fontSize: hintFont),
                     border: InputBorder.none,
-                    isDense: true,
+                    isDense: !widget.larger,
                     contentPadding:
-                        EdgeInsets.symmetric(vertical: 4),
+                        EdgeInsets.symmetric(vertical: widget.larger ? 8 : 4),
                   ),
                   onSubmitted: (_) {
                     final first = _lastOptions.firstWhere(
@@ -2625,6 +3399,18 @@ class _DependencyPainter extends CustomPainter {
   final double scrollY;
   final double cellW;
   final bool   quarterMode;
+  /// When non-null, arrows on the upstream/downstream chains of this
+  /// activity are spotlit; unrelated arrows fade. Computed inside the
+  /// painter so the parent doesn't have to redo the BFS on every move.
+  final String? hoveredActivityId;
+
+  // Palette — kept as Paint sources rather than literals so each
+  // colour's role in the legend is obvious from one place.
+  static const _normalColor   = Color(0xCC8B5CF6); // muted purple
+  static const _brokenColor   = Color(0xFFEF4444); // red
+  static const _upstreamColor = Color(0xFF22D3EE); // cyan
+  static const _downstreamColor = Color(0xFF34D399); // green
+  static const _dimmedColor   = Color(0x33A0AEC0); // very faded grey
 
   _DependencyPainter({
     required this.rows,
@@ -2634,6 +3420,7 @@ class _DependencyPainter extends CustomPainter {
     required this.scrollY,
     required this.cellW,
     required this.quarterMode,
+    this.hoveredActivityId,
   });
 
   // Build activity → row-index lookup once per paint.
@@ -2665,19 +3452,47 @@ class _DependencyPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final linePaint = Paint()
-      ..color = const Color(0x888B5CF6)   // muted purple
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    final fillPaint = Paint()
-      ..color = const Color(0x888B5CF6)
-      ..style = PaintingStyle.fill;
+    // Pre-compute chain membership once per paint so each dep can be
+    // classified in O(1). When nothing's hovered, both sets are empty.
+    final upstream = hoveredActivityId == null
+        ? const <String>{}
+        : DependencyChains.upstreamOf(hoveredActivityId!, deps);
+    final downstream = hoveredActivityId == null
+        ? const <String>{}
+        : DependencyChains.downstreamOf(hoveredActivityId!, deps);
 
     final ridx = _rowIdx;
+    // Per-target counter so multiple externals on the same activity
+    // stack horizontally to the left instead of stomping on each other.
+    final externalSlot = <String, int>{};
 
     for (final dep in deps) {
+      // External deps don't have a source row — render a small chip
+      // anchored just left of the target activity's start cell. We
+      // still want the spotlight/dim colouring to apply, so reuse
+      // `_colourFor` with empty chain sets when not hovered.
+      if (dep.externalLabel != null) {
+        final toAct = actMap[dep.toActivityId];
+        if (toAct == null) continue;
+        final toRow = ridx[toAct.id];
+        if (toRow == null) continue;
+        final toMonth = toAct.startMonth;
+        if (toMonth == null) continue;
+        final slot = externalSlot[toAct.id] ?? 0;
+        externalSlot[toAct.id] = slot + 1;
+        final colour = _colourFor(dep, false, upstream, downstream);
+        _paintExternalChip(
+          canvas: canvas,
+          size: size,
+          label: dep.externalLabel!,
+          toX: _monthLeft(toMonth),
+          y: _rowMidY(toRow),
+          slot: slot,
+          colour: colour,
+        );
+        continue;
+      }
+
       final fromAct = actMap[dep.fromActivityId];
       final toAct   = actMap[dep.toActivityId];
       if (fromAct == null || toAct == null) continue;
@@ -2686,18 +3501,44 @@ class _DependencyPainter extends CustomPainter {
       final toRow   = ridx[toAct.id];
       if (fromRow == null || toRow == null) continue;
 
-      final fromEnd   = fromAct.endMonth ?? fromAct.startMonth;
-      final toStart   = toAct.startMonth;
-      if (fromEnd == null || toStart == null) continue;
+      // For non-FS types the anchor point shifts (SS leaves from the
+      // start of the predecessor, FF arrives at the end of the
+      // successor). Kept simple: SS/FS anchor the from-side at the
+      // appropriate edge, FF anchors the to-side at the end.
+      final fromMonth = switch (dep.dependencyType) {
+        'start_to_start' => fromAct.startMonth,
+        _ => fromAct.endMonth ?? fromAct.startMonth,
+      };
+      final toMonth = switch (dep.dependencyType) {
+        'finish_to_finish' => toAct.endMonth ?? toAct.startMonth,
+        _ => toAct.startMonth,
+      };
+      if (fromMonth == null || toMonth == null) continue;
 
-      final fromX = _monthRight(fromEnd);
+      final fromX = dep.dependencyType == 'start_to_start'
+          ? _monthLeft(fromMonth)
+          : _monthRight(fromMonth);
       final fromY = _rowMidY(fromRow);
-      final toX   = _monthLeft(toStart);
+      final toX = dep.dependencyType == 'finish_to_finish'
+          ? _monthRight(toMonth)
+          : _monthLeft(toMonth);
       final toY   = _rowMidY(toRow);
 
       // Skip if entirely off-screen
       if (fromX < -cellW * 2 && toX < -cellW * 2) continue;
       if (fromX > size.width + cellW * 2 && toX > size.width + cellW * 2) continue;
+
+      final isBroken = DependencyChains.isBroken(dep, actMap);
+      final colour = _colourFor(dep, isBroken, upstream, downstream);
+
+      final linePaint = Paint()
+        ..color = colour
+        ..strokeWidth = isBroken ? 2.0 : 1.5
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round;
+      final fillPaint = Paint()
+        ..color = colour
+        ..style = PaintingStyle.fill;
 
       // Bezier with horizontal tangents
       final dx     = (toX - fromX).abs().clamp(cellW * 0.5, cellW * 2.0);
@@ -2712,6 +3553,165 @@ class _DependencyPainter extends CustomPainter {
 
       // Arrowhead at toX, toY
       _arrow(canvas, fillPaint, Offset(toX, toY), Offset(toX - dx, toY));
+
+      // Type label at the curve midpoint. Drawn only when the arrow
+      // isn't dimmed — keeping non-hovered labels out keeps the canvas
+      // readable when there are dozens of deps in view.
+      if (colour != _dimmedColor) {
+        _drawTypeLabel(
+          canvas,
+          colour,
+          dep.dependencyType,
+          (fromX + toX) / 2,
+          (fromY + toY) / 2,
+        );
+      }
+    }
+  }
+
+  /// Resolves the line colour for one dep given the current spotlight
+  /// state. Order of precedence matters: broken-on-an-unrelated-arrow
+  /// still gets dimmed because the user is focused on the hover chain.
+  Color _colourFor(
+    TimelineDependency dep,
+    bool isBroken,
+    Set<String> upstream,
+    Set<String> downstream,
+  ) {
+    final hovered = hoveredActivityId;
+    if (hovered == null) {
+      return isBroken ? _brokenColor : _normalColor;
+    }
+    // Hovered chain: dep is "upstream" if its successor is the hovered
+    // activity OR sits anywhere up the upstream chain of it.
+    final inUpstream =
+        dep.toActivityId == hovered || upstream.contains(dep.toActivityId);
+    final inDownstream = dep.fromActivityId == hovered ||
+        downstream.contains(dep.fromActivityId);
+    if (inUpstream && isBroken) return _brokenColor;
+    if (inDownstream && isBroken) return _brokenColor;
+    if (inUpstream) return _upstreamColor;
+    if (inDownstream) return _downstreamColor;
+    return _dimmedColor;
+  }
+
+  void _drawTypeLabel(
+    Canvas canvas,
+    Color colour,
+    String depType,
+    double cx,
+    double cy,
+  ) {
+    final text = DependencyChains.shortLabel(depType);
+    final tp = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          color: colour,
+          fontSize: 9,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.6,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    // Background chip so the label stays readable when it lands on
+    // a busy bar.
+    final pad = 2.0;
+    final rect = Rect.fromCenter(
+      center: Offset(cx, cy),
+      width: tp.width + pad * 2,
+      height: tp.height + pad,
+    );
+    final bg = Paint()..color = const Color(0xE8141821); // surface-ish
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(rect, const Radius.circular(2)),
+      bg,
+    );
+    tp.paint(
+      canvas,
+      Offset(cx - tp.width / 2, cy - tp.height / 2),
+    );
+  }
+
+  /// Paints a small "EXT: label" chip just to the left of an
+  /// activity's start cell, with an arrow pointing into the bar. The
+  /// chip stays clipped to the visible cells area so it's never lost
+  /// off the left edge even on a left-most activity.
+  void _paintExternalChip({
+    required Canvas canvas,
+    required Size size,
+    required String label,
+    required double toX,
+    required double y,
+    required int slot,
+    required Color colour,
+  }) {
+    final text = 'EXT: $label';
+    final tp = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          color: colour,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.4,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+      ellipsis: '…',
+    )..layout(maxWidth: 140);
+
+    const padH = 6.0;
+    const padV = 3.0;
+    final chipW = tp.width + padH * 2;
+    final chipH = tp.height + padV * 2;
+    // Each external on the same activity sits one chip-width further
+    // to the left, leaving an 8px gap between chip and target bar.
+    final gap = 8.0;
+    final stack = slot * (chipW + 4);
+    var right = toX - gap - stack;
+    var left = right - chipW;
+    // Clamp left edge so we never paint behind the frozen name column.
+    if (left < 0) {
+      left = 0;
+      right = left + chipW;
+    }
+    // Off-screen to the right — nothing to draw.
+    if (left > size.width) return;
+
+    final rect = Rect.fromLTWH(left, y - chipH / 2, chipW, chipH);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(rect, const Radius.circular(3)),
+      Paint()..color = const Color(0xE8141821),
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(rect, const Radius.circular(3)),
+      Paint()
+        ..color = colour
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.0,
+    );
+    tp.paint(canvas, Offset(left + padH, y - tp.height / 2));
+
+    // Arrow from chip right edge into the activity bar — only render
+    // when the gap is wide enough to be legible.
+    if (toX - right > 4) {
+      final linePaint = Paint()
+        ..color = colour
+        ..strokeWidth = 1.5
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round;
+      canvas.drawLine(Offset(right, y), Offset(toX, y), linePaint);
+      _arrow(
+        canvas,
+        Paint()
+          ..color = colour
+          ..style = PaintingStyle.fill,
+        Offset(toX, y),
+        Offset(right, y),
+      );
     }
   }
 
@@ -2739,7 +3739,8 @@ class _DependencyPainter extends CustomPainter {
       old.scrollY != scrollY ||
       old.cellW   != cellW   ||
       old.deps    != deps    ||
-      old.rows    != rows;
+      old.rows    != rows    ||
+      old.hoveredActivityId != hoveredActivityId;
 }
 
 // ─── Layout mode buttons (expand / presentation) ─────────────────────────────

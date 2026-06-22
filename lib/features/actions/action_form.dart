@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:provider/provider.dart';
 
+import '../../core/analytics/keel_events.dart';
 import '../../core/database/database.dart';
 import '../../providers/settings_provider.dart';
 import '../../shared/theme/keel_colors.dart';
@@ -207,6 +208,12 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
       ));
     }
 
+    if (!isEdit && mounted) {
+      context.analytics.track(
+        KeelEvents.actionCreated,
+        props: {KeelEventProps.source: 'action_form'},
+      );
+    }
     if (mounted) Navigator.of(context).pop();
   }
 

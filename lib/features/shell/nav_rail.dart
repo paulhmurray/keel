@@ -4,11 +4,17 @@ import '../../shared/theme/keel_colors.dart';
 class KeelNavRail extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
+  // When true, the overview tab reads PROG and uses a workspaces icon
+  // (programme-scoped install). Default false → reads PROJ. The rest
+  // of the rail is identical for V1; per-section divergence happens
+  // inside each view based on ProjectProvider.isProgramme.
+  final bool isProgramme;
 
   const KeelNavRail({
     super.key,
     required this.selectedIndex,
     required this.onDestinationSelected,
+    this.isProgramme = false,
   });
 
   @override
@@ -23,8 +29,16 @@ class KeelNavRail extends StatelessWidget {
               child: Column(
                 children: [
                   const SizedBox(height: 8),
-                  _NavItem(icon: Icons.dashboard_outlined, label: 'Prog', index: 0, selected: selectedIndex == 0, onTap: onDestinationSelected),
-                  _NavItem(icon: Icons.timeline_outlined, label: 'Sched', index: 1, selected: selectedIndex == 1, onTap: onDestinationSelected),
+                  _NavItem(
+                    icon: isProgramme
+                        ? Icons.workspaces_outlined
+                        : Icons.dashboard_outlined,
+                    label: isProgramme ? 'Prog' : 'Proj',
+                    index: 0,
+                    selected: selectedIndex == 0,
+                    onTap: onDestinationSelected,
+                  ),
+                  _NavItem(icon: Icons.bubble_chart_outlined, label: 'Canvas', index: 1, selected: selectedIndex == 1, onTap: onDestinationSelected),
                   _NavItem(icon: Icons.table_chart_outlined, label: 'Plan', index: 12, selected: selectedIndex == 12, onTap: onDestinationSelected),
                   _NavItem(icon: Icons.monitor_heart_outlined, label: 'Status', index: 13, selected: selectedIndex == 13, onTap: onDestinationSelected),
                   _NavItem(icon: Icons.article_outlined, label: 'Charter', index: 14, selected: selectedIndex == 14, onTap: onDestinationSelected),

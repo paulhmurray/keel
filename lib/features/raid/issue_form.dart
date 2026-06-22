@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:drift/drift.dart' show Value;
 
+import '../../core/analytics/keel_events.dart';
 import '../../core/database/database.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/widgets/dropdown_field.dart';
@@ -88,6 +89,7 @@ class _IssueFormDialogState extends State<IssueFormDialog> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final isNew = widget.issue == null;
     final existing = await widget.db.raidDao.getIssuesForProject(widget.projectId);
     final String ref = widget.issue?.ref ?? _nextRef(existing);
 
@@ -114,6 +116,12 @@ class _IssueFormDialogState extends State<IssueFormDialog> {
       ),
     );
 
+    if (isNew && mounted) {
+      context.analytics.track(
+        KeelEvents.issueCreated,
+        props: {KeelEventProps.source: 'issue_form'},
+      );
+    }
     if (mounted) Navigator.of(context).pop();
   }
 

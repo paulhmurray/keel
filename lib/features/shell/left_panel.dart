@@ -12,12 +12,22 @@ import '../../shared/widgets/status_chip.dart';
 import '../../shared/utils/date_utils.dart' as du;
 
 class LeftPanel extends StatelessWidget {
+  // Section-level navigation (used when the section is empty or as a
+  // header tap target — clicking a row prefers the item callbacks below).
   final VoidCallback? onNavigateToRaid;
   final VoidCallback? onNavigateToDecisions;
   final VoidCallback? onNavigateToActions;
   final VoidCallback? onNavigateToJournal;
   final VoidCallback? onNavigateToPlaybook;
   final VoidCallback? onNavigateToProgramme;
+
+  // Item-level openers — invoked when the user clicks a specific row.
+  // The shell wires these to navigate + open the relevant form dialog.
+  final void Function(Risk)? onOpenRisk;
+  final void Function(Decision)? onOpenDecision;
+  final void Function(ProjectAction)? onOpenAction;
+  final void Function(JournalEntry)? onOpenJournal;
+  final void Function(String stageId)? onOpenPlaybookStage;
 
   const LeftPanel({
     super.key,
@@ -27,6 +37,11 @@ class LeftPanel extends StatelessWidget {
     this.onNavigateToJournal,
     this.onNavigateToPlaybook,
     this.onNavigateToProgramme,
+    this.onOpenRisk,
+    this.onOpenDecision,
+    this.onOpenAction,
+    this.onOpenJournal,
+    this.onOpenPlaybookStage,
   });
 
   @override
@@ -56,6 +71,7 @@ class LeftPanel extends StatelessWidget {
                           projectId: projectId,
                           db: db,
                           onTap: onNavigateToRaid,
+                          onOpenItem: onOpenRisk,
                         ),
                         _SectionHeader(
                           label: 'Pending Decisions',
@@ -65,6 +81,7 @@ class LeftPanel extends StatelessWidget {
                           projectId: projectId,
                           db: db,
                           onTap: onNavigateToDecisions,
+                          onOpenItem: onOpenDecision,
                         ),
                         _SectionHeader(
                           label: 'Overdue Actions',
@@ -74,11 +91,22 @@ class LeftPanel extends StatelessWidget {
                           projectId: projectId,
                           db: db,
                           onTap: onNavigateToActions,
+                          onOpenItem: onOpenAction,
                         ),
                         _SectionHeader(label: 'Recent Journal', icon: Icons.menu_book_outlined),
-                        _RecentJournalSection(projectId: projectId, db: db, onTap: onNavigateToJournal),
+                        _RecentJournalSection(
+                          projectId: projectId,
+                          db: db,
+                          onTap: onNavigateToJournal,
+                          onOpenItem: onOpenJournal,
+                        ),
                         _SectionHeader(label: 'Playbook Stage', icon: Icons.account_tree_outlined),
-                        _PlaybookStageSection(projectId: projectId, db: db, onTap: onNavigateToPlaybook),
+                        _PlaybookStageSection(
+                          projectId: projectId,
+                          db: db,
+                          onTap: onNavigateToPlaybook,
+                          onOpenStage: onOpenPlaybookStage,
+                        ),
                         _ProgrammeGapsSection(projectId: projectId, db: db, onTap: onNavigateToProgramme),
                         _UpcomingDeadlinesSection(projectId: projectId, db: db),
                         const SizedBox(height: 8),
@@ -128,9 +156,13 @@ class _TopRisksSection extends StatelessWidget {
   final String projectId;
   final AppDatabase db;
   final VoidCallback? onTap;
+  final void Function(Risk)? onOpenItem;
 
   const _TopRisksSection(
-      {required this.projectId, required this.db, this.onTap});
+      {required this.projectId,
+      required this.db,
+      this.onTap,
+      this.onOpenItem});
 
   @override
   Widget build(BuildContext context) {
@@ -157,7 +189,12 @@ class _TopRisksSection extends StatelessWidget {
                       rag: _riskRag(r.likelihood, r.impact),
                       showLabel: false,
                     ),
-                    onTap: onTap,
+                    // Prefer the item-aware opener so the click navigates
+                    // *and* opens the risk dialog; fall back to the
+                    // section-level navigation if not wired.
+                    onTap: onOpenItem != null
+                        ? () => onOpenItem!(r)
+                        : onTap,
                   ))
               .toList(),
         );
@@ -197,9 +234,13 @@ class _TopDecisionsSection extends StatelessWidget {
   final String projectId;
   final AppDatabase db;
   final VoidCallback? onTap;
+  final void Function(Decision)? onOpenItem;
 
   const _TopDecisionsSection(
-      {required this.projectId, required this.db, this.onTap});
+      {required this.projectId,
+      required this.db,
+      this.onTap,
+      this.onOpenItem});
 
   @override
   Widget build(BuildContext context) {
@@ -219,7 +260,9 @@ class _TopDecisionsSection extends StatelessWidget {
                         : d.description,
                     barColor: KColors.blue,
                     trailing: StatusChip(status: d.status),
-                    onTap: onTap,
+                    onTap: onOpenItem != null
+                        ? () => onOpenItem!(d)
+                        : onTap,
                   ))
               .toList(),
         );
@@ -234,9 +277,13 @@ class _TopActionsSection extends StatelessWidget {
   final String projectId;
   final AppDatabase db;
   final VoidCallback? onTap;
+  final void Function(ProjectAction)? onOpenItem;
 
   const _TopActionsSection(
-      {required this.projectId, required this.db, this.onTap});
+      {required this.projectId,
+      required this.db,
+      this.onTap,
+      this.onOpenItem});
 
   @override
   Widget build(BuildContext context) {
@@ -264,7 +311,9 @@ class _TopActionsSection extends StatelessWidget {
                             ),
                           )
                         : null,
-                    onTap: onTap,
+                    onTap: onOpenItem != null
+                        ? () => onOpenItem!(a)
+                        : onTap,
                   ))
               .toList(),
         );
@@ -388,7 +437,13 @@ class _RecentJournalSection extends StatelessWidget {
   final String projectId;
   final AppDatabase db;
   final VoidCallback? onTap;
-  const _RecentJournalSection({required this.projectId, required this.db, this.onTap});
+  final void Function(JournalEntry)? onOpenItem;
+  const _RecentJournalSection({
+    required this.projectId,
+    required this.db,
+    this.onTap,
+    this.onOpenItem,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -411,7 +466,7 @@ class _RecentJournalSection extends StatelessWidget {
                 _fmt(e.entryDate),
                 style: const TextStyle(color: KColors.textDim, fontSize: 10),
               ),
-              onTap: onTap,
+              onTap: onOpenItem != null ? () => onOpenItem!(e) : onTap,
             );
           }).toList(),
         );
@@ -436,11 +491,13 @@ class _PlaybookStageSection extends StatelessWidget {
   final String projectId;
   final AppDatabase db;
   final VoidCallback? onTap;
+  final void Function(String stageId)? onOpenStage;
 
   const _PlaybookStageSection({
     required this.projectId,
     required this.db,
     this.onTap,
+    this.onOpenStage,
   });
 
   @override
@@ -497,6 +554,7 @@ class _PlaybookStageSection extends StatelessWidget {
                 final stageIdx =
                     stages.indexWhere((s) => s.id == current!.id) + 1;
 
+                final stageId = current.id;
                 return _PulseItem(
                   label: 'Stage $stageIdx: ${current.name}',
                   barColor: barColor,
@@ -515,7 +573,9 @@ class _PlaybookStageSection extends StatelessWidget {
                         ),
                     ],
                   ),
-                  onTap: onTap,
+                  onTap: onOpenStage != null
+                      ? () => onOpenStage!(stageId)
+                      : onTap,
                 );
               },
             );

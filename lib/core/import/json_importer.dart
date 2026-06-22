@@ -32,6 +32,12 @@ class ImportResult {
 }
 
 class JsonImporter {
+  /// Parses a nullable ISO-8601 timestamp from JSON. Returns null for a
+  /// missing/blank/non-string value so cascade fields like `escalated_at`
+  /// round-trip cleanly (null = not escalated).
+  static DateTime? _parseDt(dynamic v) =>
+      v is String && v.isNotEmpty ? DateTime.tryParse(v) : null;
+
   /// Reads a JSON file and imports it. Returns a summary of what was imported.
   /// Not supported on web — use [importFromString] instead.
   static Future<ImportResult> importFromFile(
@@ -158,6 +164,8 @@ class JsonImporter {
           status: Value(rm['status'] as String? ?? 'open'),
           source: Value(rm['source'] as String? ?? 'manual'),
           sourceNote: Value(rm['source_note'] as String?),
+          escalatedAt: Value(_parseDt(rm['escalated_at'])),
+          sourceProjectId: Value(rm['source_project_id'] as String?),
         ));
         riskCount++;
       }
@@ -176,6 +184,8 @@ class JsonImporter {
               : null),
           source: Value(am['source'] as String? ?? 'manual'),
           sourceNote: Value(am['source_note'] as String?),
+          escalatedAt: Value(_parseDt(am['escalated_at'])),
+          sourceProjectId: Value(am['source_project_id'] as String?),
         ));
         assumCount++;
       }
@@ -193,6 +203,8 @@ class JsonImporter {
           resolution: Value(im['resolution'] as String?),
           source: Value(im['source'] as String? ?? 'manual'),
           sourceNote: Value(im['source_note'] as String?),
+          escalatedAt: Value(_parseDt(im['escalated_at'])),
+          sourceProjectId: Value(im['source_project_id'] as String?),
         ));
         issueCount++;
       }
@@ -209,6 +221,8 @@ class JsonImporter {
           dueDate: Value(dm['due_date'] as String?),
           source: Value(dm['source'] as String? ?? 'manual'),
           sourceNote: Value(dm['source_note'] as String?),
+          escalatedAt: Value(_parseDt(dm['escalated_at'])),
+          sourceProjectId: Value(dm['source_project_id'] as String?),
         ));
         depCount++;
       }
@@ -230,6 +244,8 @@ class JsonImporter {
         outcome: Value(dm['outcome'] as String?),
         source: Value(dm['source'] as String? ?? 'manual'),
         sourceNote: Value(dm['source_note'] as String?),
+        escalatedAt: Value(_parseDt(dm['escalated_at'])),
+        sourceProjectId: Value(dm['source_project_id'] as String?),
       ));
       decisionCount++;
     }
@@ -240,6 +256,16 @@ class JsonImporter {
     if (peopleData != null) {
       for (final p in (peopleData['persons'] as List? ?? [])) {
         final pm = p as Map<String, dynamic>;
+        final rawType = pm['person_type'] as String?;
+        // Backwards compatibility: imports that pre-date the v26 schema split
+        // may carry person_type='stakeholder'. Translate to colleague +
+        // is_stakeholder=true so the data lines up with the new model.
+        final isLegacyStakeholderType = rawType == 'stakeholder';
+        final personType = isLegacyStakeholderType
+            ? 'colleague'
+            : (rawType ?? 'colleague');
+        final isStakeholder = (pm['is_stakeholder'] as bool?) ??
+            isLegacyStakeholderType;
         await db.peopleDao.upsertPerson(PersonsCompanion(
           id: Value(pm['id'] as String),
           projectId: Value(projectId),
@@ -249,7 +275,10 @@ class JsonImporter {
           organisation: Value(pm['organisation'] as String?),
           phone: Value(pm['phone'] as String?),
           teamsHandle: Value(pm['teams_handle'] as String?),
-          personType: Value(pm['person_type'] as String? ?? 'stakeholder'),
+          personType: Value(personType),
+          isStakeholder: Value(isStakeholder),
+          sourceProjectId: Value(pm['source_project_id'] as String?),
+          sourceProjectName: Value(pm['source_project_name'] as String?),
         ));
         personCount++;
       }
@@ -357,6 +386,8 @@ class JsonImporter {
         priority: Value(am['priority'] as String? ?? 'medium'),
         source: Value(am['source'] as String? ?? 'manual'),
         sourceNote: Value(am['source_note'] as String?),
+        escalatedAt: Value(_parseDt(am['escalated_at'])),
+        sourceProjectId: Value(am['source_project_id'] as String?),
         outcome: Value(am['outcome'] as String?),
         categoryId: Value(am['category_id'] as String?),
         recurrenceGroupId: Value(am['recurrence_group_id'] as String?),
@@ -593,6 +624,7 @@ class JsonImporter {
         accomplishments: Value(rm['accomplishments'] as String?),
         nextSteps: Value(rm['next_steps'] as String?),
         risksHighlighted: Value(rm['risks_highlighted'] as String?),
+        sourceProjectId: Value(rm['source_project_id'] as String?),
       ));
     }
 
@@ -627,6 +659,9 @@ class JsonImporter {
         successCriteria: Value(charterData['success_criteria'] as String?),
         keyConstraints: Value(charterData['key_constraints'] as String?),
         assumptions: Value(charterData['assumptions'] as String?),
+        sourceProjectId: Value(charterData['source_project_id'] as String?),
+        sourceProjectName:
+            Value(charterData['source_project_name'] as String?),
       ));
     }
 
@@ -684,6 +719,7 @@ class JsonImporter {
           colourTheme: Value(wm['colour_theme'] as String? ?? 'wp1'),
           sortOrder: Value(wm['sort_order'] as int? ?? 0),
           ragStatus: Value(wm['rag_status'] as String? ?? 'not_started'),
+          sourceProjectId: Value(wm['source_project_id'] as String?),
         ));
       }
       for (final a in (timelineData['activities'] as List? ?? [])) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:drift/drift.dart' show Value;
 
+import '../../core/analytics/keel_events.dart';
 import '../../core/database/database.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/widgets/dropdown_field.dart';
@@ -97,6 +98,7 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final isNew = widget.risk == null;
     final String ref = widget.risk?.ref ??
         _nextRef(await widget.db.raidDao.getRisksForProject(widget.projectId));
 
@@ -129,6 +131,12 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
       ),
     );
 
+    if (isNew && mounted) {
+      context.analytics.track(
+        KeelEvents.riskCreated,
+        props: {KeelEventProps.source: 'risk_form'},
+      );
+    }
     if (mounted) Navigator.of(context).pop();
   }
 

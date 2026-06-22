@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/cascade/cascade_service.dart';
+import '../../core/cascade/sync_cascade_gateway.dart';
 import '../../core/database/database.dart';
+import '../../core/sync/sync_client.dart';
 import '../../providers/project_provider.dart';
+import '../../providers/sync_provider.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/widgets/status_chip.dart';
 import '../../shared/widgets/source_badge.dart';
 import '../../shared/utils/date_utils.dart' as du;
+import '../canvas/canvas_drag_source.dart';
+import '../canvas/in_canvas_indicator.dart';
+import '../programme/overdue_cascade_panel.dart';
 import 'decision_form.dart';
 
 class DecisionsView extends StatefulWidget {
@@ -74,6 +81,10 @@ class _DecisionsViewState extends State<DecisionsView> {
             ],
           ),
           const SizedBox(height: 16),
+          // Programme-only overdue-decisions roll-up. Quiet (renders
+          // nothing) on project-kind installs and on programmes with
+          // no overdue cascaded decisions.
+          const OverdueCascadePanel(kind: OverdueCascadeKind.decision),
           // List
           Expanded(
             child: StreamBuilder<List<Decision>>(
@@ -144,7 +155,12 @@ class _DecisionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return CanvasDragSource(
+      itemType: 'decision',
+      itemId: decision.id,
+      title: decision.description,
+      body: decision.rationale,
+      child: Container(
       decoration: BoxDecoration(
         color: KColors.surface,
         border: Border.all(color: KColors.border),
@@ -198,28 +214,130 @@ class _DecisionCard extends StatelessWidget {
                         ),
                         StatusChip(status: decision.status),
                         const SizedBox(width: 6),
-                        PopupMenuButton<String>(
-                          icon: const Icon(Icons.more_vert,
-                              size: 16, color: KColors.textMuted),
-                          onSelected: (val) {
-                            if (val == 'edit') {
-                              showDialog(
-                                context: context,
-                                builder: (_) => DecisionFormDialog(
+                        if (decision.escalatedAt != null &&
+                            decision.sourceProjectId == null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 5, vertical: 1),
+                            margin: const EdgeInsets.only(right: 4),
+                            decoration: BoxDecoration(
+                              color: KColors.amberDim,
+                              border: Border.all(
+                                  color: KColors.amber, width: 0.5),
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                            child: const Tooltip(
+                              message:
+                                  'Escalated — visible to linked programmes',
+                              child: Text(
+                                '↑ ESC',
+                                style: TextStyle(
+                                  color: KColors.amber,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.4,
+                                ),
+                              ),
+                            ),
+                          ),
+                        if (decision.sourceProjectId != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 5, vertical: 1),
+                            margin: const EdgeInsets.only(right: 4),
+                            decoration: BoxDecoration(
+                              color: KColors.surface2,
+                              border: Border.all(
+                                  color: KColors.border2, width: 0.5),
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                            child: const Tooltip(
+                              message:
+                                  'Cascaded from a linked project — read-only',
+                              child: Text('PROJ',
+                                  style: TextStyle(
+                                    color: KColors.textMuted,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.6,
+                                  )),
+                            ),
+                          ),
+                        if (decision.sourceProjectId == null)
+                          PopupMenuButton<String>(
+                            icon: const Icon(Icons.more_vert,
+                                size: 16, color: KColors.textMuted),
+                            onSelected: (val) async {
+                              if (val == 'edit') {
+                                await showDialog(
+                                  context: context,
+                                  builder: (_) => DecisionFormDialog(
+                                      projectId: projectId,
+                                      db: db,
+                                      decision: decision),
+                                );
+                                if (context.mounted &&
+                                    decision.escalatedAt != null) {
+                                  final fresh = await db.decisionsDao
+                                      .getDecisionById(decision.id);
+                                  if (fresh != null && context.mounted) {
+                                    await _cascadeFor(context, db)
+                                        .pushDecision(fresh);
+                                  }
+                                }
+                              } else if (val == 'escalate') {
+                                await db.decisionsDao
+                                    .setDecisionEscalated(
+                                        decision.id, true);
+                                final fresh = await db.decisionsDao
+                                    .getDecisionById(decision.id);
+                                if (fresh != null && context.mounted) {
+                                  await _cascadeFor(context, db)
+                                      .pushDecision(fresh);
+                                }
+                              } else if (val == 'unescalate') {
+                                if (context.mounted) {
+                                  await _cascadeFor(context, db)
+                                      .tombstoneRaidItem(
                                     projectId: projectId,
-                                    db: db,
-                                    decision: decision),
-                              );
-                            } else if (val == 'delete') {
-                              db.decisionsDao.deleteDecision(decision.id);
-                            }
-                          },
-                          itemBuilder: (_) => const [
-                            PopupMenuItem(value: 'edit', child: Text('Edit')),
-                            PopupMenuItem(
-                                value: 'delete', child: Text('Delete')),
-                          ],
-                        ),
+                                    itemKind: CascadeKinds.decision,
+                                    itemId: decision.id,
+                                  );
+                                }
+                                await db.decisionsDao
+                                    .setDecisionEscalated(
+                                        decision.id, false);
+                              } else if (val == 'delete') {
+                                if (decision.escalatedAt != null &&
+                                    context.mounted) {
+                                  await _cascadeFor(context, db)
+                                      .tombstoneRaidItem(
+                                    projectId: projectId,
+                                    itemKind: CascadeKinds.decision,
+                                    itemId: decision.id,
+                                  );
+                                }
+                                await db.decisionsDao
+                                    .deleteDecision(decision.id);
+                              }
+                            },
+                            itemBuilder: (_) => [
+                              const PopupMenuItem(
+                                  value: 'edit', child: Text('Edit')),
+                              if (decision.escalatedAt == null)
+                                const PopupMenuItem(
+                                    value: 'escalate',
+                                    child:
+                                        Text('Escalate to programme'))
+                              else
+                                const PopupMenuItem(
+                                    value: 'unescalate',
+                                    child: Text('Stop escalating')),
+                              const PopupMenuItem(
+                                  value: 'delete',
+                                  child: Text('Delete')),
+                            ],
+                          ),
                       ],
                     ),
                     const SizedBox(height: 6),
@@ -256,6 +374,11 @@ class _DecisionCard extends StatelessWidget {
                           ),
                         ),
                         SourceBadge(source: decision.source),
+                        const SizedBox(width: 6),
+                        InCanvasIndicator(
+                          itemType: 'decision',
+                          itemId: decision.id,
+                        ),
                       ],
                     ),
                     if (decision.rationale != null &&
@@ -279,6 +402,23 @@ class _DecisionCard extends StatelessWidget {
           ),
         ),
       ),
+    ),
     );
   }
+}
+
+/// CascadeService for the decision row's escalate / unescalate /
+/// delete handlers.
+CascadeService _cascadeFor(BuildContext context, AppDatabase db) {
+  final sync = context.read<SyncProvider>();
+  final token = sync.accessToken;
+  return CascadeService(
+    db,
+    gateway: token == null
+        ? null
+        : SyncCascadeGateway(
+            client: SyncClient(baseUrl: sync.serverUrl),
+            accessToken: token,
+          ),
+  );
 }

@@ -5,10 +5,14 @@ import 'package:drift/drift.dart' show Value;
 
 import '../../shared/theme/keel_colors.dart';
 
+import '../../core/cascade/cascade_service.dart';
+import '../../core/cascade/sync_cascade_gateway.dart';
 import '../../core/database/database.dart';
 import '../../core/programme/coverage_calculator.dart';
+import '../../core/sync/sync_client.dart';
 import '../../providers/project_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/sync_provider.dart';
 import '../../shared/widgets/dropdown_field.dart';
 import '../../shared/utils/date_utils.dart' as du;
 import '../programme/overview/coverage_indicator.dart';
@@ -62,8 +66,9 @@ class _PeopleViewState extends State<PeopleView>
               ),
               const SizedBox(width: 8),
               ElevatedButton.icon(
-                onPressed: () =>
-                    _showPersonForm(context, projectId, db, null, null),
+                onPressed: () => _showPersonForm(
+                    context, projectId, db, null, null,
+                    defaultIsStakeholder: false),
                 icon: const Icon(Icons.person_add_outlined, size: 16),
                 label: const Text('Add Person'),
               ),
@@ -100,30 +105,49 @@ class _PeopleViewState extends State<PeopleView>
               _PersonsList(
                 projectId: projectId,
                 db: db,
-                personType: 'stakeholder',
-                onEdit: (p) =>
-                    _showPersonForm(context, projectId, db, p, 'stakeholder'),
+                source: _PersonSource.stakeholderFlag,
+                emptyMessage: 'No stakeholders flagged yet.',
+                onEdit: (p) => _showPersonForm(context, projectId, db, p,
+                    p.personType,
+                    defaultIsStakeholder: true),
+                onAdd: () => _showPersonForm(context, projectId, db, null, null,
+                    defaultIsStakeholder: true),
               ),
               _PersonsList(
                 projectId: projectId,
                 db: db,
-                personType: 'colleague',
-                onEdit: (p) =>
-                    _showPersonForm(context, projectId, db, p, 'colleague'),
+                source: _PersonSource.type('colleague'),
+                emptyMessage: 'No team members added yet.',
+                onEdit: (p) => _showPersonForm(
+                    context, projectId, db, p, 'colleague',
+                    defaultIsStakeholder: p.isStakeholder),
+                onAdd: () => _showPersonForm(
+                    context, projectId, db, null, 'colleague',
+                    defaultIsStakeholder: false),
               ),
               _PersonsList(
                 projectId: projectId,
                 db: db,
-                personType: 'exec',
-                onEdit: (p) =>
-                    _showPersonForm(context, projectId, db, p, 'exec'),
+                source: _PersonSource.type('exec'),
+                emptyMessage: 'No executives added yet.',
+                onEdit: (p) => _showPersonForm(
+                    context, projectId, db, p, 'exec',
+                    defaultIsStakeholder: p.isStakeholder),
+                onAdd: () => _showPersonForm(
+                    context, projectId, db, null, 'exec',
+                    defaultIsStakeholder: false),
               ),
               _PersonsList(
                 projectId: projectId,
                 db: db,
-                personType: 'vendor',
-                onEdit: (p) =>
-                    _showPersonForm(context, projectId, db, p, 'vendor'),
+                source: _PersonSource.type('vendor'),
+                emptyMessage: 'No vendors added yet.',
+                onEdit: (p) => _showPersonForm(
+                    context, projectId, db, p, 'vendor',
+                    defaultIsStakeholder: p.isStakeholder),
+                onAdd: () => _showPersonForm(
+                    context, projectId, db, null, 'vendor',
+                    defaultIsStakeholder: false),
               ),
             ],
           ),
@@ -132,18 +156,39 @@ class _PeopleViewState extends State<PeopleView>
     );
   }
 
-  void _showPersonForm(BuildContext context, String projectId, AppDatabase db,
-      Person? person, String? defaultType) {
+  void _showPersonForm(
+    BuildContext context,
+    String projectId,
+    AppDatabase db,
+    Person? person,
+    String? defaultType, {
+    required bool defaultIsStakeholder,
+  }) {
     showDialog(
       context: context,
       builder: (_) => _PersonFormDialog(
         projectId: projectId,
         db: db,
         person: person,
-        defaultType: defaultType ?? 'stakeholder',
+        defaultType: defaultType ?? 'colleague',
+        defaultIsStakeholder: defaultIsStakeholder,
       ),
     );
   }
+}
+
+/// Where a `_PersonsList` pulls its rows from — either a `personType`
+/// category, or "everyone flagged as a stakeholder".
+class _PersonSource {
+  final String? personType;
+  final bool stakeholderOnly;
+
+  const _PersonSource._({this.personType, required this.stakeholderOnly});
+
+  factory _PersonSource.type(String type) =>
+      _PersonSource._(personType: type, stakeholderOnly: false);
+
+  static const stakeholderFlag = _PersonSource._(stakeholderOnly: true);
 }
 
 // ---------------------------------------------------------------------------
@@ -235,20 +280,31 @@ class _OverviewSectionLabel extends StatelessWidget {
 class _PersonsList extends StatelessWidget {
   final String projectId;
   final AppDatabase db;
-  final String personType;
+  final _PersonSource source;
+  final String emptyMessage;
   final void Function(Person) onEdit;
+  final VoidCallback onAdd;
 
   const _PersonsList({
     required this.projectId,
     required this.db,
-    required this.personType,
+    required this.source,
+    required this.emptyMessage,
     required this.onEdit,
+    required this.onAdd,
   });
+
+  Stream<List<Person>> _stream() {
+    if (source.stakeholderOnly) {
+      return db.peopleDao.watchStakeholderPersons(projectId);
+    }
+    return db.peopleDao.watchPersonsByType(projectId, source.personType!);
+  }
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<Person>>(
-      stream: db.peopleDao.watchPersonsByType(projectId, personType),
+      stream: _stream(),
       builder: (context, snap) {
         if (!snap.hasData) {
           return const Center(child: CircularProgressIndicator());
@@ -256,15 +312,20 @@ class _PersonsList extends StatelessWidget {
         final persons = snap.data!;
         if (persons.isEmpty) {
           return Center(
-            child: Text(
-              switch (personType) {
-                'stakeholder' => 'No stakeholders added yet.',
-                'colleague' => 'No team members added yet.',
-                'exec' => 'No executives added yet.',
-                'vendor' => 'No vendors added yet.',
-                _ => 'No people added yet.',
-              },
-              style: const TextStyle(color: KColors.textDim),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  emptyMessage,
+                  style: const TextStyle(color: KColors.textDim),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: onAdd,
+                  icon: const Icon(Icons.person_add_outlined, size: 14),
+                  label: const Text('Add'),
+                ),
+              ],
             ),
           );
         }
@@ -302,6 +363,22 @@ class _PersonCard extends StatelessWidget {
     if (parts.isEmpty) return '?';
     if (parts.length == 1) return parts[0][0].toUpperCase();
     return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+  }
+
+  /// CascadeService for the delete-tombstone path. Mirrors the helper
+  /// on the form save handler.
+  CascadeService _cascadeForRow(BuildContext context) {
+    final sync = context.read<SyncProvider>();
+    final token = sync.accessToken;
+    return CascadeService(
+      db,
+      gateway: token == null
+          ? null
+          : SyncCascadeGateway(
+              client: SyncClient(baseUrl: sync.serverUrl),
+              accessToken: token,
+            ),
+    );
   }
 
   @override
@@ -394,7 +471,7 @@ class _PersonCard extends StatelessWidget {
                 ),
               ),
               // Profile badges via FutureBuilder
-              if (person.personType == 'stakeholder')
+              if (person.isStakeholder)
                 FutureBuilder<StakeholderProfile?>(
                   future: db.peopleDao.getStakeholderByPersonId(person.id),
                   builder: (ctx, snap) {
@@ -420,21 +497,64 @@ class _PersonCard extends StatelessWidget {
                 ),
               const SizedBox(width: 8),
               if (person.email != null && person.email!.isNotEmpty)
-                Text(
-                  person.email!,
-                  style: const TextStyle(
-                      color: KColors.textDim, fontSize: 12),
+                Flexible(
+                  child: Text(
+                    person.email!,
+                    style: const TextStyle(
+                        color: KColors.textDim, fontSize: 12),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               const SizedBox(width: 8),
-              IconButton(
-                icon: const Icon(Icons.edit_outlined, size: 18),
-                onPressed: onEdit,
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline,
-                    size: 18, color: KColors.red),
-                onPressed: () => db.peopleDao.deletePerson(person.id),
-              ),
+              if (person.sourceProjectId != null) ...[
+                // Cascaded — read-only. Show a PROJ tag with the
+                // source project name so the programme manager knows
+                // who they're looking at and where the canonical
+                // record lives.
+                Tooltip(
+                  message:
+                      'Cascaded from ${person.sourceProjectName ?? "a linked project"} — read-only',
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: KColors.surface2,
+                      border: Border.all(
+                          color: KColors.border2, width: 0.5),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                    child: Text(
+                      person.sourceProjectName != null
+                          ? 'PROJ · ${person.sourceProjectName}'
+                          : 'PROJ',
+                      style: const TextStyle(
+                        color: KColors.textMuted,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                  ),
+                ),
+              ] else ...[
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined, size: 18),
+                  onPressed: onEdit,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline,
+                      size: 18, color: KColors.red),
+                  onPressed: () async {
+                    // Tombstone the cascade copies first so the
+                    // programme sees the removal reliably.
+                    await _cascadeForRow(context).deletePerson(
+                      projectId: person.projectId,
+                      personId: person.id,
+                    );
+                    await db.peopleDao.deletePerson(person.id);
+                  },
+                ),
+              ],
             ],
           ),
         ),
@@ -596,7 +716,7 @@ class _PersonDetailDialog extends StatelessWidget {
                       const SizedBox(height: 16),
                     ],
                     // Profile section
-                    if (person.personType == 'stakeholder')
+                    if (person.isStakeholder)
                       FutureBuilder<StakeholderProfile?>(
                         future: db.peopleDao
                             .getStakeholderByPersonId(person.id),
@@ -928,12 +1048,14 @@ class _PersonFormDialog extends StatefulWidget {
   final AppDatabase db;
   final Person? person;
   final String defaultType;
+  final bool defaultIsStakeholder;
 
   const _PersonFormDialog({
     required this.projectId,
     required this.db,
     this.person,
     required this.defaultType,
+    required this.defaultIsStakeholder,
   });
 
   @override
@@ -949,6 +1071,7 @@ class _PersonFormDialogState extends State<_PersonFormDialog> {
   late TextEditingController _phoneCtrl;
   late TextEditingController _teamsCtrl;
   late String _personType;
+  late bool _isStakeholder;
 
   // Stakeholder fields
   late TextEditingController _engagementCtrl;
@@ -962,9 +1085,17 @@ class _PersonFormDialogState extends State<_PersonFormDialog> {
   late TextEditingController _colleagueNotesCtrl;
   bool _directReport = false;
 
-  final _personTypes = ['stakeholder', 'colleague', 'vendor', 'exec'];
+  // Category is now one of three; "stakeholder" is the orthogonal flag below.
+  final _personTypes = ['colleague', 'exec', 'vendor'];
   final _influences = ['high', 'medium', 'low'];
   final _stances = ['sponsor', 'supporter', 'neutral', 'resistant', 'unknown'];
+
+  String _normaliseType(String raw) {
+    // Legacy 'stakeholder' values fold into colleague + isStakeholder=true.
+    if (raw == 'stakeholder') return 'colleague';
+    if (_personTypes.contains(raw)) return raw;
+    return 'colleague';
+  }
 
   @override
   void initState() {
@@ -976,7 +1107,8 @@ class _PersonFormDialogState extends State<_PersonFormDialog> {
     _orgCtrl = TextEditingController(text: p?.organisation ?? '');
     _phoneCtrl = TextEditingController(text: p?.phone ?? '');
     _teamsCtrl = TextEditingController(text: p?.teamsHandle ?? '');
-    _personType = p?.personType ?? widget.defaultType;
+    _personType = _normaliseType(p?.personType ?? widget.defaultType);
+    _isStakeholder = p?.isStakeholder ?? widget.defaultIsStakeholder;
 
     _engagementCtrl = TextEditingController();
     _stakeholderNotesCtrl = TextEditingController();
@@ -1048,11 +1180,12 @@ class _PersonFormDialogState extends State<_PersonFormDialog> {
         teamsHandle: Value(
             _teamsCtrl.text.trim().isEmpty ? null : _teamsCtrl.text.trim()),
         personType: Value(_personType),
+        isStakeholder: Value(_isStakeholder),
         updatedAt: Value(DateTime.now()),
       ),
     );
 
-    if (_personType == 'stakeholder') {
+    if (_isStakeholder) {
       final existing =
           await widget.db.peopleDao.getStakeholderByPersonId(id);
       final spId = existing?.id ?? const Uuid().v4();
@@ -1072,7 +1205,8 @@ class _PersonFormDialogState extends State<_PersonFormDialog> {
           updatedAt: Value(DateTime.now()),
         ),
       );
-    } else if (_personType == 'colleague') {
+    }
+    if (_personType == 'colleague') {
       final existing =
           await widget.db.peopleDao.getColleagueByPersonId(id);
       final cpId = existing?.id ?? const Uuid().v4();
@@ -1095,7 +1229,40 @@ class _PersonFormDialogState extends State<_PersonFormDialog> {
       );
     }
 
+    // Cascade to active programme links — auto-publish on save.
+    if (mounted) {
+      final fresh = await widget.db.peopleDao.getPersonById(id);
+      final projectName = context
+              .read<ProjectProvider>()
+              .currentProject
+              ?.name ??
+          'project';
+      if (fresh != null && mounted) {
+        // ignore: use_build_context_synchronously
+        await _cascadeFor(context).pushPerson(
+          fresh,
+          sourceProjectName: projectName,
+        );
+      }
+    }
+
     if (mounted) Navigator.of(context).pop();
+  }
+
+  /// Resolves a CascadeService from the live providers. Same idiom
+  /// as the other auto-cascade forms (charter, status reports).
+  CascadeService _cascadeFor(BuildContext context) {
+    final sync = context.read<SyncProvider>();
+    final token = sync.accessToken;
+    return CascadeService(
+      widget.db,
+      gateway: token == null
+          ? null
+          : SyncCascadeGateway(
+              client: SyncClient(baseUrl: sync.serverUrl),
+              accessToken: token,
+            ),
+    );
   }
 
   @override
@@ -1113,12 +1280,30 @@ class _PersonFormDialogState extends State<_PersonFormDialog> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 DropdownField(
-                  label: 'Type',
+                  label: 'Category',
                   value: _personType,
                   items: _personTypes,
                   onChanged: (v) => setState(() => _personType = v!),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 6),
+                // Stakeholder is orthogonal to category — anyone can be one.
+                CheckboxListTile(
+                  value: _isStakeholder,
+                  onChanged: (v) =>
+                      setState(() => _isStakeholder = v ?? false),
+                  title: const Text(
+                    'Track as project stakeholder',
+                    style: TextStyle(fontSize: 13),
+                  ),
+                  subtitle: const Text(
+                    'Shows on the Stakeholders tab and unlocks influence / stance fields.',
+                    style: TextStyle(fontSize: 11, color: KColors.textDim),
+                  ),
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  dense: true,
+                ),
+                const SizedBox(height: 6),
                 TextFormField(
                   controller: _nameCtrl,
                   autofocus: true,
@@ -1174,7 +1359,7 @@ class _PersonFormDialogState extends State<_PersonFormDialog> {
                       labelText: 'Teams handle / Slack'),
                 ),
                 // Stakeholder-specific fields
-                if (_personType == 'stakeholder') ...[
+                if (_isStakeholder) ...[
                   const SizedBox(height: 16),
                   const Divider(color: KColors.border),
                   const SizedBox(height: 8),
