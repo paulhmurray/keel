@@ -71,6 +71,10 @@ class JsonImporter {
       description: Value(projectData['description'] as String?),
       startDate: Value(projectData['start_date'] as String?),
       status: Value(projectData['status'] as String? ?? 'active'),
+      // Preserve programme/project classification across machines. Older
+      // exports (pre-kind) omit the key → default to 'project'.
+      kind: Value(projectData['kind'] as String? ?? 'project'),
+      parentProgrammeId: Value(projectData['parent_programme_id'] as String?),
     ));
 
     // Programme overview
@@ -789,6 +793,85 @@ class JsonImporter {
       }
     }
 
+    // Canvas — cards, template instances, then sequences (FK → cards).
+    // Missing key on exports that pre-date canvas sync — silently skipped.
+    final canvasData = data['canvas'] as Map<String, dynamic>?;
+    if (canvasData != null) {
+      for (final c in (canvasData['cards'] as List? ?? [])) {
+        final cm = c as Map<String, dynamic>;
+        await db.into(db.canvasCards).insertOnConflictUpdate(
+              CanvasCardsCompanion(
+                id: Value(cm['id'] as String),
+                projectId: Value(projectId),
+                title: Value(cm['title'] as String? ?? ''),
+                body: Value(cm['body'] as String?),
+                band: Value(cm['band'] as String? ?? 'this_week'),
+                positionX: Value(cm['position_x'] as int? ?? 16),
+                positionY: Value(cm['position_y'] as int? ?? 16),
+                colour: Value(cm['colour'] as String?),
+                size: Value(cm['size'] as String? ?? 'medium'),
+                startDate: Value(cm['start_date'] as String?),
+                endDate: Value(cm['end_date'] as String?),
+                effortDays: Value(cm['effort_days'] as int?),
+                tags: Value(cm['tags'] as String?),
+                linkedItemType: Value(cm['linked_item_type'] as String?),
+                linkedItemId: Value(cm['linked_item_id'] as String?),
+                promotedAt: Value(_parseDt(cm['promoted_at'])),
+                promotedToType: Value(cm['promoted_to_type'] as String?),
+                promotedToId: Value(cm['promoted_to_id'] as String?),
+              ),
+            );
+      }
+      for (final t in (canvasData['templates'] as List? ?? [])) {
+        final tm = t as Map<String, dynamic>;
+        await db.into(db.canvasTemplates).insertOnConflictUpdate(
+              CanvasTemplatesCompanion(
+                id: Value(tm['id'] as String),
+                projectId: Value(projectId),
+                templateType: Value(tm['template_type'] as String? ?? ''),
+                name: Value(tm['name'] as String? ?? ''),
+                content: Value(tm['content'] as String? ?? '{}'),
+              ),
+            );
+      }
+      for (final s in (canvasData['sequences'] as List? ?? [])) {
+        final sm = s as Map<String, dynamic>;
+        await db.into(db.canvasSequences).insertOnConflictUpdate(
+              CanvasSequencesCompanion(
+                id: Value(sm['id'] as String),
+                projectId: Value(projectId),
+                fromCardId: Value(sm['from_card_id'] as String),
+                toCardId: Value(sm['to_card_id'] as String),
+              ),
+            );
+      }
+    }
+
+    // Programme links owned by this entity — restores connections + their
+    // encryption secrets so a freshly-synced machine reconnects. Missing
+    // key on pre-links exports is fine (skipped). partnerLocalId is kept
+    // as-is: project ids are stable across machines, so a same-machine
+    // partner that was also pulled resolves correctly; a partner that
+    // isn't local is simply a dangling ref (harmless, like a cross-
+    // machine link).
+    for (final l in (data['programme_links'] as List? ?? [])) {
+      final lm = l as Map<String, dynamic>;
+      await db.into(db.programmeLinks).insertOnConflictUpdate(
+            ProgrammeLinksCompanion(
+              id: Value(lm['id'] as String),
+              ownerEntityId: Value(lm['owner_entity_id'] as String? ?? projectId),
+              ownerKind: Value(lm['owner_kind'] as String? ?? 'project'),
+              partnerKind: Value(lm['partner_kind'] as String? ?? 'programme'),
+              partnerName: Value(lm['partner_name'] as String?),
+              partnerLocalId: Value(lm['partner_local_id'] as String?),
+              code: Value(lm['code'] as String? ?? ''),
+              linkSecret: Value(lm['link_secret'] as String?),
+              status: Value(lm['status'] as String? ?? 'pending_remote'),
+              generatedHere: Value(lm['generated_here'] as bool? ?? false),
+            ),
+          );
+    }
+
     // Re-run charter migration in case the source device had overview data but
     // no charter yet — ensures ProgrammeOverview content is never lost on sync.
     await CharterMigration(db).runIfNeeded();
@@ -813,6 +896,19 @@ class JsonImporter {
   static Future<void> _clearSyncedTables(
       AppDatabase db, String projectId) async {
     final id = projectId;
+
+    // Programme links owned by this entity (re-imported from the blob).
+    await (db.delete(db.programmeLinks)
+          ..where((t) => t.ownerEntityId.equals(id)))
+        .go();
+
+    // Canvas — sequences reference cards, so clear sequences first.
+    await (db.delete(db.canvasSequences)..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.canvasCards)..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.canvasTemplates)..where((t) => t.projectId.equals(id)))
+        .go();
 
     // Timeline — activities/dependencies depend on work packages; clear first
     await (db.delete(db.timelineDependencies)

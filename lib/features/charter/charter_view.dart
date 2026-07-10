@@ -4,11 +4,9 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/cascade/cascade_service.dart';
-import '../../core/cascade/sync_cascade_gateway.dart';
+import '../../core/cascade/cascade_factory.dart';
 import '../../core/database/database.dart';
-import '../../core/sync/sync_client.dart';
 import '../../providers/project_provider.dart';
-import '../../providers/sync_provider.dart';
 import '../../shared/theme/keel_colors.dart';
 import 'charter_export_dialog.dart';
 import 'charter_section.dart';
@@ -166,19 +164,8 @@ class _CharterBodyState extends State<_CharterBody> {
     setState(() => _editing = false);
   }
 
-  CascadeService _cascadeFor(BuildContext context) {
-    final sync = context.read<SyncProvider>();
-    final token = sync.accessToken;
-    return CascadeService(
-      widget.db,
-      gateway: token == null
-          ? null
-          : SyncCascadeGateway(
-              client: SyncClient(baseUrl: sync.serverUrl),
-              accessToken: token,
-            ),
-    );
-  }
+  CascadeService _cascadeFor(BuildContext context) =>
+      buildCascadeService(context);
 
   void _cancel() {
     _disposeControllers();

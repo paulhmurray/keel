@@ -5,6 +5,7 @@ import '../../core/database/database.dart';
 import '../../providers/project_provider.dart';
 import '../../shared/theme/keel_colors.dart';
 import 'overview/programme_pulse_widget.dart';
+import 'overview/per_project_pulse.dart';
 import 'overview/velocity_row.dart';
 import 'overview/pressures_section.dart';
 import 'overview/coverage_row.dart';
@@ -143,6 +144,13 @@ class _OverviewBody extends StatelessWidget {
                         onEditNarrative: () {
                           // scroll to narrative section
                         },
+                      ),
+                      // Portfolio breakdown — one row per linked project.
+                      // Renders nothing on a plain project / empty programme.
+                      PerProjectPulse(
+                        programmeId: projectId,
+                        db: db,
+                        workPackages: workPackages,
                       ),
                       const SizedBox(height: 24),
 

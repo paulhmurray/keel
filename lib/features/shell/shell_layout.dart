@@ -8,8 +8,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/analytics/keel_events.dart';
-import '../../core/cascade/cascade_service.dart';
-import '../../core/cascade/sync_cascade_gateway.dart';
+import '../../core/cascade/cascade_factory.dart';
 import '../../core/database/database.dart';
 import '../../core/sync/links_gateway.dart';
 import '../../core/sync/sync_client.dart';
@@ -143,46 +142,72 @@ class _ShellLayoutState extends State<ShellLayout> {
           context.read<ProjectProvider>().currentProjectId);
     });
 
-    // Best-effort: refresh any pending programme links on launch so a
-    // PM who paired their project last night sees the connection light
-    // up this morning without having to touch settings.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _refreshProgrammeLinks();
-    });
+    // Best-effort: refresh programme links + cascade data on launch so a
+    // PM who paired their project last night sees the connection (and any
+    // cascaded data) without having to touch settings.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshCascade());
+
+    // Re-run the cascade refresh whenever the active project changes —
+    // escalate a RAID item / edit a plan in a project, switch to the
+    // linked programme, and it's there on first render.
+    final projectProvider = context.read<ProjectProvider>();
+    _projectProvider = projectProvider;
+    _lastCascadeProjectId = projectProvider.currentProjectId;
+    projectProvider.addListener(_onProjectChanged);
   }
 
-  /// Background refresh of pending_remote programme links + cascade
-  /// pull for any active programme. Silent — failures don't surface
-  /// to the user; the manual Refresh button in settings exists for
-  /// explicit re-checks.
-  Future<void> _refreshProgrammeLinks() async {
+  ProjectProvider? _projectProvider;
+  String? _lastCascadeProjectId;
+  // Bumped after a cascade refresh actually runs so views that load their
+  // data once (the Gantt) remount and pick up freshly-cascaded rows.
+  int _cascadeRefreshSeq = 0;
+
+  void _onProjectChanged() {
+    if (!mounted) return;
+    final id = _projectProvider?.currentProjectId;
+    if (id == _lastCascadeProjectId) return;
+    _lastCascadeProjectId = id;
+    _refreshCascade();
+  }
+
+  /// Brings cascade data up to date for the active entity, then forces a
+  /// reload of one-shot views. Silent + best-effort.
+  ///
+  /// For a SAME-MACHINE link (the common single-install case) it replays
+  /// both directions — the partner project re-pushes its catalogue
+  /// (including derived fields like WP spans) and the programme pulls it
+  /// in — so the programme is always fresh without depending on the PM
+  /// re-saving items or a sync. For remote-only links it activates
+  /// pending links and pulls on the programme side.
+  Future<void> _refreshCascade() async {
     if (!mounted) return;
     final sync = context.read<SyncProvider>();
-    final token = sync.accessToken;
-    if (token == null) return;
     final db = context.read<AppDatabase>();
-    final client = SyncClient(baseUrl: sync.serverUrl);
+    final token = sync.accessToken;
     try {
-      // 1) Activate any links whose remote side joined while we were
-      // offline.
-      await db.programmeLinksDao.refreshPendingLinks(
-        remoteUserId: sync.userId,
-        remote: SyncLinksGateway(
-            client: client, accessToken: token),
-      );
-      // 2) On the programme side, pull cascaded items from every
-      // active link so the Plan view reflects the latest portfolio
-      // state on next render.
-      if (!mounted) return;
       final project = context.read<ProjectProvider>().currentProject;
-      if (project != null && project.kind == 'programme') {
-        final cascade = CascadeService(
-          db,
-          gateway: SyncCascadeGateway(
-              client: client, accessToken: token),
+      if (project == null) return;
+      // Activate any pending_remote links the server now reports paired.
+      if (token != null) {
+        await db.programmeLinksDao.refreshPendingLinks(
+          remoteUserId: sync.userId,
+          remote: SyncLinksGateway(
+              client: SyncClient(baseUrl: sync.serverUrl),
+              accessToken: token),
         );
-        await cascade.pullForProgramme(project.id);
       }
+      if (!mounted) return;
+      final links = await db.programmeLinksDao.getLinksForEntity(project.id);
+      final hasLocalLink = links
+          .any((l) => l.status == 'active' && l.partnerLocalId != null);
+      if (hasLocalLink) {
+        // Same-machine: reconcile both sides (push partner project, pull
+        // this entity) regardless of which side we're viewing.
+        await sync.replayCascadeForActivation(project.id, db);
+      } else if (project.kind == 'programme') {
+        await buildCascadeServiceWith(db, sync).pullForProgramme(project.id);
+      }
+      if (mounted) setState(() => _cascadeRefreshSeq++);
     } catch (_) {
       // Quietly drop — manual refresh + next launch will retry.
     }
@@ -378,6 +403,7 @@ class _ShellLayoutState extends State<ShellLayout> {
   @override
   void dispose() {
     _dbChangeSub?.cancel();
+    _projectProvider?.removeListener(_onProjectChanged);
     if (!kIsWeb) {
       HardwareKeyboard.instance.removeHandler(_handleGlobalKey);
     }
@@ -798,6 +824,7 @@ class _ShellLayoutState extends State<ShellLayout> {
         return PlaybookView(focusStageId: focus);
       case 12:
         return ProgrammeGanttView(
+          cascadeRefreshSeq: _cascadeRefreshSeq,
           isExpanded: _ganttMode == _GanttLayoutMode.expanded,
           isPresentation: _ganttMode == _GanttLayoutMode.presentation,
           onToggleExpanded: _toggleGanttExpanded,

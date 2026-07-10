@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/cascade/cascade_service.dart';
-import '../../core/cascade/sync_cascade_gateway.dart';
+import '../../core/cascade/cascade_factory.dart';
 import '../../core/database/database.dart';
-import '../../core/sync/sync_client.dart';
 import '../../providers/project_provider.dart';
-import '../../providers/sync_provider.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/utils/date_utils.dart' as du;
 import '../../shared/widgets/compass_empty_state.dart';
@@ -26,22 +24,13 @@ import 'dependency_form.dart';
 // badge when escalatedAt is non-null. Centralising the logic here so
 // the four rows don't each grow their own cascade plumbing.
 
-/// Builds a [CascadeService] from the live providers. Returns a
-/// service with a null gateway when the user isn't signed in — push
-/// then no-ops, so the UI doesn't need to branch.
-CascadeService _cascadeFor(BuildContext context, AppDatabase db) {
-  final sync = context.read<SyncProvider>();
-  final token = sync.accessToken;
-  return CascadeService(
-    db,
-    gateway: token == null
-        ? null
-        : SyncCascadeGateway(
-            client: SyncClient(baseUrl: sync.serverUrl),
-            accessToken: token,
-          ),
-  );
-}
+/// Builds a [CascadeService] for the active providers. The gateway is
+/// always present (local same-machine transport at minimum, plus the
+/// remote HTTP transport when signed in) so escalation works whether or
+/// not the user is online. [db] is unused now that the factory reads it
+/// from context, kept in the signature so the call sites don't churn.
+CascadeService _cascadeFor(BuildContext context, AppDatabase db) =>
+    buildCascadeService(context);
 
 /// Cascaded rows are read-only on the programme side — sourceProjectId
 /// non-null means this row arrived from a linked project.
@@ -78,13 +67,25 @@ class _EscalatedBadge extends StatelessWidget {
   }
 }
 
-/// "Cascaded from project" badge for the programme side.
+/// "Cascaded from project" badge for the programme side. Resolves the
+/// source project's name via the live project list (accurate for
+/// same-machine links); falls back to a bare "PROJ" when the source
+/// project isn't on this machine.
 class _CascadedBadge extends StatelessWidget {
-  const _CascadedBadge();
+  final String? sourceProjectId;
+  const _CascadedBadge({this.sourceProjectId});
 
   @override
   Widget build(BuildContext context) {
+    final projects = context.watch<ProjectProvider>().projects;
+    final name = sourceProjectId == null
+        ? null
+        : projects
+            .cast<Project?>()
+            .firstWhere((p) => p?.id == sourceProjectId, orElse: () => null)
+            ?.name;
     return Container(
+      constraints: const BoxConstraints(maxWidth: 120),
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
       margin: const EdgeInsets.only(left: 4),
       decoration: BoxDecoration(
@@ -93,10 +94,14 @@ class _CascadedBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(2),
       ),
       child: Tooltip(
-        message: 'Cascaded from a linked project — read-only',
-        child: const Text(
-          'PROJ',
-          style: TextStyle(
+        message: name == null
+            ? 'Cascaded from a linked project — read-only'
+            : 'Cascaded from project: $name — read-only',
+        child: Text(
+          name == null ? 'PROJ' : 'PROJ · $name',
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+          style: const TextStyle(
             color: KColors.textMuted,
             fontSize: 9,
             fontWeight: FontWeight.w700,
@@ -592,7 +597,7 @@ class _RiskRow extends StatelessWidget {
                       !_isCascaded(risk.sourceProjectId))
                     const _EscalatedBadge(),
                   if (_isCascaded(risk.sourceProjectId))
-                    const _CascadedBadge(),
+                    _CascadedBadge(sourceProjectId: risk.sourceProjectId),
                 ],
               ),
             ),
@@ -823,7 +828,7 @@ class _AssumptionRow extends StatelessWidget {
                       !_isCascaded(assumption.sourceProjectId))
                     const _EscalatedBadge(),
                   if (_isCascaded(assumption.sourceProjectId))
-                    const _CascadedBadge(),
+                    _CascadedBadge(sourceProjectId: assumption.sourceProjectId),
                 ],
               ),
             ),
@@ -1080,7 +1085,7 @@ class _IssueRow extends StatelessWidget {
                       !_isCascaded(issue.sourceProjectId))
                     const _EscalatedBadge(),
                   if (_isCascaded(issue.sourceProjectId))
-                    const _CascadedBadge(),
+                    _CascadedBadge(sourceProjectId: issue.sourceProjectId),
                 ],
               ),
             ),
@@ -1324,7 +1329,7 @@ class _DependencyRow extends StatelessWidget {
                       !_isCascaded(dep.sourceProjectId))
                     const _EscalatedBadge(),
                   if (_isCascaded(dep.sourceProjectId))
-                    const _CascadedBadge(),
+                    _CascadedBadge(sourceProjectId: dep.sourceProjectId),
                 ],
               ),
             ),

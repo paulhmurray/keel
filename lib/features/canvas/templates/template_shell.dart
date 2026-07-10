@@ -10,6 +10,7 @@ import 'instances/retrospective/retro_view.dart';
 import 'instances/stakeholder_map/stakeholder_map_view.dart';
 import 'instances/swot/swot_view.dart';
 import 'instances/user_story_map/usm_view.dart';
+import 'instances/wardley_map/wardley_map_view.dart';
 import 'template_presentation.dart';
 import 'template_registry.dart';
 
@@ -127,6 +128,8 @@ class _TemplateShellState extends State<TemplateShell> {
         return RaciView(template: t);
       case CanvasTemplateType.userStoryMap:
         return UsmView(template: t);
+      case CanvasTemplateType.wardleyMap:
+        return WardleyMapView(template: t);
       default:
         return _ComingSoonBody(template: t, definition: def);
     }

@@ -72,6 +72,20 @@ class JsonExporter {
     final projectScope = await db.programmeGanttDao.getScope(projectId);
     final integrationDomains = await db.programmeGanttDao.getDomains(projectId);
     final prioritisationSources = await db.programmeGanttDao.getSources(projectId);
+    // Canvas — cards, their sequencing arrows, and template instances
+    // (SWOT, Wardley map, etc.). Private to the project; part of the
+    // owner's own cross-machine sync, not the programme cascade.
+    final canvasCards = await db.canvasCardsDao.getCardsForProject(projectId);
+    final canvasSequences =
+        await db.canvasCardsDao.getSequencesForProject(projectId);
+    final canvasTemplates =
+        await db.canvasTemplatesDao.getTemplatesForProject(projectId);
+    // Programme links owned by this entity — carries the connection to
+    // linked projects/programmes AND the per-link encryption secret, so
+    // the owner's portfolio reconnects on a new machine. The secret rides
+    // INSIDE this already-E2E-encrypted blob, so the server never sees it.
+    final programmeLinks =
+        await db.programmeLinksDao.getLinksForEntity(projectId);
     // gather journal links for all entries
     final journalLinks = <Map<String, dynamic>>[];
     for (final entry in journalEntries) {
@@ -100,6 +114,10 @@ class JsonExporter {
         'description': project.description,
         'start_date': project.startDate,
         'status': project.status,
+        // Entity type — without this a programme re-imports as a plain
+        // project on another machine.
+        'kind': project.kind,
+        'parent_programme_id': project.parentProgrammeId,
         'created_at': project.createdAt.toIso8601String(),
         'updated_at': project.updatedAt.toIso8601String(),
       },
@@ -616,6 +634,68 @@ class JsonExporter {
             .toList(),
       },
     };
+
+    // Canvas — cards + sequences + template instances.
+    data['canvas'] = {
+      'cards': canvasCards
+          .map((c) => {
+                'id': c.id,
+                'title': c.title,
+                'body': c.body,
+                'band': c.band,
+                'position_x': c.positionX,
+                'position_y': c.positionY,
+                'colour': c.colour,
+                'size': c.size,
+                'start_date': c.startDate,
+                'end_date': c.endDate,
+                'effort_days': c.effortDays,
+                'tags': c.tags,
+                'linked_item_type': c.linkedItemType,
+                'linked_item_id': c.linkedItemId,
+                'promoted_at': c.promotedAt?.toIso8601String(),
+                'promoted_to_type': c.promotedToType,
+                'promoted_to_id': c.promotedToId,
+                'created_at': c.createdAt.toIso8601String(),
+                'updated_at': c.updatedAt.toIso8601String(),
+              })
+          .toList(),
+      'sequences': canvasSequences
+          .map((s) => {
+                'id': s.id,
+                'from_card_id': s.fromCardId,
+                'to_card_id': s.toCardId,
+                'created_at': s.createdAt.toIso8601String(),
+              })
+          .toList(),
+      'templates': canvasTemplates
+          .map((t) => {
+                'id': t.id,
+                'template_type': t.templateType,
+                'name': t.name,
+                'content': t.content,
+                'created_at': t.createdAt.toIso8601String(),
+                'updated_at': t.updatedAt.toIso8601String(),
+              })
+          .toList(),
+    };
+
+    // Programme links (connection + encryption secret) owned by this entity.
+    data['programme_links'] = programmeLinks
+        .map((l) => {
+              'id': l.id,
+              'owner_entity_id': l.ownerEntityId,
+              'owner_kind': l.ownerKind,
+              'partner_kind': l.partnerKind,
+              'partner_name': l.partnerName,
+              'partner_local_id': l.partnerLocalId,
+              'code': l.code,
+              'link_secret': l.linkSecret,
+              'status': l.status,
+              'generated_here': l.generatedHere,
+              'created_at': l.createdAt.toIso8601String(),
+            })
+        .toList();
 
     // Playbook — optional; only exported when a playbook is attached
     final projectPlaybook =

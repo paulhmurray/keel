@@ -467,6 +467,46 @@ void main() {
   // read-only cascaded rows into plain editable ones.
 
   group('escalation + cascade survive an export→import round-trip', () {
+    test('a programme re-imports as a programme, not a project', () async {
+      await db.projectDao.insertProject(ProjectsCompanion.insert(
+        id: 'prog-rt',
+        name: 'Portfolio',
+        kind: const Value('programme'),
+      ));
+      final jsonStr = await JsonExporter.exportProjectToString(
+          projectId: 'prog-rt', db: db);
+      final fresh = AppDatabase.memory();
+      addTearDown(fresh.close);
+      await JsonImporter.importFromString(jsonStr, fresh);
+
+      final imported = await fresh.projectDao.getProjectById('prog-rt');
+      expect(imported, isNotNull);
+      expect(imported!.kind, 'programme');
+    });
+
+    test('a programme link + its encryption secret survive the round-trip',
+        () async {
+      await db.projectDao.insertProject(ProjectsCompanion.insert(
+          id: 'prog-l', name: 'Prog', kind: const Value('programme')));
+      // A link owned by the programme, carrying a secret.
+      final share = await db.programmeLinksDao.generateCodeForEntity(
+          ownerEntityId: 'prog-l', ownerKind: 'programme');
+      final routing = share.split('#').first;
+      final secret = share.split('#').last;
+
+      final jsonStr = await JsonExporter.exportProjectToString(
+          projectId: 'prog-l', db: db);
+      final fresh = AppDatabase.memory();
+      addTearDown(fresh.close);
+      await JsonImporter.importFromString(jsonStr, fresh);
+
+      final links =
+          await fresh.programmeLinksDao.getLinksForEntity('prog-l');
+      expect(links, hasLength(1));
+      expect(links.single.code, routing);
+      expect(links.single.linkSecret, secret);
+    });
+
     test('escalatedAt persists on a natively-escalated risk', () async {
       const projectId = 'rt-proj';
       await db.projectDao.insertProject(

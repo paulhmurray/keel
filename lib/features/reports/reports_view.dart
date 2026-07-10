@@ -4,11 +4,9 @@ import 'package:uuid/uuid.dart';
 import 'package:drift/drift.dart' show Value;
 
 import '../../core/cascade/cascade_service.dart';
-import '../../core/cascade/sync_cascade_gateway.dart';
+import '../../core/cascade/cascade_factory.dart';
 import '../../core/database/database.dart';
 import '../../core/export/html_exporter.dart';
-import '../../core/sync/sync_client.dart';
-import '../../providers/sync_provider.dart';
 import '../../core/export/pdf_exporter.dart';
 import '../../core/export/handover_exporter.dart';
 import '../../core/export/programme_workbook_exporter.dart';
@@ -16,6 +14,7 @@ import '../../core/llm/llm_client_factory.dart';
 import '../../providers/project_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../shared/theme/keel_colors.dart';
+import '../../shared/widgets/cascaded_source_badge.dart';
 import '../../shared/widgets/rag_badge.dart';
 import '../../shared/widgets/dropdown_field.dart';
 
@@ -199,19 +198,8 @@ class _ReportCard extends StatelessWidget {
   /// Build a CascadeService for the delete-tombstone path. Mirrors
   /// the helper in _ReportFormDialogState so both flows share the
   /// same gateway resolution.
-  CascadeService _cascadeFor(BuildContext context) {
-    final sync = context.read<SyncProvider>();
-    final token = sync.accessToken;
-    return CascadeService(
-      db,
-      gateway: token == null
-          ? null
-          : SyncCascadeGateway(
-              client: SyncClient(baseUrl: sync.serverUrl),
-              accessToken: token,
-            ),
-    );
-  }
+  CascadeService _cascadeFor(BuildContext context) =>
+      buildCascadeService(context);
 
   void _exportHtml(BuildContext context) async {
     final name = await _projectName();
@@ -284,29 +272,8 @@ class _ReportCard extends StatelessWidget {
                             fontWeight: FontWeight.w600, fontSize: 14)),
                   ),
                   if (isCascaded) ...[
-                    Tooltip(
-                      message:
-                          'Cascaded from a linked project — read-only',
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 5, vertical: 1),
-                        decoration: BoxDecoration(
-                          color: KColors.surface2,
-                          border: Border.all(
-                              color: KColors.border2, width: 0.5),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                        child: const Text(
-                          'PROJ',
-                          style: TextStyle(
-                            color: KColors.textMuted,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.6,
-                          ),
-                        ),
-                      ),
-                    ),
+                    CascadedSourceBadge(
+                        sourceProjectId: report.sourceProjectId),
                     const SizedBox(width: 8),
                   ],
                   if (report.period != null) ...[
@@ -742,19 +709,8 @@ class _ReportFormDialogState extends State<_ReportFormDialog> {
   /// Build a CascadeService using the live providers. Same idiom as
   /// the WP form and RAID view — the service treats a missing
   /// gateway as no-op so call sites stay branch-free.
-  CascadeService _cascadeFor(BuildContext context) {
-    final sync = context.read<SyncProvider>();
-    final token = sync.accessToken;
-    return CascadeService(
-      widget.db,
-      gateway: token == null
-          ? null
-          : SyncCascadeGateway(
-              client: SyncClient(baseUrl: sync.serverUrl),
-              accessToken: token,
-            ),
-    );
-  }
+  CascadeService _cascadeFor(BuildContext context) =>
+      buildCascadeService(context);
 
   @override
   Widget build(BuildContext context) {

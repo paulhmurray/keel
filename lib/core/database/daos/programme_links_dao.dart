@@ -82,15 +82,27 @@ class ProgrammeLinksDao extends DatabaseAccessor<AppDatabase>
       (select(programmeLinks)..where((t) => t.code.equals(code)))
           .getSingleOrNull();
 
-  /// Generates a fresh share code AND inserts a `pending_remote` link
-  /// row on this side. The returned code is what the user shares with
-  /// the other party. Codes are 12 chars of base32-ish alphabet (no
-  /// confusable 0/O/1/I), shown grouped as `KL-XXXX-XXXX-XXXX`.
+  /// All rows holding [code]. On a single-install link BOTH sides live
+  /// here (the project's row and the programme's row share the code), so
+  /// callers that must inspect the link without assuming a single row
+  /// use this instead of [findByCode].
+  Future<List<ProgrammeLink>> getByCode(String code) =>
+      (select(programmeLinks)..where((t) => t.code.equals(code))).get();
+
+  /// Generates a fresh link AND inserts a `pending_remote` row on this
+  /// side. Returns the FULL shareable string `KL-XXXX-XXXX-XXXX#<secret>`.
+  ///
+  /// The part before `#` is the routing code (12 chars of a base32-ish
+  /// alphabet, no confusable 0/O/1/I) — this is what the server sees. The
+  /// part after `#` is a random 256-bit base64url secret that encrypts the
+  /// cascade payloads end-to-end; it is stored locally and shared
+  /// party-to-party but NEVER sent to the server.
   Future<String> generateCodeForEntity({
     required String ownerEntityId,
     required String ownerKind,
   }) async {
     final code = _generateCode();
+    final secret = _generateSecret();
     final partnerKind = ownerKind == 'programme' ? 'project' : 'programme';
     await into(programmeLinks).insert(
       ProgrammeLinksCompanion.insert(
@@ -99,11 +111,12 @@ class ProgrammeLinksDao extends DatabaseAccessor<AppDatabase>
         ownerKind: ownerKind,
         partnerKind: partnerKind,
         code: code,
+        linkSecret: Value(secret),
         status: const Value('pending_remote'),
         generatedHere: const Value(true),
       ),
     );
-    return code;
+    return '$code#$secret';
   }
 
   /// Redeems a code shared by the other side. If the partner entity is
@@ -122,7 +135,12 @@ class ProgrammeLinksDao extends DatabaseAccessor<AppDatabase>
     required String ownerKind,
     String? partnerNameHint,
   }) async {
-    final cleanCode = _normaliseCode(code);
+    // The pasted string is `routingCode#secret`. Only the routing code is
+    // normalised/matched; the secret is case-sensitive base64url and kept
+    // verbatim for the encryption key.
+    final split = _splitShare(code);
+    final cleanCode = _normaliseCode(split.routing);
+    final secret = split.secret;
     final existingHere = await (select(programmeLinks)
           ..where((t) => t.code.equals(cleanCode)))
         .get();
@@ -164,6 +182,9 @@ class ProgrammeLinksDao extends DatabaseAccessor<AppDatabase>
             partnerName: Value(partnerOwnerName),
             partnerLocalId: Value(partner.ownerEntityId),
             code: cleanCode,
+            // Prefer the partner row's stored secret (authoritative on
+            // this machine); fall back to the pasted one.
+            linkSecret: Value(partner.linkSecret ?? secret),
             status: const Value('active'),
           ),
         );
@@ -188,6 +209,7 @@ class ProgrammeLinksDao extends DatabaseAccessor<AppDatabase>
           partnerKind: partnerKind,
           partnerName: Value(partnerNameHint),
           code: cleanCode,
+          linkSecret: Value(secret),
           status: const Value('pending_remote'),
         ),
       );
@@ -245,12 +267,13 @@ class ProgrammeLinksDao extends DatabaseAccessor<AppDatabase>
     required String ownerName,
     required RemoteLinksGateway? remote,
   }) async {
-    final code = await generateCodeForEntity(
+    final share = await generateCodeForEntity(
         ownerEntityId: ownerEntityId, ownerKind: ownerKind);
-    if (remote == null) return code;
+    if (remote == null) return share;
     try {
+      // The server only ever gets the routing code, never the secret.
       await remote.claim(
-        code: code,
+        code: _splitShare(share).routing,
         entityId: ownerEntityId,
         kind: ownerKind,
         name: ownerName,
@@ -259,7 +282,7 @@ class ProgrammeLinksDao extends DatabaseAccessor<AppDatabase>
       // Server unreachable / unauthenticated — local row still exists
       // and a later refresh will sync it.
     }
-    return code;
+    return share;
   }
 
   /// Remote-aware redeem. Tries same-machine activation first (cheap
@@ -288,7 +311,7 @@ class ProgrammeLinksDao extends DatabaseAccessor<AppDatabase>
     if (remote == null || remoteUserId == null) return local;
     try {
       final snapshot = await remote.claim(
-        code: _normaliseCode(code),
+        code: _normaliseCode(_splitShare(code).routing),
         entityId: ownerEntityId,
         kind: ownerKind,
         name: ownerName,
@@ -383,10 +406,33 @@ class ProgrammeLinksDao extends DatabaseAccessor<AppDatabase>
   }
 
   /// Strips spaces and lowercase chars so a user who pastes "kl ABCD ef…"
-  /// still hits the same row a generated code wrote.
+  /// still hits the same row a generated code wrote. Only ever applied to
+  /// the routing code, never the secret (which is case-sensitive).
   String _normaliseCode(String input) {
     final cleaned = input.replaceAll(RegExp(r'\s+'), '').toUpperCase();
     return cleaned;
+  }
+
+  /// A random 256-bit base64url secret — the per-link cascade encryption
+  /// key material. Generated in the DAO (not the sync layer) to avoid a
+  /// database→sync import cycle; the sync layer turns it into an AES key.
+  String _generateSecret() {
+    final rand = Random.secure();
+    final bytes = List<int>.generate(32, (_) => rand.nextInt(256));
+    return base64Url.encode(bytes);
+  }
+
+  /// Splits a shared string `routingCode#secret` into its parts. A string
+  /// without `#` (legacy, or a code typed by hand) yields a null secret.
+  ({String routing, String? secret}) _splitShare(String input) {
+    final trimmed = input.trim();
+    final hash = trimmed.indexOf('#');
+    if (hash < 0) return (routing: trimmed, secret: null);
+    final secret = trimmed.substring(hash + 1).trim();
+    return (
+      routing: trimmed.substring(0, hash),
+      secret: secret.isEmpty ? null : secret,
+    );
   }
 
   Future<String?> _lookupProjectName(String id) async {

@@ -22,6 +22,10 @@ class CascadeKinds {
   // as RAID: PM toggles a flag per item; auto-pushes thereafter.
   static const action = 'action';
   static const decision = 'decision';
+  // People-overview coverage matrices — auto-cascade so a programme can
+  // render each project's full People overview (roles + coverage).
+  static const stakeholderRole = 'stakeholder_role';
+  static const teamRole = 'team_role';
 }
 
 /// Abstract gateway the CascadeService talks to. Mirrors the
@@ -108,7 +112,8 @@ class CascadeService {
     if (wp.sourceProjectId != null) return; // never re-cascade
     final links = await _activeLinksForEntity(wp.projectId);
     if (links.isEmpty) return;
-    final payload = _workPackagePayload(wp);
+    final payload = _workPackagePayload(wp)
+      ..addAll(await _workPackageSpanPayload(wp));
     for (final link in links) {
       try {
         await gateway!.push(
@@ -345,11 +350,19 @@ class CascadeService {
     required String sourceProjectName,
   }) async {
     if (person.sourceProjectId != null) return; // never re-cascade
+    // Embed the person's stakeholder + colleague profiles so the
+    // programme can render a real influence/interest map, stance
+    // colours, and team grouping across all projects. Profiles are 1:1
+    // with a person, so they ride along rather than being their own kind.
+    final stakeholder =
+        await db.peopleDao.getStakeholderByPersonId(person.id);
+    final colleague = await db.peopleDao.getColleagueByPersonId(person.id);
     await _pushToAllLinks(
       projectId: person.projectId,
       itemKind: CascadeKinds.person,
       itemId: person.id,
-      payload: _personPayload(person, sourceProjectName),
+      payload: _personPayload(person, sourceProjectName,
+          stakeholder: stakeholder, colleague: colleague),
     );
   }
 
@@ -384,6 +397,74 @@ class CascadeService {
     for (final p in people) {
       if (p.sourceProjectId != null) continue; // skip cascaded
       await pushPerson(p, sourceProjectName: projectName);
+    }
+  }
+
+  // ── People-overview coverage matrices ──────────────────────────────────
+  //
+  // Stakeholder-role + team-role slots (the project's People "Overview"
+  // tab) auto-cascade so the programme can render each project's full
+  // overview. A role's assigned personId is remapped to the cascaded
+  // person's synthetic id on apply so assignments resolve on the
+  // programme side.
+
+  Future<void> pushStakeholderRole(StakeholderRole role) async {
+    if (role.sourceProjectId != null) return; // never re-cascade
+    await _pushToAllLinks(
+      projectId: role.projectId,
+      itemKind: CascadeKinds.stakeholderRole,
+      itemId: role.id,
+      payload: _stakeholderRolePayload(role),
+    );
+  }
+
+  Future<void> pushTeamRole(TeamRole role) async {
+    if (role.sourceProjectId != null) return; // never re-cascade
+    await _pushToAllLinks(
+      projectId: role.projectId,
+      itemKind: CascadeKinds.teamRole,
+      itemId: role.id,
+      payload: _teamRolePayload(role),
+    );
+  }
+
+  Future<void> pushAllRoles(String projectId) async {
+    if (gateway == null) return;
+    final sRoles = await db.stakeholderRoleDao.getForProject(projectId);
+    for (final r in sRoles) {
+      if (r.sourceProjectId != null) continue;
+      await pushStakeholderRole(r);
+    }
+    final tRoles = await db.teamRoleDao.getForProject(projectId);
+    for (final r in tRoles) {
+      if (r.sourceProjectId != null) continue;
+      await pushTeamRole(r);
+    }
+  }
+
+  Future<void> deleteStakeholderRole({
+    required String projectId,
+    required String roleId,
+  }) =>
+      _tombstone(projectId, CascadeKinds.stakeholderRole, roleId);
+
+  Future<void> deleteTeamRole({
+    required String projectId,
+    required String roleId,
+  }) =>
+      _tombstone(projectId, CascadeKinds.teamRole, roleId);
+
+  Future<void> _tombstone(
+      String projectId, String itemKind, String itemId) async {
+    if (gateway == null) return;
+    final links = await _activeLinksForEntity(projectId);
+    for (final link in links) {
+      try {
+        await gateway!
+            .delete(code: link.code, itemKind: itemKind, itemId: itemId);
+      } catch (_) {
+        // Best-effort.
+      }
     }
   }
 
@@ -508,6 +589,12 @@ class CascadeService {
             case CascadeKinds.decision:
               await _applyDecision(programmeId, rec);
               applied++;
+            case CascadeKinds.stakeholderRole:
+              await _applyStakeholderRole(programmeId, rec);
+              applied++;
+            case CascadeKinds.teamRole:
+              await _applyTeamRole(programmeId, rec);
+              applied++;
             default:
               // Unknown kinds — silently skip so a server that's
               // ahead of the client doesn't crash anything.
@@ -537,6 +624,56 @@ class CascadeService {
       'sort_order': wp.sortOrder,
       'rag_status': wp.ragStatus,
     };
+  }
+
+  /// Computes the WP's overall span from its activities so the programme
+  /// can draw a swimlane bar. Only HEADERS cascade — the activities
+  /// themselves stay private — so this derived span is the programme's
+  /// only signal of when the WP runs.
+  ///
+  /// Carries the span TWO ways:
+  ///   - `start_month` / `end_month`: the raw month indices. Always sent
+  ///     when the WP has dated activities. The programme uses these to
+  ///     place the bar when no calendar anchor exists (relative axis).
+  ///   - `start_date` / `end_date`: absolute dates, sent ONLY when the
+  ///     source project has a month-0 anchor. Preferred on render because
+  ///     they survive differing anchors between project and programme.
+  ///
+  /// Returns an empty map only when the WP has no dated activities — the
+  /// programme then shows the header with no bar.
+  Future<Map<String, dynamic>> _workPackageSpanPayload(
+      TimelineWorkPackage wp) async {
+    final acts = await db.programmeGanttDao.getActivitiesForWP(wp.id);
+    int? minStart;
+    int? maxEnd;
+    for (final a in acts) {
+      final s = a.startMonth;
+      if (s == null) continue;
+      final end = a.endMonth ?? s;
+      minStart = (minStart == null || s < minStart) ? s : minStart;
+      maxEnd = (maxEnd == null || end > maxEnd) ? end : maxEnd;
+    }
+    if (minStart == null || maxEnd == null) return const {};
+    final payload = <String, dynamic>{
+      'start_month': minStart,
+      'end_month': maxEnd,
+    };
+    // Add absolute dates when the project anchors its timeline.
+    final header = await db.programmeGanttDao.getHeader(wp.projectId);
+    final anchorIso = header?.month0Date;
+    if (anchorIso != null) {
+      try {
+        final anchor = DateTime.parse(anchorIso);
+        payload['start_date'] =
+            DateTime(anchor.year, anchor.month + minStart, 1)
+                .toIso8601String();
+        payload['end_date'] =
+            DateTime(anchor.year, anchor.month + maxEnd, 1).toIso8601String();
+      } catch (_) {
+        // Bad anchor — fall back to month indices only.
+      }
+    }
+    return payload;
   }
 
   /// True when the PM has flagged this row for cascade AND it's not
@@ -629,7 +766,11 @@ class CascadeService {
       };
 
   Map<String, dynamic> _personPayload(
-          Person p, String sourceProjectName) =>
+    Person p,
+    String sourceProjectName, {
+    StakeholderProfile? stakeholder,
+    ColleagueProfile? colleague,
+  }) =>
       {
         'source_project_name': sourceProjectName,
         'name': p.name,
@@ -640,6 +781,53 @@ class CascadeService {
         if (p.teamsHandle != null) 'teams_handle': p.teamsHandle,
         'person_type': p.personType,
         'is_stakeholder': p.isStakeholder,
+        // Embedded stakeholder profile (influence/interest/stance) — lets
+        // the programme plot the portfolio-wide stakeholder map.
+        if (stakeholder != null)
+          'stakeholder_profile': {
+            if (stakeholder.influence != null)
+              'influence': stakeholder.influence,
+            if (stakeholder.interest != null)
+              'interest': stakeholder.interest,
+            if (stakeholder.stance != null) 'stance': stakeholder.stance,
+            if (stakeholder.engagementStrategy != null)
+              'engagement_strategy': stakeholder.engagementStrategy,
+          },
+        // Embedded colleague profile (team) — lets the programme group by
+        // team within a project.
+        if (colleague != null)
+          'colleague_profile': {
+            if (colleague.team != null) 'team': colleague.team,
+            'direct_report': colleague.directReport,
+          },
+      };
+
+  Map<String, dynamic> _stakeholderRolePayload(StakeholderRole r) => {
+        'role_name': r.roleName,
+        'role_type': r.roleType,
+        if (r.personId != null) 'person_id': r.personId,
+        'is_scaffold': r.isScaffold,
+        'is_applicable': r.isApplicable,
+        'sort_order': r.sortOrder,
+        if (r.notes != null) 'notes': r.notes,
+        if (r.functionalArea != null) 'functional_area': r.functionalArea,
+        if (r.integrationRelevance != null)
+          'integration_relevance': r.integrationRelevance,
+        if (r.priority != null) 'priority': r.priority,
+        if (r.engagementStatus != null)
+          'engagement_status': r.engagementStatus,
+        'gap_flag': r.gapFlag,
+        if (r.gapDescription != null) 'gap_description': r.gapDescription,
+      };
+
+  Map<String, dynamic> _teamRolePayload(TeamRole r) => {
+        'role_name': r.roleName,
+        'team_group': r.teamGroup,
+        if (r.personId != null) 'person_id': r.personId,
+        'is_scaffold': r.isScaffold,
+        'is_applicable': r.isApplicable,
+        'sort_order': r.sortOrder,
+        if (r.notes != null) 'notes': r.notes,
       };
 
   Map<String, dynamic> _charterPayload(
@@ -697,6 +885,10 @@ class CascadeService {
         ragStatus:
             Value(payload['rag_status'] as String? ?? 'not_started'),
         sourceProjectId: Value(rec.sourceEntityId),
+        cascadeStartDate: Value(payload['start_date'] as String?),
+        cascadeEndDate: Value(payload['end_date'] as String?),
+        cascadeStartMonth: Value(payload['start_month'] as int?),
+        cascadeEndMonth: Value(payload['end_month'] as int?),
       ),
     );
   }
@@ -863,7 +1055,17 @@ class CascadeService {
       String programmeId, CascadeRecord rec) async {
     final id =
         'cascade:${CascadeKinds.person}:${rec.sourceEntityId}:${rec.itemId}';
+    // Deterministic profile ids derived from the person id so re-pulls
+    // upsert rather than duplicate.
+    final stakeholderId = '$id:stakeholder';
+    final colleagueId = '$id:colleague';
     if (rec.deleted) {
+      await (db.delete(db.stakeholderProfiles)
+            ..where((t) => t.personId.equals(id)))
+          .go();
+      await (db.delete(db.colleagueProfiles)
+            ..where((t) => t.personId.equals(id)))
+          .go();
       await (db.delete(db.persons)..where((t) => t.id.equals(id))).go();
       return;
     }
@@ -881,6 +1083,106 @@ class CascadeService {
       isStakeholder: Value(p['is_stakeholder'] as bool? ?? false),
       sourceProjectId: Value(rec.sourceEntityId),
       sourceProjectName: Value(p['source_project_name'] as String?),
+      updatedAt: Value(DateTime.now()),
+    ));
+
+    // Embedded profiles. Upsert when present; clear a stale one that was
+    // removed on the source (so the programme reflects a deleted profile).
+    final sp = p['stakeholder_profile'] as Map?;
+    if (sp != null) {
+      await db.peopleDao.upsertStakeholder(StakeholderProfilesCompanion.insert(
+        id: stakeholderId,
+        projectId: programmeId,
+        personId: id,
+        influence: Value(sp['influence'] as String?),
+        interest: Value(sp['interest'] as String?),
+        stance: Value(sp['stance'] as String?),
+        engagementStrategy: Value(sp['engagement_strategy'] as String?),
+        sourceProjectId: Value(rec.sourceEntityId),
+        updatedAt: Value(DateTime.now()),
+      ));
+    } else {
+      await (db.delete(db.stakeholderProfiles)
+            ..where((t) => t.personId.equals(id)))
+          .go();
+    }
+
+    final cp = p['colleague_profile'] as Map?;
+    if (cp != null) {
+      await db.peopleDao.upsertColleague(ColleagueProfilesCompanion.insert(
+        id: colleagueId,
+        projectId: programmeId,
+        personId: id,
+        team: Value(cp['team'] as String?),
+        directReport: Value(cp['direct_report'] as bool? ?? false),
+        sourceProjectId: Value(rec.sourceEntityId),
+        updatedAt: Value(DateTime.now()),
+      ));
+    } else {
+      await (db.delete(db.colleagueProfiles)
+            ..where((t) => t.personId.equals(id)))
+          .go();
+    }
+  }
+
+  /// Remaps a role's source-side personId to the cascaded person's
+  /// synthetic id so assignments resolve against programme-side people.
+  String? _remapPersonId(CascadeRecord rec, String? sourcePersonId) {
+    if (sourcePersonId == null) return null;
+    return 'cascade:${CascadeKinds.person}:${rec.sourceEntityId}:$sourcePersonId';
+  }
+
+  Future<void> _applyStakeholderRole(
+      String programmeId, CascadeRecord rec) async {
+    final id =
+        'cascade:${CascadeKinds.stakeholderRole}:${rec.sourceEntityId}:${rec.itemId}';
+    if (rec.deleted) {
+      await (db.delete(db.stakeholderRoles)..where((t) => t.id.equals(id)))
+          .go();
+      return;
+    }
+    final p = rec.payload;
+    await db.stakeholderRoleDao.upsert(StakeholderRolesCompanion.insert(
+      id: id,
+      projectId: programmeId,
+      roleName: p['role_name'] as String? ?? '(role)',
+      roleType: p['role_type'] as String? ?? 'active',
+      personId: Value(_remapPersonId(rec, p['person_id'] as String?)),
+      isScaffold: Value(p['is_scaffold'] as bool? ?? true),
+      isApplicable: Value(p['is_applicable'] as bool? ?? true),
+      sortOrder: Value(p['sort_order'] as int? ?? 0),
+      notes: Value(p['notes'] as String?),
+      functionalArea: Value(p['functional_area'] as String?),
+      integrationRelevance: Value(p['integration_relevance'] as String?),
+      priority: Value(p['priority'] as String?),
+      engagementStatus: Value(p['engagement_status'] as String?),
+      gapFlag: Value(p['gap_flag'] as bool? ?? false),
+      gapDescription: Value(p['gap_description'] as String?),
+      sourceProjectId: Value(rec.sourceEntityId),
+      updatedAt: Value(DateTime.now()),
+    ));
+  }
+
+  Future<void> _applyTeamRole(
+      String programmeId, CascadeRecord rec) async {
+    final id =
+        'cascade:${CascadeKinds.teamRole}:${rec.sourceEntityId}:${rec.itemId}';
+    if (rec.deleted) {
+      await (db.delete(db.teamRoles)..where((t) => t.id.equals(id))).go();
+      return;
+    }
+    final p = rec.payload;
+    await db.teamRoleDao.upsert(TeamRolesCompanion.insert(
+      id: id,
+      projectId: programmeId,
+      roleName: p['role_name'] as String? ?? '(role)',
+      teamGroup: p['team_group'] as String? ?? 'specialist',
+      personId: Value(_remapPersonId(rec, p['person_id'] as String?)),
+      isScaffold: Value(p['is_scaffold'] as bool? ?? true),
+      isApplicable: Value(p['is_applicable'] as bool? ?? true),
+      sortOrder: Value(p['sort_order'] as int? ?? 0),
+      notes: Value(p['notes'] as String?),
+      sourceProjectId: Value(rec.sourceEntityId),
       updatedAt: Value(DateTime.now()),
     ));
   }

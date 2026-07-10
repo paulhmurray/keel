@@ -100,8 +100,8 @@ void main() {
   });
 
   group('TemplateRegistry', () {
-    test('lists all six template types', () {
-      expect(TemplateRegistry.available, hasLength(6));
+    test('lists all seven template types', () {
+      expect(TemplateRegistry.available, hasLength(7));
       expect(
         TemplateRegistry.available.map((d) => d.type).toSet(),
         {
@@ -111,6 +111,7 @@ void main() {
           CanvasTemplateType.stakeholderMap,
           CanvasTemplateType.raciMatrix,
           CanvasTemplateType.userStoryMap,
+          CanvasTemplateType.wardleyMap,
         },
       );
     });
@@ -144,13 +145,15 @@ void main() {
       }
     });
 
-    test('only User Story Map declares fullscreen support (Phase 2 cohort)',
-        () {
+    test('User Story Map and Wardley Map declare fullscreen support', () {
       final fullscreen = TemplateRegistry.available
           .where((d) => d.supportsFullscreen)
           .map((d) => d.type)
-          .toList();
-      expect(fullscreen, [CanvasTemplateType.userStoryMap]);
+          .toSet();
+      expect(fullscreen, {
+        CanvasTemplateType.userStoryMap,
+        CanvasTemplateType.wardleyMap,
+      });
     });
   });
 }

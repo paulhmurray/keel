@@ -88,8 +88,13 @@ class ProgrammeLinks extends Table {
   // programme row's id. Null while we're waiting for the other machine
   // to redeem the code.
   TextColumn get partnerLocalId => text().nullable()();
-  // Shared identifier — what fly.io will route on in Phase C.
+  // Shared identifier — what fly.io routes on. The server sees this.
   TextColumn get code => text()();
+  // Per-link 256-bit secret (base64url) used to derive the AES key that
+  // encrypts cascade payloads end-to-end. Shared party-to-party alongside
+  // the code but NEVER sent to the server, so the server stores only
+  // ciphertext. Null on legacy links created before E2E cascade.
+  TextColumn get linkSecret => text().nullable()();
   // 'pending_remote' — waiting for the other machine to redeem
   // 'active'         — both sides confirmed (single-machine link or
   //                    successful cross-machine handshake)
@@ -104,6 +109,32 @@ class ProgrammeLinks extends Table {
 
   @override
   Set<Column> get primaryKey => {id};
+}
+
+/// Same-machine cascade channel — a local mirror of the server's
+/// `cascaded_items` table. When a project and a programme live in the
+/// same install, the link activates locally (partnerLocalId set on both
+/// sides) but there's no sync server in the loop. This table is the
+/// transport: [LocalCascadeGateway] writes pushed items here keyed by
+/// the link [code], and the programme's pull reads them back. Rows are
+/// upserted on (code, itemKind, itemId); a tombstone sets [deleted].
+class CascadeItems extends Table {
+  // The shared link code both sides hold. Push writes under it; pull
+  // reads everything under it — exactly how the remote channel keys.
+  TextColumn get code => text()();
+  // The source project that emitted the item (cascade attribution).
+  TextColumn get sourceEntityId => text()();
+  TextColumn get itemKind => text()(); // CascadeKinds.* string
+  TextColumn get itemId => text()();
+  // JSON-encoded payload map — the same shape the remote channel carries.
+  TextColumn get payload => text()();
+  // Soft-delete tombstone. Pull applies these as removals so an
+  // unescalated / deleted item disappears from the programme side.
+  BoolColumn get deleted => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {code, itemKind, itemId};
 }
 
 class ProgrammeOverviews extends Table {
@@ -320,6 +351,9 @@ class StakeholderProfiles extends Table {
   TextColumn get stance => text().nullable()();
   TextColumn get engagementStrategy => text().nullable()();
   TextColumn get notes => text().nullable()();
+  // Set when this profile arrived via cascade alongside its person
+  // (programme side). Read-only; null for native rows.
+  TextColumn get sourceProjectId => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
@@ -347,6 +381,9 @@ class StakeholderRoles extends Table {
   TextColumn get engagementStatus => text().nullable()();
   BoolColumn get gapFlag => boolean().withDefault(const Constant(false))();
   TextColumn get gapDescription => text().nullable()();
+  // Cascade marker (programme side) — the role slot arrived from a linked
+  // project's People overview; read-only. Null for native rows.
+  TextColumn get sourceProjectId => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
@@ -365,6 +402,8 @@ class TeamRoles extends Table {
   BoolColumn get isApplicable => boolean().withDefault(const Constant(true))();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
   TextColumn get notes => text().nullable()();
+  // Cascade marker (programme side); null for native rows.
+  TextColumn get sourceProjectId => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
@@ -419,6 +458,8 @@ class ColleagueProfiles extends Table {
   TextColumn get team => text().nullable()();
   BoolColumn get directReport =>
       boolean().withDefault(const Constant(false))();
+  // Cascade origin marker (programme side). Read-only; null for native.
+  TextColumn get sourceProjectId => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
@@ -756,6 +797,22 @@ class TimelineWorkPackages extends Table {
   // install; cascaded rows are rendered read-only and tagged with the
   // upstream project's name in the Plan view.
   TextColumn get sourceProjectId => text().nullable()();
+  // Cascaded span (programme-side rows only). Only WP HEADERS cascade —
+  // the underlying activities stay private to the source project — so a
+  // cascaded WP has no activities to derive a bar from. At push time the
+  // source PM's app computes the WP's overall span from its activities
+  // and converts it to absolute dates (using that project's month-0
+  // anchor); these columns store the result so the programme can draw a
+  // swimlane bar mapped onto its own timeline. Null on native rows and
+  // on cascaded WPs whose source had no dated activities.
+  TextColumn get cascadeStartDate => text().nullable()();
+  TextColumn get cascadeEndDate => text().nullable()();
+  // Raw month indices of the same span, carried alongside the absolute
+  // dates. Used to draw the bar when neither project has set a calendar
+  // anchor (month0Date) — the common relative-axis case — where the
+  // dates can't be computed but the axes are assumed aligned (M0=M0).
+  IntColumn get cascadeStartMonth => integer().nullable()();
+  IntColumn get cascadeEndMonth => integer().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
@@ -1087,6 +1144,7 @@ class ProjectStageProgresses extends Table {
   tables: [
     Projects,
     ProgrammeLinks,
+    CascadeItems,
     ProgrammeOverviews,
     Workstreams,
     WorkstreamLinks,
@@ -1169,7 +1227,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.memory() : super(openMemoryConnection());
 
   @override
-  int get schemaVersion => 40;
+  int get schemaVersion => 46;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1435,6 +1493,48 @@ class AppDatabase extends _$AppDatabase {
                 projectActions, projectActions.sourceProjectId);
             await m.addColumn(decisions, decisions.escalatedAt);
             await m.addColumn(decisions, decisions.sourceProjectId);
+          }
+          if (from < 41) {
+            // Same-machine cascade channel. Lets a project and a
+            // programme in one install exchange cascaded items without
+            // a sync server in the loop (LocalCascadeGateway).
+            await m.createTable(cascadeItems);
+          }
+          if (from < 42) {
+            // Cascaded WP span — lets the programme draw a swimlane bar
+            // for a cascaded WP whose activities stayed private.
+            await m.addColumn(
+                timelineWorkPackages, timelineWorkPackages.cascadeStartDate);
+            await m.addColumn(
+                timelineWorkPackages, timelineWorkPackages.cascadeEndDate);
+          }
+          if (from < 43) {
+            // Raw month-index span — fallback bar placement when no
+            // calendar anchor exists to derive absolute dates.
+            await m.addColumn(timelineWorkPackages,
+                timelineWorkPackages.cascadeStartMonth);
+            await m.addColumn(
+                timelineWorkPackages, timelineWorkPackages.cascadeEndMonth);
+          }
+          if (from < 44) {
+            // Cascade markers on people profiles so a programme can show
+            // stakeholder influence/interest/stance + colleague team
+            // across all linked projects.
+            await m.addColumn(stakeholderProfiles,
+                stakeholderProfiles.sourceProjectId);
+            await m.addColumn(
+                colleagueProfiles, colleagueProfiles.sourceProjectId);
+          }
+          if (from < 45) {
+            // Cascade markers on the coverage/role matrices so a
+            // programme can render each project's full People overview.
+            await m.addColumn(
+                stakeholderRoles, stakeholderRoles.sourceProjectId);
+            await m.addColumn(teamRoles, teamRoles.sourceProjectId);
+          }
+          if (from < 46) {
+            // Per-link secret for E2E-encrypting cascade payloads.
+            await m.addColumn(programmeLinks, programmeLinks.linkSecret);
           }
         },
       );

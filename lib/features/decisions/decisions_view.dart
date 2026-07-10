@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/cascade/cascade_service.dart';
-import '../../core/cascade/sync_cascade_gateway.dart';
+import '../../core/cascade/cascade_factory.dart';
 import '../../core/database/database.dart';
-import '../../core/sync/sync_client.dart';
 import '../../providers/project_provider.dart';
-import '../../providers/sync_provider.dart';
 import '../../shared/theme/keel_colors.dart';
+import '../../shared/widgets/cascaded_source_badge.dart';
 import '../../shared/widgets/status_chip.dart';
 import '../../shared/widgets/source_badge.dart';
 import '../../shared/utils/date_utils.dart' as du;
@@ -241,27 +240,10 @@ class _DecisionCard extends StatelessWidget {
                             ),
                           ),
                         if (decision.sourceProjectId != null)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 5, vertical: 1),
-                            margin: const EdgeInsets.only(right: 4),
-                            decoration: BoxDecoration(
-                              color: KColors.surface2,
-                              border: Border.all(
-                                  color: KColors.border2, width: 0.5),
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                            child: const Tooltip(
-                              message:
-                                  'Cascaded from a linked project — read-only',
-                              child: Text('PROJ',
-                                  style: TextStyle(
-                                    color: KColors.textMuted,
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 0.6,
-                                  )),
-                            ),
+                          Padding(
+                            padding: const EdgeInsets.only(right: 4),
+                            child: CascadedSourceBadge(
+                                sourceProjectId: decision.sourceProjectId),
                           ),
                         if (decision.sourceProjectId == null)
                           PopupMenuButton<String>(
@@ -409,16 +391,5 @@ class _DecisionCard extends StatelessWidget {
 
 /// CascadeService for the decision row's escalate / unescalate /
 /// delete handlers.
-CascadeService _cascadeFor(BuildContext context, AppDatabase db) {
-  final sync = context.read<SyncProvider>();
-  final token = sync.accessToken;
-  return CascadeService(
-    db,
-    gateway: token == null
-        ? null
-        : SyncCascadeGateway(
-            client: SyncClient(baseUrl: sync.serverUrl),
-            accessToken: token,
-          ),
-  );
-}
+CascadeService _cascadeFor(BuildContext context, AppDatabase db) =>
+    buildCascadeService(context);

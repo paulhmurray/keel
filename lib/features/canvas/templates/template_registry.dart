@@ -10,6 +10,7 @@ class CanvasTemplateType {
   static const stakeholderMap = 'stakeholder_map';
   static const raciMatrix = 'raci_matrix';
   static const userStoryMap = 'user_story_map';
+  static const wardleyMap = 'wardley_map';
 
   static const all = [
     preMortem,
@@ -18,6 +19,7 @@ class CanvasTemplateType {
     stakeholderMap,
     raciMatrix,
     userStoryMap,
+    wardleyMap,
   ];
 }
 
@@ -92,6 +94,14 @@ class TemplateRegistry {
       description: 'Jeff Patton structure — activities, tasks, releases',
       icon: Icons.view_week_outlined,
       defaultContent: '{"activities":[],"releases":[],"stories":[]}',
+      supportsFullscreen: true,
+    ),
+    TemplateDefinition(
+      type: CanvasTemplateType.wardleyMap,
+      name: 'Wardley Map',
+      description: 'Value chain × evolution, with dependencies',
+      icon: Icons.account_tree_outlined,
+      defaultContent: '{"components":[],"dependencies":[]}',
       supportsFullscreen: true,
     ),
   ];

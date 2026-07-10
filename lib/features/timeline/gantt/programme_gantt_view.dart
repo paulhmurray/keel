@@ -10,10 +10,8 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/cascade/cascade_service.dart';
-import '../../../core/cascade/sync_cascade_gateway.dart';
+import '../../../core/cascade/cascade_factory.dart';
 import '../../../core/database/database.dart';
-import '../../../core/sync/sync_client.dart';
-import '../../../providers/sync_provider.dart';
 import 'dependency_chains.dart';
 import '../../../providers/project_provider.dart';
 import '../../../providers/settings_provider.dart';
@@ -29,6 +27,7 @@ const _kCellW = 56.0;
 const _kHeaderH = 40.0;
 const _kWpRowH = 38.0;
 const _kRowH = 38.0;
+const _kGroupRowH = 26.0;
 
 // ─── WP theme colours ─────────────────────────────────────────────────────────
 Color _wpColor(String theme) => switch (theme) {
@@ -95,6 +94,64 @@ class _ActRow extends _GRow {
   @override double get height => _kRowH;
 }
 
+/// One swimlane group in the programme plan: either the native programme
+/// Work Packages ([sourceProjectId] == null) or all cascaded WPs from a
+/// single linked project.
+class PlanSwimlaneGroup {
+  final String? sourceProjectId; // null = native programme
+  final List<TimelineWorkPackage> wps;
+  const PlanSwimlaneGroup({required this.sourceProjectId, required this.wps});
+}
+
+/// Partitions [wps] into ordered swimlanes for the programme plan: the
+/// native programme group first, then one group per linked project
+/// ordered by [nameFor] (case-insensitive). Input order is preserved
+/// within each group (callers pass sortOrder-sorted WPs). When there are
+/// no cascaded WPs the result is a single native group, so a
+/// single-project plan renders without headers. Pure + unit-tested.
+List<PlanSwimlaneGroup> planSwimlaneGroups(
+  List<TimelineWorkPackage> wps, {
+  required String Function(String sourceProjectId) nameFor,
+}) {
+  final native = wps.where((w) => w.sourceProjectId == null).toList();
+  final byProject = <String, List<TimelineWorkPackage>>{};
+  for (final w in wps.where((w) => w.sourceProjectId != null)) {
+    byProject.putIfAbsent(w.sourceProjectId!, () => []).add(w);
+  }
+  final groups = <PlanSwimlaneGroup>[];
+  // Emit the native group when it has rows, or when there's nothing
+  // cascaded at all (so a plain project still yields one group).
+  if (native.isNotEmpty || byProject.isEmpty) {
+    groups.add(PlanSwimlaneGroup(sourceProjectId: null, wps: native));
+  }
+  final keys = byProject.keys.toList()
+    ..sort((a, b) =>
+        nameFor(a).toLowerCase().compareTo(nameFor(b).toLowerCase()));
+  for (final k in keys) {
+    groups.add(PlanSwimlaneGroup(sourceProjectId: k, wps: byProject[k]!));
+  }
+  return groups;
+}
+
+/// A swimlane divider above a block of Work Packages that share a source.
+/// Native programme WPs get one labelled with the programme's own name;
+/// each linked project's cascaded WPs get one labelled with the project
+/// name. Only emitted when the programme actually has cascaded WPs, so a
+/// single-project / native-only plan stays header-free.
+class _GroupRow extends _GRow {
+  final String label;
+  // null = native programme group; otherwise the source project id.
+  final String? sourceProjectId;
+  final int wpCount;
+  _GroupRow({
+    required this.label,
+    required this.sourceProjectId,
+    required this.wpCount,
+  });
+  @override
+  double get height => _kGroupRowH;
+}
+
 /// Drag payload for reorder drags inside the name column. Two kinds:
 /// `wp` carries the work package id; `activity` carries the activity id
 /// plus its parent WP id so the drop logic can reject cross-WP drops
@@ -116,6 +173,9 @@ class ProgrammeGanttView extends StatelessWidget {
   final bool isPresentation;
   final VoidCallback? onToggleExpanded;
   final VoidCallback? onTogglePresentation;
+  // Bumped by the shell after a cascade refresh lands so this one-shot
+  // loader remounts and re-reads freshly-cascaded WP rows (incl. spans).
+  final int cascadeRefreshSeq;
 
   const ProgrammeGanttView({
     super.key,
@@ -123,6 +183,7 @@ class ProgrammeGanttView extends StatelessWidget {
     this.isPresentation = false,
     this.onToggleExpanded,
     this.onTogglePresentation,
+    this.cascadeRefreshSeq = 0,
   });
 
   @override
@@ -133,7 +194,7 @@ class ProgrammeGanttView extends StatelessWidget {
           style: TextStyle(color: KColors.textMuted)));
     }
     return _ProgrammeGanttContent(
-      key: ValueKey(projectId),
+      key: ValueKey('$projectId:$cascadeRefreshSeq'),
       projectId: projectId,
       isExpanded: isExpanded,
       isPresentation: isPresentation,
@@ -275,11 +336,37 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     }
     if (months.isEmpty) months = List.generate(12, (i) => 'M$i');
 
+    // Resolve source-project names for swimlane grouping. Same lookup the
+    // cascaded tag uses — accurate for same-machine links (the project row
+    // is local). Falls back to a generic label when the source isn't on
+    // this machine (cross-machine: name display is a documented follow-up).
+    final projectsById = {
+      for (final p in context.read<ProjectProvider>().projects) p.id: p
+    };
+    String nameFor(String projectId) =>
+        projectsById[projectId]?.name ?? 'Linked project';
+
+    final groups = planSwimlaneGroups(wps, nameFor: nameFor);
+    // Only show swimlane headers once there's cascaded content — a
+    // single-project / native-only plan stays clean and header-free.
+    final hasCascaded = groups.any((g) => g.sourceProjectId != null);
+
     final rows = <_GRow>[];
-    for (final wp in wps) {
-      rows.add(_WpRow(wp));
-      for (final act in actsByWp[wp.id] ?? []) {
-        rows.add(_ActRow(act, wp));
+    for (final g in groups) {
+      if (hasCascaded && g.wps.isNotEmpty) {
+        final label = g.sourceProjectId == null
+            ? (projectsById[pid]?.name ?? 'This programme')
+            : nameFor(g.sourceProjectId!);
+        rows.add(_GroupRow(
+            label: label,
+            sourceProjectId: g.sourceProjectId,
+            wpCount: g.wps.length));
+      }
+      for (final wp in g.wps) {
+        rows.add(_WpRow(wp));
+        for (final act in actsByWp[wp.id] ?? []) {
+          rows.add(_ActRow(act, wp));
+        }
       }
     }
 
@@ -409,6 +496,19 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     await _load();
     if (!mounted) return;
     setState(() { _draggingActId = null; _dragMonthDelta = 0; });
+    await _repushWp(_actMap[id]?.workPackageId);
+  }
+
+  /// Re-cascades a Work Package's header + freshly-recomputed span after
+  /// its activities change. A cascaded WP's swimlane bar on the programme
+  /// is derived from these activities, which stay private — so an
+  /// activity edit here is the only thing that can move that bar. No-op
+  /// when the WP is itself a cascaded (read-only) row.
+  Future<void> _repushWp(String? wpId) async {
+    if (wpId == null || !mounted) return;
+    final wp = _wps.where((w) => w.id == wpId).firstOrNull;
+    if (wp == null || wp.sourceProjectId != null) return;
+    await buildCascadeService(context).pushWorkPackage(wp);
   }
 
   /// Returns the effective start/end months for a cell render, accounting
@@ -422,6 +522,44 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
       return (s, e);
     }
     return (act.startMonth, act.endMonth);
+  }
+
+  /// Resolves a cascaded WP's bar span as column indices on THIS
+  /// programme's axis. Prefers absolute dates (which survive differing
+  /// month-0 anchors between project and programme): when both the
+  /// programme and the WP carry a date span, the date is re-mapped
+  /// through the programme's own anchor. Falls back to the raw cascaded
+  /// month indices when no anchor exists (the relative-axis case, where
+  /// axes are assumed aligned). Returns null when the WP isn't cascaded
+  /// or has no span at all. Indices are clamped to the visible range.
+  (int, int)? _cascadeWpMonths(TimelineWorkPackage wp) {
+    if (_months.isEmpty) return null;
+    final maxM = _months.length - 1;
+    (int, int) ordered(int a, int b) =>
+        (a < b ? a : b, a < b ? b : a);
+
+    final startIso = wp.cascadeStartDate;
+    final endIso = wp.cascadeEndDate;
+    final anchorIso = _header?.month0Date;
+    if (startIso != null && endIso != null && anchorIso != null) {
+      try {
+        final anchor = DateTime.parse(anchorIso);
+        int toIndex(DateTime d) =>
+            (d.year - anchor.year) * 12 + (d.month - anchor.month);
+        final si = toIndex(DateTime.parse(startIso)).clamp(0, maxM);
+        final ei = toIndex(DateTime.parse(endIso)).clamp(0, maxM);
+        return ordered(si, ei);
+      } catch (_) {
+        // Fall through to month-index placement.
+      }
+    }
+
+    final sm = wp.cascadeStartMonth;
+    final em = wp.cascadeEndMonth;
+    if (sm != null && em != null) {
+      return ordered(sm.clamp(0, maxM), em.clamp(0, maxM));
+    }
+    return null;
   }
 
   // ── Baseline ──────────────────────────────────────────────────────────────
@@ -539,7 +677,8 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
         initialEndMonth: startMonth,
       ),
     );
-    _load();
+    await _load();
+    await _repushWp(wp.id);
   }
 
   Future<void> _openEditActivity(TimelineActivity act, TimelineWorkPackage wp) async {
@@ -554,7 +693,8 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
         sortOrder: act.sortOrder,
       ),
     );
-    _load();
+    await _load();
+    await _repushWp(wp.id);
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────
@@ -949,6 +1089,42 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
   // ── Row: name column ──────────────────────────────────────────────────────
 
   Widget _buildNameCell(_GRow row) {
+    if (row is _GroupRow) {
+      final isCascaded = row.sourceProjectId != null;
+      return Container(
+        height: _kGroupRowH,
+        padding: const EdgeInsets.only(left: 8, right: 8),
+        decoration: const BoxDecoration(
+          color: KColors.surface2,
+          border: Border(
+            bottom: BorderSide(color: KColors.border),
+            top: BorderSide(color: KColors.border),
+          ),
+        ),
+        child: Row(children: [
+          Icon(isCascaded ? Icons.link : Icons.workspaces_outlined,
+              size: 12, color: KColors.textDim),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              row.label.toUpperCase(),
+              style: const TextStyle(
+                  color: KColors.textDim,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          Text('${row.wpCount}',
+              style: const TextStyle(
+                  color: KColors.textMuted,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600)),
+        ]),
+      );
+    }
+
     if (row is _WpRow) {
       final c = _wpColor(row.wp.colourTheme);
       final isCascaded = row.wp.sourceProjectId != null;
@@ -1196,26 +1372,63 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
 
   Widget _buildCellRow(_GRow row,
       List<({String label, int start, int end})> cols) {
+    if (row is _GroupRow) {
+      // Full-width divider strip aligned to the name-column header.
+      return Container(
+        height: _kGroupRowH,
+        width: cols.length * _cellW,
+        decoration: const BoxDecoration(
+          color: KColors.surface2,
+          border: Border(
+            bottom: BorderSide(color: KColors.border),
+            top: BorderSide(color: KColors.border),
+          ),
+        ),
+      );
+    }
+
     if (row is _WpRow) {
       final c = _wpColor(row.wp.colourTheme);
+      // Cascaded WPs have no activities to draw, so the header row itself
+      // carries a condensed swimlane bar across the WP's cascaded span.
+      final span =
+          row.wp.sourceProjectId != null ? _cascadeWpMonths(row.wp) : null;
       return SizedBox(
         height: _kWpRowH,
         child: Row(
           children: List.generate(cols.length, (ci) {
             final col = cols[ci];
-            return GestureDetector(
-              onTap: () => _openAddActivity(row.wp, startMonth: col.start),
-              child: Container(
-                width: _cellW, height: _kWpRowH,
-                decoration: BoxDecoration(
-                  color: c.withValues(alpha: 0.05),
-                  border: Border(
-                    right: BorderSide(
-                        color: KColors.border.withValues(alpha: 0.3)),
-                    bottom: const BorderSide(color: KColors.border),
-                  ),
+            final inSpan = span != null &&
+                col.start <= span.$2 &&
+                col.end >= span.$1;
+            final cell = Container(
+              width: _cellW,
+              height: _kWpRowH,
+              decoration: BoxDecoration(
+                color: c.withValues(alpha: 0.05),
+                border: Border(
+                  right: BorderSide(
+                      color: KColors.border.withValues(alpha: 0.3)),
+                  bottom: const BorderSide(color: KColors.border),
                 ),
               ),
+              alignment: Alignment.center,
+              child: inSpan
+                  ? Container(
+                      height: 12,
+                      margin: const EdgeInsets.symmetric(horizontal: 1),
+                      decoration: BoxDecoration(
+                        color: c.withValues(alpha: 0.85),
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    )
+                  : null,
+            );
+            // Cascaded rows are read-only: no add-activity affordance.
+            if (span != null) return cell;
+            return GestureDetector(
+              onTap: () => _openAddActivity(row.wp, startMonth: col.start),
+              child: cell,
             );
           }),
         ),
@@ -1562,17 +1775,22 @@ class _CascadedFromTag extends StatelessWidget {
           (p) => p?.id == sourceProjectId,
           orElse: () => null,
         );
-    final label = source?.name ?? 'project';
+    final label = source?.name;
     return Tooltip(
-      message: 'Cascaded from project: $label',
+      message: label == null
+          ? 'Cascaded from a linked project — read-only'
+          : 'Cascaded from project: $label',
       child: Container(
+        constraints: const BoxConstraints(maxWidth: 96),
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
         decoration: BoxDecoration(
           color: KColors.surface2,
           border: Border.all(color: KColors.border2, width: 0.5),
           borderRadius: BorderRadius.circular(2),
         ),
-        child: Text('PROJ',
+        child: Text(label == null ? 'PROJ' : 'PROJ · $label',
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
             style: const TextStyle(
                 color: KColors.textMuted,
                 fontSize: 8.5,
@@ -2094,20 +2312,52 @@ class _HeaderSettingsDialogState extends State<_HeaderSettingsDialog> {
                 ),
                 const SizedBox(width: 12),
                 SizedBox(
-                  width: 80,
+                  width: 90,
                   child: TextFormField(
                     controller: _monthCountCtrl,
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
-                        labelText: 'Count', isDense: true),
+                        labelText: 'Months', isDense: true),
                     style: const TextStyle(
                         color: KColors.text, fontSize: 12),
                     onChanged: (_) => setState(() {}),
                   ),
                 ),
               ]),
+              const SizedBox(height: 10),
+              // Quick presets — programmes commonly run multiple years, so
+              // make the long ranges one tap rather than hand-typing.
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  for (final preset in const [
+                    (label: '1 yr', months: 12),
+                    (label: '2 yr', months: 24),
+                    (label: '3 yr', months: 36),
+                    (label: '5 yr', months: 60),
+                  ])
+                    ActionChip(
+                      label: Text('${preset.label} · ${preset.months}',
+                          style: const TextStyle(fontSize: 11)),
+                      backgroundColor:
+                          _monthCountCtrl.text.trim() == '${preset.months}'
+                              ? KColors.blue.withValues(alpha: 0.18)
+                              : KColors.surface2,
+                      side: BorderSide(
+                          color: _monthCountCtrl.text.trim() ==
+                                  '${preset.months}'
+                              ? KColors.blue
+                              : KColors.border),
+                      onPressed: () => setState(
+                          () => _monthCountCtrl.text = '${preset.months}'),
+                    ),
+                ],
+              ),
               const SizedBox(height: 8),
-              Text('Preview: ${preview.take(6).join(', ')}${preview.length > 6 ? ', ...' : ''}',
+              Text(
+                  'Spans ${_generateLabels().length} months'
+                  '${preview.isNotEmpty ? ' · ${preview.first} → ${preview.last}' : ''}',
                   style: const TextStyle(
                       color: KColors.textDim, fontSize: 11)),
             ],
@@ -2214,19 +2464,8 @@ class _WpFormDialogState extends State<_WpFormDialog> {
   /// Builds a [CascadeService] from the live providers. Returns a
   /// service with a null gateway when the user isn't signed in — the
   /// service treats that as "no-op", so the UI doesn't need to branch.
-  CascadeService _cascadeFor(BuildContext context) {
-    final sync = context.read<SyncProvider>();
-    final token = sync.accessToken;
-    return CascadeService(
-      widget.db,
-      gateway: token == null
-          ? null
-          : SyncCascadeGateway(
-              client: SyncClient(baseUrl: sync.serverUrl),
-              accessToken: token,
-            ),
-    );
-  }
+  CascadeService _cascadeFor(BuildContext context) =>
+      buildCascadeService(context);
 
   Future<void> _delete() async {
     final confirm = await showDialog<bool>(

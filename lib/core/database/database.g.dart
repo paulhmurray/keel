@@ -648,6 +648,17 @@ class $ProgrammeLinksTable extends ProgrammeLinks
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _linkSecretMeta = const VerificationMeta(
+    'linkSecret',
+  );
+  @override
+  late final GeneratedColumn<String> linkSecret = GeneratedColumn<String>(
+    'link_secret',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _statusMeta = const VerificationMeta('status');
   @override
   late final GeneratedColumn<String> status = GeneratedColumn<String>(
@@ -694,6 +705,7 @@ class $ProgrammeLinksTable extends ProgrammeLinks
     partnerName,
     partnerLocalId,
     code,
+    linkSecret,
     status,
     generatedHere,
     createdAt,
@@ -771,6 +783,12 @@ class $ProgrammeLinksTable extends ProgrammeLinks
     } else if (isInserting) {
       context.missing(_codeMeta);
     }
+    if (data.containsKey('link_secret')) {
+      context.handle(
+        _linkSecretMeta,
+        linkSecret.isAcceptableOrUnknown(data['link_secret']!, _linkSecretMeta),
+      );
+    }
     if (data.containsKey('status')) {
       context.handle(
         _statusMeta,
@@ -829,6 +847,10 @@ class $ProgrammeLinksTable extends ProgrammeLinks
         DriftSqlType.string,
         data['${effectivePrefix}code'],
       )!,
+      linkSecret: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}link_secret'],
+      ),
       status: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}status'],
@@ -858,6 +880,7 @@ class ProgrammeLink extends DataClass implements Insertable<ProgrammeLink> {
   final String? partnerName;
   final String? partnerLocalId;
   final String code;
+  final String? linkSecret;
   final String status;
   final bool generatedHere;
   final DateTime createdAt;
@@ -869,6 +892,7 @@ class ProgrammeLink extends DataClass implements Insertable<ProgrammeLink> {
     this.partnerName,
     this.partnerLocalId,
     required this.code,
+    this.linkSecret,
     required this.status,
     required this.generatedHere,
     required this.createdAt,
@@ -887,6 +911,9 @@ class ProgrammeLink extends DataClass implements Insertable<ProgrammeLink> {
       map['partner_local_id'] = Variable<String>(partnerLocalId);
     }
     map['code'] = Variable<String>(code);
+    if (!nullToAbsent || linkSecret != null) {
+      map['link_secret'] = Variable<String>(linkSecret);
+    }
     map['status'] = Variable<String>(status);
     map['generated_here'] = Variable<bool>(generatedHere);
     map['created_at'] = Variable<DateTime>(createdAt);
@@ -906,6 +933,9 @@ class ProgrammeLink extends DataClass implements Insertable<ProgrammeLink> {
           ? const Value.absent()
           : Value(partnerLocalId),
       code: Value(code),
+      linkSecret: linkSecret == null && nullToAbsent
+          ? const Value.absent()
+          : Value(linkSecret),
       status: Value(status),
       generatedHere: Value(generatedHere),
       createdAt: Value(createdAt),
@@ -925,6 +955,7 @@ class ProgrammeLink extends DataClass implements Insertable<ProgrammeLink> {
       partnerName: serializer.fromJson<String?>(json['partnerName']),
       partnerLocalId: serializer.fromJson<String?>(json['partnerLocalId']),
       code: serializer.fromJson<String>(json['code']),
+      linkSecret: serializer.fromJson<String?>(json['linkSecret']),
       status: serializer.fromJson<String>(json['status']),
       generatedHere: serializer.fromJson<bool>(json['generatedHere']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
@@ -941,6 +972,7 @@ class ProgrammeLink extends DataClass implements Insertable<ProgrammeLink> {
       'partnerName': serializer.toJson<String?>(partnerName),
       'partnerLocalId': serializer.toJson<String?>(partnerLocalId),
       'code': serializer.toJson<String>(code),
+      'linkSecret': serializer.toJson<String?>(linkSecret),
       'status': serializer.toJson<String>(status),
       'generatedHere': serializer.toJson<bool>(generatedHere),
       'createdAt': serializer.toJson<DateTime>(createdAt),
@@ -955,6 +987,7 @@ class ProgrammeLink extends DataClass implements Insertable<ProgrammeLink> {
     Value<String?> partnerName = const Value.absent(),
     Value<String?> partnerLocalId = const Value.absent(),
     String? code,
+    Value<String?> linkSecret = const Value.absent(),
     String? status,
     bool? generatedHere,
     DateTime? createdAt,
@@ -968,6 +1001,7 @@ class ProgrammeLink extends DataClass implements Insertable<ProgrammeLink> {
         ? partnerLocalId.value
         : this.partnerLocalId,
     code: code ?? this.code,
+    linkSecret: linkSecret.present ? linkSecret.value : this.linkSecret,
     status: status ?? this.status,
     generatedHere: generatedHere ?? this.generatedHere,
     createdAt: createdAt ?? this.createdAt,
@@ -989,6 +1023,9 @@ class ProgrammeLink extends DataClass implements Insertable<ProgrammeLink> {
           ? data.partnerLocalId.value
           : this.partnerLocalId,
       code: data.code.present ? data.code.value : this.code,
+      linkSecret: data.linkSecret.present
+          ? data.linkSecret.value
+          : this.linkSecret,
       status: data.status.present ? data.status.value : this.status,
       generatedHere: data.generatedHere.present
           ? data.generatedHere.value
@@ -1007,6 +1044,7 @@ class ProgrammeLink extends DataClass implements Insertable<ProgrammeLink> {
           ..write('partnerName: $partnerName, ')
           ..write('partnerLocalId: $partnerLocalId, ')
           ..write('code: $code, ')
+          ..write('linkSecret: $linkSecret, ')
           ..write('status: $status, ')
           ..write('generatedHere: $generatedHere, ')
           ..write('createdAt: $createdAt')
@@ -1023,6 +1061,7 @@ class ProgrammeLink extends DataClass implements Insertable<ProgrammeLink> {
     partnerName,
     partnerLocalId,
     code,
+    linkSecret,
     status,
     generatedHere,
     createdAt,
@@ -1038,6 +1077,7 @@ class ProgrammeLink extends DataClass implements Insertable<ProgrammeLink> {
           other.partnerName == this.partnerName &&
           other.partnerLocalId == this.partnerLocalId &&
           other.code == this.code &&
+          other.linkSecret == this.linkSecret &&
           other.status == this.status &&
           other.generatedHere == this.generatedHere &&
           other.createdAt == this.createdAt);
@@ -1051,6 +1091,7 @@ class ProgrammeLinksCompanion extends UpdateCompanion<ProgrammeLink> {
   final Value<String?> partnerName;
   final Value<String?> partnerLocalId;
   final Value<String> code;
+  final Value<String?> linkSecret;
   final Value<String> status;
   final Value<bool> generatedHere;
   final Value<DateTime> createdAt;
@@ -1063,6 +1104,7 @@ class ProgrammeLinksCompanion extends UpdateCompanion<ProgrammeLink> {
     this.partnerName = const Value.absent(),
     this.partnerLocalId = const Value.absent(),
     this.code = const Value.absent(),
+    this.linkSecret = const Value.absent(),
     this.status = const Value.absent(),
     this.generatedHere = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -1076,6 +1118,7 @@ class ProgrammeLinksCompanion extends UpdateCompanion<ProgrammeLink> {
     this.partnerName = const Value.absent(),
     this.partnerLocalId = const Value.absent(),
     required String code,
+    this.linkSecret = const Value.absent(),
     this.status = const Value.absent(),
     this.generatedHere = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -1093,6 +1136,7 @@ class ProgrammeLinksCompanion extends UpdateCompanion<ProgrammeLink> {
     Expression<String>? partnerName,
     Expression<String>? partnerLocalId,
     Expression<String>? code,
+    Expression<String>? linkSecret,
     Expression<String>? status,
     Expression<bool>? generatedHere,
     Expression<DateTime>? createdAt,
@@ -1106,6 +1150,7 @@ class ProgrammeLinksCompanion extends UpdateCompanion<ProgrammeLink> {
       if (partnerName != null) 'partner_name': partnerName,
       if (partnerLocalId != null) 'partner_local_id': partnerLocalId,
       if (code != null) 'code': code,
+      if (linkSecret != null) 'link_secret': linkSecret,
       if (status != null) 'status': status,
       if (generatedHere != null) 'generated_here': generatedHere,
       if (createdAt != null) 'created_at': createdAt,
@@ -1121,6 +1166,7 @@ class ProgrammeLinksCompanion extends UpdateCompanion<ProgrammeLink> {
     Value<String?>? partnerName,
     Value<String?>? partnerLocalId,
     Value<String>? code,
+    Value<String?>? linkSecret,
     Value<String>? status,
     Value<bool>? generatedHere,
     Value<DateTime>? createdAt,
@@ -1134,6 +1180,7 @@ class ProgrammeLinksCompanion extends UpdateCompanion<ProgrammeLink> {
       partnerName: partnerName ?? this.partnerName,
       partnerLocalId: partnerLocalId ?? this.partnerLocalId,
       code: code ?? this.code,
+      linkSecret: linkSecret ?? this.linkSecret,
       status: status ?? this.status,
       generatedHere: generatedHere ?? this.generatedHere,
       createdAt: createdAt ?? this.createdAt,
@@ -1165,6 +1212,9 @@ class ProgrammeLinksCompanion extends UpdateCompanion<ProgrammeLink> {
     if (code.present) {
       map['code'] = Variable<String>(code.value);
     }
+    if (linkSecret.present) {
+      map['link_secret'] = Variable<String>(linkSecret.value);
+    }
     if (status.present) {
       map['status'] = Variable<String>(status.value);
     }
@@ -1190,9 +1240,479 @@ class ProgrammeLinksCompanion extends UpdateCompanion<ProgrammeLink> {
           ..write('partnerName: $partnerName, ')
           ..write('partnerLocalId: $partnerLocalId, ')
           ..write('code: $code, ')
+          ..write('linkSecret: $linkSecret, ')
           ..write('status: $status, ')
           ..write('generatedHere: $generatedHere, ')
           ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $CascadeItemsTable extends CascadeItems
+    with TableInfo<$CascadeItemsTable, CascadeItem> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CascadeItemsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _codeMeta = const VerificationMeta('code');
+  @override
+  late final GeneratedColumn<String> code = GeneratedColumn<String>(
+    'code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceEntityIdMeta = const VerificationMeta(
+    'sourceEntityId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceEntityId = GeneratedColumn<String>(
+    'source_entity_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _itemKindMeta = const VerificationMeta(
+    'itemKind',
+  );
+  @override
+  late final GeneratedColumn<String> itemKind = GeneratedColumn<String>(
+    'item_kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _itemIdMeta = const VerificationMeta('itemId');
+  @override
+  late final GeneratedColumn<String> itemId = GeneratedColumn<String>(
+    'item_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _payloadMeta = const VerificationMeta(
+    'payload',
+  );
+  @override
+  late final GeneratedColumn<String> payload = GeneratedColumn<String>(
+    'payload',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deletedMeta = const VerificationMeta(
+    'deleted',
+  );
+  @override
+  late final GeneratedColumn<bool> deleted = GeneratedColumn<bool>(
+    'deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    code,
+    sourceEntityId,
+    itemKind,
+    itemId,
+    payload,
+    deleted,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'cascade_items';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CascadeItem> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('code')) {
+      context.handle(
+        _codeMeta,
+        code.isAcceptableOrUnknown(data['code']!, _codeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_codeMeta);
+    }
+    if (data.containsKey('source_entity_id')) {
+      context.handle(
+        _sourceEntityIdMeta,
+        sourceEntityId.isAcceptableOrUnknown(
+          data['source_entity_id']!,
+          _sourceEntityIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceEntityIdMeta);
+    }
+    if (data.containsKey('item_kind')) {
+      context.handle(
+        _itemKindMeta,
+        itemKind.isAcceptableOrUnknown(data['item_kind']!, _itemKindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_itemKindMeta);
+    }
+    if (data.containsKey('item_id')) {
+      context.handle(
+        _itemIdMeta,
+        itemId.isAcceptableOrUnknown(data['item_id']!, _itemIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_itemIdMeta);
+    }
+    if (data.containsKey('payload')) {
+      context.handle(
+        _payloadMeta,
+        payload.isAcceptableOrUnknown(data['payload']!, _payloadMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_payloadMeta);
+    }
+    if (data.containsKey('deleted')) {
+      context.handle(
+        _deletedMeta,
+        deleted.isAcceptableOrUnknown(data['deleted']!, _deletedMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {code, itemKind, itemId};
+  @override
+  CascadeItem map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CascadeItem(
+      code: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}code'],
+      )!,
+      sourceEntityId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_entity_id'],
+      )!,
+      itemKind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}item_kind'],
+      )!,
+      itemId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}item_id'],
+      )!,
+      payload: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload'],
+      )!,
+      deleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}deleted'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $CascadeItemsTable createAlias(String alias) {
+    return $CascadeItemsTable(attachedDatabase, alias);
+  }
+}
+
+class CascadeItem extends DataClass implements Insertable<CascadeItem> {
+  final String code;
+  final String sourceEntityId;
+  final String itemKind;
+  final String itemId;
+  final String payload;
+  final bool deleted;
+  final DateTime updatedAt;
+  const CascadeItem({
+    required this.code,
+    required this.sourceEntityId,
+    required this.itemKind,
+    required this.itemId,
+    required this.payload,
+    required this.deleted,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['code'] = Variable<String>(code);
+    map['source_entity_id'] = Variable<String>(sourceEntityId);
+    map['item_kind'] = Variable<String>(itemKind);
+    map['item_id'] = Variable<String>(itemId);
+    map['payload'] = Variable<String>(payload);
+    map['deleted'] = Variable<bool>(deleted);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  CascadeItemsCompanion toCompanion(bool nullToAbsent) {
+    return CascadeItemsCompanion(
+      code: Value(code),
+      sourceEntityId: Value(sourceEntityId),
+      itemKind: Value(itemKind),
+      itemId: Value(itemId),
+      payload: Value(payload),
+      deleted: Value(deleted),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory CascadeItem.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CascadeItem(
+      code: serializer.fromJson<String>(json['code']),
+      sourceEntityId: serializer.fromJson<String>(json['sourceEntityId']),
+      itemKind: serializer.fromJson<String>(json['itemKind']),
+      itemId: serializer.fromJson<String>(json['itemId']),
+      payload: serializer.fromJson<String>(json['payload']),
+      deleted: serializer.fromJson<bool>(json['deleted']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'code': serializer.toJson<String>(code),
+      'sourceEntityId': serializer.toJson<String>(sourceEntityId),
+      'itemKind': serializer.toJson<String>(itemKind),
+      'itemId': serializer.toJson<String>(itemId),
+      'payload': serializer.toJson<String>(payload),
+      'deleted': serializer.toJson<bool>(deleted),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  CascadeItem copyWith({
+    String? code,
+    String? sourceEntityId,
+    String? itemKind,
+    String? itemId,
+    String? payload,
+    bool? deleted,
+    DateTime? updatedAt,
+  }) => CascadeItem(
+    code: code ?? this.code,
+    sourceEntityId: sourceEntityId ?? this.sourceEntityId,
+    itemKind: itemKind ?? this.itemKind,
+    itemId: itemId ?? this.itemId,
+    payload: payload ?? this.payload,
+    deleted: deleted ?? this.deleted,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  CascadeItem copyWithCompanion(CascadeItemsCompanion data) {
+    return CascadeItem(
+      code: data.code.present ? data.code.value : this.code,
+      sourceEntityId: data.sourceEntityId.present
+          ? data.sourceEntityId.value
+          : this.sourceEntityId,
+      itemKind: data.itemKind.present ? data.itemKind.value : this.itemKind,
+      itemId: data.itemId.present ? data.itemId.value : this.itemId,
+      payload: data.payload.present ? data.payload.value : this.payload,
+      deleted: data.deleted.present ? data.deleted.value : this.deleted,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CascadeItem(')
+          ..write('code: $code, ')
+          ..write('sourceEntityId: $sourceEntityId, ')
+          ..write('itemKind: $itemKind, ')
+          ..write('itemId: $itemId, ')
+          ..write('payload: $payload, ')
+          ..write('deleted: $deleted, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    code,
+    sourceEntityId,
+    itemKind,
+    itemId,
+    payload,
+    deleted,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CascadeItem &&
+          other.code == this.code &&
+          other.sourceEntityId == this.sourceEntityId &&
+          other.itemKind == this.itemKind &&
+          other.itemId == this.itemId &&
+          other.payload == this.payload &&
+          other.deleted == this.deleted &&
+          other.updatedAt == this.updatedAt);
+}
+
+class CascadeItemsCompanion extends UpdateCompanion<CascadeItem> {
+  final Value<String> code;
+  final Value<String> sourceEntityId;
+  final Value<String> itemKind;
+  final Value<String> itemId;
+  final Value<String> payload;
+  final Value<bool> deleted;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const CascadeItemsCompanion({
+    this.code = const Value.absent(),
+    this.sourceEntityId = const Value.absent(),
+    this.itemKind = const Value.absent(),
+    this.itemId = const Value.absent(),
+    this.payload = const Value.absent(),
+    this.deleted = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CascadeItemsCompanion.insert({
+    required String code,
+    required String sourceEntityId,
+    required String itemKind,
+    required String itemId,
+    required String payload,
+    this.deleted = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : code = Value(code),
+       sourceEntityId = Value(sourceEntityId),
+       itemKind = Value(itemKind),
+       itemId = Value(itemId),
+       payload = Value(payload);
+  static Insertable<CascadeItem> custom({
+    Expression<String>? code,
+    Expression<String>? sourceEntityId,
+    Expression<String>? itemKind,
+    Expression<String>? itemId,
+    Expression<String>? payload,
+    Expression<bool>? deleted,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (code != null) 'code': code,
+      if (sourceEntityId != null) 'source_entity_id': sourceEntityId,
+      if (itemKind != null) 'item_kind': itemKind,
+      if (itemId != null) 'item_id': itemId,
+      if (payload != null) 'payload': payload,
+      if (deleted != null) 'deleted': deleted,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CascadeItemsCompanion copyWith({
+    Value<String>? code,
+    Value<String>? sourceEntityId,
+    Value<String>? itemKind,
+    Value<String>? itemId,
+    Value<String>? payload,
+    Value<bool>? deleted,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return CascadeItemsCompanion(
+      code: code ?? this.code,
+      sourceEntityId: sourceEntityId ?? this.sourceEntityId,
+      itemKind: itemKind ?? this.itemKind,
+      itemId: itemId ?? this.itemId,
+      payload: payload ?? this.payload,
+      deleted: deleted ?? this.deleted,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (code.present) {
+      map['code'] = Variable<String>(code.value);
+    }
+    if (sourceEntityId.present) {
+      map['source_entity_id'] = Variable<String>(sourceEntityId.value);
+    }
+    if (itemKind.present) {
+      map['item_kind'] = Variable<String>(itemKind.value);
+    }
+    if (itemId.present) {
+      map['item_id'] = Variable<String>(itemId.value);
+    }
+    if (payload.present) {
+      map['payload'] = Variable<String>(payload.value);
+    }
+    if (deleted.present) {
+      map['deleted'] = Variable<bool>(deleted.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CascadeItemsCompanion(')
+          ..write('code: $code, ')
+          ..write('sourceEntityId: $sourceEntityId, ')
+          ..write('itemKind: $itemKind, ')
+          ..write('itemId: $itemId, ')
+          ..write('payload: $payload, ')
+          ..write('deleted: $deleted, ')
+          ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -8791,6 +9311,17 @@ class $StakeholderProfilesTable extends StakeholderProfiles
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _sourceProjectIdMeta = const VerificationMeta(
+    'sourceProjectId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceProjectId = GeneratedColumn<String>(
+    'source_project_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -8825,6 +9356,7 @@ class $StakeholderProfilesTable extends StakeholderProfiles
     stance,
     engagementStrategy,
     notes,
+    sourceProjectId,
     createdAt,
     updatedAt,
   ];
@@ -8894,6 +9426,15 @@ class $StakeholderProfilesTable extends StakeholderProfiles
         notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
       );
     }
+    if (data.containsKey('source_project_id')) {
+      context.handle(
+        _sourceProjectIdMeta,
+        sourceProjectId.isAcceptableOrUnknown(
+          data['source_project_id']!,
+          _sourceProjectIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -8947,6 +9488,10 @@ class $StakeholderProfilesTable extends StakeholderProfiles
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
       ),
+      sourceProjectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_project_id'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -8974,6 +9519,7 @@ class StakeholderProfile extends DataClass
   final String? stance;
   final String? engagementStrategy;
   final String? notes;
+  final String? sourceProjectId;
   final DateTime createdAt;
   final DateTime updatedAt;
   const StakeholderProfile({
@@ -8985,6 +9531,7 @@ class StakeholderProfile extends DataClass
     this.stance,
     this.engagementStrategy,
     this.notes,
+    this.sourceProjectId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -9008,6 +9555,9 @@ class StakeholderProfile extends DataClass
     }
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
+    }
+    if (!nullToAbsent || sourceProjectId != null) {
+      map['source_project_id'] = Variable<String>(sourceProjectId);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -9034,6 +9584,9 @@ class StakeholderProfile extends DataClass
       notes: notes == null && nullToAbsent
           ? const Value.absent()
           : Value(notes),
+      sourceProjectId: sourceProjectId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceProjectId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -9055,6 +9608,7 @@ class StakeholderProfile extends DataClass
         json['engagementStrategy'],
       ),
       notes: serializer.fromJson<String?>(json['notes']),
+      sourceProjectId: serializer.fromJson<String?>(json['sourceProjectId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -9071,6 +9625,7 @@ class StakeholderProfile extends DataClass
       'stance': serializer.toJson<String?>(stance),
       'engagementStrategy': serializer.toJson<String?>(engagementStrategy),
       'notes': serializer.toJson<String?>(notes),
+      'sourceProjectId': serializer.toJson<String?>(sourceProjectId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -9085,6 +9640,7 @@ class StakeholderProfile extends DataClass
     Value<String?> stance = const Value.absent(),
     Value<String?> engagementStrategy = const Value.absent(),
     Value<String?> notes = const Value.absent(),
+    Value<String?> sourceProjectId = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => StakeholderProfile(
@@ -9098,6 +9654,9 @@ class StakeholderProfile extends DataClass
         ? engagementStrategy.value
         : this.engagementStrategy,
     notes: notes.present ? notes.value : this.notes,
+    sourceProjectId: sourceProjectId.present
+        ? sourceProjectId.value
+        : this.sourceProjectId,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -9113,6 +9672,9 @@ class StakeholderProfile extends DataClass
           ? data.engagementStrategy.value
           : this.engagementStrategy,
       notes: data.notes.present ? data.notes.value : this.notes,
+      sourceProjectId: data.sourceProjectId.present
+          ? data.sourceProjectId.value
+          : this.sourceProjectId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -9129,6 +9691,7 @@ class StakeholderProfile extends DataClass
           ..write('stance: $stance, ')
           ..write('engagementStrategy: $engagementStrategy, ')
           ..write('notes: $notes, ')
+          ..write('sourceProjectId: $sourceProjectId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -9145,6 +9708,7 @@ class StakeholderProfile extends DataClass
     stance,
     engagementStrategy,
     notes,
+    sourceProjectId,
     createdAt,
     updatedAt,
   );
@@ -9160,6 +9724,7 @@ class StakeholderProfile extends DataClass
           other.stance == this.stance &&
           other.engagementStrategy == this.engagementStrategy &&
           other.notes == this.notes &&
+          other.sourceProjectId == this.sourceProjectId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -9173,6 +9738,7 @@ class StakeholderProfilesCompanion extends UpdateCompanion<StakeholderProfile> {
   final Value<String?> stance;
   final Value<String?> engagementStrategy;
   final Value<String?> notes;
+  final Value<String?> sourceProjectId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -9185,6 +9751,7 @@ class StakeholderProfilesCompanion extends UpdateCompanion<StakeholderProfile> {
     this.stance = const Value.absent(),
     this.engagementStrategy = const Value.absent(),
     this.notes = const Value.absent(),
+    this.sourceProjectId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -9198,6 +9765,7 @@ class StakeholderProfilesCompanion extends UpdateCompanion<StakeholderProfile> {
     this.stance = const Value.absent(),
     this.engagementStrategy = const Value.absent(),
     this.notes = const Value.absent(),
+    this.sourceProjectId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -9213,6 +9781,7 @@ class StakeholderProfilesCompanion extends UpdateCompanion<StakeholderProfile> {
     Expression<String>? stance,
     Expression<String>? engagementStrategy,
     Expression<String>? notes,
+    Expression<String>? sourceProjectId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -9226,6 +9795,7 @@ class StakeholderProfilesCompanion extends UpdateCompanion<StakeholderProfile> {
       if (stance != null) 'stance': stance,
       if (engagementStrategy != null) 'engagement_strategy': engagementStrategy,
       if (notes != null) 'notes': notes,
+      if (sourceProjectId != null) 'source_project_id': sourceProjectId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -9241,6 +9811,7 @@ class StakeholderProfilesCompanion extends UpdateCompanion<StakeholderProfile> {
     Value<String?>? stance,
     Value<String?>? engagementStrategy,
     Value<String?>? notes,
+    Value<String?>? sourceProjectId,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -9254,6 +9825,7 @@ class StakeholderProfilesCompanion extends UpdateCompanion<StakeholderProfile> {
       stance: stance ?? this.stance,
       engagementStrategy: engagementStrategy ?? this.engagementStrategy,
       notes: notes ?? this.notes,
+      sourceProjectId: sourceProjectId ?? this.sourceProjectId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -9287,6 +9859,9 @@ class StakeholderProfilesCompanion extends UpdateCompanion<StakeholderProfile> {
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
+    if (sourceProjectId.present) {
+      map['source_project_id'] = Variable<String>(sourceProjectId.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -9310,6 +9885,7 @@ class StakeholderProfilesCompanion extends UpdateCompanion<StakeholderProfile> {
           ..write('stance: $stance, ')
           ..write('engagementStrategy: $engagementStrategy, ')
           ..write('notes: $notes, ')
+          ..write('sourceProjectId: $sourceProjectId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -9501,6 +10077,17 @@ class $StakeholderRolesTable extends StakeholderRoles
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _sourceProjectIdMeta = const VerificationMeta(
+    'sourceProjectId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceProjectId = GeneratedColumn<String>(
+    'source_project_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -9542,6 +10129,7 @@ class $StakeholderRolesTable extends StakeholderRoles
     engagementStatus,
     gapFlag,
     gapDescription,
+    sourceProjectId,
     createdAt,
     updatedAt,
   ];
@@ -9667,6 +10255,15 @@ class $StakeholderRolesTable extends StakeholderRoles
         ),
       );
     }
+    if (data.containsKey('source_project_id')) {
+      context.handle(
+        _sourceProjectIdMeta,
+        sourceProjectId.isAcceptableOrUnknown(
+          data['source_project_id']!,
+          _sourceProjectIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -9748,6 +10345,10 @@ class $StakeholderRolesTable extends StakeholderRoles
         DriftSqlType.string,
         data['${effectivePrefix}gap_description'],
       ),
+      sourceProjectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_project_id'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -9781,6 +10382,7 @@ class StakeholderRole extends DataClass implements Insertable<StakeholderRole> {
   final String? engagementStatus;
   final bool gapFlag;
   final String? gapDescription;
+  final String? sourceProjectId;
   final DateTime createdAt;
   final DateTime updatedAt;
   const StakeholderRole({
@@ -9799,6 +10401,7 @@ class StakeholderRole extends DataClass implements Insertable<StakeholderRole> {
     this.engagementStatus,
     required this.gapFlag,
     this.gapDescription,
+    this.sourceProjectId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -9833,6 +10436,9 @@ class StakeholderRole extends DataClass implements Insertable<StakeholderRole> {
     map['gap_flag'] = Variable<bool>(gapFlag);
     if (!nullToAbsent || gapDescription != null) {
       map['gap_description'] = Variable<String>(gapDescription);
+    }
+    if (!nullToAbsent || sourceProjectId != null) {
+      map['source_project_id'] = Variable<String>(sourceProjectId);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -9870,6 +10476,9 @@ class StakeholderRole extends DataClass implements Insertable<StakeholderRole> {
       gapDescription: gapDescription == null && nullToAbsent
           ? const Value.absent()
           : Value(gapDescription),
+      sourceProjectId: sourceProjectId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceProjectId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -9898,6 +10507,7 @@ class StakeholderRole extends DataClass implements Insertable<StakeholderRole> {
       engagementStatus: serializer.fromJson<String?>(json['engagementStatus']),
       gapFlag: serializer.fromJson<bool>(json['gapFlag']),
       gapDescription: serializer.fromJson<String?>(json['gapDescription']),
+      sourceProjectId: serializer.fromJson<String?>(json['sourceProjectId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -9921,6 +10531,7 @@ class StakeholderRole extends DataClass implements Insertable<StakeholderRole> {
       'engagementStatus': serializer.toJson<String?>(engagementStatus),
       'gapFlag': serializer.toJson<bool>(gapFlag),
       'gapDescription': serializer.toJson<String?>(gapDescription),
+      'sourceProjectId': serializer.toJson<String?>(sourceProjectId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -9942,6 +10553,7 @@ class StakeholderRole extends DataClass implements Insertable<StakeholderRole> {
     Value<String?> engagementStatus = const Value.absent(),
     bool? gapFlag,
     Value<String?> gapDescription = const Value.absent(),
+    Value<String?> sourceProjectId = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => StakeholderRole(
@@ -9968,6 +10580,9 @@ class StakeholderRole extends DataClass implements Insertable<StakeholderRole> {
     gapDescription: gapDescription.present
         ? gapDescription.value
         : this.gapDescription,
+    sourceProjectId: sourceProjectId.present
+        ? sourceProjectId.value
+        : this.sourceProjectId,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -10000,6 +10615,9 @@ class StakeholderRole extends DataClass implements Insertable<StakeholderRole> {
       gapDescription: data.gapDescription.present
           ? data.gapDescription.value
           : this.gapDescription,
+      sourceProjectId: data.sourceProjectId.present
+          ? data.sourceProjectId.value
+          : this.sourceProjectId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -10023,6 +10641,7 @@ class StakeholderRole extends DataClass implements Insertable<StakeholderRole> {
           ..write('engagementStatus: $engagementStatus, ')
           ..write('gapFlag: $gapFlag, ')
           ..write('gapDescription: $gapDescription, ')
+          ..write('sourceProjectId: $sourceProjectId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -10046,6 +10665,7 @@ class StakeholderRole extends DataClass implements Insertable<StakeholderRole> {
     engagementStatus,
     gapFlag,
     gapDescription,
+    sourceProjectId,
     createdAt,
     updatedAt,
   );
@@ -10068,6 +10688,7 @@ class StakeholderRole extends DataClass implements Insertable<StakeholderRole> {
           other.engagementStatus == this.engagementStatus &&
           other.gapFlag == this.gapFlag &&
           other.gapDescription == this.gapDescription &&
+          other.sourceProjectId == this.sourceProjectId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -10088,6 +10709,7 @@ class StakeholderRolesCompanion extends UpdateCompanion<StakeholderRole> {
   final Value<String?> engagementStatus;
   final Value<bool> gapFlag;
   final Value<String?> gapDescription;
+  final Value<String?> sourceProjectId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -10107,6 +10729,7 @@ class StakeholderRolesCompanion extends UpdateCompanion<StakeholderRole> {
     this.engagementStatus = const Value.absent(),
     this.gapFlag = const Value.absent(),
     this.gapDescription = const Value.absent(),
+    this.sourceProjectId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -10127,6 +10750,7 @@ class StakeholderRolesCompanion extends UpdateCompanion<StakeholderRole> {
     this.engagementStatus = const Value.absent(),
     this.gapFlag = const Value.absent(),
     this.gapDescription = const Value.absent(),
+    this.sourceProjectId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -10150,6 +10774,7 @@ class StakeholderRolesCompanion extends UpdateCompanion<StakeholderRole> {
     Expression<String>? engagementStatus,
     Expression<bool>? gapFlag,
     Expression<String>? gapDescription,
+    Expression<String>? sourceProjectId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -10171,6 +10796,7 @@ class StakeholderRolesCompanion extends UpdateCompanion<StakeholderRole> {
       if (engagementStatus != null) 'engagement_status': engagementStatus,
       if (gapFlag != null) 'gap_flag': gapFlag,
       if (gapDescription != null) 'gap_description': gapDescription,
+      if (sourceProjectId != null) 'source_project_id': sourceProjectId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -10193,6 +10819,7 @@ class StakeholderRolesCompanion extends UpdateCompanion<StakeholderRole> {
     Value<String?>? engagementStatus,
     Value<bool>? gapFlag,
     Value<String?>? gapDescription,
+    Value<String?>? sourceProjectId,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -10213,6 +10840,7 @@ class StakeholderRolesCompanion extends UpdateCompanion<StakeholderRole> {
       engagementStatus: engagementStatus ?? this.engagementStatus,
       gapFlag: gapFlag ?? this.gapFlag,
       gapDescription: gapDescription ?? this.gapDescription,
+      sourceProjectId: sourceProjectId ?? this.sourceProjectId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -10269,6 +10897,9 @@ class StakeholderRolesCompanion extends UpdateCompanion<StakeholderRole> {
     if (gapDescription.present) {
       map['gap_description'] = Variable<String>(gapDescription.value);
     }
+    if (sourceProjectId.present) {
+      map['source_project_id'] = Variable<String>(sourceProjectId.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -10299,6 +10930,7 @@ class StakeholderRolesCompanion extends UpdateCompanion<StakeholderRole> {
           ..write('engagementStatus: $engagementStatus, ')
           ..write('gapFlag: $gapFlag, ')
           ..write('gapDescription: $gapDescription, ')
+          ..write('sourceProjectId: $sourceProjectId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -10420,6 +11052,17 @@ class $TeamRolesTable extends TeamRoles
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _sourceProjectIdMeta = const VerificationMeta(
+    'sourceProjectId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceProjectId = GeneratedColumn<String>(
+    'source_project_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -10455,6 +11098,7 @@ class $TeamRolesTable extends TeamRoles
     isApplicable,
     sortOrder,
     notes,
+    sourceProjectId,
     createdAt,
     updatedAt,
   ];
@@ -10532,6 +11176,15 @@ class $TeamRolesTable extends TeamRoles
         notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
       );
     }
+    if (data.containsKey('source_project_id')) {
+      context.handle(
+        _sourceProjectIdMeta,
+        sourceProjectId.isAcceptableOrUnknown(
+          data['source_project_id']!,
+          _sourceProjectIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -10589,6 +11242,10 @@ class $TeamRolesTable extends TeamRoles
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
       ),
+      sourceProjectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_project_id'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -10616,6 +11273,7 @@ class TeamRole extends DataClass implements Insertable<TeamRole> {
   final bool isApplicable;
   final int sortOrder;
   final String? notes;
+  final String? sourceProjectId;
   final DateTime createdAt;
   final DateTime updatedAt;
   const TeamRole({
@@ -10628,6 +11286,7 @@ class TeamRole extends DataClass implements Insertable<TeamRole> {
     required this.isApplicable,
     required this.sortOrder,
     this.notes,
+    this.sourceProjectId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -10646,6 +11305,9 @@ class TeamRole extends DataClass implements Insertable<TeamRole> {
     map['sort_order'] = Variable<int>(sortOrder);
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
+    }
+    if (!nullToAbsent || sourceProjectId != null) {
+      map['source_project_id'] = Variable<String>(sourceProjectId);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -10667,6 +11329,9 @@ class TeamRole extends DataClass implements Insertable<TeamRole> {
       notes: notes == null && nullToAbsent
           ? const Value.absent()
           : Value(notes),
+      sourceProjectId: sourceProjectId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceProjectId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -10687,6 +11352,7 @@ class TeamRole extends DataClass implements Insertable<TeamRole> {
       isApplicable: serializer.fromJson<bool>(json['isApplicable']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
       notes: serializer.fromJson<String?>(json['notes']),
+      sourceProjectId: serializer.fromJson<String?>(json['sourceProjectId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -10704,6 +11370,7 @@ class TeamRole extends DataClass implements Insertable<TeamRole> {
       'isApplicable': serializer.toJson<bool>(isApplicable),
       'sortOrder': serializer.toJson<int>(sortOrder),
       'notes': serializer.toJson<String?>(notes),
+      'sourceProjectId': serializer.toJson<String?>(sourceProjectId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -10719,6 +11386,7 @@ class TeamRole extends DataClass implements Insertable<TeamRole> {
     bool? isApplicable,
     int? sortOrder,
     Value<String?> notes = const Value.absent(),
+    Value<String?> sourceProjectId = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => TeamRole(
@@ -10731,6 +11399,9 @@ class TeamRole extends DataClass implements Insertable<TeamRole> {
     isApplicable: isApplicable ?? this.isApplicable,
     sortOrder: sortOrder ?? this.sortOrder,
     notes: notes.present ? notes.value : this.notes,
+    sourceProjectId: sourceProjectId.present
+        ? sourceProjectId.value
+        : this.sourceProjectId,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -10749,6 +11420,9 @@ class TeamRole extends DataClass implements Insertable<TeamRole> {
           : this.isApplicable,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
       notes: data.notes.present ? data.notes.value : this.notes,
+      sourceProjectId: data.sourceProjectId.present
+          ? data.sourceProjectId.value
+          : this.sourceProjectId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -10766,6 +11440,7 @@ class TeamRole extends DataClass implements Insertable<TeamRole> {
           ..write('isApplicable: $isApplicable, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('notes: $notes, ')
+          ..write('sourceProjectId: $sourceProjectId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -10783,6 +11458,7 @@ class TeamRole extends DataClass implements Insertable<TeamRole> {
     isApplicable,
     sortOrder,
     notes,
+    sourceProjectId,
     createdAt,
     updatedAt,
   );
@@ -10799,6 +11475,7 @@ class TeamRole extends DataClass implements Insertable<TeamRole> {
           other.isApplicable == this.isApplicable &&
           other.sortOrder == this.sortOrder &&
           other.notes == this.notes &&
+          other.sourceProjectId == this.sourceProjectId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -10813,6 +11490,7 @@ class TeamRolesCompanion extends UpdateCompanion<TeamRole> {
   final Value<bool> isApplicable;
   final Value<int> sortOrder;
   final Value<String?> notes;
+  final Value<String?> sourceProjectId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -10826,6 +11504,7 @@ class TeamRolesCompanion extends UpdateCompanion<TeamRole> {
     this.isApplicable = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.notes = const Value.absent(),
+    this.sourceProjectId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -10840,6 +11519,7 @@ class TeamRolesCompanion extends UpdateCompanion<TeamRole> {
     this.isApplicable = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.notes = const Value.absent(),
+    this.sourceProjectId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -10857,6 +11537,7 @@ class TeamRolesCompanion extends UpdateCompanion<TeamRole> {
     Expression<bool>? isApplicable,
     Expression<int>? sortOrder,
     Expression<String>? notes,
+    Expression<String>? sourceProjectId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -10871,6 +11552,7 @@ class TeamRolesCompanion extends UpdateCompanion<TeamRole> {
       if (isApplicable != null) 'is_applicable': isApplicable,
       if (sortOrder != null) 'sort_order': sortOrder,
       if (notes != null) 'notes': notes,
+      if (sourceProjectId != null) 'source_project_id': sourceProjectId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -10887,6 +11569,7 @@ class TeamRolesCompanion extends UpdateCompanion<TeamRole> {
     Value<bool>? isApplicable,
     Value<int>? sortOrder,
     Value<String?>? notes,
+    Value<String?>? sourceProjectId,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -10901,6 +11584,7 @@ class TeamRolesCompanion extends UpdateCompanion<TeamRole> {
       isApplicable: isApplicable ?? this.isApplicable,
       sortOrder: sortOrder ?? this.sortOrder,
       notes: notes ?? this.notes,
+      sourceProjectId: sourceProjectId ?? this.sourceProjectId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -10937,6 +11621,9 @@ class TeamRolesCompanion extends UpdateCompanion<TeamRole> {
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
+    if (sourceProjectId.present) {
+      map['source_project_id'] = Variable<String>(sourceProjectId.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -10961,6 +11648,7 @@ class TeamRolesCompanion extends UpdateCompanion<TeamRole> {
           ..write('isApplicable: $isApplicable, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('notes: $notes, ')
+          ..write('sourceProjectId: $sourceProjectId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -12431,6 +13119,17 @@ class $ColleagueProfilesTable extends ColleagueProfiles
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _sourceProjectIdMeta = const VerificationMeta(
+    'sourceProjectId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceProjectId = GeneratedColumn<String>(
+    'source_project_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -12465,6 +13164,7 @@ class $ColleagueProfilesTable extends ColleagueProfiles
     notes,
     team,
     directReport,
+    sourceProjectId,
     createdAt,
     updatedAt,
   ];
@@ -12540,6 +13240,15 @@ class $ColleagueProfilesTable extends ColleagueProfiles
         ),
       );
     }
+    if (data.containsKey('source_project_id')) {
+      context.handle(
+        _sourceProjectIdMeta,
+        sourceProjectId.isAcceptableOrUnknown(
+          data['source_project_id']!,
+          _sourceProjectIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -12593,6 +13302,10 @@ class $ColleagueProfilesTable extends ColleagueProfiles
         DriftSqlType.bool,
         data['${effectivePrefix}direct_report'],
       )!,
+      sourceProjectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_project_id'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -12620,6 +13333,7 @@ class ColleagueProfile extends DataClass
   final String? notes;
   final String? team;
   final bool directReport;
+  final String? sourceProjectId;
   final DateTime createdAt;
   final DateTime updatedAt;
   const ColleagueProfile({
@@ -12631,6 +13345,7 @@ class ColleagueProfile extends DataClass
     this.notes,
     this.team,
     required this.directReport,
+    this.sourceProjectId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -12653,6 +13368,9 @@ class ColleagueProfile extends DataClass
       map['team'] = Variable<String>(team);
     }
     map['direct_report'] = Variable<bool>(directReport);
+    if (!nullToAbsent || sourceProjectId != null) {
+      map['source_project_id'] = Variable<String>(sourceProjectId);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -12674,6 +13392,9 @@ class ColleagueProfile extends DataClass
           : Value(notes),
       team: team == null && nullToAbsent ? const Value.absent() : Value(team),
       directReport: Value(directReport),
+      sourceProjectId: sourceProjectId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceProjectId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -12693,6 +13414,7 @@ class ColleagueProfile extends DataClass
       notes: serializer.fromJson<String?>(json['notes']),
       team: serializer.fromJson<String?>(json['team']),
       directReport: serializer.fromJson<bool>(json['directReport']),
+      sourceProjectId: serializer.fromJson<String?>(json['sourceProjectId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -12709,6 +13431,7 @@ class ColleagueProfile extends DataClass
       'notes': serializer.toJson<String?>(notes),
       'team': serializer.toJson<String?>(team),
       'directReport': serializer.toJson<bool>(directReport),
+      'sourceProjectId': serializer.toJson<String?>(sourceProjectId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -12723,6 +13446,7 @@ class ColleagueProfile extends DataClass
     Value<String?> notes = const Value.absent(),
     Value<String?> team = const Value.absent(),
     bool? directReport,
+    Value<String?> sourceProjectId = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => ColleagueProfile(
@@ -12734,6 +13458,9 @@ class ColleagueProfile extends DataClass
     notes: notes.present ? notes.value : this.notes,
     team: team.present ? team.value : this.team,
     directReport: directReport ?? this.directReport,
+    sourceProjectId: sourceProjectId.present
+        ? sourceProjectId.value
+        : this.sourceProjectId,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -12753,6 +13480,9 @@ class ColleagueProfile extends DataClass
       directReport: data.directReport.present
           ? data.directReport.value
           : this.directReport,
+      sourceProjectId: data.sourceProjectId.present
+          ? data.sourceProjectId.value
+          : this.sourceProjectId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -12769,6 +13499,7 @@ class ColleagueProfile extends DataClass
           ..write('notes: $notes, ')
           ..write('team: $team, ')
           ..write('directReport: $directReport, ')
+          ..write('sourceProjectId: $sourceProjectId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -12785,6 +13516,7 @@ class ColleagueProfile extends DataClass
     notes,
     team,
     directReport,
+    sourceProjectId,
     createdAt,
     updatedAt,
   );
@@ -12800,6 +13532,7 @@ class ColleagueProfile extends DataClass
           other.notes == this.notes &&
           other.team == this.team &&
           other.directReport == this.directReport &&
+          other.sourceProjectId == this.sourceProjectId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -12813,6 +13546,7 @@ class ColleagueProfilesCompanion extends UpdateCompanion<ColleagueProfile> {
   final Value<String?> notes;
   final Value<String?> team;
   final Value<bool> directReport;
+  final Value<String?> sourceProjectId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -12825,6 +13559,7 @@ class ColleagueProfilesCompanion extends UpdateCompanion<ColleagueProfile> {
     this.notes = const Value.absent(),
     this.team = const Value.absent(),
     this.directReport = const Value.absent(),
+    this.sourceProjectId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -12838,6 +13573,7 @@ class ColleagueProfilesCompanion extends UpdateCompanion<ColleagueProfile> {
     this.notes = const Value.absent(),
     this.team = const Value.absent(),
     this.directReport = const Value.absent(),
+    this.sourceProjectId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -12853,6 +13589,7 @@ class ColleagueProfilesCompanion extends UpdateCompanion<ColleagueProfile> {
     Expression<String>? notes,
     Expression<String>? team,
     Expression<bool>? directReport,
+    Expression<String>? sourceProjectId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -12866,6 +13603,7 @@ class ColleagueProfilesCompanion extends UpdateCompanion<ColleagueProfile> {
       if (notes != null) 'notes': notes,
       if (team != null) 'team': team,
       if (directReport != null) 'direct_report': directReport,
+      if (sourceProjectId != null) 'source_project_id': sourceProjectId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -12881,6 +13619,7 @@ class ColleagueProfilesCompanion extends UpdateCompanion<ColleagueProfile> {
     Value<String?>? notes,
     Value<String?>? team,
     Value<bool>? directReport,
+    Value<String?>? sourceProjectId,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -12894,6 +13633,7 @@ class ColleagueProfilesCompanion extends UpdateCompanion<ColleagueProfile> {
       notes: notes ?? this.notes,
       team: team ?? this.team,
       directReport: directReport ?? this.directReport,
+      sourceProjectId: sourceProjectId ?? this.sourceProjectId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -12927,6 +13667,9 @@ class ColleagueProfilesCompanion extends UpdateCompanion<ColleagueProfile> {
     if (directReport.present) {
       map['direct_report'] = Variable<bool>(directReport.value);
     }
+    if (sourceProjectId.present) {
+      map['source_project_id'] = Variable<String>(sourceProjectId.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -12950,6 +13693,7 @@ class ColleagueProfilesCompanion extends UpdateCompanion<ColleagueProfile> {
           ..write('notes: $notes, ')
           ..write('team: $team, ')
           ..write('directReport: $directReport, ')
+          ..write('sourceProjectId: $sourceProjectId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -22456,6 +23200,50 @@ class $TimelineWorkPackagesTable extends TimelineWorkPackages
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _cascadeStartDateMeta = const VerificationMeta(
+    'cascadeStartDate',
+  );
+  @override
+  late final GeneratedColumn<String> cascadeStartDate = GeneratedColumn<String>(
+    'cascade_start_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _cascadeEndDateMeta = const VerificationMeta(
+    'cascadeEndDate',
+  );
+  @override
+  late final GeneratedColumn<String> cascadeEndDate = GeneratedColumn<String>(
+    'cascade_end_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _cascadeStartMonthMeta = const VerificationMeta(
+    'cascadeStartMonth',
+  );
+  @override
+  late final GeneratedColumn<int> cascadeStartMonth = GeneratedColumn<int>(
+    'cascade_start_month',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _cascadeEndMonthMeta = const VerificationMeta(
+    'cascadeEndMonth',
+  );
+  @override
+  late final GeneratedColumn<int> cascadeEndMonth = GeneratedColumn<int>(
+    'cascade_end_month',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -22491,6 +23279,10 @@ class $TimelineWorkPackagesTable extends TimelineWorkPackages
     sortOrder,
     ragStatus,
     sourceProjectId,
+    cascadeStartDate,
+    cascadeEndDate,
+    cascadeStartMonth,
+    cascadeEndMonth,
     createdAt,
     updatedAt,
   ];
@@ -22572,6 +23364,42 @@ class $TimelineWorkPackagesTable extends TimelineWorkPackages
         ),
       );
     }
+    if (data.containsKey('cascade_start_date')) {
+      context.handle(
+        _cascadeStartDateMeta,
+        cascadeStartDate.isAcceptableOrUnknown(
+          data['cascade_start_date']!,
+          _cascadeStartDateMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cascade_end_date')) {
+      context.handle(
+        _cascadeEndDateMeta,
+        cascadeEndDate.isAcceptableOrUnknown(
+          data['cascade_end_date']!,
+          _cascadeEndDateMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cascade_start_month')) {
+      context.handle(
+        _cascadeStartMonthMeta,
+        cascadeStartMonth.isAcceptableOrUnknown(
+          data['cascade_start_month']!,
+          _cascadeStartMonthMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cascade_end_month')) {
+      context.handle(
+        _cascadeEndMonthMeta,
+        cascadeEndMonth.isAcceptableOrUnknown(
+          data['cascade_end_month']!,
+          _cascadeEndMonthMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -22629,6 +23457,22 @@ class $TimelineWorkPackagesTable extends TimelineWorkPackages
         DriftSqlType.string,
         data['${effectivePrefix}source_project_id'],
       ),
+      cascadeStartDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cascade_start_date'],
+      ),
+      cascadeEndDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cascade_end_date'],
+      ),
+      cascadeStartMonth: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cascade_start_month'],
+      ),
+      cascadeEndMonth: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cascade_end_month'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -22657,6 +23501,10 @@ class TimelineWorkPackage extends DataClass
   final int sortOrder;
   final String ragStatus;
   final String? sourceProjectId;
+  final String? cascadeStartDate;
+  final String? cascadeEndDate;
+  final int? cascadeStartMonth;
+  final int? cascadeEndMonth;
   final DateTime createdAt;
   final DateTime updatedAt;
   const TimelineWorkPackage({
@@ -22669,6 +23517,10 @@ class TimelineWorkPackage extends DataClass
     required this.sortOrder,
     required this.ragStatus,
     this.sourceProjectId,
+    this.cascadeStartDate,
+    this.cascadeEndDate,
+    this.cascadeStartMonth,
+    this.cascadeEndMonth,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -22689,6 +23541,18 @@ class TimelineWorkPackage extends DataClass
     map['rag_status'] = Variable<String>(ragStatus);
     if (!nullToAbsent || sourceProjectId != null) {
       map['source_project_id'] = Variable<String>(sourceProjectId);
+    }
+    if (!nullToAbsent || cascadeStartDate != null) {
+      map['cascade_start_date'] = Variable<String>(cascadeStartDate);
+    }
+    if (!nullToAbsent || cascadeEndDate != null) {
+      map['cascade_end_date'] = Variable<String>(cascadeEndDate);
+    }
+    if (!nullToAbsent || cascadeStartMonth != null) {
+      map['cascade_start_month'] = Variable<int>(cascadeStartMonth);
+    }
+    if (!nullToAbsent || cascadeEndMonth != null) {
+      map['cascade_end_month'] = Variable<int>(cascadeEndMonth);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -22712,6 +23576,18 @@ class TimelineWorkPackage extends DataClass
       sourceProjectId: sourceProjectId == null && nullToAbsent
           ? const Value.absent()
           : Value(sourceProjectId),
+      cascadeStartDate: cascadeStartDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cascadeStartDate),
+      cascadeEndDate: cascadeEndDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cascadeEndDate),
+      cascadeStartMonth: cascadeStartMonth == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cascadeStartMonth),
+      cascadeEndMonth: cascadeEndMonth == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cascadeEndMonth),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -22732,6 +23608,10 @@ class TimelineWorkPackage extends DataClass
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
       ragStatus: serializer.fromJson<String>(json['ragStatus']),
       sourceProjectId: serializer.fromJson<String?>(json['sourceProjectId']),
+      cascadeStartDate: serializer.fromJson<String?>(json['cascadeStartDate']),
+      cascadeEndDate: serializer.fromJson<String?>(json['cascadeEndDate']),
+      cascadeStartMonth: serializer.fromJson<int?>(json['cascadeStartMonth']),
+      cascadeEndMonth: serializer.fromJson<int?>(json['cascadeEndMonth']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -22749,6 +23629,10 @@ class TimelineWorkPackage extends DataClass
       'sortOrder': serializer.toJson<int>(sortOrder),
       'ragStatus': serializer.toJson<String>(ragStatus),
       'sourceProjectId': serializer.toJson<String?>(sourceProjectId),
+      'cascadeStartDate': serializer.toJson<String?>(cascadeStartDate),
+      'cascadeEndDate': serializer.toJson<String?>(cascadeEndDate),
+      'cascadeStartMonth': serializer.toJson<int?>(cascadeStartMonth),
+      'cascadeEndMonth': serializer.toJson<int?>(cascadeEndMonth),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -22764,6 +23648,10 @@ class TimelineWorkPackage extends DataClass
     int? sortOrder,
     String? ragStatus,
     Value<String?> sourceProjectId = const Value.absent(),
+    Value<String?> cascadeStartDate = const Value.absent(),
+    Value<String?> cascadeEndDate = const Value.absent(),
+    Value<int?> cascadeStartMonth = const Value.absent(),
+    Value<int?> cascadeEndMonth = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => TimelineWorkPackage(
@@ -22778,6 +23666,18 @@ class TimelineWorkPackage extends DataClass
     sourceProjectId: sourceProjectId.present
         ? sourceProjectId.value
         : this.sourceProjectId,
+    cascadeStartDate: cascadeStartDate.present
+        ? cascadeStartDate.value
+        : this.cascadeStartDate,
+    cascadeEndDate: cascadeEndDate.present
+        ? cascadeEndDate.value
+        : this.cascadeEndDate,
+    cascadeStartMonth: cascadeStartMonth.present
+        ? cascadeStartMonth.value
+        : this.cascadeStartMonth,
+    cascadeEndMonth: cascadeEndMonth.present
+        ? cascadeEndMonth.value
+        : this.cascadeEndMonth,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -22798,6 +23698,18 @@ class TimelineWorkPackage extends DataClass
       sourceProjectId: data.sourceProjectId.present
           ? data.sourceProjectId.value
           : this.sourceProjectId,
+      cascadeStartDate: data.cascadeStartDate.present
+          ? data.cascadeStartDate.value
+          : this.cascadeStartDate,
+      cascadeEndDate: data.cascadeEndDate.present
+          ? data.cascadeEndDate.value
+          : this.cascadeEndDate,
+      cascadeStartMonth: data.cascadeStartMonth.present
+          ? data.cascadeStartMonth.value
+          : this.cascadeStartMonth,
+      cascadeEndMonth: data.cascadeEndMonth.present
+          ? data.cascadeEndMonth.value
+          : this.cascadeEndMonth,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -22815,6 +23727,10 @@ class TimelineWorkPackage extends DataClass
           ..write('sortOrder: $sortOrder, ')
           ..write('ragStatus: $ragStatus, ')
           ..write('sourceProjectId: $sourceProjectId, ')
+          ..write('cascadeStartDate: $cascadeStartDate, ')
+          ..write('cascadeEndDate: $cascadeEndDate, ')
+          ..write('cascadeStartMonth: $cascadeStartMonth, ')
+          ..write('cascadeEndMonth: $cascadeEndMonth, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -22832,6 +23748,10 @@ class TimelineWorkPackage extends DataClass
     sortOrder,
     ragStatus,
     sourceProjectId,
+    cascadeStartDate,
+    cascadeEndDate,
+    cascadeStartMonth,
+    cascadeEndMonth,
     createdAt,
     updatedAt,
   );
@@ -22848,6 +23768,10 @@ class TimelineWorkPackage extends DataClass
           other.sortOrder == this.sortOrder &&
           other.ragStatus == this.ragStatus &&
           other.sourceProjectId == this.sourceProjectId &&
+          other.cascadeStartDate == this.cascadeStartDate &&
+          other.cascadeEndDate == this.cascadeEndDate &&
+          other.cascadeStartMonth == this.cascadeStartMonth &&
+          other.cascadeEndMonth == this.cascadeEndMonth &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -22863,6 +23787,10 @@ class TimelineWorkPackagesCompanion
   final Value<int> sortOrder;
   final Value<String> ragStatus;
   final Value<String?> sourceProjectId;
+  final Value<String?> cascadeStartDate;
+  final Value<String?> cascadeEndDate;
+  final Value<int?> cascadeStartMonth;
+  final Value<int?> cascadeEndMonth;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -22876,6 +23804,10 @@ class TimelineWorkPackagesCompanion
     this.sortOrder = const Value.absent(),
     this.ragStatus = const Value.absent(),
     this.sourceProjectId = const Value.absent(),
+    this.cascadeStartDate = const Value.absent(),
+    this.cascadeEndDate = const Value.absent(),
+    this.cascadeStartMonth = const Value.absent(),
+    this.cascadeEndMonth = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -22890,6 +23822,10 @@ class TimelineWorkPackagesCompanion
     this.sortOrder = const Value.absent(),
     this.ragStatus = const Value.absent(),
     this.sourceProjectId = const Value.absent(),
+    this.cascadeStartDate = const Value.absent(),
+    this.cascadeEndDate = const Value.absent(),
+    this.cascadeStartMonth = const Value.absent(),
+    this.cascadeEndMonth = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -22906,6 +23842,10 @@ class TimelineWorkPackagesCompanion
     Expression<int>? sortOrder,
     Expression<String>? ragStatus,
     Expression<String>? sourceProjectId,
+    Expression<String>? cascadeStartDate,
+    Expression<String>? cascadeEndDate,
+    Expression<int>? cascadeStartMonth,
+    Expression<int>? cascadeEndMonth,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -22920,6 +23860,10 @@ class TimelineWorkPackagesCompanion
       if (sortOrder != null) 'sort_order': sortOrder,
       if (ragStatus != null) 'rag_status': ragStatus,
       if (sourceProjectId != null) 'source_project_id': sourceProjectId,
+      if (cascadeStartDate != null) 'cascade_start_date': cascadeStartDate,
+      if (cascadeEndDate != null) 'cascade_end_date': cascadeEndDate,
+      if (cascadeStartMonth != null) 'cascade_start_month': cascadeStartMonth,
+      if (cascadeEndMonth != null) 'cascade_end_month': cascadeEndMonth,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -22936,6 +23880,10 @@ class TimelineWorkPackagesCompanion
     Value<int>? sortOrder,
     Value<String>? ragStatus,
     Value<String?>? sourceProjectId,
+    Value<String?>? cascadeStartDate,
+    Value<String?>? cascadeEndDate,
+    Value<int?>? cascadeStartMonth,
+    Value<int?>? cascadeEndMonth,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -22950,6 +23898,10 @@ class TimelineWorkPackagesCompanion
       sortOrder: sortOrder ?? this.sortOrder,
       ragStatus: ragStatus ?? this.ragStatus,
       sourceProjectId: sourceProjectId ?? this.sourceProjectId,
+      cascadeStartDate: cascadeStartDate ?? this.cascadeStartDate,
+      cascadeEndDate: cascadeEndDate ?? this.cascadeEndDate,
+      cascadeStartMonth: cascadeStartMonth ?? this.cascadeStartMonth,
+      cascadeEndMonth: cascadeEndMonth ?? this.cascadeEndMonth,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -22986,6 +23938,18 @@ class TimelineWorkPackagesCompanion
     if (sourceProjectId.present) {
       map['source_project_id'] = Variable<String>(sourceProjectId.value);
     }
+    if (cascadeStartDate.present) {
+      map['cascade_start_date'] = Variable<String>(cascadeStartDate.value);
+    }
+    if (cascadeEndDate.present) {
+      map['cascade_end_date'] = Variable<String>(cascadeEndDate.value);
+    }
+    if (cascadeStartMonth.present) {
+      map['cascade_start_month'] = Variable<int>(cascadeStartMonth.value);
+    }
+    if (cascadeEndMonth.present) {
+      map['cascade_end_month'] = Variable<int>(cascadeEndMonth.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -23010,6 +23974,10 @@ class TimelineWorkPackagesCompanion
           ..write('sortOrder: $sortOrder, ')
           ..write('ragStatus: $ragStatus, ')
           ..write('sourceProjectId: $sourceProjectId, ')
+          ..write('cascadeStartDate: $cascadeStartDate, ')
+          ..write('cascadeEndDate: $cascadeEndDate, ')
+          ..write('cascadeStartMonth: $cascadeStartMonth, ')
+          ..write('cascadeEndMonth: $cascadeEndMonth, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -32640,6 +33608,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $ProjectsTable projects = $ProjectsTable(this);
   late final $ProgrammeLinksTable programmeLinks = $ProgrammeLinksTable(this);
+  late final $CascadeItemsTable cascadeItems = $CascadeItemsTable(this);
   late final $ProgrammeOverviewsTable programmeOverviews =
       $ProgrammeOverviewsTable(this);
   late final $WorkstreamsTable workstreams = $WorkstreamsTable(this);
@@ -32779,6 +33748,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     projects,
     programmeLinks,
+    cascadeItems,
     programmeOverviews,
     workstreams,
     workstreamLinks,
@@ -36940,6 +37910,7 @@ typedef $$ProgrammeLinksTableCreateCompanionBuilder =
       Value<String?> partnerName,
       Value<String?> partnerLocalId,
       required String code,
+      Value<String?> linkSecret,
       Value<String> status,
       Value<bool> generatedHere,
       Value<DateTime> createdAt,
@@ -36954,6 +37925,7 @@ typedef $$ProgrammeLinksTableUpdateCompanionBuilder =
       Value<String?> partnerName,
       Value<String?> partnerLocalId,
       Value<String> code,
+      Value<String?> linkSecret,
       Value<String> status,
       Value<bool> generatedHere,
       Value<DateTime> createdAt,
@@ -37024,6 +37996,11 @@ class $$ProgrammeLinksTableFilterComposer
 
   ColumnFilters<String> get code => $composableBuilder(
     column: $table.code,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get linkSecret => $composableBuilder(
+    column: $table.linkSecret,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -37105,6 +38082,11 @@ class $$ProgrammeLinksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get linkSecret => $composableBuilder(
+    column: $table.linkSecret,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get status => $composableBuilder(
     column: $table.status,
     builder: (column) => ColumnOrderings(column),
@@ -37176,6 +38158,11 @@ class $$ProgrammeLinksTableAnnotationComposer
 
   GeneratedColumn<String> get code =>
       $composableBuilder(column: $table.code, builder: (column) => column);
+
+  GeneratedColumn<String> get linkSecret => $composableBuilder(
+    column: $table.linkSecret,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
@@ -37249,6 +38236,7 @@ class $$ProgrammeLinksTableTableManager
                 Value<String?> partnerName = const Value.absent(),
                 Value<String?> partnerLocalId = const Value.absent(),
                 Value<String> code = const Value.absent(),
+                Value<String?> linkSecret = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<bool> generatedHere = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
@@ -37261,6 +38249,7 @@ class $$ProgrammeLinksTableTableManager
                 partnerName: partnerName,
                 partnerLocalId: partnerLocalId,
                 code: code,
+                linkSecret: linkSecret,
                 status: status,
                 generatedHere: generatedHere,
                 createdAt: createdAt,
@@ -37275,6 +38264,7 @@ class $$ProgrammeLinksTableTableManager
                 Value<String?> partnerName = const Value.absent(),
                 Value<String?> partnerLocalId = const Value.absent(),
                 required String code,
+                Value<String?> linkSecret = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<bool> generatedHere = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
@@ -37287,6 +38277,7 @@ class $$ProgrammeLinksTableTableManager
                 partnerName: partnerName,
                 partnerLocalId: partnerLocalId,
                 code: code,
+                linkSecret: linkSecret,
                 status: status,
                 generatedHere: generatedHere,
                 createdAt: createdAt,
@@ -37359,6 +38350,246 @@ typedef $$ProgrammeLinksTableProcessedTableManager =
       (ProgrammeLink, $$ProgrammeLinksTableReferences),
       ProgrammeLink,
       PrefetchHooks Function({bool ownerEntityId})
+    >;
+typedef $$CascadeItemsTableCreateCompanionBuilder =
+    CascadeItemsCompanion Function({
+      required String code,
+      required String sourceEntityId,
+      required String itemKind,
+      required String itemId,
+      required String payload,
+      Value<bool> deleted,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$CascadeItemsTableUpdateCompanionBuilder =
+    CascadeItemsCompanion Function({
+      Value<String> code,
+      Value<String> sourceEntityId,
+      Value<String> itemKind,
+      Value<String> itemId,
+      Value<String> payload,
+      Value<bool> deleted,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$CascadeItemsTableFilterComposer
+    extends Composer<_$AppDatabase, $CascadeItemsTable> {
+  $$CascadeItemsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get code => $composableBuilder(
+    column: $table.code,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceEntityId => $composableBuilder(
+    column: $table.sourceEntityId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get itemKind => $composableBuilder(
+    column: $table.itemKind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get itemId => $composableBuilder(
+    column: $table.itemId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get deleted => $composableBuilder(
+    column: $table.deleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CascadeItemsTableOrderingComposer
+    extends Composer<_$AppDatabase, $CascadeItemsTable> {
+  $$CascadeItemsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get code => $composableBuilder(
+    column: $table.code,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceEntityId => $composableBuilder(
+    column: $table.sourceEntityId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get itemKind => $composableBuilder(
+    column: $table.itemKind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get itemId => $composableBuilder(
+    column: $table.itemId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get deleted => $composableBuilder(
+    column: $table.deleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CascadeItemsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CascadeItemsTable> {
+  $$CascadeItemsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get code =>
+      $composableBuilder(column: $table.code, builder: (column) => column);
+
+  GeneratedColumn<String> get sourceEntityId => $composableBuilder(
+    column: $table.sourceEntityId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get itemKind =>
+      $composableBuilder(column: $table.itemKind, builder: (column) => column);
+
+  GeneratedColumn<String> get itemId =>
+      $composableBuilder(column: $table.itemId, builder: (column) => column);
+
+  GeneratedColumn<String> get payload =>
+      $composableBuilder(column: $table.payload, builder: (column) => column);
+
+  GeneratedColumn<bool> get deleted =>
+      $composableBuilder(column: $table.deleted, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$CascadeItemsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CascadeItemsTable,
+          CascadeItem,
+          $$CascadeItemsTableFilterComposer,
+          $$CascadeItemsTableOrderingComposer,
+          $$CascadeItemsTableAnnotationComposer,
+          $$CascadeItemsTableCreateCompanionBuilder,
+          $$CascadeItemsTableUpdateCompanionBuilder,
+          (
+            CascadeItem,
+            BaseReferences<_$AppDatabase, $CascadeItemsTable, CascadeItem>,
+          ),
+          CascadeItem,
+          PrefetchHooks Function()
+        > {
+  $$CascadeItemsTableTableManager(_$AppDatabase db, $CascadeItemsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CascadeItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CascadeItemsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CascadeItemsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> code = const Value.absent(),
+                Value<String> sourceEntityId = const Value.absent(),
+                Value<String> itemKind = const Value.absent(),
+                Value<String> itemId = const Value.absent(),
+                Value<String> payload = const Value.absent(),
+                Value<bool> deleted = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CascadeItemsCompanion(
+                code: code,
+                sourceEntityId: sourceEntityId,
+                itemKind: itemKind,
+                itemId: itemId,
+                payload: payload,
+                deleted: deleted,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String code,
+                required String sourceEntityId,
+                required String itemKind,
+                required String itemId,
+                required String payload,
+                Value<bool> deleted = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CascadeItemsCompanion.insert(
+                code: code,
+                sourceEntityId: sourceEntityId,
+                itemKind: itemKind,
+                itemId: itemId,
+                payload: payload,
+                deleted: deleted,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CascadeItemsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CascadeItemsTable,
+      CascadeItem,
+      $$CascadeItemsTableFilterComposer,
+      $$CascadeItemsTableOrderingComposer,
+      $$CascadeItemsTableAnnotationComposer,
+      $$CascadeItemsTableCreateCompanionBuilder,
+      $$CascadeItemsTableUpdateCompanionBuilder,
+      (
+        CascadeItem,
+        BaseReferences<_$AppDatabase, $CascadeItemsTable, CascadeItem>,
+      ),
+      CascadeItem,
+      PrefetchHooks Function()
     >;
 typedef $$ProgrammeOverviewsTableCreateCompanionBuilder =
     ProgrammeOverviewsCompanion Function({
@@ -42473,6 +43704,7 @@ typedef $$StakeholderProfilesTableCreateCompanionBuilder =
       Value<String?> stance,
       Value<String?> engagementStrategy,
       Value<String?> notes,
+      Value<String?> sourceProjectId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -42487,6 +43719,7 @@ typedef $$StakeholderProfilesTableUpdateCompanionBuilder =
       Value<String?> stance,
       Value<String?> engagementStrategy,
       Value<String?> notes,
+      Value<String?> sourceProjectId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -42580,6 +43813,11 @@ class $$StakeholderProfilesTableFilterComposer
 
   ColumnFilters<String> get notes => $composableBuilder(
     column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -42679,6 +43917,11 @@ class $$StakeholderProfilesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -42764,6 +44007,11 @@ class $$StakeholderProfilesTableAnnotationComposer
 
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -42862,6 +44110,7 @@ class $$StakeholderProfilesTableTableManager
                 Value<String?> stance = const Value.absent(),
                 Value<String?> engagementStrategy = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<String?> sourceProjectId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -42874,6 +44123,7 @@ class $$StakeholderProfilesTableTableManager
                 stance: stance,
                 engagementStrategy: engagementStrategy,
                 notes: notes,
+                sourceProjectId: sourceProjectId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -42888,6 +44138,7 @@ class $$StakeholderProfilesTableTableManager
                 Value<String?> stance = const Value.absent(),
                 Value<String?> engagementStrategy = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<String?> sourceProjectId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -42900,6 +44151,7 @@ class $$StakeholderProfilesTableTableManager
                 stance: stance,
                 engagementStrategy: engagementStrategy,
                 notes: notes,
+                sourceProjectId: sourceProjectId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -43005,6 +44257,7 @@ typedef $$StakeholderRolesTableCreateCompanionBuilder =
       Value<String?> engagementStatus,
       Value<bool> gapFlag,
       Value<String?> gapDescription,
+      Value<String?> sourceProjectId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -43026,6 +44279,7 @@ typedef $$StakeholderRolesTableUpdateCompanionBuilder =
       Value<String?> engagementStatus,
       Value<bool> gapFlag,
       Value<String?> gapDescription,
+      Value<String?> sourceProjectId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -43136,6 +44390,11 @@ class $$StakeholderRolesTableFilterComposer
 
   ColumnFilters<String> get gapDescription => $composableBuilder(
     column: $table.gapDescription,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -43252,6 +44511,11 @@ class $$StakeholderRolesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -43349,6 +44613,11 @@ class $$StakeholderRolesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -43424,6 +44693,7 @@ class $$StakeholderRolesTableTableManager
                 Value<String?> engagementStatus = const Value.absent(),
                 Value<bool> gapFlag = const Value.absent(),
                 Value<String?> gapDescription = const Value.absent(),
+                Value<String?> sourceProjectId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -43443,6 +44713,7 @@ class $$StakeholderRolesTableTableManager
                 engagementStatus: engagementStatus,
                 gapFlag: gapFlag,
                 gapDescription: gapDescription,
+                sourceProjectId: sourceProjectId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -43464,6 +44735,7 @@ class $$StakeholderRolesTableTableManager
                 Value<String?> engagementStatus = const Value.absent(),
                 Value<bool> gapFlag = const Value.absent(),
                 Value<String?> gapDescription = const Value.absent(),
+                Value<String?> sourceProjectId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -43483,6 +44755,7 @@ class $$StakeholderRolesTableTableManager
                 engagementStatus: engagementStatus,
                 gapFlag: gapFlag,
                 gapDescription: gapDescription,
+                sourceProjectId: sourceProjectId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -43567,6 +44840,7 @@ typedef $$TeamRolesTableCreateCompanionBuilder =
       Value<bool> isApplicable,
       Value<int> sortOrder,
       Value<String?> notes,
+      Value<String?> sourceProjectId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -43582,6 +44856,7 @@ typedef $$TeamRolesTableUpdateCompanionBuilder =
       Value<bool> isApplicable,
       Value<int> sortOrder,
       Value<String?> notes,
+      Value<String?> sourceProjectId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -43657,6 +44932,11 @@ class $$TeamRolesTableFilterComposer
 
   ColumnFilters<String> get notes => $composableBuilder(
     column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -43743,6 +45023,11 @@ class $$TeamRolesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -43814,6 +45099,11 @@ class $$TeamRolesTableAnnotationComposer
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
 
+  GeneratedColumn<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -43881,6 +45171,7 @@ class $$TeamRolesTableTableManager
                 Value<bool> isApplicable = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<String?> sourceProjectId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -43894,6 +45185,7 @@ class $$TeamRolesTableTableManager
                 isApplicable: isApplicable,
                 sortOrder: sortOrder,
                 notes: notes,
+                sourceProjectId: sourceProjectId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -43909,6 +45201,7 @@ class $$TeamRolesTableTableManager
                 Value<bool> isApplicable = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<String?> sourceProjectId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -43922,6 +45215,7 @@ class $$TeamRolesTableTableManager
                 isApplicable: isApplicable,
                 sortOrder: sortOrder,
                 notes: notes,
+                sourceProjectId: sourceProjectId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -45004,6 +46298,7 @@ typedef $$ColleagueProfilesTableCreateCompanionBuilder =
       Value<String?> notes,
       Value<String?> team,
       Value<bool> directReport,
+      Value<String?> sourceProjectId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -45018,6 +46313,7 @@ typedef $$ColleagueProfilesTableUpdateCompanionBuilder =
       Value<String?> notes,
       Value<String?> team,
       Value<bool> directReport,
+      Value<String?> sourceProjectId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -45111,6 +46407,11 @@ class $$ColleagueProfilesTableFilterComposer
 
   ColumnFilters<bool> get directReport => $composableBuilder(
     column: $table.directReport,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -45210,6 +46511,11 @@ class $$ColleagueProfilesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -45297,6 +46603,11 @@ class $$ColleagueProfilesTableAnnotationComposer
 
   GeneratedColumn<bool> get directReport => $composableBuilder(
     column: $table.directReport,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
     builder: (column) => column,
   );
 
@@ -45394,6 +46705,7 @@ class $$ColleagueProfilesTableTableManager
                 Value<String?> notes = const Value.absent(),
                 Value<String?> team = const Value.absent(),
                 Value<bool> directReport = const Value.absent(),
+                Value<String?> sourceProjectId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -45406,6 +46718,7 @@ class $$ColleagueProfilesTableTableManager
                 notes: notes,
                 team: team,
                 directReport: directReport,
+                sourceProjectId: sourceProjectId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -45420,6 +46733,7 @@ class $$ColleagueProfilesTableTableManager
                 Value<String?> notes = const Value.absent(),
                 Value<String?> team = const Value.absent(),
                 Value<bool> directReport = const Value.absent(),
+                Value<String?> sourceProjectId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -45432,6 +46746,7 @@ class $$ColleagueProfilesTableTableManager
                 notes: notes,
                 team: team,
                 directReport: directReport,
+                sourceProjectId: sourceProjectId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -52876,6 +54191,10 @@ typedef $$TimelineWorkPackagesTableCreateCompanionBuilder =
       Value<int> sortOrder,
       Value<String> ragStatus,
       Value<String?> sourceProjectId,
+      Value<String?> cascadeStartDate,
+      Value<String?> cascadeEndDate,
+      Value<int?> cascadeStartMonth,
+      Value<int?> cascadeEndMonth,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -52891,6 +54210,10 @@ typedef $$TimelineWorkPackagesTableUpdateCompanionBuilder =
       Value<int> sortOrder,
       Value<String> ragStatus,
       Value<String?> sourceProjectId,
+      Value<String?> cascadeStartDate,
+      Value<String?> cascadeEndDate,
+      Value<int?> cascadeStartMonth,
+      Value<int?> cascadeEndMonth,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -53002,6 +54325,26 @@ class $$TimelineWorkPackagesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get cascadeStartDate => $composableBuilder(
+    column: $table.cascadeStartDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cascadeEndDate => $composableBuilder(
+    column: $table.cascadeEndDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cascadeStartMonth => $composableBuilder(
+    column: $table.cascadeStartMonth,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cascadeEndMonth => $composableBuilder(
+    column: $table.cascadeEndMonth,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnFilters(column),
@@ -53110,6 +54453,26 @@ class $$TimelineWorkPackagesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get cascadeStartDate => $composableBuilder(
+    column: $table.cascadeStartDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cascadeEndDate => $composableBuilder(
+    column: $table.cascadeEndDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get cascadeStartMonth => $composableBuilder(
+    column: $table.cascadeStartMonth,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get cascadeEndMonth => $composableBuilder(
+    column: $table.cascadeEndMonth,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -53180,6 +54543,26 @@ class $$TimelineWorkPackagesTableAnnotationComposer
 
   GeneratedColumn<String> get sourceProjectId => $composableBuilder(
     column: $table.sourceProjectId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get cascadeStartDate => $composableBuilder(
+    column: $table.cascadeStartDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get cascadeEndDate => $composableBuilder(
+    column: $table.cascadeEndDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get cascadeStartMonth => $composableBuilder(
+    column: $table.cascadeStartMonth,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get cascadeEndMonth => $composableBuilder(
+    column: $table.cascadeEndMonth,
     builder: (column) => column,
   );
 
@@ -53284,6 +54667,10 @@ class $$TimelineWorkPackagesTableTableManager
                 Value<int> sortOrder = const Value.absent(),
                 Value<String> ragStatus = const Value.absent(),
                 Value<String?> sourceProjectId = const Value.absent(),
+                Value<String?> cascadeStartDate = const Value.absent(),
+                Value<String?> cascadeEndDate = const Value.absent(),
+                Value<int?> cascadeStartMonth = const Value.absent(),
+                Value<int?> cascadeEndMonth = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -53297,6 +54684,10 @@ class $$TimelineWorkPackagesTableTableManager
                 sortOrder: sortOrder,
                 ragStatus: ragStatus,
                 sourceProjectId: sourceProjectId,
+                cascadeStartDate: cascadeStartDate,
+                cascadeEndDate: cascadeEndDate,
+                cascadeStartMonth: cascadeStartMonth,
+                cascadeEndMonth: cascadeEndMonth,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -53312,6 +54703,10 @@ class $$TimelineWorkPackagesTableTableManager
                 Value<int> sortOrder = const Value.absent(),
                 Value<String> ragStatus = const Value.absent(),
                 Value<String?> sourceProjectId = const Value.absent(),
+                Value<String?> cascadeStartDate = const Value.absent(),
+                Value<String?> cascadeEndDate = const Value.absent(),
+                Value<int?> cascadeStartMonth = const Value.absent(),
+                Value<int?> cascadeEndMonth = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -53325,6 +54720,10 @@ class $$TimelineWorkPackagesTableTableManager
                 sortOrder: sortOrder,
                 ragStatus: ragStatus,
                 sourceProjectId: sourceProjectId,
+                cascadeStartDate: cascadeStartDate,
+                cascadeEndDate: cascadeEndDate,
+                cascadeStartMonth: cascadeStartMonth,
+                cascadeEndMonth: cascadeEndMonth,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -60152,6 +61551,8 @@ class $AppDatabaseManager {
       $$ProjectsTableTableManager(_db, _db.projects);
   $$ProgrammeLinksTableTableManager get programmeLinks =>
       $$ProgrammeLinksTableTableManager(_db, _db.programmeLinks);
+  $$CascadeItemsTableTableManager get cascadeItems =>
+      $$CascadeItemsTableTableManager(_db, _db.cascadeItems);
   $$ProgrammeOverviewsTableTableManager get programmeOverviews =>
       $$ProgrammeOverviewsTableTableManager(_db, _db.programmeOverviews);
   $$WorkstreamsTableTableManager get workstreams =>

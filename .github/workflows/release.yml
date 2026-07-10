@@ -59,7 +59,9 @@ jobs:
       # ── Linux ──────────────────────────────────────────────────────────────
       - name: Build (Linux)
         if: matrix.platform == 'linux'
-        run: flutter build linux --release
+        run: |
+          flutter build linux --release \
+            --dart-define=POSTHOG_API_KEY=${{ secrets.POSTHOG_API_KEY }}
 
       - name: Package (Linux)
         if: matrix.platform == 'linux'
@@ -72,7 +74,9 @@ jobs:
       # ── Windows ────────────────────────────────────────────────────────────
       - name: Build (Windows)
         if: matrix.platform == 'windows'
-        run: flutter build windows --release
+        run: >
+          flutter build windows --release
+          --dart-define=POSTHOG_API_KEY=${{ secrets.POSTHOG_API_KEY }}
 
       - name: Install Inno Setup
         if: matrix.platform == 'windows'

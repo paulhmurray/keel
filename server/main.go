@@ -76,12 +76,27 @@ func main() {
 	router := gin.New()
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
-	router.Use(rateLimiter.Middleware())
 
-	// Health check
+	// Health check — registered BEFORE the rate limiter so uptime
+	// monitors can poll it as often as they like without being throttled.
+	// Pings the database so the endpoint reflects real health (process up
+	// AND database reachable), not just "the binary is running" — that's
+	// what makes it useful for catching outages early.
 	router.GET("/health", func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
+		defer cancel()
+		if err := db.Ping(ctx); err != nil {
+			c.JSON(http.StatusServiceUnavailable, gin.H{
+				"status":   "degraded",
+				"database": "unreachable",
+			})
+			return
+		}
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
+
+	// Rate limiter applies to every route registered below this point.
+	router.Use(rateLimiter.Middleware())
 
 	// Version endpoint — no auth required.
 	// Source of truth is GitHub Releases (paulhmurray/keel). Cached 10 min.

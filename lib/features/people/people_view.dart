@@ -6,13 +6,11 @@ import 'package:drift/drift.dart' show Value;
 import '../../shared/theme/keel_colors.dart';
 
 import '../../core/cascade/cascade_service.dart';
-import '../../core/cascade/sync_cascade_gateway.dart';
+import '../../core/cascade/cascade_factory.dart';
 import '../../core/database/database.dart';
 import '../../core/programme/coverage_calculator.dart';
-import '../../core/sync/sync_client.dart';
 import '../../providers/project_provider.dart';
 import '../../providers/settings_provider.dart';
-import '../../providers/sync_provider.dart';
 import '../../shared/widgets/dropdown_field.dart';
 import '../../shared/utils/date_utils.dart' as du;
 import '../programme/overview/coverage_indicator.dart';
@@ -44,11 +42,19 @@ class _PeopleViewState extends State<PeopleView>
 
   @override
   Widget build(BuildContext context) {
-    final projectId = context.watch<ProjectProvider>().currentProjectId;
+    final provider = context.watch<ProjectProvider>();
+    final projectId = provider.currentProjectId;
     if (projectId == null) {
       return const Center(child: Text('Select a project to view people.'));
     }
     final db = context.read<AppDatabase>();
+
+    // Programmes pull in each linked project's People-Overview layout
+    // (coverage + stakeholder-role + team-role matrices) as a read-only
+    // panel, one per project.
+    if (provider.isProgramme) {
+      return _ProgrammePeopleView(programmeId: projectId, db: db);
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -367,19 +373,8 @@ class _PersonCard extends StatelessWidget {
 
   /// CascadeService for the delete-tombstone path. Mirrors the helper
   /// on the form save handler.
-  CascadeService _cascadeForRow(BuildContext context) {
-    final sync = context.read<SyncProvider>();
-    final token = sync.accessToken;
-    return CascadeService(
-      db,
-      gateway: token == null
-          ? null
-          : SyncCascadeGateway(
-              client: SyncClient(baseUrl: sync.serverUrl),
-              accessToken: token,
-            ),
-    );
-  }
+  CascadeService _cascadeForRow(BuildContext context) =>
+      buildCascadeService(context);
 
   @override
   Widget build(BuildContext context) {
@@ -1077,6 +1072,7 @@ class _PersonFormDialogState extends State<_PersonFormDialog> {
   late TextEditingController _engagementCtrl;
   late TextEditingController _stakeholderNotesCtrl;
   String _influence = 'medium';
+  String _interest = 'medium';
   String _stance = 'unknown';
 
   // Colleague fields
@@ -1088,6 +1084,7 @@ class _PersonFormDialogState extends State<_PersonFormDialog> {
   // Category is now one of three; "stakeholder" is the orthogonal flag below.
   final _personTypes = ['colleague', 'exec', 'vendor'];
   final _influences = ['high', 'medium', 'low'];
+  final _interests = ['high', 'medium', 'low'];
   final _stances = ['sponsor', 'supporter', 'neutral', 'resistant', 'unknown'];
 
   String _normaliseType(String raw) {
@@ -1130,6 +1127,7 @@ class _PersonFormDialogState extends State<_PersonFormDialog> {
     setState(() {
       if (sp != null) {
         _influence = sp.influence ?? 'medium';
+        _interest = sp.interest ?? 'medium';
         _stance = sp.stance ?? 'unknown';
         _engagementCtrl.text = sp.engagementStrategy ?? '';
         _stakeholderNotesCtrl.text = sp.notes ?? '';
@@ -1195,6 +1193,7 @@ class _PersonFormDialogState extends State<_PersonFormDialog> {
           projectId: Value(widget.projectId),
           personId: Value(id),
           influence: Value(_influence),
+          interest: Value(_interest),
           stance: Value(_stance),
           engagementStrategy: Value(_engagementCtrl.text.trim().isEmpty
               ? null
@@ -1251,19 +1250,8 @@ class _PersonFormDialogState extends State<_PersonFormDialog> {
 
   /// Resolves a CascadeService from the live providers. Same idiom
   /// as the other auto-cascade forms (charter, status reports).
-  CascadeService _cascadeFor(BuildContext context) {
-    final sync = context.read<SyncProvider>();
-    final token = sync.accessToken;
-    return CascadeService(
-      widget.db,
-      gateway: token == null
-          ? null
-          : SyncCascadeGateway(
-              client: SyncClient(baseUrl: sync.serverUrl),
-              accessToken: token,
-            ),
-    );
-  }
+  CascadeService _cascadeFor(BuildContext context) =>
+      buildCascadeService(context);
 
   @override
   Widget build(BuildContext context) {
@@ -1383,6 +1371,16 @@ class _PersonFormDialogState extends State<_PersonFormDialog> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: DropdownField(
+                          label: 'Interest',
+                          value: _interest,
+                          items: _interests,
+                          onChanged: (v) =>
+                              setState(() => _interest = v!),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DropdownField(
                           label: 'Stance',
                           value: _stance,
                           items: _stances,
@@ -1470,4 +1468,646 @@ class _PersonFormDialogState extends State<_PersonFormDialog> {
       ],
     );
   }
+}
+
+// ===========================================================================
+// Programme People overview — one read-only People-Overview panel per
+// linked project (coverage + stakeholder-role + team-role matrices).
+// ===========================================================================
+
+const _kStakeholderTiers = [
+  ('accountable', 'ACCOUNTABLE'),
+  ('active', 'ACTIVE'),
+  ('affected', 'AFFECTED'),
+];
+
+const _kTeamGroups = [
+  ('programme_leadership', 'Programme Leadership'),
+  ('business_analysis', 'Business Analysis'),
+  ('technology', 'Technology'),
+  ('specialist', 'Specialist'),
+  ('governance', 'Governance'),
+];
+
+/// Programme People page: pulls in each linked project's People overview
+/// layout as its own read-only panel. Cascaded role matrices + people are
+/// grouped by source project; the programme's own native overview (if any)
+/// leads.
+class _ProgrammePeopleView extends StatelessWidget {
+  final String programmeId;
+  final AppDatabase db;
+
+  const _ProgrammePeopleView({required this.programmeId, required this.db});
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<ProjectProvider>();
+    final programmeName = provider.currentProject?.name ?? 'Programme';
+    final projectsById = {for (final p in provider.projects) p.id: p};
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+          child: Row(children: [
+            const Icon(Icons.groups_2_outlined,
+                color: KColors.amber, size: 22),
+            const SizedBox(width: 10),
+            Flexible(
+              child: Text('People',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                  overflow: TextOverflow.ellipsis),
+            ),
+          ]),
+        ),
+        Expanded(
+          child: StreamBuilder<List<StakeholderRole>>(
+            stream: db.stakeholderRoleDao.watchForProject(programmeId),
+            builder: (context, srSnap) {
+              return StreamBuilder<List<TeamRole>>(
+                stream: db.teamRoleDao.watchForProject(programmeId),
+                builder: (context, trSnap) {
+                  return StreamBuilder<List<Person>>(
+                    stream:
+                        db.peopleDao.watchPersonsForProject(programmeId),
+                    builder: (context, pSnap) {
+                      final sRoles =
+                          srSnap.data ?? const <StakeholderRole>[];
+                      final tRoles = trSnap.data ?? const <TeamRole>[];
+                      final persons = pSnap.data ?? const <Person>[];
+
+                      // Collect source project ids across roles + people.
+                      final sourceIds = <String>{
+                        for (final r in sRoles)
+                          if (r.sourceProjectId != null) r.sourceProjectId!,
+                        for (final r in tRoles)
+                          if (r.sourceProjectId != null) r.sourceProjectId!,
+                        for (final p in persons)
+                          if (p.sourceProjectId != null) p.sourceProjectId!,
+                      };
+
+                      String nameFor(String id) {
+                        final n = projectsById[id]?.name;
+                        if (n != null && n.isNotEmpty) return n;
+                        final fromPerson = persons
+                            .cast<Person?>()
+                            .firstWhere(
+                                (p) => p!.sourceProjectId == id,
+                                orElse: () => null)
+                            ?.sourceProjectName;
+                        return fromPerson ?? 'Linked project';
+                      }
+
+                      final orderedIds = sourceIds.toList()
+                        ..sort((a, b) => nameFor(a)
+                            .toLowerCase()
+                            .compareTo(nameFor(b).toLowerCase()));
+
+                      final nativeS = sRoles
+                          .where((r) => r.sourceProjectId == null)
+                          .toList();
+                      final nativeT = tRoles
+                          .where((r) => r.sourceProjectId == null)
+                          .toList();
+                      final hasNative =
+                          nativeS.isNotEmpty || nativeT.isNotEmpty;
+
+                      if (orderedIds.isEmpty && !hasNative) {
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(32),
+                            child: Text(
+                                'Link a project and its People overview '
+                                'appears here.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: KColors.textDim)),
+                          ),
+                        );
+                      }
+
+                      final projectCount =
+                          orderedIds.length + (hasNative ? 1 : 0);
+
+                      // Worst-covered project: lowest combined
+                      // (stakeholder + team) fill ratio among projects
+                      // that actually have role slots configured.
+                      ({String label, double pct})? worst;
+                      var ranked = 0;
+                      void consider(String label,
+                          List<StakeholderRole> s, List<TeamRole> t) {
+                        final sc = CoverageCalculator.forStakeholders(s);
+                        final tc = CoverageCalculator.forTeam(t);
+                        final applicable = sc.applicable + tc.applicable;
+                        if (applicable == 0) return;
+                        ranked++;
+                        final pct = (sc.filled + tc.filled) / applicable;
+                        if (worst == null || pct < worst!.pct) {
+                          worst = (label: label, pct: pct);
+                        }
+                      }
+
+                      if (hasNative) {
+                        consider(programmeName, nativeS, nativeT);
+                      }
+                      for (final id in orderedIds) {
+                        consider(
+                          nameFor(id),
+                          sRoles
+                              .where((r) => r.sourceProjectId == id)
+                              .toList(),
+                          tRoles
+                              .where((r) => r.sourceProjectId == id)
+                              .toList(),
+                        );
+                      }
+
+                      return Column(
+                        children: [
+                          _PortfolioCoverageStrip(
+                            stakeholders:
+                                CoverageCalculator.forStakeholders(sRoles),
+                            team: CoverageCalculator.forTeam(tRoles),
+                            projectCount: projectCount,
+                            stakeholderCount:
+                                persons.where((p) => p.isStakeholder).length,
+                            gapCount:
+                                sRoles.where((r) => r.gapFlag).length,
+                            // Only worth calling out when ≥2 projects have
+                            // matrices to compare.
+                            worstLabel: ranked >= 2 ? worst?.label : null,
+                            worstPct: ranked >= 2 ? worst?.pct : null,
+                          ),
+                          Expanded(
+                            child: ListView(
+                              padding:
+                                  const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                              children: [
+                                if (hasNative)
+                                  _ProjectOverviewPanel(
+                                    label: programmeName,
+                                    isCascaded: false,
+                                    stakeholderRoles: nativeS,
+                                    teamRoles: nativeT,
+                                    persons: persons,
+                                    initiallyExpanded: true,
+                                  ),
+                                for (final id in orderedIds)
+                                  _ProjectOverviewPanel(
+                                    label: nameFor(id),
+                                    isCascaded: true,
+                                    stakeholderRoles: sRoles
+                                        .where((r) => r.sourceProjectId == id)
+                                        .toList(),
+                                    teamRoles: tRoles
+                                        .where((r) => r.sourceProjectId == id)
+                                        .toList(),
+                                    persons: persons,
+                                    initiallyExpanded:
+                                        orderedIds.length == 1,
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Programme-wide coverage roll-up pinned above the per-project panels.
+/// Aggregates filled/applicable role slots across every project so the
+/// programme manager gets a one-glance portfolio read.
+class _PortfolioCoverageStrip extends StatelessWidget {
+  final CoverageResult stakeholders;
+  final CoverageResult team;
+  final int projectCount;
+  final int stakeholderCount;
+  final int gapCount;
+  final String? worstLabel;
+  final double? worstPct;
+
+  const _PortfolioCoverageStrip({
+    required this.stakeholders,
+    required this.team,
+    required this.projectCount,
+    required this.stakeholderCount,
+    required this.gapCount,
+    this.worstLabel,
+    this.worstPct,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: KColors.surface,
+        border: Border.all(color: KColors.border),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            const Text('PORTFOLIO COVERAGE',
+                style: TextStyle(
+                    color: KColors.textDim,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.4)),
+            const Spacer(),
+            Text(
+                '$projectCount project${projectCount == 1 ? '' : 's'}'
+                ' · $stakeholderCount stakeholder${stakeholderCount == 1 ? '' : 's'}'
+                '${gapCount > 0 ? ' · $gapCount gap${gapCount == 1 ? '' : 's'}' : ''}',
+                style: const TextStyle(
+                    color: KColors.textMuted, fontSize: 11)),
+          ]),
+          const SizedBox(height: 12),
+          _PortfolioBar(label: 'Stakeholders', result: stakeholders),
+          const SizedBox(height: 8),
+          _PortfolioBar(label: 'Team', result: team),
+          if (worstLabel != null && worstPct != null) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: KColors.amberDim.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Row(children: [
+                const Icon(Icons.trending_down,
+                    size: 13, color: KColors.amber),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text.rich(
+                    TextSpan(children: [
+                      const TextSpan(
+                          text: 'Lowest coverage: ',
+                          style: TextStyle(
+                              color: KColors.textDim, fontSize: 11)),
+                      TextSpan(
+                          text: worstLabel!,
+                          style: const TextStyle(
+                              color: KColors.text,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700)),
+                      TextSpan(
+                          text: '  ${(worstPct! * 100).round()}%',
+                          style: const TextStyle(
+                              color: KColors.amber,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700)),
+                    ]),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ]),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _PortfolioBar extends StatelessWidget {
+  final String label;
+  final CoverageResult result;
+  const _PortfolioBar({required this.label, required this.result});
+
+  @override
+  Widget build(BuildContext context) {
+    final pct = result.percentage;
+    final color = result.isFull ? KColors.phosphor : KColors.amber;
+    return Row(children: [
+      SizedBox(
+          width: 84,
+          child: Text(label,
+              style: const TextStyle(color: KColors.text, fontSize: 12))),
+      Expanded(
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(2),
+          child: LinearProgressIndicator(
+            value: pct,
+            backgroundColor: KColors.surface2,
+            valueColor: AlwaysStoppedAnimation<Color>(color),
+            minHeight: 6,
+          ),
+        ),
+      ),
+      const SizedBox(width: 10),
+      SizedBox(
+        width: 78,
+        child: Text(
+            result.applicable == 0
+                ? 'no roles'
+                : '${(pct * 100).round()}%  ${result.filled}/${result.applicable}',
+            textAlign: TextAlign.right,
+            style: TextStyle(
+                color: result.applicable == 0 ? KColors.textMuted : color,
+                fontSize: 11,
+                fontWeight: FontWeight.w600)),
+      ),
+    ]);
+  }
+}
+
+/// One project's People overview, read-only, collapsible.
+class _ProjectOverviewPanel extends StatelessWidget {
+  final String label;
+  final bool isCascaded;
+  final List<StakeholderRole> stakeholderRoles;
+  final List<TeamRole> teamRoles;
+  final List<Person> persons;
+  final bool initiallyExpanded;
+
+  const _ProjectOverviewPanel({
+    required this.label,
+    required this.isCascaded,
+    required this.stakeholderRoles,
+    required this.teamRoles,
+    required this.persons,
+    this.initiallyExpanded = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final sCov = CoverageCalculator.forStakeholders(stakeholderRoles);
+    final tCov = CoverageCalculator.forTeam(teamRoles);
+    final sPct = (sCov.percentage * 100).round();
+    final tPct = (tCov.percentage * 100).round();
+    final gaps = stakeholderRoles.where((r) => r.gapFlag).length;
+
+    return Card(
+      margin: const EdgeInsets.only(top: 8),
+      child: Theme(
+        data: Theme.of(context)
+            .copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: initiallyExpanded,
+          tilePadding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          leading: Icon(isCascaded ? Icons.link : Icons.workspaces_outlined,
+              size: 16, color: KColors.textDim),
+          title: Text(label,
+              style: const TextStyle(
+                  color: KColors.text,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700),
+              overflow: TextOverflow.ellipsis),
+          subtitle: Text(
+              'Stakeholders $sPct% · Team $tPct%'
+              '${gaps > 0 ? ' · $gaps gap${gaps == 1 ? '' : 's'}' : ''}',
+              style: const TextStyle(color: KColors.textDim, fontSize: 11)),
+          children: [
+            CoverageIndicator(stakeholders: sCov, team: tCov),
+            const SizedBox(height: 4),
+            if (stakeholderRoles.isEmpty && teamRoles.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                    'No coverage matrix defined in this project yet.',
+                    style: TextStyle(color: KColors.textMuted, fontSize: 12)),
+              ),
+            if (stakeholderRoles.isNotEmpty) ...[
+              const _OverviewSectionLabel('STAKEHOLDERS'),
+              for (final (type, tierLabel) in _kStakeholderTiers)
+                _ReadOnlyTier(
+                  label: tierLabel,
+                  roles: stakeholderRoles
+                      .where((r) => r.roleType == type && r.isApplicable)
+                      .toList(),
+                  persons: persons,
+                ),
+            ],
+            if (teamRoles.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              const _OverviewSectionLabel('TEAM'),
+              for (final (group, groupLabel) in _kTeamGroups)
+                _ReadOnlyTeamGroup(
+                  label: groupLabel,
+                  roles: teamRoles
+                      .where((r) => r.teamGroup == group && r.isApplicable)
+                      .toList(),
+                  persons: persons,
+                ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Read-only tier (accountable/active/affected) of stakeholder role slots.
+class _ReadOnlyTier extends StatelessWidget {
+  final String label;
+  final List<StakeholderRole> roles;
+  final List<Person> persons;
+
+  const _ReadOnlyTier(
+      {required this.label, required this.roles, required this.persons});
+
+  @override
+  Widget build(BuildContext context) {
+    if (roles.isEmpty) return const SizedBox.shrink();
+    final filled = roles.where((r) => r.personId != null).length;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 10, bottom: 2),
+          child: Row(children: [
+            Text(label,
+                style: const TextStyle(
+                    color: KColors.textDim,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.15)),
+            const Spacer(),
+            Text('$filled of ${roles.length} filled',
+                style: const TextStyle(
+                    color: KColors.textMuted, fontSize: 10)),
+          ]),
+        ),
+        for (final role in roles)
+          _ReadOnlyRoleRow(
+            roleName: role.roleName,
+            person: _personFor(role.personId, persons),
+            priority: role.priority,
+            engagementStatus: role.engagementStatus,
+            gapFlag: role.gapFlag,
+            gapDescription: role.gapDescription,
+          ),
+      ],
+    );
+  }
+}
+
+/// Read-only team-group of role slots.
+class _ReadOnlyTeamGroup extends StatelessWidget {
+  final String label;
+  final List<TeamRole> roles;
+  final List<Person> persons;
+
+  const _ReadOnlyTeamGroup(
+      {required this.label, required this.roles, required this.persons});
+
+  @override
+  Widget build(BuildContext context) {
+    if (roles.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 10, bottom: 2),
+          child: Text(label,
+              style: const TextStyle(
+                  color: KColors.textDim,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.15)),
+        ),
+        for (final role in roles)
+          _ReadOnlyRoleRow(
+            roleName: role.roleName,
+            person: _personFor(role.personId, persons),
+          ),
+      ],
+    );
+  }
+}
+
+Person? _personFor(String? personId, List<Person> persons) {
+  if (personId == null) return null;
+  return persons
+      .cast<Person?>()
+      .firstWhere((p) => p!.id == personId, orElse: () => null);
+}
+
+/// A single read-only role slot: filled indicator + role + assignee +
+/// engagement/priority/gap chips.
+class _ReadOnlyRoleRow extends StatelessWidget {
+  final String roleName;
+  final Person? person;
+  final String? priority;
+  final String? engagementStatus;
+  final bool gapFlag;
+  final String? gapDescription;
+
+  const _ReadOnlyRoleRow({
+    required this.roleName,
+    required this.person,
+    this.priority,
+    this.engagementStatus,
+    this.gapFlag = false,
+    this.gapDescription,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final filled = person != null;
+    final chips = <Widget>[
+      if (priority != null) _miniChip(_priorityLabel(priority!), _priorityColor(priority!)),
+      if (engagementStatus != null)
+        _miniChip(_engagementLabel(engagementStatus!), _engagementColor(engagementStatus!)),
+      if (gapFlag) _miniChip('⚠ GAP', KColors.red),
+    ];
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: KColors.surface,
+        border: Border.all(color: filled ? KColors.border2 : KColors.border),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 2, right: 8),
+          child: Icon(filled ? Icons.circle : Icons.circle_outlined,
+              size: 9,
+              color: filled ? KColors.phosphor : KColors.textMuted),
+        ),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(roleName,
+                style: TextStyle(
+                    color: filled ? KColors.text : KColors.textDim,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500)),
+            if (filled) ...[
+              const SizedBox(height: 1),
+              Text(
+                  [person!.name, person!.role, person!.organisation]
+                      .where((s) => s != null && s.isNotEmpty)
+                      .join(' · '),
+                  style: const TextStyle(color: KColors.textDim, fontSize: 11),
+                  overflow: TextOverflow.ellipsis),
+            ] else
+              const Text('Unfilled',
+                  style: TextStyle(color: KColors.textMuted, fontSize: 11)),
+            if (chips.isNotEmpty) ...[
+              const SizedBox(height: 5),
+              Wrap(spacing: 5, runSpacing: 4, children: chips),
+            ],
+            if (gapFlag && gapDescription != null) ...[
+              const SizedBox(height: 3),
+              Text(gapDescription!,
+                  style: const TextStyle(color: KColors.red, fontSize: 10)),
+            ],
+          ]),
+        ),
+      ]),
+    );
+  }
+
+  static Widget _miniChip(String label, Color color) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.14),
+          borderRadius: BorderRadius.circular(3),
+        ),
+        child: Text(label,
+            style: TextStyle(
+                color: color, fontSize: 9, fontWeight: FontWeight.w700)),
+      );
+
+  static String _priorityLabel(String p) => switch (p) {
+        'critical' => '● Critical',
+        'high' => '▲ High',
+        'medium' => '◆ Medium',
+        _ => '○ Low',
+      };
+  static Color _priorityColor(String p) => switch (p) {
+        'critical' => KColors.red,
+        'high' => KColors.amber,
+        'medium' => KColors.phosphor,
+        _ => KColors.textMuted,
+      };
+  static String _engagementLabel(String s) => switch (s) {
+        'engaged' => '● Engaged',
+        'gap_action_required' => '⚠ Gap',
+        'not_engaged' => '○ Not engaged',
+        'complete' => '✓ Complete',
+        _ => '— Not started',
+      };
+  static Color _engagementColor(String s) => switch (s) {
+        'engaged' || 'complete' => KColors.phosphor,
+        'gap_action_required' => KColors.red,
+        'not_engaged' => KColors.amber,
+        _ => KColors.textMuted,
+      };
 }

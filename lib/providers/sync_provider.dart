@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/cascade/cascade_service.dart';
 import '../core/cascade/cascade_sync.dart';
+import '../core/cascade/composite_cascade_gateway.dart';
 import '../core/cascade/sync_cascade_gateway.dart';
 import '../core/database/database.dart';
 import '../core/export/json_exporter.dart';
@@ -287,6 +288,29 @@ class SyncProvider extends ChangeNotifier {
     }
   }
 
+  /// Pulls EVERY project + programme the user owns on the server into
+  /// this instance in one action — the "sign in on a new machine and get
+  /// all my stuff" flow. Each blob is decrypted + imported and its
+  /// cascade reconciled (via [pullProject]). Returns
+  /// (pulled, total) so the caller can report partial failures.
+  Future<({int pulled, int total})> pullAllProjects(
+    String encryptionPassword,
+    AppDatabase db,
+  ) async {
+    if (!isAuthenticated) {
+      _setError('Not authenticated');
+      return (pulled: 0, total: 0);
+    }
+    final serverProjects = await listServerProjects();
+    if (serverProjects.isEmpty) return (pulled: 0, total: 0);
+    var pulled = 0;
+    for (final p in serverProjects) {
+      await pullProject(p.id, encryptionPassword, db);
+      if (status == SyncStatus.success) pulled++;
+    }
+    return (pulled: pulled, total: serverProjects.length);
+  }
+
   /// Best-effort cascade reconcile run as part of a project sync/pull.
   /// Activates any freshly-paired links, then pushes this project's
   /// escalated/cascade-eligible content up to linked programmes (project
@@ -300,7 +324,12 @@ class SyncProvider extends ChangeNotifier {
     final client = _getClient();
     final cascade = CascadeService(
       db,
-      gateway: SyncCascadeGateway(client: client, accessToken: token),
+      // Composite so same-machine links reconcile through the local
+      // channel while cross-machine links use the HTTP transport.
+      gateway: CompositeCascadeGateway(
+        db,
+        remote: SyncCascadeGateway(client: client, accessToken: token),
+      ),
     );
     try {
       await reconcileCascade(
@@ -329,6 +358,63 @@ class SyncProvider extends ChangeNotifier {
       return;
     }
     await _reconcileCascade(projectId, token, db);
+  }
+
+  /// Replays the full cascade back-catalogue right after a link
+  /// (re)activates, so a project's EXISTING work packages / escalated
+  /// RAID / reports / charter / people flow up (and a programme pulls
+  /// them down) without the PM having to re-save each item to create a
+  /// false delta. This is the "on connect, go fetch everything, then
+  /// work off deltas" behaviour.
+  ///
+  /// Unlike [reconcileCascadeNow] it works signed-out too — same-machine
+  /// links route through the local channel via the composite gateway.
+  /// Reconciles project-kind entities first (they push up) then
+  /// programme-kind (they pull down) so a single-install link fully
+  /// populates in one pass. Best-effort throughout.
+  Future<void> replayCascadeForActivation(
+      String ownerEntityId, AppDatabase db) async {
+    String? token;
+    if (isAuthenticated) {
+      try {
+        token = await _ensureValidToken();
+      } catch (_) {
+        token = null;
+      }
+    }
+    final cascade = CascadeService(
+      db,
+      gateway: CompositeCascadeGateway(
+        db,
+        remote: token == null
+            ? null
+            : SyncCascadeGateway(client: _getClient(), accessToken: token),
+      ),
+    );
+    // Local entities to reconcile: the owner plus any same-machine
+    // partner (so a single-install link populates both directions).
+    final ids = <String>{ownerEntityId};
+    final links = await db.programmeLinksDao.getLinksForEntity(ownerEntityId);
+    for (final l in links) {
+      if (l.status == 'active' && l.partnerLocalId != null) {
+        ids.add(l.partnerLocalId!);
+      }
+    }
+    final entities = <Project>[];
+    for (final id in ids) {
+      final p = await db.projectDao.getProjectById(id);
+      if (p != null) entities.add(p);
+    }
+    // Projects (push up) before programmes (pull down).
+    entities.sort((a, b) =>
+        (a.kind == 'programme' ? 1 : 0) - (b.kind == 'programme' ? 1 : 0));
+    for (final e in entities) {
+      try {
+        await reconcileCascade(db: db, cascade: cascade, projectId: e.id);
+      } catch (_) {
+        // Best-effort — next sync / launch retries.
+      }
+    }
   }
 
   /// Chooses which server project a Pull should import. Prefers the

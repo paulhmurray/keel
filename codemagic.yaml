@@ -17,13 +17,16 @@ workflows:
       cocoapods: default
       groups:
         - apple_credentials   # contains APP_STORE_CONNECT_* vars (see below)
+        - posthog             # contains POSTHOG_API_KEY (analytics, opt-in)
 
     scripts:
       - name: Flutter pub get
         script: flutter pub get
 
       - name: Build macOS release
-        script: flutter build macos --release
+        script: |
+          flutter build macos --release \
+            --dart-define=POSTHOG_API_KEY="$POSTHOG_API_KEY"
 
       - name: Sign and notarize
         script: |

@@ -3,12 +3,11 @@ import 'package:provider/provider.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/cascade/cascade_service.dart';
-import '../../core/cascade/sync_cascade_gateway.dart';
+import '../../core/cascade/cascade_factory.dart';
 import '../../core/database/database.dart';
-import '../../core/sync/sync_client.dart';
 import '../../providers/project_provider.dart';
-import '../../providers/sync_provider.dart';
 import '../../shared/theme/keel_colors.dart';
+import '../../shared/widgets/cascaded_source_badge.dart';
 import '../../shared/widgets/status_chip.dart';
 import '../../shared/widgets/source_badge.dart';
 import '../../shared/utils/avatar_utils.dart';
@@ -975,26 +974,7 @@ class _ActionCard extends StatelessWidget {
                 ),
               ),
               if (action.sourceProjectId != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 5, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: KColors.surface2,
-                    border: Border.all(color: KColors.border2, width: 0.5),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                  child: const Tooltip(
-                    message:
-                        'Cascaded from a linked project — read-only',
-                    child: Text('PROJ',
-                        style: TextStyle(
-                          color: KColors.textMuted,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.6,
-                        )),
-                  ),
-                )
+                CascadedSourceBadge(sourceProjectId: action.sourceProjectId)
               else
                 PopupMenuButton<String>(
                   icon: const Icon(Icons.more_vert,
@@ -1182,19 +1162,8 @@ class _GroupRollupChip extends StatelessWidget {
 /// Resolves a CascadeService from the live providers. Shared between
 /// the action row's escalate / unescalate / delete handlers so they
 /// don't each duplicate the gateway resolution.
-CascadeService _cascadeFor(BuildContext context, AppDatabase db) {
-  final sync = context.read<SyncProvider>();
-  final token = sync.accessToken;
-  return CascadeService(
-    db,
-    gateway: token == null
-        ? null
-        : SyncCascadeGateway(
-            client: SyncClient(baseUrl: sync.serverUrl),
-            accessToken: token,
-          ),
-  );
-}
+CascadeService _cascadeFor(BuildContext context, AppDatabase db) =>
+    buildCascadeService(context);
 
 Future<bool> _confirmDeleteParent(
     BuildContext context, ProjectAction parent, int childCount) async {

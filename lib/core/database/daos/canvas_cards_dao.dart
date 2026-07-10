@@ -158,6 +158,13 @@ class CanvasCardsDao extends DatabaseAccessor<AppDatabase>
         .watch();
   }
 
+  /// One-shot read of a project's sequences — used by sync export.
+  Future<List<CanvasSequence>> getSequencesForProject(String projectId) {
+    return (select(canvasSequences)
+          ..where((t) => t.projectId.equals(projectId)))
+        .get();
+  }
+
   Future<void> addSequence({
     required String id,
     required String projectId,

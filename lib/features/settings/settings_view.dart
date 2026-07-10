@@ -1,6 +1,7 @@
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
 
@@ -670,29 +671,22 @@ class _SyncSectionState extends State<_SyncSection> {
       return;
     }
 
-    final serverProjects = await sync.listServerProjects();
-    if (serverProjects.isEmpty) {
-      _showSnack('No projects found on server.');
-      return;
-    }
-
-    // Prefer the project the user is actually viewing — pulling the wrong
-    // entity here clears + re-imports it, which used to silently overwrite
-    // an unrelated project (and wipe its escalation state).
-    final currentId = projectProvider.currentProjectId;
-    final target = SyncProvider.resolvePullTarget(currentId, serverProjects);
-
     final syncPwd = await _askSyncPassword();
     if (syncPwd == null || syncPwd.isEmpty) return;
-    await sync.pullProject(target, syncPwd, db);
-    // pullProject reconciles cascade for `target`. When the entity we're
-    // actually viewing differs (e.g. a programme not yet pushed to the
-    // server, so the blob pull fell back to a project), reconcile it too —
-    // that's what pulls a programme's escalated items down from its links.
-    if (currentId != null && currentId != target) {
-      await sync.reconcileCascadeNow(currentId, db);
-    }
+
+    // Pull EVERYTHING the user owns in one hit — every project and
+    // programme on their account lands in this instance.
+    final result = await sync.pullAllProjects(syncPwd, db);
     await projectProvider.refreshProjects();
+    if (result.total == 0) {
+      _showSnack('No projects found on server.');
+    } else if (result.pulled == result.total) {
+      _showSnack('Pulled all ${result.total} '
+          'project${result.total == 1 ? '' : 's'} from the server.');
+    } else {
+      _showSnack('Pulled ${result.pulled} of ${result.total} — '
+          'some failed (check the sync password / connection).');
+    }
   }
 
   Future<String?> _askSyncPassword() => showSyncPasswordDialog(context);
@@ -842,7 +836,7 @@ class _SyncSectionState extends State<_SyncSection> {
                 OutlinedButton.icon(
                   onPressed: isSyncing ? null : _pullNow,
                   icon: const Icon(Icons.download_outlined, size: 14),
-                  label: const Text('Pull from Server'),
+                  label: const Text('Pull all from Server'),
                 ),
                 OutlinedButton.icon(
                   onPressed: _showBillingPortal,
@@ -1415,6 +1409,10 @@ class _ProgrammeLinksSectionState extends State<_ProgrammeLinksSection> {
     final messenger = ScaffoldMessenger.of(context);
     switch (result.outcome) {
       case RedeemOutcome.activatedLocally:
+        // Pull the back-catalogue in immediately so the connection
+        // brings across existing WPs / escalated items rather than
+        // waiting for the next save or sync.
+        await sync.replayCascadeForActivation(project.id, db);
         messenger.showSnackBar(const SnackBar(
             content: Text('Link active — both sides connected.')));
       case RedeemOutcome.pendingRemote:
@@ -1432,10 +1430,16 @@ class _ProgrammeLinksSectionState extends State<_ProgrammeLinksSection> {
   Future<void> _refresh(BuildContext context) async {
     final db = context.read<AppDatabase>();
     final sync = context.read<SyncProvider>();
+    final project = context.read<ProjectProvider>().currentProject;
     final activated = await db.programmeLinksDao.refreshPendingLinks(
       remoteUserId: sync.userId,
       remote: _remoteGateway(context),
     );
+    // A link that just flipped to active needs its back-catalogue
+    // replayed so the connection brings existing data across.
+    if (activated > 0 && project != null) {
+      await sync.replayCascadeForActivation(project.id, db);
+    }
     if (!mounted) return;
     final messenger = ScaffoldMessenger.of(context);
     messenger.showSnackBar(SnackBar(
@@ -1480,20 +1484,34 @@ class _ProgrammeLinksSectionState extends State<_ProgrammeLinksSection> {
                 label: const Text('Generate code'),
               ),
               const SizedBox(width: 12),
-              if (_generatedCode != null)
+              if (_generatedCode != null) ...[
                 Expanded(
                   child: SelectableText(
                     _generatedCode!,
                     style: const TextStyle(
                       color: KColors.amber,
                       fontFamily: 'monospace',
-                      fontSize: 13,
+                      fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      letterSpacing: 0.8,
                     ),
                   ),
-                )
-              else
+                ),
+                IconButton(
+                  tooltip: 'Copy full code',
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () async {
+                    await Clipboard.setData(
+                        ClipboardData(text: _generatedCode!));
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Full code copied')),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.copy, size: 15),
+                ),
+              ] else
                 // Refresh affordance lives next to Generate so the user
                 // doesn't have to hunt for it. Pulls server state for
                 // every pending_remote link in one shot.
@@ -1504,6 +1522,25 @@ class _ProgrammeLinksSectionState extends State<_ProgrammeLinksSection> {
                 ),
             ],
           ),
+          if (_generatedCode != null) ...[
+            const SizedBox(height: 6),
+            Row(children: [
+              const Icon(Icons.lock_outline, size: 12, color: KColors.textMuted),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'Share the whole code, including the part after "#". That '
+                  'part is the encryption key — it never leaves your device '
+                  'or reaches our servers, so send it through a channel you '
+                  'trust.',
+                  style: TextStyle(
+                      color: KColors.textMuted,
+                      fontSize: 11,
+                      height: 1.35),
+                ),
+              ),
+            ]),
+          ],
           const SizedBox(height: 12),
 
           // Redeem-code row.
@@ -1517,8 +1554,8 @@ class _ProgrammeLinksSectionState extends State<_ProgrammeLinksSection> {
                       fontFamily: 'monospace',
                       fontSize: 13),
                   decoration: const InputDecoration(
-                    labelText: 'Enter a code…',
-                    hintText: 'KL-XXXX-XXXX-XXXX',
+                    labelText: 'Paste a full code…',
+                    hintText: 'KL-XXXX-XXXX-XXXX#…',
                     isDense: true,
                   ),
                 ),

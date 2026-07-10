@@ -22,17 +22,23 @@ void main() {
   tearDown(() async => db.close());
 
   group('generateCodeForEntity', () {
-    test('returns a non-empty KL-prefixed code and persists a pending row',
-        () async {
-      final code = await db.programmeLinksDao.generateCodeForEntity(
+    test('returns a KL-prefixed share string with a secret, and stores the '
+        'routing code + secret', () async {
+      final share = await db.programmeLinksDao.generateCodeForEntity(
         ownerEntityId: 'prog',
         ownerKind: 'programme',
       );
-      expect(code, startsWith('KL-'));
-      expect(code.length, greaterThan(8));
+      expect(share, startsWith('KL-'));
+      // Share = routingCode#secret; only the routing code is stored in
+      // `code`, the secret lands in `linkSecret`.
+      expect(share, contains('#'));
+      final routing = share.split('#').first;
+      final secret = share.split('#').last;
       final rows = await db.programmeLinksDao.getLinksForEntity('prog');
       expect(rows, hasLength(1));
-      expect(rows.single.code, code);
+      expect(rows.single.code, routing);
+      expect(rows.single.linkSecret, secret);
+      expect(secret, isNotEmpty);
       expect(rows.single.status, 'pending_remote');
       expect(rows.single.generatedHere, isTrue);
       expect(rows.single.partnerKind, 'project');
