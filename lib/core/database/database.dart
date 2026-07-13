@@ -1226,6 +1226,10 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(openAppConnection());
   AppDatabase.memory() : super(openMemoryConnection());
 
+  /// Test-only: wrap an arbitrary executor so migration tests can point at
+  /// a hand-seeded old-schema database file.
+  AppDatabase.forTesting(QueryExecutor executor) : super(executor);
+
   @override
   int get schemaVersion => 46;
 
@@ -1235,132 +1239,151 @@ class AppDatabase extends _$AppDatabase {
           await m.createAll();
         },
         onUpgrade: (m, from, to) async {
+          // Idempotent DDL. `m.createTable`/`m.addColumn` build from the
+          // CURRENT schema, so a table created in an early migration step
+          // already carries columns that LATER steps then try to add —
+          // which throws "duplicate column" and aborts the whole upgrade
+          // (and a re-run then hits "table already exists"). Swallowing
+          // those specific no-op errors makes upgrades from any old
+          // schema — and recovery from a half-applied one — safe.
+          Future<void> ensureTable(TableInfo table) async {
+            try {
+              await m.createTable(table);
+            } catch (_) {}
+          }
+          Future<void> ensureColumn(
+              TableInfo table, GeneratedColumn column) async {
+            try {
+              await m.addColumn(table, column);
+            } catch (_) {}
+          }
+
           if (from < 2) {
-            await m.addColumn(persons, persons.phone);
-            await m.addColumn(persons, persons.teamsHandle);
-            await m.addColumn(persons, persons.personType);
-            await m.addColumn(colleagueProfiles, colleagueProfiles.team);
-            await m.addColumn(
+            await ensureColumn(persons, persons.phone);
+            await ensureColumn(persons, persons.teamsHandle);
+            await ensureColumn(persons, persons.personType);
+            await ensureColumn(colleagueProfiles, colleagueProfiles.team);
+            await ensureColumn(
                 colleagueProfiles, colleagueProfiles.directReport);
           }
           if (from < 3) {
-            await m.addColumn(projects, projects.startDate);
+            await ensureColumn(projects, projects.startDate);
           }
           if (from < 4) {
-            await m.createTable(journalEntries);
-            await m.createTable(journalEntryLinks);
+            await ensureTable(journalEntries);
+            await ensureTable(journalEntryLinks);
           }
           if (from < 5) {
-            await m.addColumn(workstreams, workstreams.lane);
-            await m.addColumn(workstreams, workstreams.startDate);
-            await m.addColumn(workstreams, workstreams.endDate);
-            await m.createTable(workstreamLinks);
+            await ensureColumn(workstreams, workstreams.lane);
+            await ensureColumn(workstreams, workstreams.startDate);
+            await ensureColumn(workstreams, workstreams.endDate);
+            await ensureTable(workstreamLinks);
           }
           if (from < 6) {
-            await m.createTable(glossaryEntries);
+            await ensureTable(glossaryEntries);
           }
           if (from < 7) {
-            await m.createTable(actionCategories);
-            await m.addColumn(projectActions, projectActions.categoryId);
-            await m.addColumn(projectActions, projectActions.recurrenceGroupId);
-            await m.addColumn(projectActions, projectActions.linkedActionId);
+            await ensureTable(actionCategories);
+            await ensureColumn(projectActions, projectActions.categoryId);
+            await ensureColumn(projectActions, projectActions.recurrenceGroupId);
+            await ensureColumn(projectActions, projectActions.linkedActionId);
           }
           if (from < 8) {
-            await m.addColumn(projectActions, projectActions.outcome);
+            await ensureColumn(projectActions, projectActions.outcome);
           }
           if (from < 9) {
-            await m.createTable(organisations);
-            await m.createTable(playbooks);
-            await m.createTable(playbookStages);
-            await m.createTable(stageTemplates);
-            await m.createTable(projectPlaybooks);
-            await m.createTable(projectStageProgresses);
+            await ensureTable(organisations);
+            await ensureTable(playbooks);
+            await ensureTable(playbookStages);
+            await ensureTable(stageTemplates);
+            await ensureTable(projectPlaybooks);
+            await ensureTable(projectStageProgresses);
           }
           if (from < 10) {
-            await m.createTable(stakeholderRoles);
-            await m.createTable(teamRoles);
+            await ensureTable(stakeholderRoles);
+            await ensureTable(teamRoles);
           }
           if (from < 11) {
-            await m.createTable(milestones);
-            await m.createTable(workstreamActivities);
+            await ensureTable(milestones);
+            await ensureTable(workstreamActivities);
           }
           if (from < 12) {
-            await m.createTable(timelineWorkPackages);
-            await m.createTable(timelineActivities);
-            await m.createTable(timelineDependencies);
-            await m.createTable(programmeHeaders);
-            await m.createTable(projectScopes);
-            await m.createTable(integrationDomains);
-            await m.createTable(prioritisationSources);
+            await ensureTable(timelineWorkPackages);
+            await ensureTable(timelineActivities);
+            await ensureTable(timelineDependencies);
+            await ensureTable(programmeHeaders);
+            await ensureTable(projectScopes);
+            await ensureTable(integrationDomains);
+            await ensureTable(prioritisationSources);
           }
           if (from < 13) {
             // Guard: if upgrading from <12, createTable(timelineActivities)
             // already ran with the current schema which includes status.
             try {
-              await m.addColumn(timelineActivities, timelineActivities.status);
+              await ensureColumn(timelineActivities, timelineActivities.status);
             } catch (_) {}
           }
           if (from < 14) {
             // Guard: same issue — stakeholderRoles created at v10 with
             // current schema already includes these columns.
             try {
-              await m.addColumn(stakeholderRoles, stakeholderRoles.functionalArea);
+              await ensureColumn(stakeholderRoles, stakeholderRoles.functionalArea);
             } catch (_) {}
             try {
-              await m.addColumn(stakeholderRoles, stakeholderRoles.integrationRelevance);
+              await ensureColumn(stakeholderRoles, stakeholderRoles.integrationRelevance);
             } catch (_) {}
             try {
-              await m.addColumn(stakeholderRoles, stakeholderRoles.priority);
+              await ensureColumn(stakeholderRoles, stakeholderRoles.priority);
             } catch (_) {}
             try {
-              await m.addColumn(stakeholderRoles, stakeholderRoles.engagementStatus);
+              await ensureColumn(stakeholderRoles, stakeholderRoles.engagementStatus);
             } catch (_) {}
             try {
-              await m.addColumn(stakeholderRoles, stakeholderRoles.gapFlag);
+              await ensureColumn(stakeholderRoles, stakeholderRoles.gapFlag);
             } catch (_) {}
             try {
-              await m.addColumn(stakeholderRoles, stakeholderRoles.gapDescription);
+              await ensureColumn(stakeholderRoles, stakeholderRoles.gapDescription);
             } catch (_) {}
           }
           if (from < 15) {
-            await m.createTable(statusSnapshots);
+            await ensureTable(statusSnapshots);
           }
           if (from < 16) {
-            await m.createTable(projectCharters);
-            await m.createTable(programmeOverviewStates);
+            await ensureTable(projectCharters);
+            await ensureTable(programmeOverviewStates);
           }
           if (from < 17) {
-            await m.addColumn(timelineActivities, timelineActivities.contributors);
-            await m.addColumn(timelineActivities, timelineActivities.contributorIds);
+            await ensureColumn(timelineActivities, timelineActivities.contributors);
+            await ensureColumn(timelineActivities, timelineActivities.contributorIds);
           }
           if (from < 18) {
-            await m.addColumn(projectActions, projectActions.planActivityId);
+            await ensureColumn(projectActions, projectActions.planActivityId);
           }
           if (from < 19) {
             // Rich-snapshot fields. All nullable; old snapshots stay valid.
-            await m.addColumn(statusSnapshots, statusSnapshots.narrative);
-            await m.addColumn(
+            await ensureColumn(statusSnapshots, statusSnapshots.narrative);
+            await ensureColumn(
                 statusSnapshots, statusSnapshots.workstreamHealthJson);
-            await m.addColumn(statusSnapshots, statusSnapshots.topRisksJson);
-            await m.addColumn(
+            await ensureColumn(statusSnapshots, statusSnapshots.topRisksJson);
+            await ensureColumn(
                 statusSnapshots, statusSnapshots.upcomingMilestonesJson);
-            await m.addColumn(
+            await ensureColumn(
                 statusSnapshots, statusSnapshots.pendingDecisionsJson);
-            await m.addColumn(
+            await ensureColumn(
                 statusSnapshots, statusSnapshots.playbookStageJson);
           }
           if (from < 20) {
-            await m.addColumn(risks, risks.likelihoodRationale);
-            await m.addColumn(risks, risks.impactRationale);
+            await ensureColumn(risks, risks.likelihoodRationale);
+            await ensureColumn(risks, risks.impactRationale);
           }
           if (from < 21) {
-            await m.addColumn(projectActions, projectActions.parentActionId);
+            await ensureColumn(projectActions, projectActions.parentActionId);
           }
           if (from < 22) {
-            await m.createTable(actionComments);
+            await ensureTable(actionComments);
           }
           if (from < 23) {
-            await m.addColumn(journalEntries, journalEntries.isFavourite);
+            await ensureColumn(journalEntries, journalEntries.isFavourite);
           }
           if (from < 24) {
             // Series feature was rolled back briefly. Drop the seriesId
@@ -1380,17 +1403,17 @@ class AppDatabase extends _$AppDatabase {
             // v24 dropped. Guarded so a DB that never ran v23/v24 (fresh
             // install at v25) still works via createAll().
             try {
-              await m.addColumn(journalEntries, journalEntries.seriesId);
+              await ensureColumn(journalEntries, journalEntries.seriesId);
             } catch (_) {}
             try {
-              await m.createTable(journalSeriesDefs);
+              await ensureTable(journalSeriesDefs);
             } catch (_) {}
           }
           if (from < 26) {
             // Split 'stakeholder' out of personType. Existing stakeholder
             // rows become colleague + isStakeholder=true so their data and
             // any StakeholderProfile rows remain valid.
-            await m.addColumn(persons, persons.isStakeholder);
+            await ensureColumn(persons, persons.isStakeholder);
             await customStatement(
               "UPDATE persons SET person_type = 'colleague', "
               "is_stakeholder = 1 WHERE person_type = 'stakeholder'",
@@ -1398,143 +1421,142 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 27) {
             // Canvas tables — replaces the old Schedule view. No data to
-            // migrate: Schedule was a read-through projection of RAID /
-            // Actions / Decisions / Plan, all of which already exist.
-            await m.createTable(canvasCards);
-            await m.createTable(canvasSequences);
+            // migrate.
+            await ensureTable(canvasCards);
+            await ensureTable(canvasSequences);
           }
           if (from < 28) {
             // Native date range on Canvas cards — lets a card sit on the
             // calendar without needing a linked dated item.
-            await m.addColumn(canvasCards, canvasCards.startDate);
-            await m.addColumn(canvasCards, canvasCards.endDate);
+            await ensureColumn(canvasCards, canvasCards.startDate);
+            await ensureColumn(canvasCards, canvasCards.endDate);
           }
           if (from < 29) {
             // Effort estimate (days) — used when dragging an undated
             // card onto the calendar to pre-populate a sensible range.
-            await m.addColumn(canvasCards, canvasCards.effortDays);
+            await ensureColumn(canvasCards, canvasCards.effortDays);
           }
           if (from < 30) {
             // Tags column — parsed from `#tag` patterns in card bodies
             // and stored as a JSON array string. Phase 1 of Canvas v2.
-            await m.addColumn(canvasCards, canvasCards.tags);
+            await ensureColumn(canvasCards, canvasCards.tags);
           }
           if (from < 31) {
             // CanvasTemplates — SWOT, pre-mortem, etc. Phase 2 of v2.
-            await m.createTable(canvasTemplates);
+            await ensureTable(canvasTemplates);
           }
           if (from < 32) {
             // External dependencies — nullable label on dep rows so the
             // upstream "activity" can live outside the plan (vendor
             // deliveries, regulatory approvals, other teams' milestones).
-            await m.addColumn(
+            await ensureColumn(
                 timelineDependencies, timelineDependencies.externalLabel);
           }
           if (from < 33) {
             // Programme-vs-project distinction. Existing rows all
             // become kind='project' by the column's default; Phase B
             // populates parentProgrammeId via the linking flow.
-            await m.addColumn(projects, projects.kind);
-            await m.addColumn(projects, projects.parentProgrammeId);
+            await ensureColumn(projects, projects.kind);
+            await ensureColumn(projects, projects.parentProgrammeId);
           }
           if (from < 34) {
             // Programme ↔ project links. Each side of a link stores
             // its own row keyed by a shared code.
-            await m.createTable(programmeLinks);
+            await ensureTable(programmeLinks);
           }
           if (from < 35) {
             // Cascade origin marker on work packages — populated when
             // a WP arrives via a programme link (read-only on the
             // programme side); null for native rows.
-            await m.addColumn(
+            await ensureColumn(
                 timelineWorkPackages, timelineWorkPackages.sourceProjectId);
           }
           if (from < 36) {
             // RAID cascade markers (Phase C.2). escalatedAt = PM has
             // flagged this row for programme visibility; sourceProjectId
             // = row arrived via cascade and is read-only on this side.
-            await m.addColumn(risks, risks.escalatedAt);
-            await m.addColumn(risks, risks.sourceProjectId);
-            await m.addColumn(assumptions, assumptions.escalatedAt);
-            await m.addColumn(assumptions, assumptions.sourceProjectId);
-            await m.addColumn(issues, issues.escalatedAt);
-            await m.addColumn(issues, issues.sourceProjectId);
-            await m.addColumn(
+            await ensureColumn(risks, risks.escalatedAt);
+            await ensureColumn(risks, risks.sourceProjectId);
+            await ensureColumn(assumptions, assumptions.escalatedAt);
+            await ensureColumn(assumptions, assumptions.sourceProjectId);
+            await ensureColumn(issues, issues.escalatedAt);
+            await ensureColumn(issues, issues.sourceProjectId);
+            await ensureColumn(
                 programDependencies, programDependencies.escalatedAt);
-            await m.addColumn(programDependencies,
+            await ensureColumn(programDependencies,
                 programDependencies.sourceProjectId);
           }
           if (from < 37) {
             // Status-report cascade marker (Phase C.3). Auto-cascade
             // on save; column flags cascaded rows on the programme
             // side as read-only.
-            await m.addColumn(
+            await ensureColumn(
                 statusReports, statusReports.sourceProjectId);
           }
           if (from < 38) {
             // Charter cascade markers (Phase C.4). The cached source
             // name lets the programme-side card render attribution
             // without a cross-machine join.
-            await m.addColumn(
+            await ensureColumn(
                 projectCharters, projectCharters.sourceProjectId);
-            await m.addColumn(
+            await ensureColumn(
                 projectCharters, projectCharters.sourceProjectName);
           }
           if (from < 39) {
             // Person cascade markers (Phase C.5). Same pattern as
             // charter — cached source name avoids cross-machine joins.
-            await m.addColumn(persons, persons.sourceProjectId);
-            await m.addColumn(persons, persons.sourceProjectName);
+            await ensureColumn(persons, persons.sourceProjectId);
+            await ensureColumn(persons, persons.sourceProjectName);
           }
           if (from < 40) {
             // Actions + Decisions cascade markers (Phase C.6).
-            await m.addColumn(projectActions, projectActions.escalatedAt);
-            await m.addColumn(
+            await ensureColumn(projectActions, projectActions.escalatedAt);
+            await ensureColumn(
                 projectActions, projectActions.sourceProjectId);
-            await m.addColumn(decisions, decisions.escalatedAt);
-            await m.addColumn(decisions, decisions.sourceProjectId);
+            await ensureColumn(decisions, decisions.escalatedAt);
+            await ensureColumn(decisions, decisions.sourceProjectId);
           }
           if (from < 41) {
             // Same-machine cascade channel. Lets a project and a
             // programme in one install exchange cascaded items without
             // a sync server in the loop (LocalCascadeGateway).
-            await m.createTable(cascadeItems);
+            await ensureTable(cascadeItems);
           }
           if (from < 42) {
             // Cascaded WP span — lets the programme draw a swimlane bar
             // for a cascaded WP whose activities stayed private.
-            await m.addColumn(
+            await ensureColumn(
                 timelineWorkPackages, timelineWorkPackages.cascadeStartDate);
-            await m.addColumn(
+            await ensureColumn(
                 timelineWorkPackages, timelineWorkPackages.cascadeEndDate);
           }
           if (from < 43) {
             // Raw month-index span — fallback bar placement when no
             // calendar anchor exists to derive absolute dates.
-            await m.addColumn(timelineWorkPackages,
+            await ensureColumn(timelineWorkPackages,
                 timelineWorkPackages.cascadeStartMonth);
-            await m.addColumn(
+            await ensureColumn(
                 timelineWorkPackages, timelineWorkPackages.cascadeEndMonth);
           }
           if (from < 44) {
             // Cascade markers on people profiles so a programme can show
             // stakeholder influence/interest/stance + colleague team
             // across all linked projects.
-            await m.addColumn(stakeholderProfiles,
+            await ensureColumn(stakeholderProfiles,
                 stakeholderProfiles.sourceProjectId);
-            await m.addColumn(
+            await ensureColumn(
                 colleagueProfiles, colleagueProfiles.sourceProjectId);
           }
           if (from < 45) {
             // Cascade markers on the coverage/role matrices so a
             // programme can render each project's full People overview.
-            await m.addColumn(
+            await ensureColumn(
                 stakeholderRoles, stakeholderRoles.sourceProjectId);
-            await m.addColumn(teamRoles, teamRoles.sourceProjectId);
+            await ensureColumn(teamRoles, teamRoles.sourceProjectId);
           }
           if (from < 46) {
             // Per-link secret for E2E-encrypting cascade payloads.
-            await m.addColumn(programmeLinks, programmeLinks.linkSecret);
+            await ensureColumn(programmeLinks, programmeLinks.linkSecret);
           }
         },
       );
