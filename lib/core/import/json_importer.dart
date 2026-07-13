@@ -1002,6 +1002,23 @@ class JsonImporter {
     await (db.delete(db.milestones)..where((t) => t.projectId.equals(id)))
         .go();
 
+    // Playbook attachment — progress rows reference the attachment row, so
+    // clear them first. Only the per-project rows are cleared: the catalog
+    // tables (organisations/playbooks/stages/templates) are shared across
+    // projects and stay upsert-only, so a detach on the source device
+    // propagates without nuking another project's playbook.
+    final projectPlaybookIds = await (db.select(db.projectPlaybooks)
+          ..where((t) => t.projectId.equals(id)))
+        .map((p) => p.id)
+        .get();
+    for (final ppid in projectPlaybookIds) {
+      await (db.delete(db.projectStageProgresses)
+            ..where((t) => t.projectPlaybookId.equals(ppid)))
+          .go();
+    }
+    await (db.delete(db.projectPlaybooks)..where((t) => t.projectId.equals(id)))
+        .go();
+
     // People — profiles/roles first (FK to persons), then persons
     final personIds = await (db.select(db.persons)
           ..where((t) => t.projectId.equals(id)))

@@ -9,6 +9,7 @@ import '../../core/analytics/analytics_service.dart';
 import '../../core/database/database.dart';
 import '../../core/sync/links_gateway.dart';
 import '../../core/sync/sync_client.dart';
+import '../../core/sync/sync_safety_service.dart';
 import '../../core/export/csv_exporter.dart';
 import '../../core/export/json_exporter.dart';
 import '../../core/import/json_importer.dart';
@@ -680,13 +681,23 @@ class _SyncSectionState extends State<_SyncSection> {
     await projectProvider.refreshProjects();
     if (result.total == 0) {
       _showSnack('No projects found on server.');
-    } else if (result.pulled == result.total) {
-      _showSnack('Pulled all ${result.total} '
-          'project${result.total == 1 ? '' : 's'} from the server.');
-    } else {
-      _showSnack('Pulled ${result.pulled} of ${result.total} — '
-          'some failed (check the sync password / connection).');
+      return;
     }
+    final parts = <String>[
+      result.pulled == result.total
+          ? 'Pulled all ${result.total} '
+              'project${result.total == 1 ? '' : 's'} from the server.'
+          : 'Pulled ${result.pulled} of ${result.total} — '
+              'some failed (check the sync password / connection).',
+      if (result.keptLocal > 0)
+        '${result.keptLocal} had unpushed local edits and the server had '
+            'nothing newer — kept local and pushed up instead.',
+      if (result.conflicts > 0)
+        '${result.conflicts} changed on both machines — this machine\'s '
+            'edits were saved to the conflict-snapshots folder '
+            '(restore via Import JSON).',
+    ];
+    _showSnack(parts.join(' '));
   }
 
   Future<String?> _askSyncPassword() => showSyncPasswordDialog(context);
@@ -1037,6 +1048,9 @@ class _DataSectionState extends State<_DataSection> {
     setState(() { _busy = true; _lastMessage = null; _isError = false; });
     try {
       final content = await file.readAsString();
+      // Import clears + rewrites the project's tables — snapshot the whole
+      // DB first so a bad file is always recoverable.
+      await SyncSafetyService.backupDatabase(db, reason: 'pre-import');
       final result = await JsonImporter.importFromString(content, db);
       // Refresh projects list
       await projectProvider.refreshProjects();

@@ -13,7 +13,9 @@ import '../core/export/json_exporter.dart';
 import '../core/import/json_importer.dart';
 import '../core/sync/encryption_service.dart';
 import '../core/sync/links_gateway.dart';
+import '../core/sync/pull_safety.dart';
 import '../core/sync/sync_client.dart';
+import '../core/sync/sync_safety_service.dart';
 
 const _kSecureRefreshToken = 'keel_refresh_token';
 const _kSecureUserId = 'keel_user_id';
@@ -79,11 +81,8 @@ class SyncProvider extends ChangeNotifier {
   /// Pure pending-state rule: there are unsynced changes when a change
   /// exists and it's newer than the last sync (or there's been no sync).
   /// Extracted so it can be unit-tested without faking auth.
-  static bool pendingFrom(DateTime? lastChange, DateTime? lastSync) {
-    if (lastChange == null) return false;
-    if (lastSync == null) return true;
-    return lastChange.isAfter(lastSync);
-  }
+  static bool pendingFrom(DateTime? lastChange, DateTime? lastSync) =>
+      hasUnpushedChanges(lastChange, lastSync);
 
   /// Records a local edit against [projectId] (the entity currently
   /// being viewed). No-op during pull import and when no project is in
@@ -246,15 +245,28 @@ class SyncProvider extends ChangeNotifier {
     }
   }
 
-  /// Pulls encrypted data from the server, decrypts it, and imports into local DB.
-  Future<void> pullProject(
+  /// Conflict snapshots written during the current pull gesture — surfaced
+  /// so the UI can tell the user where their preserved local edits went.
+  final List<String> conflictSnapshots = [];
+
+  /// Pulls encrypted data from the server, decrypts it, and imports into
+  /// local DB. Import is destructive (clear-and-reimport), so unpushed
+  /// local edits are guarded: if the server has nothing newer they win and
+  /// get pushed instead; if the server moved too, the local state is saved
+  /// to a JSON snapshot before the server blob is applied. A snapshot
+  /// write failure aborts the import — local edits are never the casualty.
+  ///
+  /// [backupFirst] controls the rotating whole-DB backup; [pullAllProjects]
+  /// takes one backup for the whole gesture and disables it per project.
+  Future<PullOutcome> pullProject(
     String projectId,
     String encryptionPassword,
-    AppDatabase db,
-  ) async {
+    AppDatabase db, {
+    bool backupFirst = true,
+  }) async {
     if (!isAuthenticated) {
       _setError('Not authenticated');
-      return;
+      return PullOutcome.failed;
     }
     _setStatus(SyncStatus.syncing);
     try {
@@ -266,6 +278,33 @@ class SyncProvider extends ChangeNotifier {
       final key = await EncryptionService.deriveKey(encryptionPassword, uid);
       final jsonStr =
           await EncryptionService.decrypt(key, result.encryptedBase64);
+
+      final safety = resolvePullSafety(
+        lastLocalChange: _lastChangeByProject[projectId],
+        lastSync: _lastSyncByProject[projectId],
+        serverUpdatedAt: result.updatedAt,
+      );
+
+      if (safety == PullSafety.keepLocalAndPush) {
+        // Importing would only discard this machine's unpushed edits —
+        // the server blob is the one we already synced against. Push
+        // local state up instead; nothing is lost on either side.
+        await syncProject(projectId, encryptionPassword, db);
+        return status == SyncStatus.success
+            ? PullOutcome.keptLocalAndPushed
+            : PullOutcome.failed;
+      }
+
+      if (safety == PullSafety.conflict) {
+        // Both sides moved. Preserve local edits to a restorable snapshot
+        // BEFORE the destructive import; a throw here aborts the pull.
+        conflictSnapshots
+            .add(await SyncSafetyService.saveConflictSnapshot(db, projectId));
+      }
+
+      if (backupFirst) {
+        await SyncSafetyService.backupDatabase(db);
+      }
 
       _importing = true;
       try {
@@ -281,34 +320,64 @@ class SyncProvider extends ChangeNotifier {
       // the latest cascaded items from its linked projects in the same go.
       await _reconcileCascade(projectId, token, db);
       _setStatus(SyncStatus.success);
+      return safety == PullSafety.conflict
+          ? PullOutcome.conflictImported
+          : PullOutcome.imported;
     } on SyncApiException catch (e) {
       _setError(e.message);
+      return PullOutcome.failed;
     } catch (e) {
       _setError(e.toString());
+      return PullOutcome.failed;
     }
   }
 
   /// Pulls EVERY project + programme the user owns on the server into
   /// this instance in one action — the "sign in on a new machine and get
   /// all my stuff" flow. Each blob is decrypted + imported and its
-  /// cascade reconciled (via [pullProject]). Returns
-  /// (pulled, total) so the caller can report partial failures.
-  Future<({int pulled, int total})> pullAllProjects(
+  /// cascade reconciled (via [pullProject]). Returns per-outcome counts so
+  /// the caller can report partial failures, kept-local pushes, and
+  /// conflict snapshots (paths in [conflictSnapshots]).
+  Future<({int pulled, int total, int keptLocal, int conflicts})>
+      pullAllProjects(
     String encryptionPassword,
     AppDatabase db,
   ) async {
     if (!isAuthenticated) {
       _setError('Not authenticated');
-      return (pulled: 0, total: 0);
+      return (pulled: 0, total: 0, keptLocal: 0, conflicts: 0);
     }
     final serverProjects = await listServerProjects();
-    if (serverProjects.isEmpty) return (pulled: 0, total: 0);
-    var pulled = 0;
-    for (final p in serverProjects) {
-      await pullProject(p.id, encryptionPassword, db);
-      if (status == SyncStatus.success) pulled++;
+    if (serverProjects.isEmpty) {
+      return (pulled: 0, total: 0, keptLocal: 0, conflicts: 0);
     }
-    return (pulled: pulled, total: serverProjects.length);
+    conflictSnapshots.clear();
+    // One rotating whole-DB backup for the whole gesture — every project
+    // imported below can be recovered from it.
+    await SyncSafetyService.backupDatabase(db);
+    var pulled = 0, keptLocal = 0, conflicts = 0;
+    for (final p in serverProjects) {
+      final outcome =
+          await pullProject(p.id, encryptionPassword, db, backupFirst: false);
+      switch (outcome) {
+        case PullOutcome.imported:
+          pulled++;
+        case PullOutcome.keptLocalAndPushed:
+          pulled++;
+          keptLocal++;
+        case PullOutcome.conflictImported:
+          pulled++;
+          conflicts++;
+        case PullOutcome.failed:
+          break;
+      }
+    }
+    return (
+      pulled: pulled,
+      total: serverProjects.length,
+      keptLocal: keptLocal,
+      conflicts: conflicts,
+    );
   }
 
   /// Best-effort cascade reconcile run as part of a project sync/pull.

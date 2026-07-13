@@ -86,7 +86,8 @@ jobs:
         if: matrix.platform == 'windows'
         shell: pwsh
         run: |
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" windows\installer\keel.iss
+          $version = "${{ github.ref_name }}".TrimStart("v")
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /DMyAppVersion=$version windows\installer\keel.iss
           Copy-Item windows\installer\installer_output\keel-windows-setup.exe keel-windows-setup.exe
 
       - name: Package zip (Windows)

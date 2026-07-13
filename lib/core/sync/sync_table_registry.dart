@@ -1,0 +1,80 @@
+/// Single source of truth for which database tables ride in the sync blob.
+///
+/// The sync pipeline is hand-maintained in THREE places, and a table
+/// missing from any of them silently doesn't sync (or its deletions don't
+/// propagate):
+///   1. JsonExporter — serialize the rows into the export blob
+///   2. JsonImporter._import — apply the rows on import
+///   3. JsonImporter._clearSyncedTables — clear before import so deletions
+///      made on the source device are reflected here
+///
+/// When you add a table to database.dart you MUST classify it here —
+/// `sync_table_registry_test.dart` fails until you do — and, if synced,
+/// wire it into all three places above.
+///
+/// Names are Drift `actualTableName`s (snake_case).
+library;
+
+/// Tables carried in the per-project sync/export blob.
+const Set<String> syncedTables = {
+  'projects',
+  'programme_links',
+  'programme_overviews',
+  'workstreams',
+  'workstream_links',
+  'workstream_activities',
+  'governance_cadences',
+  'risks',
+  'assumptions',
+  'issues',
+  'program_dependencies',
+  'decisions',
+  'persons',
+  'stakeholder_profiles',
+  'stakeholder_roles',
+  'team_roles',
+  'colleague_profiles',
+  'milestones',
+  'action_categories',
+  'project_actions',
+  'action_comments',
+  'context_entries',
+  'glossary_entries',
+  'documents',
+  'journal_entries',
+  'journal_series_defs',
+  'journal_entry_links',
+  'canvas_cards',
+  'canvas_templates',
+  'canvas_sequences',
+  'status_reports',
+  'status_snapshots',
+  'timeline_work_packages',
+  'timeline_activities',
+  'timeline_dependencies',
+  'programme_headers',
+  'project_scopes',
+  'integration_domains',
+  'prioritisation_sources',
+  'project_charters',
+  'programme_overview_states',
+  // Playbook: catalog tables are upsert-only on import (shared across
+  // projects); the per-project attachment + progress are cleared+reimported.
+  'organisations',
+  'playbooks',
+  'playbook_stages',
+  'stage_templates',
+  'project_playbooks',
+  'project_stage_progresses',
+};
+
+/// Tables deliberately NOT in the sync blob, with why.
+const Set<String> localOnlyTables = {
+  // Same-machine cascade transport queue: the delivery channel between two
+  // entities on one install. Cross-machine cascade rides its own encrypted
+  // link channel, not the project blob.
+  'cascade_items',
+  // Mobile-note inbox: fetched from the server's own /inbox endpoint, a
+  // separate channel from project blobs.
+  'inbox_items',
+};
