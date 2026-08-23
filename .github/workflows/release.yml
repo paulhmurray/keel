@@ -33,6 +33,10 @@ jobs:
       - name: Install Flutter
         uses: subosito/flutter-action@v2
         with:
+          # Pinned to the locally-tested version — an unpinned "stable"
+          # broke v1.2.3 when a newer Dart stopped compiling pdfrx 1.3.5.
+          # Bump this in lockstep with local `flutter upgrade`.
+          flutter-version: 3.41.4
           channel: stable
           cache: true
 
