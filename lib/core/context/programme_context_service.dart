@@ -1,4 +1,6 @@
+import '../../shared/utils/money.dart';
 import '../database/database.dart';
+import '../finance/variance.dart';
 import '../status/status_calculator.dart' show StatusCalculator, Rag;
 import 'programme_context.dart';
 
@@ -81,6 +83,66 @@ class ProgrammeContextService {
         .map((wp) => '${wp.name}: ${wp.ragStatus}')
         .toList();
 
+    // Finance — approved budget + latest forecast/actuals (v2).
+    final approvedBudget = await db.financeDao.getApprovedBudget(projectId);
+    String? budgetTotal;
+    String? approvalNote;
+    String? forecastSummary;
+    String? forecastToleranceNote;
+    String? actualsSummary;
+    var fySummaries = const <String>[];
+    var categorySummaries = const <String>[];
+    if (approvedBudget != null) {
+      final totals = await db.financeDao.getTotals(approvedBudget.id);
+      final categories = await db.financeDao.getCategories(projectId);
+      final catNames = {for (final c in categories) c.id: c.name};
+      final cur = approvedBudget.currency;
+      budgetTotal = Money.formatMinorCompact(totals.totalMinor, cur);
+      final at = approvedBudget.approvedAt;
+      approvalNote = [
+        if (at != null)
+          'approved ${at.year}-${at.month.toString().padLeft(2, '0')}-${at.day.toString().padLeft(2, '0')}',
+        if (approvedBudget.approvedBy != null)
+          'by ${approvedBudget.approvedBy}',
+      ].join(' ');
+      final fys = totals.byFinancialYear.keys.toList()..sort();
+      fySummaries = [
+        for (final fy in fys)
+          '$fy: ${Money.formatMinorCompact(totals.byFinancialYear[fy]!, cur)}',
+      ];
+      categorySummaries = [
+        for (final e in totals.byCategoryId.entries.toList()
+          ..sort((a, b) => b.value.compareTo(a.value)))
+          '${catNames[e.key] ?? 'Unknown'}: ${Money.formatMinorCompact(e.value, cur)}',
+      ];
+
+      final snapshots = await db.financeDao.getSnapshots(projectId);
+      final snapshot =
+          snapshots.where((s) => s.status == 'working').firstOrNull ??
+              snapshots.firstOrNull;
+      if (snapshot != null) {
+        final ft = await db.financeDao.getForecastTotals(snapshot.id);
+        final bp = VarianceRow.bpOf(
+            ft.totalMinor - totals.totalMinor, totals.totalMinor);
+        forecastSummary =
+            '${Money.formatMinorCompact(ft.totalMinor, cur)} at completion '
+            '(${snapshot.period} snapshot, variance ${Money.formatBp(bp)})';
+        final tol = approvedBudget.varianceToleranceBp;
+        if (bp != null) {
+          final tolPct = Money.formatBp(tol).replaceAll('+', '');
+          forecastToleranceNote = bp.abs() > tol
+              ? 'BEYOND the ±$tolPct tolerance — flagged as a pressure'
+              : 'within the ±$tolPct tolerance';
+        }
+      }
+      final actuals = await db.financeDao.getActualsTotals(projectId);
+      if (actuals.totalMinor != 0) {
+        actualsSummary =
+            '${Money.formatMinorCompact(actuals.totalMinor, cur)} actuals '
+            'recorded to date';
+      }
+    }
+
     return ProgrammeContext(
       projectId: projectId,
       projectName: project?.name ?? 'Programme',
@@ -118,6 +180,14 @@ class ProgrammeContextService {
                   .trim())
           .toList(),
       workstreamSummaries: wsSummaries,
+      approvedBudgetName: approvedBudget?.name,
+      approvedBudgetTotal: budgetTotal,
+      budgetApprovalNote: approvalNote,
+      budgetFySummaries: fySummaries,
+      budgetCategorySummaries: categorySummaries,
+      forecastSummary: forecastSummary,
+      forecastToleranceNote: forecastToleranceNote,
+      actualsSummary: actualsSummary,
       assembledAt: DateTime.now(),
     );
   }
@@ -166,6 +236,29 @@ class ProgrammeContextService {
       sb.writeln('WORKSTREAMS');
       for (final ws in ctx.workstreamSummaries) {
         sb.writeln('  $ws');
+      }
+      sb.writeln();
+    }
+
+    // Omitted entirely when no budget is approved.
+    if (ctx.approvedBudgetName != null) {
+      sb.writeln('FINANCIAL');
+      sb.writeln('  Budget: ${ctx.approvedBudgetName}'
+          '${ctx.budgetApprovalNote?.isNotEmpty == true ? ' (${ctx.budgetApprovalNote})' : ''}');
+      sb.writeln('  Total: ${ctx.approvedBudgetTotal}');
+      if (ctx.budgetFySummaries.isNotEmpty) {
+        sb.writeln('  By FY: ${ctx.budgetFySummaries.join(', ')}');
+      }
+      if (ctx.budgetCategorySummaries.isNotEmpty) {
+        sb.writeln(
+            '  By category: ${ctx.budgetCategorySummaries.join(', ')}');
+      }
+      if (ctx.forecastSummary != null) {
+        sb.writeln('  Forecast: ${ctx.forecastSummary}'
+            '${ctx.forecastToleranceNote != null ? ' — ${ctx.forecastToleranceNote}' : ''}');
+      }
+      if (ctx.actualsSummary != null) {
+        sb.writeln('  Actuals: ${ctx.actualsSummary}');
       }
       sb.writeln();
     }

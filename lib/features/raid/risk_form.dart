@@ -4,9 +4,11 @@ import 'package:drift/drift.dart' show Value;
 
 import '../../core/analytics/keel_events.dart';
 import '../../core/database/database.dart';
+import '../../core/raid/raid_conversion_service.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/widgets/dropdown_field.dart';
 import '../../shared/widgets/person_picker_field.dart';
+import 'raid_convert_button.dart';
 
 class RiskFormDialog extends StatefulWidget {
   final String projectId;
@@ -232,7 +234,20 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
     final isEdit = widget.risk != null;
 
     return AlertDialog(
-      title: Text(isEdit ? 'Edit Risk' : 'New Risk'),
+      title: Row(
+        children: [
+          Text(isEdit ? 'Edit Risk' : 'New Risk'),
+          const Spacer(),
+          if (isEdit)
+            RaidConvertButton(
+              db: widget.db,
+              from: RaidKind.risk,
+              itemId: widget.risk!.id,
+              itemRef: widget.risk!.ref,
+              sourceProjectId: widget.risk!.sourceProjectId,
+            ),
+        ],
+      ),
       content: SizedBox(
         width: 500,
         child: Form(

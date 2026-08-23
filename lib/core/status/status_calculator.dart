@@ -167,53 +167,71 @@ class StatusCalculator {
     return l * i;
   }
 
-  /// Filter activities to those within the next [days] days.
+  /// Filter activities to milestone-type entries whose month falls within
+  /// the next [days] days. Completed milestones are excluded.
+  ///
+  /// Milestones are month-granular, so a milestone counts as upcoming if
+  /// any part of its month overlaps [now, now + days] — a milestone due
+  /// later this month is still upcoming, not already-passed.
+  ///
+  /// [month0Date] (the Gantt header's ISO date for month index 0) is the
+  /// preferred anchor for converting a month index to a calendar month;
+  /// parsing [monthLabels] is the fallback for headers that predate it.
+  /// [now] is injectable for tests.
   static List<TimelineActivity> upcomingMilestones(
     List<TimelineActivity> all,
     List<String> monthLabels, {
-    int days = 30,
+    String? month0Date,
+    int days = 90,
+    DateTime? now,
   }) {
-    final now = DateTime.now();
-    final cutoff = now.add(Duration(days: days));
+    final today = now ?? DateTime.now();
+    final cutoff = today.add(Duration(days: days));
 
-    // Approximate: map month index to a date using current date as anchor.
-    // Month 0 = first month in the timeline. We estimate: if today is in
-    // month M, then index M corresponds to the current month.
-    // Simple heuristic: treat monthLabels as calendar months where possible.
     return all
         .where((a) =>
             (a.activityType == 'milestone' ||
                 a.activityType == 'hard_deadline' ||
                 a.activityType == 'gate') &&
+            a.status != 'complete' &&
             a.startMonth != null)
         .where((a) {
-          final date = _approximateDateForMonth(
-              a.startMonth!, monthLabels, now);
-          if (date == null) return false;
-          return date.isAfter(now.subtract(const Duration(days: 1))) &&
-              date.isBefore(cutoff);
+          final monthStart = _dateForMonth(
+              a.startMonth!, monthLabels, month0Date, today);
+          if (monthStart == null) return false;
+          final monthEnd =
+              DateTime(monthStart.year, monthStart.month + 1, 0);
+          return !monthEnd.isBefore(today) && monthStart.isBefore(cutoff);
         })
         .toList()
       ..sort((a, b) => (a.startMonth ?? 0).compareTo(b.startMonth ?? 0));
   }
 
-  static DateTime? _approximateDateForMonth(
-      int idx, List<String> labels, DateTime now) {
-    // Try to parse "Apr 2026", "April 2026", "Apr", "M3" etc.
+  static DateTime? _dateForMonth(
+      int idx, List<String> labels, String? month0Date, DateTime now) {
+    // Preferred: exact anchor date for month 0 from the Gantt header.
+    if (month0Date != null) {
+      final base = DateTime.tryParse(month0Date);
+      if (base != null) return DateTime(base.year, base.month + idx, 1);
+    }
+
+    // Fallback: parse the label — "Sep 26", "Sep 2026", "September 2026",
+    // or bare "Sep". Placeholder labels like "M3" stay unparseable.
     if (idx < 0 || idx >= labels.length) return null;
     final label = labels[idx];
 
-    // Try MMM YYYY
-    final full = RegExp(r'^([A-Za-z]+)\s+(\d{4})$').firstMatch(label);
+    // MMM YY or MMM YYYY
+    final full = RegExp(r'^([A-Za-z]+)\s+(\d{2}|\d{4})$').firstMatch(label);
     if (full != null) {
       final month = _monthIndex(full.group(1)!);
-      final year = int.tryParse(full.group(2)!);
+      var year = int.tryParse(full.group(2)!);
       if (month != null && year != null) {
+        if (year < 100) year += 2000;
         return DateTime(year, month);
       }
     }
 
-    // Try MMM only — assume current or next year
+    // MMM only — assume current or next year
     final abbr = RegExp(r'^([A-Za-z]+)$').firstMatch(label);
     if (abbr != null) {
       final month = _monthIndex(abbr.group(1)!);

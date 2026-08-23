@@ -106,6 +106,92 @@ class ProgrammeGanttDao extends DatabaseAccessor<AppDatabase>
   Future<void> deleteActivity(String id) =>
       (delete(timelineActivities)..where((t) => t.id.equals(id))).go();
 
+  Future<TimelineActivity?> getActivityById(String id) =>
+      (select(timelineActivities)..where((t) => t.id.equals(id)))
+          .getSingleOrNull();
+
+  /// Tasks nested under [parentId].
+  Future<List<TimelineActivity>> getTasksForActivity(String parentId) =>
+      (select(timelineActivities)
+            ..where((t) => t.parentActivityId.equals(parentId))
+            ..orderBy([(t) => OrderingTerm(expression: t.sortOrder)]))
+          .get();
+
+  /// Quick-add: creates a task named [name] (row id [id], caller supplies
+  /// a uuid) under [parentId], inheriting the parent's WP and span (so it
+  /// starts inside the commitment window), then seeds the parent's span
+  /// if it had none. Returns the new task id, or null when the parent
+  /// doesn't exist.
+  Future<String?> addTask({
+    required String id,
+    required String parentId,
+    required String name,
+  }) async {
+    final parent = await getActivityById(parentId);
+    if (parent == null) return null;
+    final siblings = await getTasksForActivity(parentId);
+    await upsertActivity(TimelineActivitiesCompanion(
+      id: Value(id),
+      workPackageId: Value(parent.workPackageId),
+      projectId: Value(parent.projectId),
+      name: Value(name),
+      activityType: const Value('activity'),
+      parentActivityId: Value(parentId),
+      startMonth: Value(parent.startMonth),
+      endMonth: Value(parent.endMonth),
+      startDate: Value(parent.startDate),
+      endDate: Value(parent.endDate),
+      sortOrder: Value(siblings.length),
+      updatedAt: Value(DateTime.now()),
+    ));
+    await seedParentSpanFromTasks(parentId);
+    return id;
+  }
+
+  /// Seeds a parent activity's span from its tasks — ONLY when the
+  /// parent has no months of its own. The parent's span is a top-down
+  /// commitment window owned by the PM; tasks never overwrite it (the
+  /// Gantt highlights tasks that breach the window instead). No-op when
+  /// the parent has no tasks or already has a span.
+  Future<void> seedParentSpanFromTasks(String parentId) async {
+    final parent = await getActivityById(parentId);
+    if (parent == null ||
+        parent.startMonth != null ||
+        parent.endMonth != null) {
+      return;
+    }
+    final tasks = await getTasksForActivity(parentId);
+    if (tasks.isEmpty) return;
+
+    int? minMonth, maxMonth;
+    String? minDate, maxDate;
+    for (final t in tasks) {
+      final s = t.startMonth;
+      final e = t.endMonth ?? t.startMonth;
+      if (s != null && (minMonth == null || s < minMonth)) minMonth = s;
+      if (e != null && (maxMonth == null || e > maxMonth)) maxMonth = e;
+      if (t.startDate != null &&
+          (minDate == null || t.startDate!.compareTo(minDate) < 0)) {
+        minDate = t.startDate;
+      }
+      final te = t.endDate ?? t.startDate;
+      if (te != null && (maxDate == null || te.compareTo(maxDate) > 0)) {
+        maxDate = te;
+      }
+    }
+
+    await patchActivity(
+      parentId,
+      TimelineActivitiesCompanion(
+        startMonth: Value(minMonth),
+        endMonth: Value(maxMonth),
+        startDate: Value(minDate),
+        endDate: Value(maxDate),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
   Future<void> deleteActivitiesForWP(String wpId) =>
       (delete(timelineActivities)
             ..where((t) => t.workPackageId.equals(wpId)))

@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 import '../../core/database/database.dart';
 import '../../providers/settings_provider.dart';
 import '../../shared/theme/keel_colors.dart';
+import '../../shared/widgets/min_width_hscroll.dart';
 import '../../shared/widgets/source_badge.dart';
 import '../../shared/utils/avatar_utils.dart';
 import '../../shared/utils/date_utils.dart' as du;
@@ -115,11 +116,19 @@ class _ActionsKanbanState extends State<ActionsKanban> {
     final parentChange = action.parentActionId != targetParentId;
     if (!statusChange && !parentChange) return;
 
-    // Don't allow a parent (action with children) to be dropped as a child.
-    if (targetParentId != null) {
-      final hasChildren =
-          widget.actions.any((a) => a.parentActionId == action.id);
-      if (hasChildren) return;
+    // Nesting keeps the whole subtree together, so it's allowed as long
+    // as the tree still fits within two levels under the lane's root.
+    if (targetParentId != null && parentChange) {
+      if (action.id == targetParentId) return;
+      final part = partitionByParent(widget.actions);
+      if (actionDescendantIds(action.id, part.childrenByParent)
+          .contains(targetParentId)) {
+        return;
+      }
+      if (actionSubtreeHeight(action.id, part.childrenByParent) + 1 >
+          kMaxActionDepth) {
+        return;
+      }
     }
 
     final isClose = statusChange && targetCol == _Col.done;
@@ -186,6 +195,65 @@ class _ActionsKanbanState extends State<ActionsKanban> {
 
   void _dismissOutcome() => setState(() => _pendingOutcomeId = null);
 
+  /// Drop card [dragged] onto card [target]: nest it as a child/sub-task,
+  /// promoting the target to a group parent if needed.
+  Future<void> _nestUnderCard(
+      ProjectAction dragged, ProjectAction target) async {
+    if (dragged.id == target.id) return;
+    final part = partitionByParent(widget.actions);
+    final byId = {for (final a in widget.actions) a.id: a};
+    if (actionDescendantIds(dragged.id, part.childrenByParent)
+        .contains(target.id)) {
+      return;
+    }
+    final height = actionSubtreeHeight(dragged.id, part.childrenByParent);
+    if (actionDepth(target, byId) + 1 + height > kMaxActionDepth) return;
+    await widget.db.actionsDao.nestUnder(dragged.id, target.id);
+  }
+
+  Future<void> _closeGroup(ProjectAction root) async {
+    final part = partitionByParent(widget.actions);
+    final ids = [
+      root.id,
+      ...actionDescendantIds(root.id, part.childrenByParent),
+    ];
+    final openCount = widget.actions
+        .where((a) => ids.contains(a.id) && a.status != 'closed')
+        .length;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Close group'),
+        content: Text(openCount == 0
+            ? 'Close this group? It will leave the board (find it again '
+                'via "show old closed").'
+            : 'Close this group and its $openCount open '
+                'action${openCount == 1 ? '' : 's'}? The group will leave '
+                'the board (find it again via "show old closed").'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel')),
+          ElevatedButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Close group')),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await widget.db.actionsDao.closeActions(ids);
+  }
+
+  Future<void> _toggleSubTask(ProjectAction s, bool closed) async {
+    await widget.db.actionsDao.upsertAction(ProjectActionsCompanion(
+      id: Value(s.id),
+      projectId: Value(s.projectId),
+      description: Value(s.description),
+      status: Value(closed ? 'closed' : 'open'),
+      updatedAt: Value(DateTime.now()),
+    ));
+  }
+
   Future<void> _deleteAction(ProjectAction a) async {
     if (_pendingOutcomeId == a.id) {
       setState(() => _pendingOutcomeId = null);
@@ -213,13 +281,14 @@ class _ActionsKanbanState extends State<ActionsKanban> {
     final part = partitionByParent(widget.actions);
 
     // Build lanes:
-    //   - One per parent that has children
-    //   - One "Ungrouped" lane for childless top-level actions
+    //   - One per designated parent (even before it has children, so
+    //     there's a lane to drag into)
+    //   - One "Ungrouped" lane for the other top-level actions
     final parentLanes = <_LaneSpec>[];
     final ungroupedActions = <ProjectAction>[];
     for (final root in part.roots) {
-      final children = part.childrenByParent[root.id];
-      if (children != null && children.isNotEmpty) {
+      final children = part.childrenByParent[root.id] ?? const [];
+      if (children.isNotEmpty || root.isParent) {
         parentLanes.add(_LaneSpec.forParent(root, children));
       } else {
         ungroupedActions.add(root);
@@ -242,7 +311,12 @@ class _ActionsKanbanState extends State<ActionsKanban> {
         _LaneSpec.ungrouped(visibleUngrouped),
     ];
 
-    return Column(
+    // Below ~900px (journal dock / narrow window) the four status
+    // columns become unusably thin and their cards overflow — scroll
+    // the board horizontally at a workable width instead.
+    return MinWidthHScroll(
+      minWidth: 900,
+      child: Column(
       children: [
         _ColumnHeaderRow(),
         const Divider(color: KColors.border, height: 1),
@@ -253,6 +327,7 @@ class _ActionsKanbanState extends State<ActionsKanban> {
                 for (var i = 0; i < lanes.length; i++) ...[
                   _Swimlane(
                     spec: lanes[i],
+                    childrenByParent: part.childrenByParent,
                     catMap: widget.catMap,
                     planTagMap: widget.planTagMap,
                     db: widget.db,
@@ -263,6 +338,9 @@ class _ActionsKanbanState extends State<ActionsKanban> {
                     outcomeCtrl: _outcomeCtrl,
                     outcomeFocus: _outcomeFocus,
                     onDrop: _drop,
+                    onNest: _nestUnderCard,
+                    onToggleSubTask: _toggleSubTask,
+                    onCloseGroup: _closeGroup,
                     onSaveOutcome: _saveOutcome,
                     onDismissOutcome: _dismissOutcome,
                     onCardTap: _openCard,
@@ -277,6 +355,7 @@ class _ActionsKanbanState extends State<ActionsKanban> {
           ),
         ),
       ],
+      ),
     );
   }
 }
@@ -352,6 +431,7 @@ class _ColumnHeaderRow extends StatelessWidget {
 
 class _Swimlane extends StatelessWidget {
   final _LaneSpec spec;
+  final Map<String, List<ProjectAction>> childrenByParent;
   final Map<String, ActionCategory> catMap;
   final Map<String, String> planTagMap;
   final AppDatabase db;
@@ -362,6 +442,9 @@ class _Swimlane extends StatelessWidget {
   final TextEditingController outcomeCtrl;
   final FocusNode outcomeFocus;
   final Future<void> Function(ProjectAction, _Col, String?) onDrop;
+  final Future<void> Function(ProjectAction, ProjectAction) onNest;
+  final Future<void> Function(ProjectAction, bool) onToggleSubTask;
+  final Future<void> Function(ProjectAction) onCloseGroup;
   final Future<void> Function(ProjectAction) onSaveOutcome;
   final VoidCallback onDismissOutcome;
   final void Function(ProjectAction) onCardTap;
@@ -370,6 +453,7 @@ class _Swimlane extends StatelessWidget {
 
   const _Swimlane({
     required this.spec,
+    required this.childrenByParent,
     required this.catMap,
     required this.planTagMap,
     required this.db,
@@ -380,6 +464,9 @@ class _Swimlane extends StatelessWidget {
     required this.outcomeCtrl,
     required this.outcomeFocus,
     required this.onDrop,
+    required this.onNest,
+    required this.onToggleSubTask,
+    required this.onCloseGroup,
     required this.onSaveOutcome,
     required this.onDismissOutcome,
     required this.onCardTap,
@@ -397,6 +484,15 @@ class _Swimlane extends StatelessWidget {
       byCol[_colFor(a)]!.add(a);
     }
 
+    // Rollup counts the whole subtree, sub-tasks included.
+    final rollupActions = spec.isUngrouped
+        ? spec.children
+        : [
+            ...spec.children,
+            for (final c in spec.children)
+              ...childrenByParent[c.id] ?? const <ProjectAction>[],
+          ];
+
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -407,8 +503,9 @@ class _Swimlane extends StatelessWidget {
                 ? const _UngroupedHeader()
                 : _ParentHeader(
                     parent: spec.parent!,
-                    rollup: rollupFor(spec.children),
+                    rollup: rollupFor(rollupActions),
                     onTap: () => onCardTap(spec.parent!),
+                    onCloseGroup: () => onCloseGroup(spec.parent!),
                   ),
           ),
           for (final col in _Col.values)
@@ -416,12 +513,15 @@ class _Swimlane extends StatelessWidget {
               child: _LaneCell(
                 col: col,
                 actions: _sorted(byCol[col]!),
+                childrenByParent: childrenByParent,
                 catMap: catMap,
                 planTagMap: planTagMap,
                 pendingOutcomeId: pendingOutcomeId,
                 outcomeCtrl: outcomeCtrl,
                 outcomeFocus: outcomeFocus,
                 onDrop: (a) => onDrop(a, col, spec.parentId),
+                onNest: onNest,
+                onToggleSubTask: onToggleSubTask,
                 onSaveOutcome: onSaveOutcome,
                 onDismissOutcome: onDismissOutcome,
                 onCardTap: onCardTap,
@@ -443,11 +543,13 @@ class _ParentHeader extends StatelessWidget {
   final ProjectAction parent;
   final GroupRollup rollup;
   final VoidCallback onTap;
+  final VoidCallback onCloseGroup;
 
   const _ParentHeader({
     required this.parent,
     required this.rollup,
     required this.onTap,
+    required this.onCloseGroup,
   });
 
   @override
@@ -489,6 +591,8 @@ class _ParentHeader extends StatelessWidget {
                         color: KColors.textMuted, fontSize: 10),
                   ),
                 ),
+                const SizedBox(width: 2),
+                _HeaderMenuButton(onCloseGroup: onCloseGroup),
               ],
             ),
             const SizedBox(height: 4),
@@ -547,6 +651,50 @@ class _ParentHeader extends StatelessWidget {
   }
 }
 
+class _HeaderMenuButton extends StatelessWidget {
+  final VoidCallback onCloseGroup;
+
+  const _HeaderMenuButton({required this.onCloseGroup});
+
+  Future<void> _showMenu(BuildContext context) async {
+    final button = context.findRenderObject() as RenderBox;
+    final overlay =
+        Overlay.of(context).context.findRenderObject() as RenderBox;
+    final position = RelativeRect.fromRect(
+      Rect.fromPoints(
+        button.localToGlobal(Offset.zero, ancestor: overlay),
+        button.localToGlobal(button.size.bottomRight(Offset.zero),
+            ancestor: overlay),
+      ),
+      Offset.zero & overlay.size,
+    );
+    final val = await showMenu<String>(
+      context: context,
+      position: position,
+      items: [
+        const PopupMenuItem(
+          value: 'close_group',
+          height: 32,
+          child: Text('Close group', style: TextStyle(fontSize: 12)),
+        ),
+      ],
+    );
+    if (val == 'close_group') onCloseGroup();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return InkResponse(
+      onTap: () => _showMenu(context),
+      radius: 12,
+      child: const Padding(
+        padding: EdgeInsets.all(2),
+        child: Icon(Icons.more_vert, size: 13, color: KColors.textMuted),
+      ),
+    );
+  }
+}
+
 class _UngroupedHeader extends StatelessWidget {
   const _UngroupedHeader();
 
@@ -579,12 +727,15 @@ class _UngroupedHeader extends StatelessWidget {
 class _LaneCell extends StatelessWidget {
   final _Col col;
   final List<ProjectAction> actions;
+  final Map<String, List<ProjectAction>> childrenByParent;
   final Map<String, ActionCategory> catMap;
   final Map<String, String> planTagMap;
   final String? pendingOutcomeId;
   final TextEditingController outcomeCtrl;
   final FocusNode outcomeFocus;
   final Future<void> Function(ProjectAction) onDrop;
+  final Future<void> Function(ProjectAction, ProjectAction) onNest;
+  final Future<void> Function(ProjectAction, bool) onToggleSubTask;
   final Future<void> Function(ProjectAction) onSaveOutcome;
   final VoidCallback onDismissOutcome;
   final void Function(ProjectAction) onCardTap;
@@ -594,12 +745,15 @@ class _LaneCell extends StatelessWidget {
   const _LaneCell({
     required this.col,
     required this.actions,
+    required this.childrenByParent,
     required this.catMap,
     required this.planTagMap,
     required this.pendingOutcomeId,
     required this.outcomeCtrl,
     required this.outcomeFocus,
     required this.onDrop,
+    required this.onNest,
+    required this.onToggleSubTask,
     required this.onSaveOutcome,
     required this.onDismissOutcome,
     required this.onCardTap,
@@ -642,12 +796,16 @@ class _LaneCell extends StatelessWidget {
                   planTag: actions[i].planActivityId != null
                       ? planTagMap[actions[i].planActivityId!]
                       : null,
+                  subTasks: childrenByParent[actions[i].id] ??
+                      const <ProjectAction>[],
                   showOutcomeField: pendingOutcomeId == actions[i].id,
                   outcomeCtrl:
                       pendingOutcomeId == actions[i].id ? outcomeCtrl : null,
                   outcomeFocus:
                       pendingOutcomeId == actions[i].id ? outcomeFocus : null,
                   onTap: () => onCardTap(actions[i]),
+                  onNest: onNest,
+                  onToggleSubTask: onToggleSubTask,
                   onSaveOutcome: () => onSaveOutcome(actions[i]),
                   onDismissOutcome: onDismissOutcome,
                   onDelete: () => onDelete(actions[i]),
@@ -670,10 +828,13 @@ class _KanbanCard extends StatelessWidget {
   final ProjectAction action;
   final ActionCategory? category;
   final String? planTag;
+  final List<ProjectAction> subTasks;
   final bool showOutcomeField;
   final TextEditingController? outcomeCtrl;
   final FocusNode? outcomeFocus;
   final VoidCallback onTap;
+  final Future<void> Function(ProjectAction, ProjectAction) onNest;
+  final Future<void> Function(ProjectAction, bool) onToggleSubTask;
   final VoidCallback onSaveOutcome;
   final VoidCallback onDismissOutcome;
   final VoidCallback onDelete;
@@ -683,24 +844,30 @@ class _KanbanCard extends StatelessWidget {
     required this.action,
     required this.category,
     this.planTag,
+    this.subTasks = const [],
     required this.showOutcomeField,
     required this.outcomeCtrl,
     required this.outcomeFocus,
     required this.onTap,
+    required this.onNest,
+    required this.onToggleSubTask,
     required this.onSaveOutcome,
     required this.onDismissOutcome,
     required this.onDelete,
     required this.onDeleteSeries,
   });
 
-  Widget _buildCardContent() {
+  Widget _buildCardContent({bool nestHover = false}) {
     final barColor =
         category != null ? parseHexColor(category!.color) : KColors.border2;
 
     return Container(
       decoration: BoxDecoration(
         color: KColors.surface2,
-        border: Border.all(color: KColors.border2),
+        border: Border.all(
+          color: nestHover ? KColors.phosphor : KColors.border2,
+          width: nestHover ? 1.5 : 1,
+        ),
         borderRadius: BorderRadius.circular(4),
       ),
       child: InkWell(
@@ -812,6 +979,49 @@ class _KanbanCard extends StatelessWidget {
                     ),
                 ],
               ),
+              if (subTasks.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                const Divider(color: KColors.border, height: 1),
+                const SizedBox(height: 4),
+                for (final s in subTasks)
+                  InkWell(
+                    onTap: () =>
+                        onToggleSubTask(s, s.status != 'closed'),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: Row(
+                        children: [
+                          Icon(
+                            s.status == 'closed'
+                                ? Icons.check_box_outlined
+                                : Icons.check_box_outline_blank,
+                            size: 12,
+                            color: s.status == 'closed'
+                                ? KColors.phosphor
+                                : KColors.textDim,
+                          ),
+                          const SizedBox(width: 5),
+                          Expanded(
+                            child: Text(
+                              s.description,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: s.status == 'closed'
+                                    ? KColors.textMuted
+                                    : KColors.textDim,
+                                decoration: s.status == 'closed'
+                                    ? TextDecoration.lineThrough
+                                    : null,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
               if (planTag != null) ...[
                 const SizedBox(height: 6),
                 Container(
@@ -909,20 +1119,31 @@ class _KanbanCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final content = _buildCardContent();
-    return Draggable<ProjectAction>(
-      data: action,
-      feedback: Material(
-        color: Colors.transparent,
-        child: SizedBox(
-          width: 220,
-          child: Opacity(
-            opacity: 0.92,
-            child: Transform.scale(scale: 1.03, child: content),
+    // Dropping another card onto this one nests it as a child/sub-task
+    // (Jira-style); dropping on the empty cell area changes status only.
+    return DragTarget<ProjectAction>(
+      onWillAcceptWithDetails: (d) => d.data.id != action.id,
+      onAcceptWithDetails: (d) => onNest(d.data, action),
+      builder: (ctx, candidates, _) {
+        final hover = candidates.isNotEmpty;
+        final display =
+            hover ? _buildCardContent(nestHover: true) : content;
+        return Draggable<ProjectAction>(
+          data: action,
+          feedback: Material(
+            color: Colors.transparent,
+            child: SizedBox(
+              width: 220,
+              child: Opacity(
+                opacity: 0.92,
+                child: Transform.scale(scale: 1.03, child: content),
+              ),
+            ),
           ),
-        ),
-      ),
-      childWhenDragging: Opacity(opacity: 0.25, child: content),
-      child: content,
+          childWhenDragging: Opacity(opacity: 0.25, child: content),
+          child: display,
+        );
+      },
     );
   }
 }

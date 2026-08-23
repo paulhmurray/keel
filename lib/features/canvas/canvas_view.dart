@@ -743,74 +743,97 @@ class _Header extends StatelessWidget {
             section: section,
             onChanged: onSectionChanged,
           ),
-          if (section == CanvasSection.threeBands) ...[
-          const SizedBox(width: 12),
-          Text(
-            '$cardCount cards',
-            style: const TextStyle(
-              color: KColors.textMuted,
-              fontSize: 11,
-            ),
-          ),
-          const SizedBox(width: 24),
-          SizedBox(
-            width: 220,
-            child: TextField(
-              onChanged: (v) => onFilterChanged(filter.copyWith(search: v)),
-              decoration: InputDecoration(
-                hintText: 'Search canvas…',
-                hintStyle:
-                    const TextStyle(color: KColors.textMuted, fontSize: 12),
-                isDense: true,
-                prefixIcon:
-                    const Icon(Icons.search, size: 14, color: KColors.textDim),
-                contentPadding: const EdgeInsets.symmetric(vertical: 6),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(4),
-                  borderSide: const BorderSide(color: KColors.border),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(4),
-                  borderSide: const BorderSide(color: KColors.border),
+          // Controls: right-aligned; scroll horizontally when the
+          // viewport is squeezed (journal dock / Claude panel) rather
+          // than overflowing the header.
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                reverse: true,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (section == CanvasSection.threeBands) ...[
+                      const SizedBox(width: 12),
+                      Text(
+                        '$cardCount cards',
+                        style: const TextStyle(
+                          color: KColors.textMuted,
+                          fontSize: 11,
+                        ),
+                      ),
+                      const SizedBox(width: 24),
+                      SizedBox(
+                        width: 220,
+                        child: TextField(
+                          onChanged: (v) =>
+                              onFilterChanged(filter.copyWith(search: v)),
+                          decoration: InputDecoration(
+                            hintText: 'Search canvas…',
+                            hintStyle: const TextStyle(
+                                color: KColors.textMuted, fontSize: 12),
+                            isDense: true,
+                            prefixIcon: const Icon(Icons.search,
+                                size: 14, color: KColors.textDim),
+                            contentPadding:
+                                const EdgeInsets.symmetric(vertical: 6),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(4),
+                              borderSide:
+                                  const BorderSide(color: KColors.border),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(4),
+                              borderSide:
+                                  const BorderSide(color: KColors.border),
+                            ),
+                          ),
+                          style: const TextStyle(
+                              color: KColors.text, fontSize: 12.5),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      _FilterButton(
+                        filter: filter,
+                        tagCounts: tagCounts,
+                        onChanged: onFilterChanged,
+                      ),
+                      const SizedBox(width: 16),
+                      if (viewMode == CanvasViewMode.grid) ...[
+                        _GroupByTagToggle(
+                          value: groupByTag,
+                          onChanged: onGroupByTagChanged,
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      _ViewModeToggle(
+                          value: viewMode, onChanged: onViewModeChanged),
+                      const SizedBox(width: 12),
+                      ElevatedButton.icon(
+                        onPressed: onNewCard,
+                        icon: const Icon(Icons.add, size: 16),
+                        label: const Text('New card'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: KColors.amberDim,
+                          foregroundColor: KColors.amber,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4),
+                            side: const BorderSide(
+                                color: KColors.amber, width: 0.5),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              style: const TextStyle(color: KColors.text, fontSize: 12.5),
             ),
           ),
-          const SizedBox(width: 12),
-          _FilterButton(
-            filter: filter,
-            tagCounts: tagCounts,
-            onChanged: onFilterChanged,
-          ),
-          const Spacer(),
-          if (viewMode == CanvasViewMode.grid) ...[
-            _GroupByTagToggle(
-              value: groupByTag,
-              onChanged: onGroupByTagChanged,
-            ),
-            const SizedBox(width: 8),
-          ],
-          _ViewModeToggle(value: viewMode, onChanged: onViewModeChanged),
-          const SizedBox(width: 12),
-          ElevatedButton.icon(
-            onPressed: onNewCard,
-            icon: const Icon(Icons.add, size: 16),
-            label: const Text('New card'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: KColors.amberDim,
-              foregroundColor: KColors.amber,
-              elevation: 0,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(4),
-                side: const BorderSide(color: KColors.amber, width: 0.5),
-              ),
-            ),
-          ),
-          ] else
-            const Spacer(),
         ],
       ),
     );

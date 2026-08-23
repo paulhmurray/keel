@@ -33,6 +33,8 @@ part 'daos/action_comments_dao.dart';
 part 'daos/journal_series_dao.dart';
 part 'daos/canvas_cards_dao.dart';
 part 'daos/canvas_templates_dao.dart';
+part 'daos/finance_dao.dart';
+part 'daos/day_plan_dao.dart';
 
 // ---------------------------------------------------------------------------
 // Tables
@@ -251,7 +253,18 @@ class Issues extends Table {
   TextColumn get id => text().named('id')();
   TextColumn get projectId => text().references(Projects, #id)();
   TextColumn get ref => text().nullable()();
+  // Short scannable headline; [description] holds the full statement of
+  // what the issue is. Pre-existing rows have title null (fall back to
+  // description in the UI).
+  TextColumn get title => text().nullable()();
   TextColumn get description => text()();
+  // What happens to the project if this isn't resolved — deliberately a
+  // separate field from [description] so the register scans cleanly.
+  TextColumn get impactStatement => text().nullable()();
+  // "Needs something from above my level" — set by the PM, independent
+  // of [escalatedAt] (which records an actual cascade push).
+  BoolColumn get escalationRequired =>
+      boolean().withDefault(const Constant(false))();
   TextColumn get owner => text().nullable()();
   TextColumn get dueDate => text().nullable()();
   TextColumn get priority => text().withDefault(const Constant('medium'))();
@@ -263,6 +276,23 @@ class Issues extends Table {
   TextColumn get sourceProjectId => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Cross-references between RAID items and decisions — "this issue and
+/// that dependency are the same problem from different angles". One row
+/// per link; both ends resolve it (a link from A→B surfaces on B too).
+/// Types use the RaidKind names: risk|assumption|issue|dependency|decision.
+class RaidItemLinks extends Table {
+  TextColumn get id => text().named('id')();
+  TextColumn get projectId => text().references(Projects, #id)();
+  TextColumn get fromType => text()();
+  TextColumn get fromId => text()();
+  TextColumn get toType => text()();
+  TextColumn get toId => text()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -495,7 +525,11 @@ class ProjectActions extends Table {
   TextColumn get recurrenceGroupId => text().nullable()();
   TextColumn get linkedActionId => text().nullable()();
   TextColumn get planActivityId => text().nullable()(); // FK → TimelineActivities
-  TextColumn get parentActionId => text().nullable()(); // self-ref, one level deep
+  // Self-ref hierarchy, max two levels: parent → task → sub-task.
+  TextColumn get parentActionId => text().nullable()();
+  // Explicitly designated group parent — only flagged actions appear in
+  // the parent picker, keeping the list short and intentional.
+  BoolColumn get isParent => boolean().withDefault(const Constant(false))();
   // Cascade markers (Phase C.6). Same semantics as Decisions /
   // RAID — PM-flagged escalations push to linked programmes; the
   // source pointer makes the row read-only on the receiving side.
@@ -594,6 +628,10 @@ class JournalEntries extends Table {
   TextColumn get entryDate => text()();
   TextColumn get meetingContext => text().nullable()();
   BoolColumn get parsed => boolean().withDefault(const Constant(false))();
+  // Snapshot of [body] as of the last completed parse. Re-parsing a
+  // running note only sends text not already covered by this snapshot,
+  // so previously-parsed statements don't get re-suggested.
+  TextColumn get lastParsedBody => text().nullable()();
   DateTimeColumn get confirmedAt => dateTime().nullable()();
   BoolColumn get isFavourite => boolean().withDefault(const Constant(false))();
   TextColumn get seriesId => text().nullable()();
@@ -831,6 +869,10 @@ class TimelineActivities extends Table {
   // activity | milestone | hard_deadline | dependency_marker | ongoing | gate
   TextColumn get activityType =>
       text().withDefault(const Constant('activity'))();
+  // WBS: Work Package → Activity → Task. Non-null = this row is a task
+  // under that activity (one level deep). Parent activities with tasks
+  // roll their span up from the children.
+  TextColumn get parentActivityId => text().nullable()();
   IntColumn get startMonth => integer().nullable()();
   IntColumn get endMonth => integer().nullable()();
   TextColumn get startDate => text().nullable()();
@@ -1037,6 +1079,152 @@ class ProgrammeOverviewStates extends Table {
 }
 
 // ---------------------------------------------------------------------------
+// Finance — Project Finance v1 (spec/project-finance-v1-spec.md)
+// ---------------------------------------------------------------------------
+
+/// Per-project cost categories (People, Vendor, Technology, ...). Seeded
+/// with defaults on first open of the Finance view; editable thereafter.
+class CostCategories extends Table {
+  TextColumn get id => text().named('id')();
+  TextColumn get projectId => text().references(Projects, #id)();
+  TextColumn get name => text()();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// A versioned budget for a project. At most one budget is 'approved'
+/// at a time — approving a new one marks the previous approved budget
+/// 'superseded' in the same transaction. Approved/superseded budgets
+/// are read-only; only drafts accept line edits.
+class ProjectBudgets extends Table {
+  TextColumn get id => text().named('id')();
+  TextColumn get projectId => text().references(Projects, #id)();
+  TextColumn get name => text()();
+  // draft | approved | superseded
+  TextColumn get status => text().withDefault(const Constant('draft'))();
+  TextColumn get approvedBy => text().nullable()();
+  DateTimeColumn get approvedAt => dateTime().nullable()();
+  // ISO 4217. Single currency per budget in v1; schema never needs
+  // migration for multi-currency later.
+  TextColumn get currency => text().withDefault(const Constant('AUD'))();
+  TextColumn get fundingSource => text().nullable()();
+  TextColumn get notes => text().nullable()();
+  // Variance tolerance in basis points (500 = ±5%). Forecast drift past
+  // this against the approved budget surfaces as a programme pressure.
+  IntColumn get varianceToleranceBp =>
+      integer().withDefault(const Constant(500))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// One cell of the budget grid: category × optional workstream × FY.
+/// Amounts are integer minor units (cents) — never floats, anywhere in
+/// the money path. projectId is denormalised alongside budgetId so sync
+/// clear-and-replace and per-project queries stay simple.
+class BudgetLines extends Table {
+  TextColumn get id => text().named('id')();
+  TextColumn get projectId => text().references(Projects, #id)();
+  TextColumn get budgetId => text().references(ProjectBudgets, #id)();
+  TextColumn get costCategoryId => text().references(CostCategories, #id)();
+  // Soft reference to a TimelineWorkPackage (planActivityId convention) —
+  // no hard FK, so the line survives WP deletion.
+  TextColumn get workstreamId => text().nullable()();
+  TextColumn get financialYear => text()(); // e.g. "FY26"
+  IntColumn get amountMinor => integer()(); // cents — NEVER floats
+  TextColumn get notes => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// One month's rolling forecast (Finance v2). The 'working' snapshot is
+/// editable; submitting freezes it as that month's record. At most one
+/// snapshot per (project, period) — enforced in FinanceDao.
+class ForecastSnapshots extends Table {
+  TextColumn get id => text().named('id')();
+  TextColumn get projectId => text().references(Projects, #id)();
+  TextColumn get period => text()(); // 'YYYY-MM'
+  // working | submitted
+  TextColumn get status => text().withDefault(const Constant('working'))();
+  DateTimeColumn get submittedAt => dateTime().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Forecast grid cells — deliberately the same shape as BudgetLines
+/// (category × optional workstream × FY, integer minor units) so
+/// budget-vs-forecast comparison is native.
+class ForecastLines extends Table {
+  TextColumn get id => text().named('id')();
+  TextColumn get projectId => text().references(Projects, #id)();
+  TextColumn get snapshotId => text().references(ForecastSnapshots, #id)();
+  TextColumn get costCategoryId => text().references(CostCategories, #id)();
+  TextColumn get workstreamId => text().nullable()();
+  TextColumn get financialYear => text()();
+  IntColumn get amountMinor => integer()(); // cents — NEVER floats
+  TextColumn get notes => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Manual actuals (Finance v2 — pulled forward from the original v3
+/// plan; CSV import stays gated on PMO discovery). Keyed by calendar
+/// period, not FY: actuals land monthly from the finance partner.
+class ActualLines extends Table {
+  TextColumn get id => text().named('id')();
+  TextColumn get projectId => text().references(Projects, #id)();
+  TextColumn get period => text()(); // 'YYYY-MM'
+  TextColumn get costCategoryId => text().references(CostCategories, #id)();
+  TextColumn get workstreamId => text().nullable()();
+  IntColumn get amountMinor => integer()(); // cents — NEVER floats
+  // manual | csv_import (csv arrives in v3)
+  TextColumn get source => text().withDefault(const Constant('manual'))();
+  TextColumn get sourceRef => text().nullable()();
+  TextColumn get enteredBy => text().nullable()();
+  TextColumn get notes => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Append-only audit trail for every financial mutation. Written by
+/// FinanceDao inside the same transaction as the change itself — no
+/// write path can skip it. field='created'/'deleted' mark row-level
+/// events; otherwise field names the changed column.
+class FinancialAuditLog extends Table {
+  TextColumn get id => text().named('id')();
+  TextColumn get projectId => text().references(Projects, #id)();
+  // ProjectBudget | BudgetLine | CostCategory
+  TextColumn get entityType => text()();
+  TextColumn get entityId => text()();
+  TextColumn get field => text()();
+  TextColumn get oldValue => text().nullable()();
+  TextColumn get newValue => text().nullable()();
+  TextColumn get changedBy => text().nullable()();
+  DateTimeColumn get changedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+// ---------------------------------------------------------------------------
 // Playbook tables
 // ---------------------------------------------------------------------------
 
@@ -1137,6 +1325,62 @@ class ProjectStageProgresses extends Table {
 }
 
 // ---------------------------------------------------------------------------
+// Helm — daily time-blocking (Cal Newport-style planner)
+// ---------------------------------------------------------------------------
+
+/// One row per calendar date, GLOBAL — a day belongs to the user, not to
+/// any one project (the same person can run a programme and projects in
+/// it). Because there is no per-user sync channel, day plans ride in
+/// EVERY project's sync blob; [updatedAt] must be touched on every block
+/// mutation so the import guard can tell whether an incoming copy of a
+/// day is newer than the local one (see JsonImporter).
+class DayPlans extends Table {
+  TextColumn get id => text().named('id')();
+  TextColumn get planDate => text().unique()(); // ISO YYYY-MM-DD
+  // Cal Newport revisions: when the day breaks, the REMAINDER is redrawn
+  // in a new column rather than editing the old one — the old column
+  // stays as the honest record. currentRevision is the latest column;
+  // revisionStartsJson is a JSON int array where index r-1 holds the
+  // minute-of-day at which revision r takes over (revision 0 implicitly
+  // governs from the start of the day).
+  IntColumn get currentRevision =>
+      integer().withDefault(const Constant(0))();
+  TextColumn get revisionStartsJson =>
+      text().withDefault(const Constant('[]'))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class DayPlanBlocks extends Table {
+  TextColumn get id => text().named('id')();
+  TextColumn get dayPlanId => text().references(DayPlans, #id)();
+  IntColumn get revision => integer().withDefault(const Constant(0))();
+  // Minutes from midnight. Storage is minute-granular; the Helm grid
+  // snaps to 30-minute slots.
+  IntColumn get startMinute => integer()();
+  IntColumn get endMinute => integer()();
+  // 'meeting' | 'focus' | 'admin' | 'break' | 'home'
+  // ('home' = life outside work the plan must protect — school pickup,
+  // appointments. Excluded from carry-over, ends the workday visually.)
+  TextColumn get kind => text().withDefault(const Constant('focus'))();
+  TextColumn get label => text()();
+  // Optional link back to a project action. The label is denormalised so
+  // the block survives its project or action disappearing — the day plan
+  // is global and outlives per-project lifecycles.
+  TextColumn get projectId => text().nullable()();
+  TextColumn get linkedActionId => text().nullable()();
+  BoolColumn get done => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+// ---------------------------------------------------------------------------
 // Database
 // ---------------------------------------------------------------------------
 
@@ -1152,6 +1396,7 @@ class ProjectStageProgresses extends Table {
     Risks,
     Assumptions,
     Issues,
+    RaidItemLinks,
     ProgramDependencies,
     Decisions,
     Persons,
@@ -1191,6 +1436,15 @@ class ProjectStageProgresses extends Table {
     CanvasCards,
     CanvasSequences,
     CanvasTemplates,
+    CostCategories,
+    ProjectBudgets,
+    BudgetLines,
+    ForecastSnapshots,
+    ForecastLines,
+    ActualLines,
+    FinancialAuditLog,
+    DayPlans,
+    DayPlanBlocks,
   ],
   daos: [
     ProjectDao,
@@ -1220,6 +1474,8 @@ class ProjectStageProgresses extends Table {
     JournalSeriesDao,
     CanvasCardsDao,
     CanvasTemplatesDao,
+    FinanceDao,
+    DayPlanDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -1231,7 +1487,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(QueryExecutor executor) : super(executor);
 
   @override
-  int get schemaVersion => 46;
+  int get schemaVersion => 53;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1558,6 +1814,66 @@ class AppDatabase extends _$AppDatabase {
             // Per-link secret for E2E-encrypting cascade payloads.
             await ensureColumn(programmeLinks, programmeLinks.linkSecret);
           }
+          if (from < 47) {
+            // Project Finance v1 — budget establishment. Categories,
+            // versioned budgets, integer-minor-unit lines, audit trail.
+            await ensureTable(costCategories);
+            await ensureTable(projectBudgets);
+            await ensureTable(budgetLines);
+            await ensureTable(financialAuditLog);
+          }
+          if (from < 48) {
+            // Finance v2 — rolling forecast + manual actuals, and the
+            // variance tolerance that drives the programme pressure.
+            await ensureTable(forecastSnapshots);
+            await ensureTable(forecastLines);
+            await ensureTable(actualLines);
+            await ensureColumn(
+                projectBudgets, projectBudgets.varianceToleranceBp);
+          }
+          if (from < 49) {
+            // Designated group parents. Backfill: any action that already
+            // has children was implicitly a parent — keep it one. Same
+            // swallow-errors stance as the DDL above: a half-created old
+            // schema may not have the table yet.
+            await ensureColumn(projectActions, projectActions.isParent);
+            try {
+              await customStatement(
+                  'UPDATE project_actions SET is_parent = 1 WHERE id IN '
+                  '(SELECT DISTINCT parent_action_id FROM project_actions '
+                  'WHERE parent_action_id IS NOT NULL)');
+            } catch (_) {}
+          }
+          if (from < 50) {
+            // Incremental journal parsing. Backfill: treat already-parsed
+            // entries' current body as fully parsed so they don't
+            // re-suggest their old text on the next edit.
+            await ensureColumn(journalEntries, journalEntries.lastParsedBody);
+            try {
+              await customStatement(
+                  'UPDATE journal_entries SET last_parsed_body = body '
+                  'WHERE parsed = 1');
+            } catch (_) {}
+          }
+          if (from < 51) {
+            // Richer issues: title, impact statement, escalation-required
+            // flag; plus cross-references between RAID items/decisions.
+            await ensureColumn(issues, issues.title);
+            await ensureColumn(issues, issues.impactStatement);
+            await ensureColumn(issues, issues.escalationRequired);
+            await ensureTable(raidItemLinks);
+          }
+          if (from < 52) {
+            // WBS task layer: activities can nest one level under a
+            // parent activity.
+            await ensureColumn(
+                timelineActivities, timelineActivities.parentActivityId);
+          }
+          if (from < 53) {
+            // Helm — global daily time-blocking planner.
+            await ensureTable(dayPlans);
+            await ensureTable(dayPlanBlocks);
+          }
         },
       );
 
@@ -1642,6 +1958,23 @@ class AppDatabase extends _$AppDatabase {
             .go();
       }
       await (delete(projectPlaybooks)..where((t) => t.projectId.equals(projectId))).go();
+      // Finance — lines reference budgets/snapshots + categories;
+      // audit log last.
+      await (delete(budgetLines)..where((t) => t.projectId.equals(projectId))).go();
+      await (delete(projectBudgets)..where((t) => t.projectId.equals(projectId))).go();
+      await (delete(forecastLines)..where((t) => t.projectId.equals(projectId))).go();
+      await (delete(forecastSnapshots)..where((t) => t.projectId.equals(projectId))).go();
+      await (delete(actualLines)..where((t) => t.projectId.equals(projectId))).go();
+      await (delete(costCategories)..where((t) => t.projectId.equals(projectId))).go();
+      await (delete(financialAuditLog)..where((t) => t.projectId.equals(projectId))).go();
+      // Helm blocks are global — keep them (the denormalised label still
+      // reads fine) but drop the dangling references to the dead project.
+      await (update(dayPlanBlocks)
+            ..where((t) => t.projectId.equals(projectId)))
+          .write(const DayPlanBlocksCompanion(
+        projectId: Value(null),
+        linkedActionId: Value(null),
+      ));
       await (delete(projects)..where((t) => t.id.equals(projectId))).go();
     });
   }

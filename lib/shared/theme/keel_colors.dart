@@ -14,6 +14,8 @@ abstract class KColors {
   static const redDim    = Color(0xFF3a1818);
   static const blue      = Color(0xFF4a9eff);
   static const blueDim   = Color(0xFF122748);
+  static const violet    = Color(0xFFa78bfa);
+  static const violetDim = Color(0xFF2a2150);
   static const text      = Color(0xFFe2eaf2);
   static const textDim   = Color(0xFF8aaabb);
   static const textMuted = Color(0xFF607d94);

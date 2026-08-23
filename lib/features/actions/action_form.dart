@@ -67,6 +67,7 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
   String? _linkedActionId;
   String? _planActivityId;
   String? _parentActionId;
+  bool _isParent = false;
 
   late bool _isViewing;
 
@@ -96,6 +97,7 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
     _linkedActionId = a?.linkedActionId;
     _planActivityId = a?.planActivityId ?? widget.preLinkedActivityId;
     _parentActionId = a?.parentActionId;
+    _isParent = a?.isParent ?? false;
     _isViewing = widget.startInViewMode && a != null;
     _loadData();
   }
@@ -146,6 +148,13 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // An action with children is a parent whatever the checkbox says —
+    // keeps the flag honest for rows that predate it.
+    if (widget.action != null &&
+        _allActions.any((a) => a.parentActionId == widget.action!.id)) {
+      _isParent = true;
+    }
+
     final existing = await widget.db.actionsDao.getActionsForProject(widget.projectId);
     final nums = existing
         .where((a) => a.ref != null && a.ref!.startsWith('AC'))
@@ -182,6 +191,7 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
           recurrenceGroupId: Value(groupId),
           linkedActionId: Value(_linkedActionId),
           planActivityId: Value(_planActivityId),
+          isParent: Value(_isParent),
           updatedAt: Value(DateTime.now()),
         ));
       }
@@ -204,6 +214,7 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
         linkedActionId: Value(_linkedActionId),
         planActivityId: Value(_planActivityId),
         parentActionId: Value(_parentActionId),
+        isParent: Value(_isParent),
         updatedAt: Value(DateTime.now()),
       ));
     }
@@ -289,6 +300,14 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
                 'Plan Activity',
                 _planActivityLabel(a.planActivityId!),
               ),
+              if (a.parentActionId != null &&
+                  _allActions.any((p) => p.id == a.parentActionId))
+                _viewField(
+                  'Part of',
+                  _allActions
+                      .firstWhere((p) => p.id == a.parentActionId)
+                      .description,
+                ),
               _viewField('Description', a.description, large: true),
               Row(children: [
                 Expanded(child: _viewField('Status', a.status)),
@@ -472,34 +491,22 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
                   const SizedBox(height: 12),
                 ],
 
+                // ── Group parent flag ──────────────────────────────────
+                _IsParentCheckbox(
+                  editing: widget.action,
+                  allActions: _allActions,
+                  value: _isParent,
+                  parentActionId: _parentActionId,
+                  onChanged: (v) => setState(() => _isParent = v),
+                ),
+                const SizedBox(height: 12),
+
                 // ── Parent action (group) ──────────────────────────────
                 _ParentActionPicker(
                   editing: widget.action,
                   allActions: _allActions,
                   value: _parentActionId,
                   onChanged: (v) => setState(() => _parentActionId = v),
-                ),
-                const SizedBox(height: 12),
-
-                // ── Link to action ─────────────────────────────────────
-                DropdownButtonFormField<String?>(
-                  value: _linkedActionId,
-                  decoration: const InputDecoration(
-                      labelText: 'Linked to action (Gantt line)'),
-                  isExpanded: true,
-                  items: [
-                    const DropdownMenuItem<String?>(
-                        value: null, child: Text('— none —')),
-                    ..._allActions.map((a) => DropdownMenuItem<String?>(
-                          value: a.id,
-                          child: Text(
-                            '${a.ref != null ? '${a.ref} ' : ''}${a.description}',
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        )),
-                  ],
-                  onChanged: (v) =>
-                      setState(() => _linkedActionId = v),
                 ),
                 const SizedBox(height: 12),
 
@@ -834,6 +841,73 @@ class _PlanActivityPicker extends StatelessWidget {
 // Parent action picker (Epic-style grouping)
 // ---------------------------------------------------------------------------
 
+class _IsParentCheckbox extends StatelessWidget {
+  final ProjectAction? editing;
+  final List<ProjectAction> allActions;
+  final bool value;
+  final String? parentActionId;
+  final ValueChanged<bool> onChanged;
+
+  const _IsParentCheckbox({
+    required this.editing,
+    required this.allActions,
+    required this.value,
+    required this.parentActionId,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final byId = {for (final a in allActions) a.id: a};
+    final childCount = editing == null
+        ? 0
+        : allActions.where((a) => a.parentActionId == editing!.id).length;
+    // Locked on while children exist; unavailable to sub-tasks (a child
+    // whose chosen parent is itself nested is already at max depth).
+    final chosenParent =
+        parentActionId != null ? byId[parentActionId!] : null;
+    final atMaxDepth =
+        chosenParent != null && chosenParent.parentActionId != null;
+    final locked = childCount > 0 || atMaxDepth;
+
+    final String? hint;
+    if (childCount > 0) {
+      hint = '$childCount child action${childCount == 1 ? '' : 's'}';
+    } else if (atMaxDepth) {
+      hint = 'Sub-tasks can’t contain actions';
+    } else {
+      hint = null;
+    }
+
+    return Row(
+      children: [
+        SizedBox(
+          width: 18,
+          height: 18,
+          child: Checkbox(
+            value: value || childCount > 0,
+            onChanged:
+                locked ? null : (v) => onChanged(v ?? false),
+          ),
+        ),
+        const SizedBox(width: 8),
+        const Icon(Icons.account_tree_outlined,
+            size: 13, color: KColors.phosphor),
+        const SizedBox(width: 5),
+        const Text(
+          'Parent — can group other actions',
+          style: TextStyle(color: KColors.text, fontSize: 12),
+        ),
+        const Spacer(),
+        if (hint != null)
+          Text(hint,
+              style:
+                  const TextStyle(color: KColors.textMuted, fontSize: 10)),
+      ],
+    );
+  }
+}
+
 class _ParentActionPicker extends StatelessWidget {
   final ProjectAction? editing;
   final List<ProjectAction> allActions;
@@ -849,49 +923,43 @@ class _ParentActionPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final byId = {for (final a in allActions) a.id: a};
     final candidates =
         eligibleParentCandidates(editing: editing, all: allActions);
-    final hasChildren = editing != null &&
-        allActions.any((a) => a.parentActionId == editing!.id);
+    // A selection made before rules changed (or synced in) stays visible
+    // even if it's no longer offered fresh.
+    if (value != null &&
+        byId[value!] != null &&
+        !candidates.any((c) => c.id == value)) {
+      candidates.insert(0, byId[value!]!);
+    }
 
-    if (hasChildren) {
-      final childCount =
-          allActions.where((a) => a.parentActionId == editing!.id).length;
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(
-          color: KColors.surface2,
-          border: Border.all(color: KColors.border2),
-          borderRadius: BorderRadius.circular(3),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.account_tree_outlined,
-                size: 13, color: KColors.phosphor),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'Group parent · $childCount child action${childCount == 1 ? '' : 's'}',
-                style: const TextStyle(
-                    color: KColors.phosphor,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600),
-              ),
-            ),
-            const Text(
-              "Can't be nested under another action",
-              style: TextStyle(color: KColors.textMuted, fontSize: 10),
-            ),
-          ],
-        ),
-      );
+    if (editing != null && candidates.isEmpty && value == null) {
+      final part = partitionByParent(allActions);
+      if (actionSubtreeHeight(editing!.id, part.childrenByParent) >= 2) {
+        return const Padding(
+          padding: EdgeInsets.symmetric(vertical: 4),
+          child: Text(
+            'Has sub-tasks two levels deep — can’t be nested under '
+            'another action.',
+            style: TextStyle(color: KColors.textMuted, fontSize: 10),
+          ),
+        );
+      }
+    }
+
+    String labelFor(ProjectAction a) {
+      final base = '${a.ref != null ? '${a.ref} ' : ''}${a.description}';
+      final parent =
+          a.parentActionId != null ? byId[a.parentActionId!] : null;
+      return parent == null ? base : '$base  ·  under ${parent.ref ?? parent.description}';
     }
 
     return DropdownButtonFormField<String?>(
       value: value,
       isExpanded: true,
       decoration: const InputDecoration(
-        labelText: 'Parent action (group under…)',
+        labelText: 'Nest under parent (optional)',
       ),
       items: [
         const DropdownMenuItem<String?>(
@@ -899,7 +967,7 @@ class _ParentActionPicker extends StatelessWidget {
         ...candidates.map((a) => DropdownMenuItem<String?>(
               value: a.id,
               child: Text(
-                '${a.ref != null ? '${a.ref} ' : ''}${a.description}',
+                labelFor(a),
                 overflow: TextOverflow.ellipsis,
               ),
             )),

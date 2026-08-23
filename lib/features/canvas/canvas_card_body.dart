@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 import '../../shared/theme/keel_colors.dart';
 
@@ -111,7 +111,7 @@ class CanvasCardBody extends StatelessWidget {
               // Tapping links opens nothing for now — Phase 1 wires
               // #tag and @person mention handlers; bare URLs can route
               // via url_launcher later if the user starts pasting links.
-              onTapLink: (_, __, ___) {},
+              onTapLink: (_, _, _) {},
             ),
           ),
         );

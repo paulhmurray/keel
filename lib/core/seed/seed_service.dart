@@ -1159,6 +1159,23 @@ class SeedService {
             'date: 2026-04-28).',
       ),
     ];
+    // Steerco entries group into a series; the escalation debrief is
+    // starred — demos series + favourites in Journal.
+    const steercoSeriesId = 'seed-series-001';
+    const steercoEntryIds = {'seed-jrn-001', 'seed-jrn-006'};
+    await db.journalSeriesDao.upsert(
+      JournalSeriesDefsCompanion(
+        id:          const Value(steercoSeriesId),
+        projectId:   const Value(projectId),
+        name:        const Value('Steerco cycle'),
+        description: const Value(
+            'Prep notes and debriefs for the monthly Steering Committee.'),
+        cadenceHint: const Value('monthly'),
+        color:       const Value('#3B82F6'),
+        updatedAt:   Value(DateTime.now()),
+      ),
+    );
+
     for (final j in journalEntries) {
       final (id, title, date, meeting, body) = j;
       await db.journalDao.insertEntry(
@@ -1169,6 +1186,9 @@ class SeedService {
           body:           Value(body),
           entryDate:      Value(date),
           meetingContext: Value(meeting),
+          seriesId: Value(
+              steercoEntryIds.contains(id) ? steercoSeriesId : null),
+          isFavourite:    Value(id == 'seed-jrn-006'),
           // Pre-mark as parsed so the demo doesn't re-extract on first load
           // and create duplicate actions/risks (which would conflict with
           // the seeded RAID/Decisions/Actions IDs).
@@ -1188,6 +1208,16 @@ class SeedService {
     // Plan — Programme Gantt: header, work packages, activities
     // -------------------------------------------------------------------------
     await _seedHorizonPlan(db, projectId);
+
+    // -------------------------------------------------------------------------
+    // Canvas — cards, a sequence arrow, template instances
+    // -------------------------------------------------------------------------
+    await _seedHorizonCanvas(db, projectId);
+
+    // -------------------------------------------------------------------------
+    // Finance — cost categories, versioned budgets, audit trail
+    // -------------------------------------------------------------------------
+    await _seedHorizonFinance(db, projectId);
   }
 
   // ---------------------------------------------------------------------------
@@ -1516,6 +1546,386 @@ class SeedService {
   static String _dateOffset(DateTime base, int days) {
     final dt = base.add(Duration(days: days));
     return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+  }
+
+  // ---------------------------------------------------------------------------
+  // Canvas seeder — cards across all three bands, a sequence arrow, and
+  // filled template instances (SWOT + pre-mortem)
+  // ---------------------------------------------------------------------------
+
+  static Future<void> _seedHorizonCanvas(
+      AppDatabase db, String projectId) async {
+    // Each tuple: (id, band, title, body, colour, size, x, y, tagsJson,
+    // startDate, endDate).
+    final cards = <(String, String, String, String, String?, String, int,
+        int, String?, String?, String?)>[
+      (
+        'seed-cc-001',
+        'this_week',
+        'Walk Helena through re-baselined training plan',
+        'Priya\'s re-baseline lands this week. Pre-wire with Helena '
+            'before Friday\'s Steerco — no surprises. #steerco',
+        'amber',
+        'medium',
+        16,
+        16,
+        '["steerco"]',
+        null,
+        null,
+      ),
+      (
+        'seed-cc-002',
+        'this_week',
+        'Chase Temenos SOW 4 signature',
+        'Sitting with procurement. Blocks the Phase 3 migration window '
+            'planning. #vendor',
+        'red',
+        'medium',
+        16,
+        120,
+        '["vendor"]',
+        null,
+        null,
+      ),
+      (
+        'seed-cc-003',
+        'next_30_days',
+        'SOC 2 Type II evidence collection',
+        'Marcus needs two clean weeks of ops evidence from the new '
+            'platform. Book the window with the SRE team. #compliance',
+        'blue',
+        'medium',
+        16,
+        16,
+        '["compliance"]',
+        '2026-08-03',
+        '2026-08-14',
+      ),
+      (
+        'seed-cc-004',
+        'next_30_days',
+        'Plan Phase 3 migration window',
+        'Depends on SOW 4. Draft the cutover calendar with Amara once '
+            'the vendor commitment is locked.',
+        null,
+        'medium',
+        16,
+        120,
+        null,
+        null,
+        null,
+      ),
+      (
+        'seed-cc-005',
+        'horizon',
+        'Post-programme operating model',
+        'Who runs the platform after the programme disbands? Raise at '
+            'the September Steerco before budgets set.',
+        'purple',
+        'medium',
+        16,
+        16,
+        null,
+        null,
+        null,
+      ),
+      (
+        'seed-cc-006',
+        'horizon',
+        'FY27 run-cost budget line',
+        'Cloud run costs move to BAU after decommission — needs a home '
+            'in FY27 opex, not programme capex. #finance',
+        'green',
+        'small',
+        16,
+        130,
+        '["finance"]',
+        null,
+        null,
+      ),
+    ];
+    for (final c in cards) {
+      final (id, band, title, body, colour, size, x, y, tags, start, end) = c;
+      await db.canvasCardsDao.insertCard(
+        CanvasCardsCompanion(
+          id:        Value(id),
+          projectId: Value(projectId),
+          title:     Value(title),
+          body:      Value(body),
+          band:      Value(band),
+          colour:    Value(colour),
+          size:      Value(size),
+          positionX: Value(x),
+          positionY: Value(y),
+          tags:      Value(tags),
+          startDate: Value(start),
+          endDate:   Value(end),
+          updatedAt: Value(DateTime.now()),
+        ),
+      );
+    }
+
+    // SOW signature precedes the migration-window planning.
+    await db.canvasCardsDao.addSequence(
+      id:         'seed-cseq-001',
+      projectId:  projectId,
+      fromCardId: 'seed-cc-002',
+      toCardId:   'seed-cc-004',
+    );
+
+    // Template instances — content JSON matches the per-template models
+    // (SwotItem / PreMortemCause shapes).
+    await db.canvasTemplatesDao.insertTemplate(
+      CanvasTemplatesCompanion(
+        id:           const Value('seed-ct-001'),
+        projectId:    Value(projectId),
+        templateType: const Value('swot'),
+        name:         const Value('Mid-programme SWOT'),
+        content: const Value(
+            '{"strengths":['
+            '{"id":"sw-s1","text":"Pilot migration proved the Temenos platform at 10k accounts","sort_order":0},'
+            '{"id":"sw-s2","text":"Data platform delivering real-time analytics ahead of plan","sort_order":1}],'
+            '"weaknesses":['
+            '{"id":"sw-w1","text":"Branch training capacity — single point of failure in Priya\'s team","sort_order":0},'
+            '{"id":"sw-w2","text":"Vendor dependency on Temenos SI resourcing","sort_order":1}],'
+            '"opportunities":['
+            '{"id":"sw-o1","text":"Decommission savings could fund FY27 product roadmap","sort_order":0}],'
+            '"threats":['
+            '{"id":"sw-t1","text":"PRA scrutiny of the 4M-account migration window","sort_order":0},'
+            '{"id":"sw-t2","text":"Change fatigue in branch network","sort_order":1}]}'),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+    await db.canvasTemplatesDao.insertTemplate(
+      CanvasTemplatesCompanion(
+        id:           const Value('seed-ct-002'),
+        projectId:    Value(projectId),
+        templateType: const Value('pre_mortem'),
+        name:         const Value('Mainframe cutover pre-mortem'),
+        content: const Value(
+            '{"goal":"It is January 2027 and the mainframe decommission failed — we are running both platforms in parallel indefinitely.",'
+            '"causes":['
+            '{"id":"pm-c1","description":"Final 4M-account migration overran its window and rollback was invoked","likelihood":"medium","impact":"high",'
+            '"mitigations":[{"id":"pm-m1","description":"Dress-rehearsal cutover in the pre-prod environment two months out","owner":"Amara Osei"}]},'
+            '{"id":"pm-c2","description":"Branch staff reverted to legacy workflows under pressure","likelihood":"high","impact":"medium",'
+            '"mitigations":[{"id":"pm-m2","description":"Floor-walker support in top 50 branches for cutover fortnight","owner":"Priya Sharma"}]}]}'),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Finance seeder — Project Finance v1: seeded categories, a superseded
+  // original business case, the approved re-baseline, and a live audit
+  // trail. Uses FinanceDao's real mutation methods (not raw inserts) so
+  // the audit log is produced exactly as it would be in normal use.
+  // ---------------------------------------------------------------------------
+
+  static Future<void> _seedHorizonFinance(
+      AppDatabase db, String projectId) async {
+    const actor = 'You';
+    await db.financeDao.seedDefaultCategories(projectId, changedBy: actor);
+    final categories = await db.financeDao.getCategories(projectId);
+    final catId = {for (final c in categories) c.name: c.id};
+
+    // Line sets in whole pounds: (category, workstreamId, FY, £, notes).
+    // v1 sums to £40.0M, v2 to £42.0M — matching the overview's
+    // "£42M over 24 months" after the April 2026 re-baseline.
+    const v1Lines = <(String, String?, String, int, String?)>[
+      ('People',      null,             'FY25', 8000000, null),
+      ('People',      null,             'FY26', 7000000, null),
+      ('Vendor',      'seed-wp-cb',     'FY25', 4000000, 'Temenos licences & SI'),
+      ('Vendor',      'seed-wp-data',   'FY25', 2400000, 'Data platform build partner'),
+      ('Vendor',      'seed-wp-cb',     'FY26', 5200000, 'Temenos migration sprints'),
+      ('Technology',  null,             'FY25', 3900000, 'Cloud, licences, tooling'),
+      ('Technology',  null,             'FY26', 3900000, null),
+      ('Other',       'seed-wp-change', 'FY25', 1000000, 'Training & comms'),
+      ('Other',       'seed-wp-change', 'FY26', 1100000, 'Training & comms'),
+      ('Contingency', null,             'FY25', 1500000, null),
+      ('Contingency', null,             'FY26', 2000000, null),
+    ];
+    const v2Lines = <(String, String?, String, int, String?)>[
+      // People FY26 is first entered at £7.4M and corrected to £7.6M
+      // below — a deliberate demo of the audit trail's amount-change row.
+      ('People',      null,             'FY25', 8000000, null),
+      ('People',      null,             'FY26', 7400000, 'Extended data + mobile squads'),
+      ('Vendor',      'seed-wp-cb',     'FY25', 4000000, 'Temenos licences & SI'),
+      ('Vendor',      'seed-wp-data',   'FY25', 2400000, 'Data platform build partner'),
+      ('Vendor',      'seed-wp-cb',     'FY26', 5600000, 'Temenos migration sprints + Phase 3'),
+      ('Technology',  null,             'FY25', 3900000, 'Cloud, licences, tooling'),
+      ('Technology',  null,             'FY26', 4100000, 'Parallel-run cloud capacity'),
+      ('Other',       'seed-wp-change', 'FY25', 1100000, 'Training & comms'),
+      ('Other',       'seed-wp-change', 'FY26', 1300000, 'Incl. £180k contingency draw for external trainers'),
+      ('Contingency', null,             'FY25', 1500000, null),
+      ('Contingency', null,             'FY26', 2500000, null),
+    ];
+
+    Future<void> addLines(String budgetId,
+        List<(String, String?, String, int, String?)> lines,
+        String idPrefix) async {
+      var n = 0;
+      for (final l in lines) {
+        final (cat, ws, fy, pounds, notes) = l;
+        await db.financeDao.upsertLine(
+          id: '$idPrefix-${(++n).toString().padLeft(3, '0')}',
+          projectId: projectId,
+          budgetId: budgetId,
+          costCategoryId: catId[cat]!,
+          workstreamId: ws,
+          financialYear: fy,
+          amountMinor: pounds * 100, // whole £ → pence
+          notes: notes,
+          changedBy: actor,
+        );
+      }
+    }
+
+    // v1 — the original business case, approved then superseded.
+    final v1 = await db.financeDao.createBudget(
+      projectId: projectId,
+      name: 'Original Business Case (Jan 2025)',
+      currency: 'GBP',
+      fundingSource: 'Group Transformation Capex',
+      notes: 'Board-approved at programme kick-off.',
+      changedBy: actor,
+    );
+    await addLines(v1, v1Lines, 'seed-bl-v1');
+    await db.financeDao.approveBudget(v1,
+        approvedBy: 'Richard Okafor', changedBy: actor);
+
+    // v2 — the April 2026 re-baseline. One line is entered "wrong" then
+    // corrected so the audit trail shows a real amount change.
+    final v2 = await db.financeDao.createBudget(
+      projectId: projectId,
+      name: 'Re-baseline v2 (Apr 2026)',
+      currency: 'GBP',
+      fundingSource: 'Group Transformation Capex',
+      notes: 'Adds £2M for extended squads, parallel-run cloud capacity, '
+          'and the Steerco-approved £180k trainer contingency draw.',
+      changedBy: actor,
+    );
+    await addLines(v2, v2Lines, 'seed-bl-v2');
+    await db.financeDao.upsertLine(
+      id: 'seed-bl-v2-002', // People FY26 — correction, lands at £42.0M
+      projectId: projectId,
+      budgetId: v2,
+      costCategoryId: catId['People']!,
+      workstreamId: null,
+      financialYear: 'FY26',
+      amountMinor: 7600000 * 100,
+      notes: 'Extended data + mobile squads',
+      changedBy: actor,
+    );
+    await db.financeDao.approveBudget(v2,
+        approvedBy: 'Richard Okafor', changedBy: actor);
+
+    // A working draft left open so the demo has an editable grid on
+    // first visit — an FY27 run-cost extension being explored.
+    final draft = await db.financeDao.createDraftFrom(v2,
+        name: 'FY27 Extension Scenario (working draft)', changedBy: actor);
+    await db.financeDao.upsertLine(
+      id: 'seed-bl-v3-101',
+      projectId: projectId,
+      budgetId: draft,
+      costCategoryId: catId['Technology']!,
+      workstreamId: null,
+      financialYear: 'FY27',
+      amountMinor: 1200000 * 100,
+      notes: 'Transitional cloud run costs pending BAU handover',
+      changedBy: actor,
+    );
+    await db.financeDao.upsertLine(
+      id: 'seed-bl-v3-102',
+      projectId: projectId,
+      budgetId: draft,
+      costCategoryId: catId['People']!,
+      workstreamId: null,
+      financialYear: 'FY27',
+      amountMinor: 600000 * 100,
+      notes: 'Early-life support squad',
+      changedBy: actor,
+    );
+
+    // ── Forecast (v2): Apr–Jun submitted, Jul working ──────────────────
+    // The story: vendor + tech costs drift up through Q2; by July the
+    // forecast-at-completion (£44.2M, +5.2%) breaches the ±5% tolerance
+    // and surfaces as a programme pressure.
+    Future<void> setForecast(
+        String snapId, String cat, String fy, int pounds) async {
+      final lines = await db.financeDao.getForecastLines(snapId);
+      final line = lines.firstWhere(
+          (l) => l.costCategoryId == catId[cat] && l.financialYear == fy);
+      await db.financeDao.upsertForecastLine(
+        id: line.id,
+        projectId: projectId,
+        snapshotId: snapId,
+        costCategoryId: line.costCategoryId,
+        workstreamId: line.workstreamId,
+        financialYear: fy,
+        amountMinor: pounds * 100,
+        notes: line.notes,
+        changedBy: actor,
+      );
+    }
+
+    final apr = await db.financeDao.createSnapshot(
+        projectId: projectId,
+        period: '2026-04',
+        copyFromBudget: true,
+        changedBy: actor);
+    await db.financeDao.submitSnapshot(apr, changedBy: actor);
+
+    final may = await db.financeDao.createSnapshot(
+        projectId: projectId,
+        period: '2026-05',
+        copyFromSnapshotId: apr,
+        changedBy: actor);
+    await setForecast(may, 'Vendor', 'FY26', 5900000); // 42.3M
+    await db.financeDao.submitSnapshot(may, changedBy: actor);
+
+    final jun = await db.financeDao.createSnapshot(
+        projectId: projectId,
+        period: '2026-06',
+        copyFromSnapshotId: may,
+        changedBy: actor);
+    await setForecast(jun, 'Vendor', 'FY26', 6200000);
+    await setForecast(jun, 'Technology', 'FY26', 4400000); // 42.9M
+    await db.financeDao.submitSnapshot(jun, changedBy: actor);
+
+    final jul = await db.financeDao.createSnapshot(
+        projectId: projectId,
+        period: '2026-07',
+        copyFromSnapshotId: jun,
+        changedBy: actor);
+    await setForecast(jul, 'Vendor', 'FY26', 6900000);
+    await setForecast(jul, 'Technology', 'FY26', 4600000);
+    await setForecast(jul, 'People', 'FY26', 8000000); // 44.2M, +5.2%
+
+    // ── Actuals (v2): manual monthly entries for 2026 H1 ───────────────
+    const monthly = <(String, int)>[
+      ('People', 620000),
+      ('Vendor', 480000),
+      ('Technology', 320000),
+      ('Other', 90000),
+    ];
+    for (var m = 1; m <= 6; m++) {
+      final period = '2026-${m.toString().padLeft(2, '0')}';
+      for (final (cat, base) in monthly) {
+        // Slight upward creep so the numbers look lived-in.
+        final pounds = base + (m - 1) * (base ~/ 40);
+        await db.financeDao.upsertActualLine(
+          id: 'seed-al-$period-${cat.toLowerCase()}',
+          projectId: projectId,
+          period: period,
+          costCategoryId: catId[cat]!,
+          amountMinor: pounds * 100,
+          notes: m == 6 && cat == 'Vendor'
+              ? 'Includes Temenos SOW 3 milestone payment'
+              : null,
+          changedBy: actor,
+        );
+      }
+    }
   }
 }
 

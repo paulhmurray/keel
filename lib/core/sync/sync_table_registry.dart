@@ -28,6 +28,7 @@ const Set<String> syncedTables = {
   'assumptions',
   'issues',
   'program_dependencies',
+  'raid_item_links',
   'decisions',
   'persons',
   'stakeholder_profiles',
@@ -58,6 +59,23 @@ const Set<String> syncedTables = {
   'prioritisation_sources',
   'project_charters',
   'programme_overview_states',
+  // Finance v1: categories → budgets → lines cleared+reimported in FK
+  // order. The audit log rides in the blob too (history survives a
+  // machine move); import uses raw upserts so it never re-audits.
+  'cost_categories',
+  'project_budgets',
+  'budget_lines',
+  'forecast_snapshots',
+  'forecast_lines',
+  'actual_lines',
+  'financial_audit_log',
+  // Helm day plans are GLOBAL (one day spans every project) but still
+  // ride in every project's sync blob — there is no per-user channel.
+  // Import is guarded per-day by updatedAt (DayPlanDao.applyImportedPlan)
+  // instead of clear+reimport, so pulling a stale project can never
+  // clobber a newer plan; _clearSyncedTables deliberately skips them.
+  'day_plans',
+  'day_plan_blocks',
   // Playbook: catalog tables are upsert-only on import (shared across
   // projects); the per-project attachment + progress are cleared+reimported.
   'organisations',

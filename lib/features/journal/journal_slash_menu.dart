@@ -26,6 +26,26 @@ const kSlashCommands = [
     icon: Icons.groups_outlined,
   ),
   SlashCommand(
+    command: '/day',
+    description: 'Daily note structure',
+    template: '## {{today}}\n'
+        '\n'
+        '**Top 3 today**\n'
+        '1. ⟨first⟩\n'
+        '2. ⟨second⟩\n'
+        '3. ⟨third⟩\n'
+        '\n'
+        '**On my radar**\n'
+        '- ⟨watching⟩\n'
+        '\n'
+        '**End of day**\n'
+        'Moved: ⟨wins⟩\n'
+        'Didn\'t move: ⟨stalled⟩\n'
+        'Carrying to tomorrow: ⟨carryover⟩\n'
+        'Escalations sent: ⟨escalations⟩\n',
+    icon: Icons.today_outlined,
+  ),
+  SlashCommand(
     command: '/action',
     description: 'Action item',
     template: '**Action:** ⟨name⟩ — ⟨task⟩ — by ⟨date⟩\n',

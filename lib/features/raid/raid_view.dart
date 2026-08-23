@@ -13,6 +13,7 @@ import '../../shared/widgets/source_badge.dart';
 import '../canvas/canvas_drag_source.dart';
 import '../canvas/in_canvas_indicator.dart';
 import 'risk_form.dart';
+import '../../shared/widgets/min_width_hscroll.dart';
 import 'assumption_form.dart';
 import 'issue_form.dart';
 import 'dependency_form.dart';
@@ -117,7 +118,15 @@ class _CascadedBadge extends StatelessWidget {
 // Column width constants
 // ---------------------------------------------------------------------------
 
+// Below this width the RAID tables scroll horizontally rather than
+// crushing their fixed columns (split view / narrow windows).
+const _kTableMinW = 950.0;
+// Issues carry more columns (impact, escalation, last-updated).
+const _kIssuesTableMinW = 1200.0;
 const _kRefW = 80.0;
+const _kImpactW = 190.0;
+const _kEscW = 36.0;
+const _kUpdatedW = 64.0;
 const _kDescW = 240.0;
 const _kLikeW = 56.0;
 const _kImpW = 56.0;
@@ -463,7 +472,9 @@ class _RisksTabState extends State<_RisksTab> {
           ),
         ),
         Expanded(
-          child: Column(
+          child: MinWidthHScroll(
+            minWidth: _kTableMinW,
+            child: Column(
             children: [
               _buildHeaderRow([
                 (width: _kRefW, label: 'REF'),
@@ -504,6 +515,7 @@ class _RisksTabState extends State<_RisksTab> {
                   ),
                 ],
               ),
+          ),
         ),
       ],
     );
@@ -730,7 +742,9 @@ class _AssumptionsTabState extends State<_AssumptionsTab> {
           ),
         ),
         Expanded(
-          child: Column(
+          child: MinWidthHScroll(
+            minWidth: _kTableMinW,
+            child: Column(
             children: [
               _buildHeaderRow([
                 (width: _kRefW, label: 'REF'),
@@ -764,6 +778,7 @@ class _AssumptionsTabState extends State<_AssumptionsTab> {
                   ),
                 ],
               ),
+          ),
         ),
       ],
     );
@@ -965,15 +980,20 @@ class _IssuesTabState extends State<_IssuesTab> {
           ),
         ),
         Expanded(
-          child: Column(
+          child: MinWidthHScroll(
+            minWidth: _kIssuesTableMinW,
+            child: Column(
             children: [
               _buildHeaderRow([
                 (width: _kRefW, label: 'REF'),
-                (width: null, label: 'DESCRIPTION'),
+                (width: null, label: 'ISSUE'),
+                (width: _kImpactW, label: 'IMPACT IF UNRESOLVED'),
+                (width: _kEscW, label: 'ESC'),
                 (width: _kOwnerW, label: 'OWNER'),
                 (width: _kDueW, label: 'DUE'),
                 (width: _kPriorityW, label: 'PRIORITY'),
                 (width: _kStatusW, label: 'STATUS'),
+                (width: _kUpdatedW, label: 'UPDATED'),
                 (width: _kSourceW, label: 'SOURCE'),
                 (width: _kMenuW, label: ''),
               ]),
@@ -1001,8 +1021,47 @@ class _IssuesTabState extends State<_IssuesTab> {
                   ),
                 ],
               ),
+          ),
         ),
       ],
+    );
+  }
+}
+
+/// Relative "last touched" stamp. Open issues untouched for three weeks
+/// or more render red — either resolved-but-not-closed or neglected.
+class _UpdatedAgo extends StatelessWidget {
+  final DateTime updatedAt;
+  final bool isOpen;
+
+  const _UpdatedAgo({required this.updatedAt, required this.isOpen});
+
+  static String relativeAge(DateTime dt, DateTime now) {
+    final d = now.difference(dt);
+    if (d.inDays >= 365) return '${(d.inDays / 365).floor()}y';
+    if (d.inDays >= 30) return '${(d.inDays / 30).floor()}mo';
+    if (d.inDays >= 7) return '${(d.inDays / 7).floor()}w';
+    if (d.inDays >= 1) return '${d.inDays}d';
+    if (d.inHours >= 1) return '${d.inHours}h';
+    return 'now';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final stale = isOpen && now.difference(updatedAt).inDays >= 21;
+    return Tooltip(
+      message: 'Last updated ${du.formatDate(updatedAt.toIso8601String())}'
+          '${stale ? ' — stale: resolved-but-not-closed, or neglected?' : ''}',
+      waitDuration: const Duration(milliseconds: 350),
+      child: Text(
+        relativeAge(updatedAt, now),
+        style: TextStyle(
+          color: stale ? KColors.red : KColors.textDim,
+          fontSize: 11,
+          fontWeight: stale ? FontWeight.w700 : FontWeight.w400,
+        ),
+      ),
     );
   }
 }
@@ -1061,9 +1120,49 @@ class _IssueRow extends StatelessWidget {
                 ],
               ),
             ),
+            // Title (bold, scannable) with the full description dimmed
+            // beneath — pre-title rows just show the description.
             Expanded(
-              child: Text(issue.description, style: _kTitleStyle, maxLines: 3,
-                  overflow: TextOverflow.ellipsis),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(issue.title ?? issue.description,
+                      style: _kTitleStyle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis),
+                  if (issue.title != null && issue.title!.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(issue.description,
+                        style: _kMetaStyle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis),
+                  ],
+                ],
+              ),
+            ),
+            // Impact if unresolved — separate from what the issue is.
+            SizedBox(
+              width: _kImpactW,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Text(issue.impactStatement ?? '—',
+                    style: issue.impactStatement == null
+                        ? _kMetaStyle
+                        : _kMitigationStyle,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis),
+              ),
+            ),
+            // Escalation-required flag.
+            SizedBox(
+              width: _kEscW,
+              child: issue.escalationRequired
+                  ? const Tooltip(
+                      message: 'Escalation required',
+                      child: Icon(Icons.arrow_upward,
+                          size: 14, color: KColors.red),
+                    )
+                  : const SizedBox.shrink(),
             ),
             SizedBox(width: _kOwnerW, child: _OwnerChip(name: issue.owner)),
             SizedBox(
@@ -1075,6 +1174,16 @@ class _IssueRow extends StatelessWidget {
               child: Text(issue.priority, style: _kMetaStyle, overflow: TextOverflow.ellipsis),
             ),
             SizedBox(width: _kStatusW, child: StatusChip(status: issue.status)),
+            // Last touched — stale open issues (3+ weeks) glow red:
+            // either resolved-but-not-closed or being neglected.
+            SizedBox(
+              width: _kUpdatedW,
+              child: _UpdatedAgo(
+                updatedAt: issue.updatedAt,
+                isOpen: issue.status == 'open' ||
+                    issue.status == 'in progress',
+              ),
+            ),
             SizedBox(
               width: _kSourceW,
               child: Wrap(
@@ -1221,7 +1330,9 @@ class _DependenciesTabState extends State<_DependenciesTab> {
           ),
         ),
         Expanded(
-          child: Column(
+          child: MinWidthHScroll(
+            minWidth: _kTableMinW,
+            child: Column(
             children: [
               _buildHeaderRow([
                 (width: _kRefW, label: 'REF'),
@@ -1257,6 +1368,7 @@ class _DependenciesTabState extends State<_DependenciesTab> {
                   ),
                 ],
               ),
+          ),
         ),
       ],
     );

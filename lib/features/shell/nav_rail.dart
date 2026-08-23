@@ -29,6 +29,14 @@ class KeelNavRail extends StatelessWidget {
               child: Column(
                 children: [
                   const SizedBox(height: 8),
+                  // Helm sits ABOVE the project navigation — it's the
+                  // user's global day, not a view of the current project,
+                  // so it keeps its place when the project switches.
+                  _HelmNavItem(
+                    selected: selectedIndex == 16,
+                    onTap: onDestinationSelected,
+                  ),
+                  const _NavDivider(),
                   _NavItem(
                     icon: isProgramme
                         ? Icons.workspaces_outlined
@@ -42,6 +50,7 @@ class KeelNavRail extends StatelessWidget {
                   _NavItem(icon: Icons.table_chart_outlined, label: 'Plan', index: 12, selected: selectedIndex == 12, onTap: onDestinationSelected),
                   _NavItem(icon: Icons.monitor_heart_outlined, label: 'Status', index: 13, selected: selectedIndex == 13, onTap: onDestinationSelected),
                   _NavItem(icon: Icons.article_outlined, label: 'Charter', index: 14, selected: selectedIndex == 14, onTap: onDestinationSelected),
+                  _NavItem(icon: Icons.account_balance_outlined, label: 'Finance', index: 15, selected: selectedIndex == 15, onTap: onDestinationSelected),
                   const _NavDivider(),
                   _NavItem(icon: Icons.shield_outlined, label: 'RAID', index: 2, selected: selectedIndex == 2, onTap: onDestinationSelected),
                   _NavItem(icon: Icons.gavel_outlined, label: 'Dec', index: 3, selected: selectedIndex == 3, onTap: onDestinationSelected),
@@ -112,6 +121,54 @@ class _NavItem extends StatelessWidget {
               style: TextStyle(
                 fontSize: 10,
                 color: selected ? KColors.amber : unselectedColor,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Helm gets its own visual treatment — a bordered slot marking it as
+/// global ("you") rather than one more lens on the current project.
+class _HelmNavItem extends StatelessWidget {
+  final bool selected;
+  final ValueChanged<int> onTap;
+
+  const _HelmNavItem({required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = selected ? KColors.amber : const Color(0xFF8a9faf);
+    return GestureDetector(
+      onTap: () => onTap(16),
+      child: Container(
+        width: 64,
+        height: 56,
+        margin: const EdgeInsets.symmetric(vertical: 2),
+        decoration: BoxDecoration(
+          color: selected ? KColors.surface2 : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: selected
+                ? KColors.amber
+                : KColors.amber.withValues(alpha: 0.35),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.explore_outlined, size: 22, color: color),
+            const SizedBox(height: 3),
+            Text(
+              'HELM',
+              style: TextStyle(
+                fontSize: 10,
+                color: color,
                 fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                 letterSpacing: 0.3,
               ),

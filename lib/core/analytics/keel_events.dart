@@ -76,6 +76,8 @@ class KeelSection {
   static const settings = 'settings';
   static const inbox = 'inbox';
   static const charter = 'charter';
+  static const finance = 'finance';
+  static const helm = 'helm';
 }
 
 /// Ergonomic helper so call sites can write

@@ -38,6 +38,7 @@ void main() {
         status: 'open',
         priority: 'medium',
         source: 'cascade',
+        isParent: false,
         sourceProjectId: src,
         createdAt: DateTime(2026, 1, 1),
         updatedAt: DateTime(2026, 1, 1),

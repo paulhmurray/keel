@@ -74,8 +74,8 @@ class StatusSnapshotScheduler {
 
     // ── Rich-snapshot fields (v19) ───────────────────────────────────────────
     final monthLabels = _parseMonthLabels(header?.monthLabels);
-    final upcoming =
-        StatusCalculator.upcomingMilestones(activities, monthLabels, days: 30);
+    final upcoming = StatusCalculator.upcomingMilestones(
+        activities, monthLabels, month0Date: header?.month0Date);
     final top = StatusCalculator.topRisks(risks, limit: 3);
 
     final workstreamHealthJson = jsonEncode([

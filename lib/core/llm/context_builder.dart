@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import '../database/database.dart';
+import '../helm/day_plan_logic.dart';
+import '../status/status_calculator.dart';
 
 /// Builds a rich system prompt for the Claude panel, injecting relevant
 /// project context so the LLM can give TPM-aware responses.
@@ -45,6 +47,25 @@ class ContextBuilder {
       buffer.writeln();
     }
 
+    // --- Project charter ---
+    final charter = await db.projectCharterDao.getForProject(projectId);
+    if (charter != null) {
+      buffer.writeln('## Project Charter');
+      void charterField(String label, String? v) {
+        if (v != null && v.isNotEmpty) buffer.writeln('$label: $v');
+      }
+
+      charterField('Vision', charter.vision);
+      charterField('Objectives', charter.objectives);
+      charterField('In scope', charter.scopeIn);
+      charterField('Out of scope', charter.scopeOut);
+      charterField('Delivery approach', charter.deliveryApproach);
+      charterField('Success criteria', charter.successCriteria);
+      charterField('Key constraints', charter.keyConstraints);
+      charterField('Assumptions', charter.assumptions);
+      buffer.writeln();
+    }
+
     // --- Programme overview ---
     final overview = await db.programmeDao.getOverviewForProject(projectId);
     if (overview != null) {
@@ -81,6 +102,105 @@ class ContextBuilder {
             ? ' — ${ws.notes!.length > 100 ? '${ws.notes!.substring(0, 100)}…' : ws.notes}'
             : '';
         buffer.writeln('- ${ws.name} [${ws.status.toUpperCase()}]$lead$notes');
+      }
+      buffer.writeln();
+    }
+
+    // --- Delivery plan (programme Gantt) ---
+    final header = await db.programmeGanttDao.getHeader(projectId);
+    final wps = await db.programmeGanttDao.getWorkPackages(projectId);
+    final planActs =
+        await db.programmeGanttDao.getActivitiesForProject(projectId);
+    final planDeps = await db.programmeGanttDao.getDependencies(projectId);
+
+    List<String> monthLabels = [];
+    if (header?.monthLabels != null) {
+      try {
+        monthLabels =
+            (jsonDecode(header!.monthLabels!) as List).cast<String>();
+      } catch (_) {}
+    }
+    String month(int? idx) => idx == null
+        ? '?'
+        : (idx >= 0 && idx < monthLabels.length
+            ? monthLabels[idx]
+            : 'M${idx < 0 ? '?' : idx}');
+
+    if (wps.isNotEmpty) {
+      buffer.writeln('## Delivery Plan');
+      if (header?.title != null && header!.title!.isNotEmpty) {
+        buffer.writeln('Plan: ${header.title}');
+      }
+      if (monthLabels.isNotEmpty) {
+        buffer.writeln(
+            'Timeline: ${monthLabels.first} → ${monthLabels.last}');
+      }
+      if (header?.hardDeadline != null && header!.hardDeadline!.isNotEmpty) {
+        buffer.writeln('Hard deadline: ${header.hardDeadline}');
+      }
+
+      final actsByWp = <String, List<TimelineActivity>>{};
+      for (final a in planActs) {
+        actsByWp.putIfAbsent(a.workPackageId, () => []).add(a);
+      }
+      for (final wp in wps) {
+        final code = wp.shortCode != null && wp.shortCode!.isNotEmpty
+            ? '[${wp.shortCode}] '
+            : '';
+        final rag =
+            wp.ragStatus.isNotEmpty ? ' [RAG: ${wp.ragStatus}]' : '';
+        buffer.writeln('### $code${wp.name}$rag');
+        final acts = (actsByWp[wp.id] ?? const [])
+          ..sort((a, b) => (a.startMonth ?? 0).compareTo(b.startMonth ?? 0));
+        for (final a in acts.take(15)) {
+          final kind = switch (a.activityType) {
+            'milestone' => '◆ Milestone',
+            'gate' => '◈ Gate',
+            'hard_deadline' => '⚠ Hard deadline',
+            'dependency_marker' => '↳ Dependency',
+            'ongoing' => 'Ongoing',
+            _ => 'Activity',
+          };
+          final span = a.endMonth != null && a.endMonth != a.startMonth
+              ? '${month(a.startMonth)} → ${month(a.endMonth)}'
+              : month(a.startMonth);
+          final owner = a.owner != null && a.owner!.isNotEmpty
+              ? ' (Owner: ${a.owner})'
+              : '';
+          final critical = a.isCritical ? ' [CRITICAL PATH]' : '';
+          buffer.writeln(
+              '- $kind: ${a.name} — $span [${a.status}]$owner$critical');
+        }
+        if (acts.length > 15) {
+          buffer.writeln('- …and ${acts.length - 15} more activities');
+        }
+      }
+
+      // Dependencies between plan activities.
+      if (planDeps.isNotEmpty) {
+        final actName = {for (final a in planActs) a.id: a.name};
+        buffer.writeln('### Plan Dependencies');
+        for (final d in planDeps.take(12)) {
+          final from = d.externalLabel?.isNotEmpty ?? false
+              ? '${d.externalLabel} (external)'
+              : actName[d.fromActivityId] ?? '?';
+          final to = actName[d.toActivityId] ?? '?';
+          buffer.writeln('- $from → $to (${d.dependencyType})');
+        }
+        if (planDeps.length > 12) {
+          buffer.writeln('- …and ${planDeps.length - 12} more');
+        }
+      }
+
+      // Milestones due inside the next three months.
+      final upcoming = StatusCalculator.upcomingMilestones(
+          planActs, monthLabels,
+          month0Date: header?.month0Date);
+      if (upcoming.isNotEmpty) {
+        buffer.writeln('### Upcoming Milestones (next 3 months)');
+        for (final m in upcoming) {
+          buffer.writeln('- ${m.name} — ${month(m.startMonth)}');
+        }
       }
       buffer.writeln();
     }
@@ -154,6 +274,108 @@ class ContextBuilder {
       buffer.writeln();
     }
 
+    // --- Latest status snapshot (programme health) ---
+    final snapshot = await db.statusSnapshotDao.getMostRecent(projectId);
+    if (snapshot != null) {
+      final weekOf =
+          snapshot.weekEnding.toIso8601String().substring(0, 10);
+      buffer.writeln('## Latest Status Snapshot (week ending $weekOf)');
+      buffer.writeln(
+          'Programme RAG: ${snapshot.programmeRag.toUpperCase()}');
+      buffer.writeln('Open risks: ${snapshot.openRisksCount} · '
+          'Open actions: ${snapshot.openActionsCount} '
+          '(${snapshot.overdueActionsCount} overdue) · '
+          'Pending decisions: ${snapshot.pendingDecisionsCount}');
+      final wsHealth = StatusCalculator.parseWorkstreamRag(
+          snapshot.workstreamRag);
+      if (wsHealth.isNotEmpty) {
+        // Resolve WP ids to names where possible.
+        final wpName = {for (final wp in wps) wp.id: wp.name};
+        final parts = wsHealth.entries
+            .map((e) => '${wpName[e.key] ?? e.key}: ${e.value}')
+            .join(', ');
+        buffer.writeln('Workstream RAG: $parts');
+      }
+      if (snapshot.narrative != null && snapshot.narrative!.isNotEmpty) {
+        buffer.writeln('Narrative: ${snapshot.narrative}');
+      }
+      buffer.writeln();
+    }
+
+    // --- Assumptions (open/validated, up to 5) ---
+    final allAssumptions =
+        await db.raidDao.getAssumptionsForProject(projectId);
+    final liveAssumptions = allAssumptions
+        .where((a) => a.status == 'open' || a.status == 'validated')
+        .take(5)
+        .toList();
+    if (liveAssumptions.isNotEmpty) {
+      buffer.writeln('## Assumptions');
+      for (final a in liveAssumptions) {
+        final ref = a.ref != null ? '[${a.ref}] ' : '';
+        final owner = a.owner != null && a.owner!.isNotEmpty
+            ? ' (Owner: ${a.owner})'
+            : '';
+        buffer.writeln('- $ref${a.description} [${a.status}]$owner');
+      }
+      buffer.writeln();
+    }
+
+    // --- RAID dependencies (open, up to 6) ---
+    final allRaidDeps =
+        await db.raidDao.getDependenciesForProject(projectId);
+    final openRaidDeps = allRaidDeps
+        .where((d) => d.status != 'closed' && d.status != 'resolved')
+        .take(6)
+        .toList();
+    if (openRaidDeps.isNotEmpty) {
+      buffer.writeln('## External / Register Dependencies');
+      for (final d in openRaidDeps) {
+        final ref = d.ref != null ? '[${d.ref}] ' : '';
+        final owner = d.owner != null && d.owner!.isNotEmpty
+            ? ' (Owner: ${d.owner})'
+            : '';
+        final due = d.dueDate != null && d.dueDate!.isNotEmpty
+            ? ' Due: ${d.dueDate}'
+            : '';
+        buffer.writeln(
+            '- $ref${d.description} [${d.dependencyType}, ${d.status}]$owner$due');
+      }
+      buffer.writeln();
+    }
+
+    // --- Open issues (up to 6, escalation-required and priority first) ---
+    final allIssues = await db.raidDao.getIssuesForProject(projectId);
+    final openIssues = allIssues
+        .where((i) => i.status == 'open' || i.status == 'in progress')
+        .toList()
+      ..sort((a, b) {
+        if (a.escalationRequired != b.escalationRequired) {
+          return a.escalationRequired ? -1 : 1;
+        }
+        return _priorityScore(b.priority) - _priorityScore(a.priority);
+      });
+    final topIssues = openIssues.take(6).toList();
+    if (topIssues.isNotEmpty) {
+      buffer.writeln('## Open Issues');
+      for (final i in topIssues) {
+        final ref = i.ref != null ? '[${i.ref}] ' : '';
+        final owner = i.owner != null && i.owner!.isNotEmpty
+            ? ' (Owner: ${i.owner})'
+            : '';
+        final esc = i.escalationRequired ? ' ⚠ ESCALATION REQUIRED' : '';
+        buffer.writeln(
+            '- $ref${i.title ?? i.description} [${i.priority}]$owner$esc');
+        if (i.title != null && i.title!.isNotEmpty) {
+          buffer.writeln('  ${i.description}');
+        }
+        if (i.impactStatement != null && i.impactStatement!.isNotEmpty) {
+          buffer.writeln('  Impact if unresolved: ${i.impactStatement}');
+        }
+      }
+      buffer.writeln();
+    }
+
     // --- Pending decisions (up to 5) ---
     final allDecisions =
         await db.decisionsDao.getDecisionsForProject(projectId);
@@ -181,8 +403,11 @@ class ContextBuilder {
     final todayIso =
         '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
     final openActions = allActions
-        .where((a) => a.status == 'open')
-        .take(8)
+        .where((a) =>
+            a.status == 'open' ||
+            a.status == 'in progress' ||
+            a.status == 'blocked')
+        .take(10)
         .toList();
     if (openActions.isNotEmpty) {
       buffer.writeln('## Open Actions');
@@ -196,10 +421,73 @@ class ContextBuilder {
             : '';
         final overdue = a.dueDate != null &&
                 a.dueDate!.isNotEmpty &&
-                a.dueDate!.compareTo(todayIso) < 0
+                a.dueDate!.compareTo(todayIso) < 0 &&
+                a.status != 'closed'
             ? ' ⚠ OVERDUE'
             : '';
-        buffer.writeln('- $ref${a.description}$owner$due$overdue');
+        final state = a.status == 'open' ? '' : ' [${a.status}]';
+        buffer.writeln('- $ref${a.description}$state$owner$due$overdue');
+      }
+      buffer.writeln();
+    }
+
+    // --- Today's Helm day plan (global, spans every project) ---
+    final dayPlan = await db.dayPlanDao.getPlanForDate(todayIso);
+    if (dayPlan != null) {
+      final dayBlocks = await db.dayPlanDao.getBlocksForPlan(dayPlan.id);
+      final revStarts = parseRevisionStarts(dayPlan.revisionStartsJson);
+      final schedule = effectiveSchedule(dayBlocks, revStarts);
+      if (schedule.isNotEmpty) {
+        buffer.writeln('## Today\'s Plan — Helm ($todayIso)');
+        buffer.writeln(
+            '(The PM\'s time-blocked plan for today. It is GLOBAL — it '
+            'spans all their projects, not just this one.)');
+        // Resolve project names once for attribution.
+        final planProjectNames = <String, String>{};
+        for (final b in schedule) {
+          final pid = b.projectId;
+          if (pid == null || planProjectNames.containsKey(pid)) continue;
+          final p = await db.projectDao.getProjectById(pid);
+          if (p != null) planProjectNames[pid] = p.name;
+        }
+        for (final b in schedule) {
+          final projectTag = b.projectId != null &&
+                  planProjectNames.containsKey(b.projectId)
+              ? ' (Project: ${planProjectNames[b.projectId]})'
+              : '';
+          final done = b.done ? ' ✓ done' : '';
+          buffer.writeln(
+              '- ${formatMinute(b.startMinute)}–${formatMinute(b.endMinute)} '
+              '[${b.kind}] ${b.label}$projectTag$done');
+        }
+        if (dayPlan.currentRevision > 0) {
+          buffer.writeln(
+              'The day has been re-planned ${dayPlan.currentRevision} '
+              'time(s) (Cal Newport-style revision columns).');
+        }
+        buffer.writeln();
+      }
+    }
+
+    // --- Recent journal entries (up to 5) ---
+    final journalEntries =
+        await db.journalDao.getEntriesForProject(projectId);
+    final recentJournal = journalEntries.take(5).toList();
+    if (recentJournal.isNotEmpty) {
+      buffer.writeln('## Recent Journal Entries');
+      buffer.writeln(
+          '(The PM\'s working notes — meetings, observations, running '
+          'commentary. Useful context; don\'t quote verbatim in '
+          'stakeholder-facing output.)');
+      for (final e in recentJournal) {
+        final title = e.title != null && e.title!.isNotEmpty
+            ? '${e.title} — '
+            : '';
+        buffer.writeln('### $title${e.entryDate}');
+        final preview = e.body.length > 400
+            ? '${e.body.substring(0, 400)}…'
+            : e.body;
+        buffer.writeln(preview);
       }
       buffer.writeln();
     }
@@ -299,6 +587,22 @@ class ContextBuilder {
       buffer.writeln();
     }
 
+    // --- Glossary (up to 15 terms/systems, so acronyms resolve) ---
+    final glossary = await db.glossaryDao.getForProject(projectId);
+    if (glossary.isNotEmpty) {
+      buffer.writeln('## Glossary');
+      for (final g in glossary.take(15)) {
+        final acronym = g.acronym != null && g.acronym!.isNotEmpty
+            ? ' (${g.acronym})'
+            : '';
+        final desc = g.description != null && g.description!.isNotEmpty
+            ? ' — ${g.description}'
+            : '';
+        buffer.writeln('- ${g.name}$acronym$desc');
+      }
+      buffer.writeln();
+    }
+
     buffer.writeln(
         'Use the above project context to give relevant, informed responses. '
         'When you are unsure about something, say so. '
@@ -306,6 +610,13 @@ class ContextBuilder {
 
     return buffer.toString();
   }
+
+  int _priorityScore(String p) => switch (p.toLowerCase()) {
+        'critical' => 4,
+        'high' => 3,
+        'medium' => 2,
+        _ => 1,
+      };
 
   int _riskScore(String likelihood, String impact) {
     int s(String v) {
@@ -347,11 +658,24 @@ class ContextBuilder {
     final project = await db.projectDao.getProjectById(projectId);
     if (project != null) sections.add(('Project: ${project.name}', 0));
 
+    final charter = await db.projectCharterDao.getForProject(projectId);
+    if (charter != null) sections.add(('Charter', 0));
+
     final overview = await db.programmeDao.getOverviewForProject(projectId);
     if (overview != null) sections.add(('Programme overview', 0));
 
+    final snapshot = await db.statusSnapshotDao.getMostRecent(projectId);
+    if (snapshot != null) sections.add(('Latest status snapshot', 0));
+
     final workstreams = await db.programmeDao.getWorkstreamsForProject(projectId);
     if (workstreams.isNotEmpty) sections.add(('Workstreams', workstreams.length));
+
+    final wps = await db.programmeGanttDao.getWorkPackages(projectId);
+    if (wps.isNotEmpty) {
+      final acts =
+          await db.programmeGanttDao.getActivitiesForProject(projectId);
+      sections.add(('Delivery plan (${wps.length} WPs)', acts.length));
+    }
 
     final people = await db.peopleDao.getPersonsForProject(projectId);
     if (people.isNotEmpty) sections.add(('People & stakeholders', people.length));
@@ -360,13 +684,67 @@ class ContextBuilder {
     final openRisks = allRisks.where((r) => r.status == 'open').length;
     if (openRisks > 0) sections.add(('Open risks (top 5)', openRisks.clamp(0, 5)));
 
+    final allIssues = await db.raidDao.getIssuesForProject(projectId);
+    final openIssues = allIssues
+        .where((i) => i.status == 'open' || i.status == 'in progress')
+        .length;
+    if (openIssues > 0) {
+      sections.add(('Open issues (top 6)', openIssues.clamp(0, 6)));
+    }
+
+    final assumptions = await db.raidDao.getAssumptionsForProject(projectId);
+    final liveAssumptions = assumptions
+        .where((a) => a.status == 'open' || a.status == 'validated')
+        .length;
+    if (liveAssumptions > 0) {
+      sections.add(('Assumptions', liveAssumptions.clamp(0, 5)));
+    }
+
+    final raidDeps = await db.raidDao.getDependenciesForProject(projectId);
+    final openDeps = raidDeps
+        .where((d) => d.status != 'closed' && d.status != 'resolved')
+        .length;
+    if (openDeps > 0) {
+      sections.add(('Register dependencies', openDeps.clamp(0, 6)));
+    }
+
     final allDecisions = await db.decisionsDao.getDecisionsForProject(projectId);
     final pendingDecisions = allDecisions.where((d) => d.status == 'pending').length;
     if (pendingDecisions > 0) sections.add(('Pending decisions', pendingDecisions.clamp(0, 5)));
 
     final allActions = await db.actionsDao.getActionsForProject(projectId);
-    final openActions = allActions.where((a) => a.status == 'open').length;
-    if (openActions > 0) sections.add(('Open actions', openActions.clamp(0, 8)));
+    final openActions = allActions
+        .where((a) =>
+            a.status == 'open' ||
+            a.status == 'in progress' ||
+            a.status == 'blocked')
+        .length;
+    if (openActions > 0) {
+      sections.add(('Open actions', openActions.clamp(0, 10)));
+    }
+
+    final now = DateTime.now();
+    final todayIso =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final dayPlan = await db.dayPlanDao.getPlanForDate(todayIso);
+    if (dayPlan != null) {
+      final dayBlocks = await db.dayPlanDao.getBlocksForPlan(dayPlan.id);
+      final schedule = effectiveSchedule(
+          dayBlocks, parseRevisionStarts(dayPlan.revisionStartsJson));
+      if (schedule.isNotEmpty) {
+        sections.add(('Today\'s Helm plan', schedule.length));
+      }
+    }
+
+    final journal = await db.journalDao.getEntriesForProject(projectId);
+    if (journal.isNotEmpty) {
+      sections.add(('Journal entries (recent)', journal.length.clamp(0, 5)));
+    }
+
+    final glossary = await db.glossaryDao.getForProject(projectId);
+    if (glossary.isNotEmpty) {
+      sections.add(('Glossary terms', glossary.length.clamp(0, 15)));
+    }
 
     final canvasCards =
         await db.canvasCardsDao.getCardsForProject(projectId);

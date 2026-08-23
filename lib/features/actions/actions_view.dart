@@ -73,6 +73,36 @@ class _ActionsViewState extends State<ActionsView> {
   bool _isOldClosed(ProjectAction a) =>
       isOldClosed(a, hideAfterDays: _closedHideAfterDays);
 
+  /// Everything shown when "show old closed" is off:
+  ///   - retired groups (closed parent, all descendants closed) drop
+  ///     immediately, board and list alike
+  ///   - individually old-closed actions age out after two weeks — except
+  ///     a parent that still has visible descendants, which must stay so
+  ///     its group keeps its swimlane/heading.
+  List<ProjectAction> _visibleActions(List<ProjectAction> all) {
+    final byId = {for (final a in all) a.id: a};
+    final part = partitionByParent(all);
+    final retired = retiredRootIds(all);
+
+    String topRootOf(ProjectAction a) {
+      var cursor = a;
+      final seen = <String>{cursor.id};
+      while (cursor.parentActionId != null) {
+        final p = byId[cursor.parentActionId!];
+        if (p == null || !seen.add(p.id)) break;
+        cursor = p;
+      }
+      return cursor.id;
+    }
+
+    return all.where((a) {
+      if (retired.contains(topRootOf(a))) return false;
+      if (!_isOldClosed(a)) return true;
+      return actionDescendantIds(a.id, part.childrenByParent)
+          .any((id) => byId[id] != null && !_isOldClosed(byId[id]!));
+    }).toList();
+  }
+
   void _toggleShowOldClosed() {
     setState(() => _showOldClosed = !_showOldClosed);
     if (_projectId != null) _savePrefs(_projectId!);
@@ -157,7 +187,9 @@ class _ActionsViewState extends State<ActionsView> {
       separatorBuilder: (_, _) => const SizedBox(height: 6),
       itemBuilder: (ctx, i) {
         final entry = visible[i];
-        return _ActionCard(
+        return Padding(
+          padding: EdgeInsets.only(left: entry.depth >= 2 ? 26.0 : 0),
+          child: _ActionCard(
           action: entry.action,
           db: db,
           projectId: projectId,
@@ -182,6 +214,7 @@ class _ActionsViewState extends State<ActionsView> {
                     }
                   })
               : null,
+          ),
         );
       },
     );
@@ -209,15 +242,31 @@ class _ActionsViewState extends State<ActionsView> {
       if (!rootMatches && matchingChildren.isEmpty && isParent) continue;
       if (!isParent && !rootMatches) continue;
 
+      // Rollup spans the whole subtree, sub-tasks included.
+      final subTasksByTask = {
+        for (final c in allChildren)
+          c.id: part.childrenByParent[c.id] ?? const <ProjectAction>[],
+      };
       out.add(_ListEntry(
         action: root,
         isParent: isParent,
         isChild: false,
-        rollup: isParent ? rollupFor(allChildren) : null,
+        rollup: isParent
+            ? rollupFor([
+                ...allChildren,
+                ...subTasksByTask.values.expand((s) => s),
+              ])
+            : null,
       ));
       if (isParent && !_collapsedParents.contains(root.id)) {
         for (final c in matchingChildren) {
-          out.add(_ListEntry(action: c, isParent: false, isChild: true));
+          out.add(_ListEntry(
+              action: c, isParent: false, isChild: true, depth: 1));
+          for (final s in (subTasksByTask[c.id] ?? const <ProjectAction>[])
+              .where(_matchesOwnerFilter)) {
+            out.add(_ListEntry(
+                action: s, isParent: false, isChild: true, depth: 2));
+          }
         }
       }
     }
@@ -287,11 +336,9 @@ class _ActionsViewState extends State<ActionsView> {
                       return const Center(child: CircularProgressIndicator());
                     }
                     final all = snap.data!;
-                    final hiddenOldClosed =
-                        all.where(_isOldClosed).length;
-                    final visible = _showOldClosed
-                        ? all
-                        : all.where((a) => !_isOldClosed(a)).toList();
+                    final visible =
+                        _showOldClosed ? all : _visibleActions(all);
+                    final hiddenOldClosed = all.length - visible.length;
 
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -360,10 +407,10 @@ class _ClosedToggle extends StatelessWidget {
     final activeColor = showOld ? KColors.amber : KColors.textDim;
     return Tooltip(
       message: showOld
-          ? 'Click to hide closed actions older than 2 weeks'
+          ? 'Click to hide closed groups and closed actions older than 2 weeks'
           : hiddenCount == 0
               ? 'No old closed actions to show'
-              : 'Click to show $hiddenCount closed action${hiddenCount == 1 ? '' : 's'} older than 2 weeks',
+              : 'Click to show $hiddenCount hidden closed action${hiddenCount == 1 ? '' : 's'} (closed groups and actions older than 2 weeks)',
       waitDuration: const Duration(milliseconds: 350),
       child: InkWell(
         onTap: onTap,
@@ -741,12 +788,15 @@ class _ListEntry {
   final bool isParent;
   final bool isChild;
   final GroupRollup? rollup;
+  // 0 = top level, 1 = task under a parent, 2 = sub-task.
+  final int depth;
 
   const _ListEntry({
     required this.action,
     required this.isParent,
     required this.isChild,
     this.rollup,
+    this.depth = 0,
   });
 }
 

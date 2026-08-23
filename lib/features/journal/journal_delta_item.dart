@@ -18,6 +18,7 @@ class JournalDeltaItemWidget extends StatefulWidget {
   final VoidCallback onIgnore;
   final VoidCallback onEdit;
   final VoidCallback onCancelEdit;
+  final VoidCallback onReopen;
 
   const JournalDeltaItemWidget({
     super.key,
@@ -28,6 +29,7 @@ class JournalDeltaItemWidget extends StatefulWidget {
     required this.onIgnore,
     required this.onEdit,
     required this.onCancelEdit,
+    required this.onReopen,
   });
 
   @override
@@ -54,6 +56,10 @@ class _JournalDeltaItemWidgetState extends State<JournalDeltaItemWidget> {
     if (!old.isEditing && widget.isEditing) {
       _editType = widget.delta.type;
       _rebuildFields(_editType);
+      // Re-editing must show the values from the previous edit, not the
+      // ones captured when this widget was first built.
+      _descCtrl.text =
+          widget.delta.editFields['description'] ?? widget.delta.title;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _descFocus.requestFocus();
       });
@@ -293,9 +299,10 @@ class _JournalDeltaItemWidgetState extends State<JournalDeltaItemWidget> {
                 ],
               ),
             ] else ...[
-              // Title display
+              // Title display — edited description wins over the
+              // parser's original title.
               Text(
-                delta.title,
+                delta.editFields['description'] ?? delta.title,
                 style: TextStyle(
                   color: isIgnored ? KColors.textDim : KColors.text,
                   fontSize: 12,
@@ -330,6 +337,20 @@ class _JournalDeltaItemWidgetState extends State<JournalDeltaItemWidget> {
                       label: 'N  Ignore',
                       color: KColors.textDim,
                       onTap: widget.onIgnore,
+                    ),
+                  ],
+                ),
+              ],
+              // Confirmed/ignored items stay reversible until the review
+              // is committed with Confirm All (or dismissed).
+              if (isConfirmed || isIgnored) ...[
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    _ActionBtn(
+                      label: '↩  Reopen',
+                      color: KColors.textDim,
+                      onTap: widget.onReopen,
                     ),
                   ],
                 ),

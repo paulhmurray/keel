@@ -12,6 +12,7 @@ import 'package:uuid/uuid.dart';
 import '../../../core/cascade/cascade_service.dart';
 import '../../../core/cascade/cascade_factory.dart';
 import '../../../core/database/database.dart';
+import 'date_precision.dart';
 import 'dependency_chains.dart';
 import '../../../providers/project_provider.dart';
 import '../../../providers/settings_provider.dart';
@@ -90,7 +91,14 @@ class _WpRow extends _GRow {
 class _ActRow extends _GRow {
   final TimelineActivity act;
   final TimelineWorkPackage wp;
-  _ActRow(this.act, this.wp);
+  // WBS: true when this row is a task nested under a parent activity.
+  final bool isTask;
+  // Tasks under this activity (empty for tasks and childless activities).
+  // Non-empty makes this a summary row: roll-up bar, no direct drag.
+  final List<TimelineActivity> tasks;
+  _ActRow(this.act, this.wp,
+      {this.isTask = false, this.tasks = const []});
+  bool get isSummary => tasks.isNotEmpty;
   @override double get height => _kRowH;
 }
 
@@ -261,6 +269,9 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
   String? _hoveredActivityId;
   Map<String, TimelineActivity> _actMap = {};
   bool _showDependencies = true;
+  // Critical path mode: non-critical rows fade to background so the
+  // chain that actually drives the end date stands out.
+  bool _criticalPathMode = false;
 
   // ── Baseline ──────────────────────────────────────────────────────────────
   bool _showBaseline = true;
@@ -272,6 +283,8 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
   ProgrammeHeader? _header;
   List<String> _months = [];
   List<_GRow> _rows = [];
+  // Parent activities whose task rows are folded away.
+  final Set<String> _collapsedTasks = {};
   bool _loading = true;
   Map<String, ({int count, String urgency})> _actionSummary = {};
 
@@ -364,8 +377,29 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
       }
       for (final wp in g.wps) {
         rows.add(_WpRow(wp));
-        for (final act in actsByWp[wp.id] ?? []) {
-          rows.add(_ActRow(act, wp));
+        final wpActs =
+            (actsByWp[wp.id] ?? []).cast<TimelineActivity>();
+        final ids = {for (final a in wpActs) a.id};
+        final tasksByParent = <String, List<TimelineActivity>>{};
+        for (final a in wpActs) {
+          if (a.parentActivityId != null &&
+              ids.contains(a.parentActivityId)) {
+            tasksByParent.putIfAbsent(a.parentActivityId!, () => []).add(a);
+          }
+        }
+        for (final act in wpActs) {
+          // A task whose parent exists renders under it, not at top level.
+          if (act.parentActivityId != null &&
+              ids.contains(act.parentActivityId)) {
+            continue;
+          }
+          final tasks = tasksByParent[act.id] ?? const <TimelineActivity>[];
+          rows.add(_ActRow(act, wp, tasks: tasks));
+          if (tasks.isNotEmpty && !_collapsedTasks.contains(act.id)) {
+            for (final t in tasks) {
+              rows.add(_ActRow(t, wp, isTask: true));
+            }
+          }
         }
       }
     }
@@ -485,14 +519,49 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     // Keep _draggingActId set until the reload completes so the bar continues
     // to render at the previewed position. Clearing it earlier would let the
     // bar briefly render from the still-stale _actMap before fresh data lands.
+    // Dated activities shift their real dates by the same month delta so
+    // the day-accurate bar moves with the drag.
+    final act = _actMap[id];
+    final appliedDelta = newStart - _dragOrigStart;
+    String? shiftDate(String? iso) {
+      if (iso == null || appliedDelta == 0) return iso;
+      final d = DateTime.tryParse(iso);
+      if (d == null) return iso;
+      final shifted = DateTime(d.year, d.month + appliedDelta, d.day);
+      return shifted.toIso8601String().substring(0, 10);
+    }
+
     await _db.programmeGanttDao.patchActivity(
       id,
       TimelineActivitiesCompanion(
         startMonth: Value(newStart),
         endMonth:   Value(newEnd),
+        startDate:  Value(shiftDate(act?.startDate)),
+        endDate:    Value(shiftDate(act?.endDate)),
         updatedAt:  Value(DateTime.now()),
       ),
     );
+    // Dragging a parent moves the whole subtree: its commitment window
+    // and every task shift together by the same delta.
+    final tasks = await _db.programmeGanttDao.getTasksForActivity(id);
+    for (final t in tasks) {
+      final ts = t.startMonth == null
+          ? null
+          : (t.startMonth! + appliedDelta).clamp(0, maxM);
+      final te = t.endMonth == null
+          ? null
+          : (t.endMonth! + appliedDelta).clamp(0, maxM);
+      await _db.programmeGanttDao.patchActivity(
+        t.id,
+        TimelineActivitiesCompanion(
+          startMonth: Value(ts),
+          endMonth:   Value(te),
+          startDate:  Value(shiftDate(t.startDate)),
+          endDate:    Value(shiftDate(t.endDate)),
+          updatedAt:  Value(DateTime.now()),
+        ),
+      );
+    }
     await _load();
     if (!mounted) return;
     setState(() { _draggingActId = null; _dragMonthDelta = 0; });
@@ -664,7 +733,8 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     _load();
   }
 
-  Future<void> _openAddActivity(TimelineWorkPackage wp, {int? startMonth}) async {
+  Future<void> _openAddActivity(TimelineWorkPackage wp,
+      {int? startMonth, String? parentActivityId}) async {
     await showDialog(
       context: context,
       builder: (_) => _ActivityFormDialog(
@@ -672,9 +742,11 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
         projectId: widget.projectId,
         wp: wp,
         months: _months,
+        month0Date: _header?.month0Date,
         sortOrder: _acts[wp.id]?.length ?? 0,
         initialStartMonth: startMonth,
         initialEndMonth: startMonth,
+        initialParentActivityId: parentActivityId,
       ),
     );
     await _load();
@@ -690,6 +762,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
         wp: wp,
         activity: act,
         months: _months,
+        month0Date: _header?.month0Date,
         sortOrder: act.sortOrder,
       ),
     );
@@ -761,50 +834,82 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
   }
 
   Widget _buildTopBar() {
+    final isProgramme = context.read<ProjectProvider>().isProgramme;
+    final planLabel = isProgramme ? 'PROGRAMME PLAN' : 'PROJECT PLAN';
+    final planDesc = 'The delivery schedule. Work packages, activities, '
+        'milestones over the ${isProgramme ? 'programme' : 'project'} '
+        'lifetime.';
     return Container(
-      height: 48,
+      height: 64,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: KColors.border)),
       ),
-      child: Row(children: [
-        // Title — flexible so it shrinks rather than overflows
+      child: LayoutBuilder(builder: (ctx, barConstraints) {
+        // Priority shedding: below the threshold the secondary controls
+        // (dependency/critical/baseline/zoom toggles, Configure) fold
+        // into a "⋯" overflow menu instead of relying on the hidden
+        // horizontal scroller — invisible scroll reads as "cut off".
+        final compact = barConstraints.maxWidth < 1150;
+        return Row(children: [
+        // Title block — two lines: label · plan title, description under.
+        // Every text has an ellipsis path so this can never overflow.
         Flexible(
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            const Text('PROGRAMME PLAN',
-                style: TextStyle(
-                    color: KColors.textMuted, fontSize: 10,
-                    fontWeight: FontWeight.w700, letterSpacing: 0.1)),
-            if (_header?.title != null) ...[
-              const SizedBox(width: 8),
-              const Text('·', style: TextStyle(color: KColors.border2)),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(_header!.title!,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        color: KColors.text, fontSize: 13,
-                        fontWeight: FontWeight.w500)),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(mainAxisSize: MainAxisSize.min, children: [
+                Flexible(
+                  child: Text(planLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          color: KColors.textMuted, fontSize: 10,
+                          fontWeight: FontWeight.w700, letterSpacing: 0.1)),
+                ),
+                if (_header?.title != null) ...[
+                  const SizedBox(width: 8),
+                  const Text('·', style: TextStyle(color: KColors.border2)),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(_header!.title!,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            color: KColors.text, fontSize: 13,
+                            fontWeight: FontWeight.w500)),
+                  ),
+                ],
+              ]),
+              const SizedBox(height: 3),
+              Text(
+                planDesc,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                    color: KColors.textMuted, fontSize: 11),
               ),
             ],
-          ]),
-        ),
-        const SizedBox(width: 12),
-        const Flexible(
-          child: Text(
-            'The delivery schedule. Work packages, activities, milestones over the programme lifetime.',
-            style: TextStyle(color: KColors.textMuted, fontSize: 11),
-            overflow: TextOverflow.ellipsis,
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 12),
+        // Controls: right-aligned; scroll horizontally when there isn't
+        // room rather than overflowing the bar.
+        Expanded(
+          flex: 3,
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              reverse: true,
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
         // View toggle
         _ViewToggle(
           showMilestones: _showMilestones,
           onChanged: (v) => setState(() => _showMilestones = v),
         ),
         const SizedBox(width: 12),
-        if (!_showMilestones) ...[
+        if (!compact && !_showMilestones) ...[
           Tooltip(
             message: _showDependencies
                 ? 'Hide dependency arrows'
@@ -828,6 +933,35 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                     size: 13,
                     color: _showDependencies
                         ? KColors.amber
+                        : KColors.textMuted),
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Tooltip(
+            message: _criticalPathMode
+                ? 'Show the full plan'
+                : 'Critical path mode — fade everything not marked '
+                    'critical',
+            child: GestureDetector(
+              onTap: () => setState(
+                  () => _criticalPathMode = !_criticalPathMode),
+              child: Container(
+                width: 28, height: 28,
+                decoration: BoxDecoration(
+                  color: _criticalPathMode
+                      ? KColors.red.withValues(alpha: 0.15)
+                      : KColors.surface2,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(
+                      color: _criticalPathMode
+                          ? KColors.red
+                          : KColors.border),
+                ),
+                child: Icon(Icons.route_outlined,
+                    size: 13,
+                    color: _criticalPathMode
+                        ? KColors.red
                         : KColors.textMuted),
               ),
             ),
@@ -918,12 +1052,17 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
           ),
           const SizedBox(width: 12),
         ],
-        TextButton.icon(
-          onPressed: _openHeaderSettings,
-          icon: const Icon(Icons.tune_outlined, size: 14),
-          label: const Text('Configure', style: TextStyle(fontSize: 12)),
-        ),
-        const SizedBox(width: 8),
+        if (compact) ...[
+          _overflowMenuButton(),
+          const SizedBox(width: 8),
+        ] else ...[
+          TextButton.icon(
+            onPressed: _openHeaderSettings,
+            icon: const Icon(Icons.tune_outlined, size: 14),
+            label: const Text('Configure', style: TextStyle(fontSize: 12)),
+          ),
+          const SizedBox(width: 8),
+        ],
         ElevatedButton.icon(
           onPressed: _openAddWp,
           icon: const Icon(Icons.add, size: 14),
@@ -937,7 +1076,127 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
           onToggleExpanded: widget.onToggleExpanded,
           onTogglePresentation: widget.onTogglePresentation,
         ),
-      ]),
+              ]),
+            ),
+          ),
+        ),
+      ]);
+      }),
+    );
+  }
+
+  /// Compact-width home for the secondary toolbar controls. Items carry
+  /// their handler as the value so onSelected just invokes it.
+  Widget _overflowMenuButton() {
+    PopupMenuItem<VoidCallback> item({
+      required IconData icon,
+      required String label,
+      required VoidCallback onTap,
+      bool active = false,
+      Color activeColor = KColors.amber,
+    }) {
+      final color = active ? activeColor : KColors.textDim;
+      return PopupMenuItem<VoidCallback>(
+        value: onTap,
+        height: 36,
+        child: Row(children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 10),
+          Text(label, style: TextStyle(color: color, fontSize: 12)),
+        ]),
+      );
+    }
+
+    return PopupMenuButton<VoidCallback>(
+      tooltip: 'More plan controls',
+      color: KColors.surface2,
+      onSelected: (handler) => handler(),
+      itemBuilder: (context) => [
+        if (!_showMilestones) ...[
+          item(
+            icon: Icons.share_outlined,
+            label: _showDependencies
+                ? 'Hide dependency arrows'
+                : 'Show dependency arrows',
+            active: _showDependencies,
+            onTap: () =>
+                setState(() => _showDependencies = !_showDependencies),
+          ),
+          item(
+            icon: Icons.route_outlined,
+            label: _criticalPathMode
+                ? 'Show the full plan'
+                : 'Critical path mode',
+            active: _criticalPathMode,
+            activeColor: KColors.red,
+            onTap: () =>
+                setState(() => _criticalPathMode = !_criticalPathMode),
+          ),
+          if (_hasBaseline) ...[
+            item(
+              icon: Icons.compare_arrows_outlined,
+              label: _showBaseline
+                  ? 'Hide baseline ghost bars'
+                  : 'Show baseline ghost bars',
+              active: _showBaseline,
+              activeColor: KColors.phosphor,
+              onTap: () => setState(() => _showBaseline = !_showBaseline),
+            ),
+            item(
+              icon: Icons.bookmark_remove_outlined,
+              label: 'Clear baseline',
+              onTap: _clearBaseline,
+            ),
+          ],
+          item(
+            icon: Icons.bookmark_add_outlined,
+            label: 'Set current plan as baseline',
+            onTap: () {
+              if (!_settingBaseline) _setBaseline();
+            },
+          ),
+          item(
+            icon: Icons.calendar_view_month_outlined,
+            label: _quarterMode ? 'Month columns' : 'Quarter columns',
+            active: _quarterMode,
+            onTap: () => setState(() {
+              _quarterMode = !_quarterMode;
+              _fitToScreen();
+            }),
+          ),
+          item(
+            icon: Icons.zoom_in,
+            label: 'Zoom in',
+            onTap: _zoomIn,
+          ),
+          item(
+            icon: Icons.zoom_out,
+            label: 'Zoom out',
+            onTap: _zoomOut,
+          ),
+          item(
+            icon: Icons.fit_screen_outlined,
+            label: 'Fit to screen',
+            onTap: _fitToScreen,
+          ),
+        ],
+        item(
+          icon: Icons.tune_outlined,
+          label: 'Configure months / header',
+          onTap: _openHeaderSettings,
+        ),
+      ],
+      child: Container(
+        width: 28,
+        height: 28,
+        decoration: BoxDecoration(
+          color: KColors.surface2,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: KColors.border),
+        ),
+        child: const Icon(Icons.more_horiz,
+            size: 15, color: KColors.textMuted),
+      ),
     );
   }
 
@@ -1023,7 +1282,8 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
             child: ListView.builder(
               controller: _vertNames,
               itemCount: _rows.length,
-              itemBuilder: (ctx2, i) => _buildNameCell(_rows[i]),
+              itemBuilder: (ctx2, i) =>
+                  _fadeNonCritical(_rows[i], _buildNameCell(_rows[i])),
             ),
           ),
           // Scrollable cell area + dependency overlay
@@ -1052,20 +1312,38 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                     child: ListView.builder(
                       controller: _vertBody,
                       itemCount: _rows.length,
-                      itemBuilder: (ctx2, i) => _buildCellRow(_rows[i], cols),
+                      itemBuilder: (ctx2, i) => _fadeNonCritical(
+                          _rows[i], _buildCellRow(_rows[i], cols)),
                     ),
                   ),
                 ),
               ),
-              // Dependency arrows overlay
+              // Dependency arrows overlay. ClipRect is load-bearing:
+              // the painter positions arrows with scroll offsets, so a
+              // scrolled-away endpoint yields coordinates outside the
+              // grid — without the clip those strokes paint over the
+              // column header and app chrome above.
               if (_showDependencies && _deps.isNotEmpty)
                 IgnorePointer(
-                  child: AnimatedBuilder(
+                  child: ClipRect(
+                    child: AnimatedBuilder(
                     animation: Listenable.merge([_horizBody, _vertBody]),
                     builder: (_, __) => CustomPaint(
                       painter: _DependencyPainter(
                         rows:        _rows,
-                        deps:        _deps,
+                        // Critical-path mode: only arrows between
+                        // critical activities stay at full strength.
+                        deps: _criticalPathMode
+                            ? _deps
+                                .where((d) =>
+                                    (_actMap[d.fromActivityId]
+                                            ?.isCritical ??
+                                        false) &&
+                                    (_actMap[d.toActivityId]
+                                            ?.isCritical ??
+                                        false))
+                                .toList()
+                            : _deps,
                         actMap:      _actMap,
                         scrollX:     _horizBody.hasClients
                             ? _horizBody.offset : 0,
@@ -1076,6 +1354,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                         hoveredActivityId: _hoveredActivityId,
                       ),
                       child: const SizedBox.expand(),
+                      ),
                     ),
                   ),
                 ),
@@ -1204,19 +1483,19 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     };
 
     final isEditing = _editingNameId == act.id;
+    // Tasks reorder among siblings under the same parent; activities
+    // among top-level rows of the same WP. Payload parent scoping keys
+    // that: tasks carry their parent activity id instead of the WP id.
     final payload = _ReorderPayload(
-      kind: 'activity',
+      kind: row.isTask ? 'task' : 'activity',
       id: act.id,
-      parentWpId: row.wp.id,
+      parentWpId: row.isTask ? act.parentActivityId! : row.wp.id,
     );
 
     return _ReorderDropTarget(
-      // Activities reorder only within their parent WP — cross-WP drops
-      // would silently change the row's parent, which is not what the
-      // user is asking for here.
       accepts: (p) =>
-          p.kind == 'activity' &&
-          p.parentWpId == row.wp.id &&
+          p.kind == payload.kind &&
+          p.parentWpId == payload.parentWpId &&
           p.id != act.id,
       onAccept: (p) =>
           _moveActivityAbove(row.wp.id, p.id, act.id),
@@ -1252,8 +1531,27 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
           // fine; the gutter is only 14 px wide.
           width: 14,
         ),
+        // WBS indent: tasks sit one level deeper than activities.
+        if (row.isTask) const SizedBox(width: 14),
         Container(width: 2, height: 14, color: c.withValues(alpha: 0.4)),
         const SizedBox(width: 6),
+        // Collapse chevron for activities with tasks.
+        if (row.isSummary)
+          InkWell(
+            onTap: () => setState(() {
+              if (!_collapsedTasks.remove(act.id)) {
+                _collapsedTasks.add(act.id);
+              }
+              _load();
+            }),
+            child: Icon(
+              _collapsedTasks.contains(act.id)
+                  ? Icons.chevron_right
+                  : Icons.expand_more,
+              size: 13,
+              color: KColors.textDim,
+            ),
+          ),
         if (typeIcon != null) ...[
           Text(typeIcon,
               style: TextStyle(color: c.withValues(alpha: 0.8), fontSize: 10)),
@@ -1293,9 +1591,16 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(act.name,
-                            style: const TextStyle(
-                                color: KColors.text, fontSize: 11),
+                        Text(
+                            row.isSummary
+                                ? '${act.name}  ·  ${row.tasks.length}'
+                                : act.name,
+                            style: TextStyle(
+                                color: KColors.text,
+                                fontSize: 11,
+                                fontWeight: row.isSummary
+                                    ? FontWeight.w600
+                                    : FontWeight.w400),
                             overflow: TextOverflow.ellipsis),
                         if (act.owner != null && act.owner!.isNotEmpty)
                           Text(
@@ -1311,6 +1616,22 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                   ),
                 ),
         ),
+        // Add-task (activities only — tasks don't nest further)
+        if (!row.isTask)
+          Tooltip(
+            message: 'Add task under this activity',
+            waitDuration: const Duration(milliseconds: 400),
+            child: GestureDetector(
+              onTap: () => _openAddActivity(row.wp,
+                  parentActivityId: act.id),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: Icon(Icons.add,
+                    size: 11,
+                    color: KColors.textMuted.withValues(alpha: 0.6)),
+              ),
+            ),
+          ),
         // Edit icon (always visible for clarity)
         GestureDetector(
           onTap: () => _openEditActivity(act, row.wp),
@@ -1325,6 +1646,17 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
             padding: EdgeInsets.only(right: 4),
             child: Icon(Icons.priority_high, size: 10, color: KColors.red),
           ),
+        if (row.isSummary && _tasksBreachWindow(row))
+          const Tooltip(
+            message: 'Tasks are scheduled outside this activity\'s '
+                'window — widen the window or move the tasks',
+            waitDuration: Duration(milliseconds: 350),
+            child: Padding(
+              padding: EdgeInsets.only(right: 4),
+              child: Icon(Icons.warning_amber_outlined,
+                  size: 11, color: KColors.red),
+            ),
+          ),
         // Actions badge
         if (_actionSummary.containsKey(act.id))
           _ActionsBadge(
@@ -1335,6 +1667,36 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     ),
     ),
     );
+  }
+
+  /// Critical-path mode: an activity row counts as critical when it's
+  /// flagged itself or (for parents) any of its tasks is. Structure rows
+  /// (WP / swimlane headers) always stay readable.
+  bool _rowIsCritical(_GRow row) {
+    if (row is! _ActRow) return true;
+    return row.act.isCritical || row.tasks.any((t) => t.isCritical);
+  }
+
+  Widget _fadeNonCritical(_GRow row, Widget child) {
+    if (!_criticalPathMode || _rowIsCritical(row)) return child;
+    // Faded, not hidden: the rest of the plan stays as context, and a
+    // dimmed row is still clickable (e.g. to flag it critical).
+    return Opacity(opacity: 0.18, child: child);
+  }
+
+  /// True when any of a summary row's tasks fall outside the parent's
+  /// committed window (month-granular).
+  bool _tasksBreachWindow(_ActRow row) {
+    final ps = row.act.startMonth;
+    final pe = row.act.endMonth ?? ps;
+    if (ps == null) return false;
+    for (final t in row.tasks) {
+      final s = t.startMonth;
+      final e = t.endMonth ?? t.startMonth;
+      if (s != null && s < ps) return true;
+      if (e != null && pe != null && e > pe) return true;
+    }
+    return false;
   }
 
   void _showActionsPopover(BuildContext context, TimelineActivity act) {
@@ -1577,10 +1939,26 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     // Bar types support drag-to-move. Keep the cell draggable while a drag
     // on this activity is in progress so the gesture recogniser isn't
     // disposed when the preview shifts the bar off the originating cell.
+    // Dragging a summary parent moves its whole subtree.
     final isDraggable = (isActive || isDragging) &&
         (act.activityType == 'activity' ||
          act.activityType == 'ongoing' ||
          act.activityType == 'dependency_marker');
+
+    // Day-accurate insets when the activity carries real dates (skipped
+    // mid-drag: the preview moves in month steps).
+    final dateInsets = !isDragging
+        ? dateInsetsForCell(
+            startDate: act.startDate,
+            endDate: act.endDate,
+            month0Date: _header?.month0Date,
+            colStart: col.start,
+            colEnd: col.end,
+            colWidth: _cellW,
+          )
+        : (left: 0.0, right: 0.0);
+    final hasDatePrecision =
+        isActive && (dateInsets.left > 0 || dateInsets.right > 0);
 
     // ── Ghost bar (baseline variance) ──────────────────────────────────────
     // Show when activity has moved from its baseline position.
@@ -1618,25 +1996,140 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
       }
     }
 
-    final cellContent = ghostBar != null
-        ? Stack(children: [
-            Positioned.fill(child: Container(
-              decoration: BoxDecoration(color: bg),
+    final isBarType = act.activityType == 'activity' ||
+        act.activityType == 'ongoing' ||
+        act.activityType == 'dependency_marker';
+
+    // Summary parents: the bar is the PM's commitment window — full
+    // presence (solid fill + bold top bracket). Tasks scheduled outside
+    // it paint a red breach segment on this row.
+    if (row.isSummary && isBarType) {
+      bg = isActive ? c.withValues(alpha: 0.20) : null;
+      // Task roll-up range for breach detection (month-granular).
+      int? tMin, tMax;
+      for (final t in row.tasks) {
+        final s = t.startMonth;
+        final e = t.endMonth ?? t.startMonth;
+        if (s != null && (tMin == null || s < tMin)) tMin = s;
+        if (e != null && (tMax == null || e > tMax)) tMax = e;
+      }
+      final taskOverlapsCol = tMin != null &&
+          tMax != null &&
+          tMin <= col.end &&
+          tMax >= col.start;
+      final breachHere = taskOverlapsCol && !isActive && !isDragging;
+
+      final summaryChild = Stack(children: [
+        if (isActive)
+          Positioned(
+            left: dateInsets.left,
+            right: dateInsets.right,
+            top: 0,
+            bottom: 0,
+            child: Container(
+              decoration: BoxDecoration(
+                color: bg,
+                border: Border(
+                  top: BorderSide(color: c, width: 2.5),
+                ),
+              ),
               child: child,
-            )),
-            ghostBar,
-          ])
-        : child;
+            ),
+          ),
+        if (breachHere)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 2,
+            child: Container(
+              height: 4,
+              margin: const EdgeInsets.symmetric(horizontal: 1),
+              decoration: BoxDecoration(
+                color: KColors.red.withValues(alpha: 0.75),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+        if (ghostBar != null) ghostBar,
+      ]);
+
+      final summaryCell = Container(
+        width: _cellW, height: _kRowH,
+        decoration: BoxDecoration(
+          border: Border(
+            right:
+                BorderSide(color: KColors.border.withValues(alpha: 0.3)),
+            bottom:
+                BorderSide(color: KColors.border.withValues(alpha: 0.3)),
+          ),
+        ),
+        child: summaryChild,
+      );
+
+      if (isDraggable) {
+        return MouseRegion(
+          cursor: SystemMouseCursors.grab,
+          child: GestureDetector(
+            onTap: () => _openEditActivity(act, row.wp),
+            onHorizontalDragStart: (_) => _onDragStart(act),
+            onHorizontalDragUpdate: (d) => _onDragUpdate(d.delta.dx),
+            onHorizontalDragEnd: (_) => _onDragEnd(),
+            child: summaryCell,
+          ),
+        );
+      }
+      return GestureDetector(
+        onTap: () => _openEditActivity(act, row.wp),
+        child: summaryCell,
+      );
+    }
+
+    // Date-precise bars inset the fill to the exact days, which needs
+    // the fill painted as a positioned child rather than cell background.
+    final useInsetFill = isActive && isBarType && hasDatePrecision;
+
+    Widget cellContent;
+    Color? cellBg;
+    if (useInsetFill) {
+      cellBg = null;
+      cellContent = Stack(children: [
+        Positioned(
+          left: dateInsets.left,
+          right: dateInsets.right,
+          top: 0,
+          bottom: 0,
+          child: Container(
+            decoration: BoxDecoration(color: bg),
+            child: child,
+          ),
+        ),
+        if (ghostBar != null) ghostBar,
+      ]);
+    } else {
+      cellBg = ghostBar != null
+          ? null
+          : (isDragging && isActive
+              ? (bg ?? KColors.surface).withValues(alpha: 0.5)
+              : bg);
+      cellContent = ghostBar != null
+          ? Stack(children: [
+              Positioned.fill(child: Container(
+                decoration: BoxDecoration(color: bg),
+                child: child,
+              )),
+              ghostBar,
+            ])
+          : child;
+    }
 
     final cell = Container(
       width: _cellW, height: _kRowH,
       decoration: BoxDecoration(
-        color: ghostBar != null ? null :
-            (isDragging && isActive
-                ? (bg ?? KColors.surface).withValues(alpha: 0.5)
-                : bg),
+        color: cellBg,
         border: Border(
-          left: borderLeft,
+          left: useInsetFill
+              ? const BorderSide(color: Colors.transparent)
+              : borderLeft,
           right: BorderSide(color: KColors.border.withValues(alpha: 0.3)),
           bottom: BorderSide(color: KColors.border.withValues(alpha: 0.3)),
         ),
@@ -2641,6 +3134,77 @@ class _WpFormDialogState extends State<_WpFormDialog> {
   }
 }
 
+// ─── Parent activity dropdown (WBS: activity → task) ─────────────────────────
+class _ParentActivityDropdown extends StatelessWidget {
+  final String wpId;
+  final String? editingId;
+  final List<({TimelineActivity act, TimelineWorkPackage wp})>
+      allActivities;
+  final String? value;
+  final ValueChanged<String?> onChanged;
+
+  const _ParentActivityDropdown({
+    required this.wpId,
+    required this.editingId,
+    required this.allActivities,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // An activity that already has tasks can't itself become a task.
+    final editingHasTasks = editingId != null &&
+        allActivities.any((p) => p.act.parentActivityId == editingId);
+    if (editingHasTasks) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 4),
+        child: Text(
+          'Has tasks — this activity is a WBS parent and can\'t be '
+          'nested under another.',
+          style: TextStyle(color: KColors.textMuted, fontSize: 11),
+        ),
+      );
+    }
+
+    // Candidates: top-level activities in the same WP (tasks nest one
+    // level only). allActivities already excludes the editing row.
+    final candidates = allActivities
+        .where((p) =>
+            p.wp.id == wpId &&
+            p.act.parentActivityId == null &&
+            p.act.activityType == 'activity')
+        .toList();
+    // A stale/foreign selection still shows rather than crashing the
+    // dropdown (e.g. parent converted or moved WP).
+    final values = {for (final c in candidates) c.act.id};
+    if (candidates.isEmpty && value == null) {
+      return const SizedBox.shrink();
+    }
+
+    return DropdownButtonFormField<String?>(
+      value: values.contains(value) ? value : null,
+      isExpanded: true,
+      decoration: const InputDecoration(
+        labelText: 'Parent activity (makes this a task)',
+        contentPadding:
+            EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      ),
+      style: const TextStyle(color: KColors.text, fontSize: 14),
+      dropdownColor: KColors.surface2,
+      items: [
+        const DropdownMenuItem<String?>(
+            value: null, child: Text('— none (top-level activity) —')),
+        ...candidates.map((c) => DropdownMenuItem<String?>(
+              value: c.act.id,
+              child: Text(c.act.name, overflow: TextOverflow.ellipsis),
+            )),
+      ],
+      onChanged: onChanged,
+    );
+  }
+}
+
 // ─── Activity Form Dialog ─────────────────────────────────────────────────────
 class _ActivityFormDialog extends StatefulWidget {
   final AppDatabase db;
@@ -2648,9 +3212,11 @@ class _ActivityFormDialog extends StatefulWidget {
   final TimelineWorkPackage wp;
   final TimelineActivity? activity;
   final List<String> months;
+  final String? month0Date;
   final int sortOrder;
   final int? initialStartMonth;
   final int? initialEndMonth;
+  final String? initialParentActivityId;
 
   const _ActivityFormDialog({
     required this.db,
@@ -2658,9 +3224,11 @@ class _ActivityFormDialog extends StatefulWidget {
     required this.wp,
     this.activity,
     required this.months,
+    this.month0Date,
     required this.sortOrder,
     this.initialStartMonth,
     this.initialEndMonth,
+    this.initialParentActivityId,
   });
 
   @override
@@ -2677,11 +3245,22 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
   String   _status     = 'not_started';
   int?     _startMonth;
   int?     _endMonth;
+  String?  _startDate;
+  String?  _endDate;
+  String?  _parentActivityId;
   bool     _isCritical = false;
   bool     _saving     = false;
   String?  _ownerId;
   List<Person> _persons = [];
   List<_Contributor> _contributors = [];
+
+  // Tasks (WBS children) of this activity. Edit mode: live rows,
+  // quick-add writes straight to the DB. Create mode: names queue in
+  // [_pendingTaskNames] and are created after the activity itself saves.
+  final _taskQuickAddCtrl = TextEditingController();
+  final _taskQuickAddFocus = FocusNode();
+  List<TimelineActivity> _tasks = [];
+  final List<String> _pendingTaskNames = [];
 
   // Inbound dependency state — list of predecessors of this activity.
   // Mix of internal predecessors (point at another activity) and
@@ -2708,6 +3287,10 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
     _status     = a?.status ?? 'not_started';
     _startMonth = a?.startMonth ?? widget.initialStartMonth;
     _endMonth   = a?.endMonth ?? widget.initialEndMonth;
+    _startDate  = a?.startDate;
+    _endDate    = a?.endDate;
+    _parentActivityId =
+        a?.parentActivityId ?? widget.initialParentActivityId;
     _isCritical = a?.isCritical ?? false;
     _ownerId    = a?.ownerId;
     if (a?.contributors != null) {
@@ -2747,9 +3330,16 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
         : await widget.db.programmeGanttDao
             .getInboundDependenciesFor(widget.activity!.id);
 
+    final ownTasks = widget.activity == null
+        ? const <TimelineActivity>[]
+        : acts
+            .where((a) => a.parentActivityId == widget.activity!.id)
+            .toList();
+
     if (!mounted) return;
     setState(() {
       _allActivities = pairs;
+      _tasks = ownTasks;
       _predecessors = [
         for (final d in inbound)
           if (d.externalLabel != null)
@@ -2788,7 +3378,36 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
     _ownerCtrl.dispose();
     _labelCtrl.dispose();
     _notesCtrl.dispose();
+    _taskQuickAddCtrl.dispose();
+    _taskQuickAddFocus.dispose();
     super.dispose();
+  }
+
+  /// Whether the tasks section applies: bar-type activities that aren't
+  /// themselves tasks.
+  bool get _canHaveTasks =>
+      _type == 'activity' && _parentActivityId == null;
+
+  Future<void> _quickAddTask() async {
+    final name = _taskQuickAddCtrl.text.trim();
+    if (name.isEmpty) return;
+    _taskQuickAddCtrl.clear();
+    if (_isEdit) {
+      await widget.db.programmeGanttDao.addTask(
+        id: const Uuid().v4(),
+        parentId: widget.activity!.id,
+        name: name,
+      );
+      await _loadDependencies();
+    } else {
+      setState(() => _pendingTaskNames.add(name));
+    }
+    _taskQuickAddFocus.requestFocus();
+  }
+
+  Future<void> _removeTask(TimelineActivity task) async {
+    await widget.db.programmeGanttDao.deleteActivity(task.id);
+    await _loadDependencies();
   }
 
   Future<void> _save() async {
@@ -2797,7 +3416,17 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
     final now = DateTime.now();
     final id  = widget.activity?.id ?? const Uuid().v4();
 
-    final endVal = _isSinglePoint ? _startMonth : _endMonth;
+    // Real dates (when set) are the source of truth: derive the month
+    // span from them so every month-based consumer stays consistent.
+    final derived = monthSpanForDates(
+      startDate: _startDate,
+      endDate: _isSinglePoint ? _startDate : _endDate,
+      month0Date: widget.month0Date,
+    );
+    final startVal = derived?.startMonth ?? _startMonth;
+    final endVal = derived != null
+        ? derived.endMonth
+        : (_isSinglePoint ? _startMonth : _endMonth);
 
     await widget.db.programmeGanttDao.upsertActivity(
       TimelineActivitiesCompanion(
@@ -2810,7 +3439,10 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
         ownerId:      Value(_ownerId),
         activityType: Value(_type),
         status:       Value(_status),
-        startMonth:   Value(_startMonth),
+        parentActivityId: Value(_parentActivityId),
+        startDate:    Value(_startDate),
+        endDate:      Value(_isSinglePoint ? _startDate : _endDate),
+        startMonth:   Value(startVal),
         endMonth:     Value(endVal),
         isCritical:   Value(_isCritical),
         cellLabel:    Value(_labelCtrl.text.trim().isEmpty
@@ -2834,6 +3466,19 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
       activityId: id,
       desired: _predecessors,
     );
+
+    // Tasks queued during create mode land now that the parent exists.
+    for (final name in _pendingTaskNames) {
+      await widget.db.programmeGanttDao
+          .addTask(id: const Uuid().v4(), parentId: id, name: name);
+    }
+
+    // A parent that never had a window of its own gets seeded from its
+    // tasks; an existing window is the PM's commitment and stays put.
+    if (_parentActivityId != null) {
+      await widget.db.programmeGanttDao
+          .seedParentSpanFromTasks(_parentActivityId!);
+    }
 
     if (mounted) Navigator.of(context).pop();
   }
@@ -2896,9 +3541,12 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
             style: TextStyle(color: c, fontSize: 12,
                 fontWeight: FontWeight.w600)),
       ]),
+      // Sized so the full form (incl. dates + WBS parent) fits without
+      // scrolling on a typical desktop; the scroll view below is the
+      // fallback for short screens.
       content: SizedBox(
-        width: 640,
-        height: 760,
+        width: min(760, MediaQuery.of(context).size.width * 0.9),
+        height: min(940, MediaQuery.of(context).size.height * 0.88),
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
@@ -2918,24 +3566,55 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                       v == null || v.trim().isEmpty ? 'Required' : null,
                 ),
                 const SizedBox(height: 12),
-                // Activity type
-                DropdownButtonFormField<String>(
-                  value: _type,
-                  decoration: const InputDecoration(
-                    labelText: 'Activity type',
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                // Activity type + status share a row to keep the taller
+                // form on one screen.
+                Row(children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: _type,
+                      decoration: const InputDecoration(
+                        labelText: 'Activity type',
+                        contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
+                      ),
+                      style: const TextStyle(
+                          color: KColors.text, fontSize: 14),
+                      dropdownColor: KColors.surface2,
+                      items: _kActivityTypes.map((t) => DropdownMenuItem(
+                            value: t,
+                            child: Text(_kActivityTypeLabels[t]!,
+                                style: const TextStyle(fontSize: 14)),
+                          )).toList(),
+                      onChanged: (v) =>
+                          setState(() => _type = v ?? 'activity'),
+                    ),
                   ),
-                  style: const TextStyle(color: KColors.text, fontSize: 14),
-                  dropdownColor: KColors.surface2,
-                  items: _kActivityTypes.map((t) => DropdownMenuItem(
-                        value: t,
-                        child: Text(_kActivityTypeLabels[t]!,
-                            style: const TextStyle(fontSize: 14)),
-                      )).toList(),
-                  onChanged: (v) =>
-                      setState(() => _type = v ?? 'activity'),
-                ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: _status,
+                      decoration: const InputDecoration(
+                        labelText: 'Status',
+                        contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
+                      ),
+                      style: const TextStyle(
+                          color: KColors.text, fontSize: 14),
+                      dropdownColor: KColors.surface2,
+                      items: milestoneTrackerStatuses
+                          .map((s) => DropdownMenuItem(
+                                value: s,
+                                child: Text(
+                                    milestoneTrackerStatusLabels[s]!,
+                                    style:
+                                        const TextStyle(fontSize: 14)),
+                              ))
+                          .toList(),
+                      onChanged: (v) =>
+                          setState(() => _status = v ?? 'not_started'),
+                    ),
+                  ),
+                ]),
                 const SizedBox(height: 12),
                 // Month range
                 Row(children: [
@@ -2983,6 +3662,132 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                   ],
                 ]),
                 const SizedBox(height: 14),
+                // Optional real dates — months stay the planning grain;
+                // dates add day-accurate bars and override the month
+                // span when set.
+                Row(children: [
+                  Expanded(
+                    child: DatePickerField(
+                      label: _isSinglePoint
+                          ? 'Exact date (optional)'
+                          : 'Start date (optional)',
+                      isoValue: _startDate,
+                      onChanged: (v) => setState(() => _startDate = v),
+                    ),
+                  ),
+                  if (!_isSinglePoint) ...[
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: DatePickerField(
+                        label: 'End date (optional)',
+                        isoValue: _endDate,
+                        onChanged: (v) => setState(() => _endDate = v),
+                      ),
+                    ),
+                  ],
+                ]),
+                if (_startDate != null && widget.month0Date == null)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 4),
+                    child: Text(
+                      'Set the plan\'s month-0 date (Configure) so dates '
+                      'can position the bar day-accurately.',
+                      style:
+                          TextStyle(color: KColors.amber, fontSize: 11),
+                    ),
+                  ),
+                const SizedBox(height: 14),
+                // WBS parent: nest this row as a task under an activity.
+                _ParentActivityDropdown(
+                  wpId: widget.wp.id,
+                  editingId: widget.activity?.id,
+                  allActivities: _allActivities,
+                  value: _parentActivityId,
+                  onChanged: (v) =>
+                      setState(() => _parentActivityId = v),
+                ),
+                const SizedBox(height: 14),
+                // Tasks — rapid decomposition without leaving the dialog.
+                if (_canHaveTasks) ...[
+                  const Text('TASKS',
+                      style: TextStyle(
+                          color: KColors.textDim,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.1)),
+                  const SizedBox(height: 6),
+                  if (_isEdit)
+                    for (final t in _tasks)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Row(children: [
+                          Container(
+                              width: 2, height: 12,
+                              color: c.withValues(alpha: 0.5)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(t.name,
+                                style: const TextStyle(
+                                    color: KColors.text, fontSize: 12),
+                                overflow: TextOverflow.ellipsis),
+                          ),
+                          InkWell(
+                            onTap: () => _removeTask(t),
+                            child: const Padding(
+                              padding: EdgeInsets.all(2),
+                              child: Icon(Icons.close,
+                                  size: 12, color: KColors.textMuted),
+                            ),
+                          ),
+                        ]),
+                      )
+                  else
+                    for (var i = 0; i < _pendingTaskNames.length; i++)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Row(children: [
+                          Container(
+                              width: 2, height: 12,
+                              color: c.withValues(alpha: 0.5)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(_pendingTaskNames[i],
+                                style: const TextStyle(
+                                    color: KColors.text, fontSize: 12),
+                                overflow: TextOverflow.ellipsis),
+                          ),
+                          InkWell(
+                            onTap: () => setState(
+                                () => _pendingTaskNames.removeAt(i)),
+                            child: const Padding(
+                              padding: EdgeInsets.all(2),
+                              child: Icon(Icons.close,
+                                  size: 12, color: KColors.textMuted),
+                            ),
+                          ),
+                        ]),
+                      ),
+                  TextField(
+                    controller: _taskQuickAddCtrl,
+                    focusNode: _taskQuickAddFocus,
+                    style: const TextStyle(
+                        color: KColors.text, fontSize: 12),
+                    decoration: InputDecoration(
+                      hintText: _isEdit
+                          ? 'Add task — Enter to save, keep typing for more'
+                          : 'Add task — created with the activity',
+                      hintStyle: const TextStyle(
+                          color: KColors.textMuted, fontSize: 12),
+                      isDense: true,
+                      prefixIcon: const Icon(Icons.add,
+                          size: 14, color: KColors.textDim),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 8),
+                    ),
+                    onSubmitted: (_) => _quickAddTask(),
+                  ),
+                  const SizedBox(height: 14),
+                ],
                 // Owner — roomier styling pass-through so the field
                 // doesn't feel compressed at this larger dialog size.
                 PersonPickerField(
@@ -3011,24 +3816,6 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                   larger: true,
                 ),
                 const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  value: _status,
-                  decoration: const InputDecoration(
-                    labelText: 'Status',
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  ),
-                  style:
-                      const TextStyle(color: KColors.text, fontSize: 14),
-                  dropdownColor: KColors.surface2,
-                  items: milestoneTrackerStatuses.map((s) => DropdownMenuItem(
-                    value: s,
-                    child: Text(milestoneTrackerStatusLabels[s]!,
-                        style: const TextStyle(fontSize: 14)),
-                  )).toList(),
-                  onChanged: (v) => setState(() => _status = v ?? 'not_started'),
-                ),
-                const SizedBox(height: 12),
                 TextFormField(
                   controller: _labelCtrl,
                   decoration: const InputDecoration(
@@ -3045,7 +3832,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                 // label out of view.
                 TextFormField(
                   controller: _notesCtrl,
-                  minLines: 4,
+                  minLines: 3,
                   maxLines: 10,
                   decoration: const InputDecoration(
                     labelText: 'Notes (optional)',

@@ -9,7 +9,16 @@ import 'journal_overlay.dart';
 import 'journal_series_form.dart';
 
 class JournalHistoryView extends StatefulWidget {
-  const JournalHistoryView({super.key});
+  /// When provided, "+ New Entry" opens the shell's docked journal pane
+  /// (split view) instead of the modal quick-capture overlay.
+  final VoidCallback? onNewEntryDocked;
+
+  /// When provided, clicking an existing entry opens it in the docked
+  /// split view instead of the modal overlay.
+  final void Function(JournalEntry entry)? onOpenEntryDocked;
+
+  const JournalHistoryView(
+      {super.key, this.onNewEntryDocked, this.onOpenEntryDocked});
 
   @override
   State<JournalHistoryView> createState() => _JournalHistoryViewState();
@@ -55,6 +64,10 @@ class _JournalHistoryViewState extends State<JournalHistoryView> {
   }
 
   void _openEntry(BuildContext context, JournalEntry entry) {
+    if (widget.onOpenEntryDocked != null) {
+      widget.onOpenEntryDocked!(entry);
+      return;
+    }
     final projectId = context.read<ProjectProvider>().currentProjectId;
     final db = context.read<AppDatabase>();
     final settings = context.read<SettingsProvider>().settings;
@@ -109,7 +122,9 @@ class _JournalHistoryViewState extends State<JournalHistoryView> {
               ),
               const SizedBox(width: 8),
               ElevatedButton.icon(
-                onPressed: () => _openNewEntry(context),
+                onPressed: () => widget.onNewEntryDocked != null
+                    ? widget.onNewEntryDocked!()
+                    : _openNewEntry(context),
                 icon: const Icon(Icons.add, size: 14),
                 label: const Text('New Entry'),
               ),

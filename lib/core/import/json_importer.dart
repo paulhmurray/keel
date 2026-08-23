@@ -65,16 +65,31 @@ class JsonImporter {
     // upsert-only would leave deleted records in place.
     await _clearSyncedTables(db, projectId);
 
+    // Preserve programme/project classification across machines. Kind is
+    // immutable after creation (no UI can change it), so an existing
+    // programme row must NEVER be demoted to 'project' by an import —
+    // older exports (pre-1.2.0) omit the key entirely, and a blob pushed
+    // by an old build carries 'project' for what is locally a programme.
+    // Demotion here cascades: the PROJ badge, the programme navigation,
+    // and every kind-gated view all key off this one column.
+    final existingProject = await db.projectDao.getProjectById(projectId);
+    final incomingKind = projectData['kind'] as String?;
+    final resolvedKind =
+        (incomingKind == 'programme' || existingProject?.kind == 'programme')
+            ? 'programme'
+            : (incomingKind ?? 'project');
     await db.projectDao.upsertProject(ProjectsCompanion(
       id: Value(projectId),
       name: Value(projectData['name'] as String),
       description: Value(projectData['description'] as String?),
       startDate: Value(projectData['start_date'] as String?),
       status: Value(projectData['status'] as String? ?? 'active'),
-      // Preserve programme/project classification across machines. Older
-      // exports (pre-kind) omit the key → default to 'project'.
-      kind: Value(projectData['kind'] as String? ?? 'project'),
-      parentProgrammeId: Value(projectData['parent_programme_id'] as String?),
+      kind: Value(resolvedKind),
+      // Pre-kind blobs also omit this key — keep the local linkage rather
+      // than nulling it out.
+      parentProgrammeId: projectData.containsKey('parent_programme_id')
+          ? Value(projectData['parent_programme_id'] as String?)
+          : Value(existingProject?.parentProgrammeId),
     ));
 
     // Programme overview
@@ -199,7 +214,11 @@ class JsonImporter {
           id: Value(im['id'] as String),
           projectId: Value(projectId),
           ref: Value(im['ref'] as String?),
+          title: Value(im['title'] as String?),
           description: Value(im['description'] as String),
+          impactStatement: Value(im['impact_statement'] as String?),
+          escalationRequired:
+              Value(im['escalation_required'] as bool? ?? false),
           owner: Value(im['owner'] as String?),
           dueDate: Value(im['due_date'] as String?),
           priority: Value(im['priority'] as String? ?? 'medium'),
@@ -229,6 +248,17 @@ class JsonImporter {
           sourceProjectId: Value(dm['source_project_id'] as String?),
         ));
         depCount++;
+      }
+      for (final l in (raidData['item_links'] as List? ?? [])) {
+        final lm = l as Map<String, dynamic>;
+        await db.raidDao.insertItemLink(RaidItemLinksCompanion(
+          id: Value(lm['id'] as String),
+          projectId: Value(projectId),
+          fromType: Value(lm['from_type'] as String),
+          fromId: Value(lm['from_id'] as String),
+          toType: Value(lm['to_type'] as String),
+          toId: Value(lm['to_id'] as String),
+        ));
       }
     }
 
@@ -398,9 +428,17 @@ class JsonImporter {
         linkedActionId: Value(am['linked_action_id'] as String?),
         planActivityId: Value(am['plan_activity_id'] as String?),
         parentActionId: Value(am['parent_action_id'] as String?),
+        isParent: Value(am['is_parent'] as bool? ?? false),
       ));
       actionCount++;
     }
+    // Exports from machines that predate the is_parent flag carry none —
+    // backfill it for any action that has children, same as the migration.
+    await db.customStatement(
+        'UPDATE project_actions SET is_parent = 1 WHERE project_id = ?1 '
+        'AND id IN (SELECT DISTINCT parent_action_id FROM project_actions '
+        'WHERE project_id = ?1 AND parent_action_id IS NOT NULL)',
+        [projectId]);
 
     // Action comments — gracefully ignored when the source export pre-dates
     // schema_version 22 (the key will be missing).
@@ -502,6 +540,12 @@ class JsonImporter {
           entryDate: Value(em['entry_date'] as String),
           meetingContext: Value(em['meeting_context'] as String?),
           parsed: Value(em['parsed'] as bool? ?? false),
+          // Older exports lack the snapshot; for parsed entries fall back
+          // to the body so they don't re-suggest old text after import.
+          lastParsedBody: Value(em['last_parsed_body'] as String? ??
+              ((em['parsed'] as bool? ?? false)
+                  ? em['body'] as String?
+                  : null)),
           isFavourite: Value(em['is_favourite'] as bool? ?? false),
           seriesId: Value(em['series_id'] as String?),
         ));
@@ -737,6 +781,7 @@ class JsonImporter {
           ownerId: Value(am['owner_id'] as String?),
           activityType:
               Value(am['activity_type'] as String? ?? 'activity'),
+          parentActivityId: Value(am['parent_activity_id'] as String?),
           startMonth: Value(am['start_month'] as int?),
           endMonth: Value(am['end_month'] as int?),
           startDate: Value(am['start_date'] as String?),
@@ -872,6 +917,150 @@ class JsonImporter {
           );
     }
 
+    // Finance — categories → budgets → lines → audit log (FK order).
+    // Raw upserts ONLY: the audit trail travels in the payload itself,
+    // so importing must never generate fresh audit entries. Missing key
+    // on pre-finance exports is fine (skipped).
+    final financeData = data['finance'] as Map<String, dynamic>?;
+    if (financeData != null) {
+      for (final c in (financeData['cost_categories'] as List? ?? [])) {
+        final cm = c as Map<String, dynamic>;
+        await db.financeDao.upsertCategoryRaw(CostCategoriesCompanion(
+          id: Value(cm['id'] as String),
+          projectId: Value(projectId),
+          name: Value(cm['name'] as String? ?? ''),
+          sortOrder: Value(cm['sort_order'] as int? ?? 0),
+        ));
+      }
+      for (final b in (financeData['budgets'] as List? ?? [])) {
+        final bm = b as Map<String, dynamic>;
+        await db.financeDao.upsertBudgetRaw(ProjectBudgetsCompanion(
+          id: Value(bm['id'] as String),
+          projectId: Value(projectId),
+          name: Value(bm['name'] as String? ?? ''),
+          status: Value(bm['status'] as String? ?? 'draft'),
+          approvedBy: Value(bm['approved_by'] as String?),
+          approvedAt: Value(_parseDt(bm['approved_at'])),
+          currency: Value(bm['currency'] as String? ?? 'AUD'),
+          fundingSource: Value(bm['funding_source'] as String?),
+          notes: Value(bm['notes'] as String?),
+          varianceToleranceBp:
+              Value(bm['variance_tolerance_bp'] as int? ?? 500),
+        ));
+      }
+      for (final l in (financeData['budget_lines'] as List? ?? [])) {
+        final lm = l as Map<String, dynamic>;
+        await db.financeDao.upsertLineRaw(BudgetLinesCompanion(
+          id: Value(lm['id'] as String),
+          projectId: Value(projectId),
+          budgetId: Value(lm['budget_id'] as String),
+          costCategoryId: Value(lm['cost_category_id'] as String),
+          workstreamId: Value(lm['workstream_id'] as String?),
+          financialYear: Value(lm['financial_year'] as String? ?? ''),
+          amountMinor: Value(lm['amount_minor'] as int? ?? 0),
+          notes: Value(lm['notes'] as String?),
+        ));
+      }
+      for (final s in (financeData['forecast_snapshots'] as List? ?? [])) {
+        final sm = s as Map<String, dynamic>;
+        await db.financeDao.upsertSnapshotRaw(ForecastSnapshotsCompanion(
+          id: Value(sm['id'] as String),
+          projectId: Value(projectId),
+          period: Value(sm['period'] as String? ?? ''),
+          status: Value(sm['status'] as String? ?? 'working'),
+          submittedAt: Value(_parseDt(sm['submitted_at'])),
+        ));
+      }
+      for (final l in (financeData['forecast_lines'] as List? ?? [])) {
+        final lm = l as Map<String, dynamic>;
+        await db.financeDao.upsertForecastLineRaw(ForecastLinesCompanion(
+          id: Value(lm['id'] as String),
+          projectId: Value(projectId),
+          snapshotId: Value(lm['snapshot_id'] as String),
+          costCategoryId: Value(lm['cost_category_id'] as String),
+          workstreamId: Value(lm['workstream_id'] as String?),
+          financialYear: Value(lm['financial_year'] as String? ?? ''),
+          amountMinor: Value(lm['amount_minor'] as int? ?? 0),
+          notes: Value(lm['notes'] as String?),
+        ));
+      }
+      for (final l in (financeData['actual_lines'] as List? ?? [])) {
+        final lm = l as Map<String, dynamic>;
+        await db.financeDao.upsertActualLineRaw(ActualLinesCompanion(
+          id: Value(lm['id'] as String),
+          projectId: Value(projectId),
+          period: Value(lm['period'] as String? ?? ''),
+          costCategoryId: Value(lm['cost_category_id'] as String),
+          workstreamId: Value(lm['workstream_id'] as String?),
+          amountMinor: Value(lm['amount_minor'] as int? ?? 0),
+          source: Value(lm['source'] as String? ?? 'manual'),
+          sourceRef: Value(lm['source_ref'] as String?),
+          enteredBy: Value(lm['entered_by'] as String?),
+          notes: Value(lm['notes'] as String?),
+        ));
+      }
+      for (final a in (financeData['audit_log'] as List? ?? [])) {
+        final am = a as Map<String, dynamic>;
+        await db.financeDao.upsertAuditRaw(FinancialAuditLogCompanion(
+          id: Value(am['id'] as String),
+          projectId: Value(projectId),
+          entityType: Value(am['entity_type'] as String? ?? ''),
+          entityId: Value(am['entity_id'] as String? ?? ''),
+          field: Value(am['field'] as String? ?? ''),
+          oldValue: Value(am['old_value'] as String?),
+          newValue: Value(am['new_value'] as String?),
+          changedBy: Value(am['changed_by'] as String?),
+          changedAt: Value(
+              _parseDt(am['changed_at']) ?? DateTime.now()),
+        ));
+      }
+    }
+
+    // Helm day plans — GLOBAL, so they are NOT cleared per project.
+    // Each incoming day replaces the local copy of that date only when
+    // strictly newer (matched by plan_date, since two machines create the
+    // same date under different ids). Missing key on pre-Helm exports is
+    // fine (skipped).
+    final dayPlanData = data['day_plans'] as Map<String, dynamic>?;
+    if (dayPlanData != null) {
+      final blocksByPlan = <String, List<DayPlanBlocksCompanion>>{};
+      for (final b in (dayPlanData['blocks'] as List? ?? [])) {
+        final bm = b as Map<String, dynamic>;
+        blocksByPlan
+            .putIfAbsent(bm['day_plan_id'] as String, () => [])
+            .add(DayPlanBlocksCompanion(
+              id: Value(bm['id'] as String),
+              dayPlanId: Value(bm['day_plan_id'] as String),
+              revision: Value(bm['revision'] as int? ?? 0),
+              startMinute: Value(bm['start_minute'] as int? ?? 0),
+              endMinute: Value(bm['end_minute'] as int? ?? 0),
+              kind: Value(bm['kind'] as String? ?? 'focus'),
+              label: Value(bm['label'] as String? ?? ''),
+              projectId: Value(bm['project_id'] as String?),
+              linkedActionId: Value(bm['linked_action_id'] as String?),
+              done: Value(bm['done'] as bool? ?? false),
+              createdAt: Value(_parseDt(bm['created_at']) ?? DateTime.now()),
+              updatedAt: Value(_parseDt(bm['updated_at']) ?? DateTime.now()),
+            ));
+      }
+      for (final p in (dayPlanData['plans'] as List? ?? [])) {
+        final pm = p as Map<String, dynamic>;
+        final planId = pm['id'] as String;
+        await db.dayPlanDao.applyImportedPlan(
+          plan: DayPlansCompanion(
+            id: Value(planId),
+            planDate: Value(pm['plan_date'] as String),
+            currentRevision: Value(pm['current_revision'] as int? ?? 0),
+            revisionStartsJson:
+                Value(pm['revision_starts_json'] as String? ?? '[]'),
+            createdAt: Value(_parseDt(pm['created_at']) ?? DateTime.now()),
+            updatedAt: Value(_parseDt(pm['updated_at']) ?? DateTime.now()),
+          ),
+          blocks: blocksByPlan[planId] ?? const [],
+        );
+      }
+    }
+
     // Re-run charter migration in case the source device had overview data but
     // no charter yet — ensures ProgrammeOverview content is never lost on sync.
     await CharterMigration(db).runIfNeeded();
@@ -952,6 +1141,8 @@ class JsonImporter {
     await (db.delete(db.assumptions)..where((t) => t.projectId.equals(id)))
         .go();
     await (db.delete(db.issues)..where((t) => t.projectId.equals(id))).go();
+    await (db.delete(db.raidItemLinks)..where((t) => t.projectId.equals(id)))
+        .go();
     await (db.delete(db.programDependencies)
           ..where((t) => t.projectId.equals(id)))
         .go();
@@ -1000,6 +1191,26 @@ class JsonImporter {
 
     // Milestones
     await (db.delete(db.milestones)..where((t) => t.projectId.equals(id)))
+        .go();
+
+    // Finance — lines reference budgets/snapshots + categories, so
+    // clear lines first; audit log is replaced wholesale (it rides in
+    // the blob).
+    await (db.delete(db.budgetLines)..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.projectBudgets)..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.forecastLines)..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.forecastSnapshots)
+          ..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.actualLines)..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.costCategories)..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.financialAuditLog)
+          ..where((t) => t.projectId.equals(id)))
         .go();
 
     // Playbook attachment — progress rows reference the attachment row, so

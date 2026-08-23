@@ -83,6 +83,20 @@ class _JournalDeltaPanelState extends State<JournalDeltaPanel> {
     _reclaimFocus();
   }
 
+  /// Puts a confirmed/ignored item back into the pending pile and makes
+  /// it active. Decisions here are freely reversible until Confirm All
+  /// (or dismiss) commits them.
+  void _reopen(DetectedDelta delta) {
+    setState(() {
+      delta.confirmed = false;
+      delta.ignored = false;
+      _editingActive = false;
+      final idx = _pending.indexOf(delta);
+      if (idx >= 0) _activeIndex = idx;
+    });
+    _reclaimFocus();
+  }
+
   void _nextItem() {
     setState(() {
       _editingActive = false;
@@ -105,6 +119,19 @@ class _JournalDeltaPanelState extends State<JournalDeltaPanel> {
     final isMetaOrCtrl = HardwareKeyboard.instance.isMetaPressed ||
         HardwareKeyboard.instance.isControlPressed;
 
+    // While an edit form is open, plain keystrokes are the user TYPING
+    // into its fields — they bubble up here, so reacting to them is how
+    // typing a name ending in 'y' used to confirm the item mid-edit.
+    // Only Escape (cancel the edit) is handled; everything else belongs
+    // to the text fields.
+    if (_editingActive) {
+      if (event.logicalKey == LogicalKeyboardKey.escape) {
+        _cancelEdit();
+        return KeyEventResult.handled;
+      }
+      return KeyEventResult.ignored;
+    }
+
     if (event.logicalKey == LogicalKeyboardKey.keyY ||
         event.logicalKey == LogicalKeyboardKey.enter) {
       if (isMetaOrCtrl && event.logicalKey == LogicalKeyboardKey.enter) {
@@ -117,29 +144,21 @@ class _JournalDeltaPanelState extends State<JournalDeltaPanel> {
       }
     }
     if (event.logicalKey == LogicalKeyboardKey.keyN) {
-      if (!_editingActive) {
-        _ignoreActive();
-        return KeyEventResult.handled;
-      }
+      _ignoreActive();
+      return KeyEventResult.handled;
     }
     if (event.logicalKey == LogicalKeyboardKey.keyE) {
-      if (!_editingActive && _pending.isNotEmpty) {
+      if (_pending.isNotEmpty) {
         setState(() => _editingActive = true);
         return KeyEventResult.handled;
       }
     }
     if (event.logicalKey == LogicalKeyboardKey.tab) {
-      if (!_editingActive) {
-        final isShift = HardwareKeyboard.instance.isShiftPressed;
-        if (isShift) { _prevItem(); } else { _nextItem(); }
-        return KeyEventResult.handled;
-      }
+      final isShift = HardwareKeyboard.instance.isShiftPressed;
+      if (isShift) { _prevItem(); } else { _nextItem(); }
+      return KeyEventResult.handled;
     }
     if (event.logicalKey == LogicalKeyboardKey.escape) {
-      if (_editingActive) {
-        _cancelEdit();
-        return KeyEventResult.handled;
-      }
       widget.onDismiss();
       return KeyEventResult.handled;
     }
@@ -226,6 +245,7 @@ class _JournalDeltaPanelState extends State<JournalDeltaPanel> {
                       onIgnore: _ignoreActive,
                       onEdit: () => setState(() => _editingActive = true),
                       onCancelEdit: _cancelEdit,
+                      onReopen: () => _reopen(e.value),
                     );
                   }).toList(),
                 ),

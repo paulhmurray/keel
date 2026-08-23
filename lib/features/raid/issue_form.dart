@@ -4,10 +4,14 @@ import 'package:drift/drift.dart' show Value;
 
 import '../../core/analytics/keel_events.dart';
 import '../../core/database/database.dart';
+import '../../core/raid/raid_conversion_service.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/widgets/dropdown_field.dart';
 import '../../shared/widgets/date_picker_field.dart';
+import '../../shared/utils/date_utils.dart' as du;
 import '../../shared/widgets/person_picker_field.dart';
+import 'raid_convert_button.dart';
+import 'raid_links_section.dart';
 
 class IssueFormDialog extends StatefulWidget {
   final String projectId;
@@ -30,7 +34,9 @@ class IssueFormDialog extends StatefulWidget {
 class _IssueFormDialogState extends State<IssueFormDialog> {
   final _formKey = GlobalKey<FormState>();
 
+  late TextEditingController _titleCtrl;
   late TextEditingController _descCtrl;
+  late TextEditingController _impactCtrl;
   late TextEditingController _ownerCtrl;
   late TextEditingController _resolutionCtrl;
   late TextEditingController _sourceNoteCtrl;
@@ -39,6 +45,7 @@ class _IssueFormDialogState extends State<IssueFormDialog> {
   String _priority = 'medium';
   String _status = 'open';
   String _source = 'manual';
+  bool _escalationRequired = false;
   List<Person> _persons = const [];
 
   late bool _isViewing;
@@ -51,7 +58,10 @@ class _IssueFormDialogState extends State<IssueFormDialog> {
   void initState() {
     super.initState();
     final issue = widget.issue;
+    _titleCtrl = TextEditingController(text: issue?.title ?? '');
     _descCtrl = TextEditingController(text: issue?.description ?? '');
+    _impactCtrl =
+        TextEditingController(text: issue?.impactStatement ?? '');
     _ownerCtrl = TextEditingController(text: issue?.owner ?? '');
     _resolutionCtrl = TextEditingController(text: issue?.resolution ?? '');
     _sourceNoteCtrl = TextEditingController(text: issue?.sourceNote ?? '');
@@ -59,6 +69,7 @@ class _IssueFormDialogState extends State<IssueFormDialog> {
     _priority = issue?.priority ?? 'medium';
     _status = issue?.status ?? 'open';
     _source = issue?.source ?? 'manual';
+    _escalationRequired = issue?.escalationRequired ?? false;
     _isViewing = widget.startInViewMode && issue != null;
     _loadPersons();
   }
@@ -70,7 +81,9 @@ class _IssueFormDialogState extends State<IssueFormDialog> {
 
   @override
   void dispose() {
+    _titleCtrl.dispose();
     _descCtrl.dispose();
+    _impactCtrl.dispose();
     _ownerCtrl.dispose();
     _resolutionCtrl.dispose();
     _sourceNoteCtrl.dispose();
@@ -99,7 +112,13 @@ class _IssueFormDialogState extends State<IssueFormDialog> {
         id: Value(id),
         projectId: Value(widget.projectId),
         ref: Value(ref),
+        title: Value(
+            _titleCtrl.text.trim().isEmpty ? null : _titleCtrl.text.trim()),
         description: Value(_descCtrl.text.trim()),
+        impactStatement: Value(_impactCtrl.text.trim().isEmpty
+            ? null
+            : _impactCtrl.text.trim()),
+        escalationRequired: Value(_escalationRequired),
         owner: Value(
             _ownerCtrl.text.trim().isEmpty ? null : _ownerCtrl.text.trim()),
         dueDate: Value(_dueDate),
@@ -154,7 +173,33 @@ class _IssueFormDialogState extends State<IssueFormDialog> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _viewField('Description', i.description, large: true),
+              if (i.title != null && i.title!.isNotEmpty)
+                _viewField('Title', i.title, large: true),
+              _viewField('Description', i.description,
+                  large: i.title == null || i.title!.isEmpty),
+              if (i.impactStatement != null &&
+                  i.impactStatement!.isNotEmpty)
+                _viewField('Impact if unresolved', i.impactStatement),
+              if (i.escalationRequired)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.arrow_upward,
+                          size: 13, color: KColors.red),
+                      const SizedBox(width: 6),
+                      Text(
+                        'ESCALATION REQUIRED',
+                        style: TextStyle(
+                          color: KColors.red,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.08,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               Row(
                 children: [
                   Expanded(child: _viewField('Priority', i.priority)),
@@ -177,6 +222,15 @@ class _IssueFormDialogState extends State<IssueFormDialog> {
                   if (i.sourceNote != null && i.sourceNote!.isNotEmpty)
                     Expanded(child: _viewField('Source Note', i.sourceNote)),
                 ],
+              ),
+              _viewField('Last updated',
+                  du.formatDate(i.updatedAt.toIso8601String())),
+              RaidLinksSection(
+                db: widget.db,
+                projectId: widget.projectId,
+                itemType: RaidKind.issue,
+                itemId: i.id,
+                readOnly: true,
               ),
             ],
           ),
@@ -203,20 +257,81 @@ class _IssueFormDialogState extends State<IssueFormDialog> {
     final isEdit = widget.issue != null;
 
     return AlertDialog(
-      title: Text(isEdit ? 'Edit Issue' : 'New Issue'),
+      title: Row(
+        children: [
+          Text(isEdit ? 'Edit Issue' : 'New Issue'),
+          const Spacer(),
+          if (isEdit)
+            RaidConvertButton(
+              db: widget.db,
+              from: RaidKind.issue,
+              itemId: widget.issue!.id,
+              itemRef: widget.issue!.ref,
+              sourceProjectId: widget.issue!.sourceProjectId,
+            ),
+        ],
+      ),
       content: SizedBox(
         width: 460,
         child: Form(
           key: _formKey,
+          child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextFormField(
-                controller: _descCtrl,
+                controller: _titleCtrl,
                 autofocus: true,
-                decoration: const InputDecoration(labelText: 'Description *'),
+                decoration: const InputDecoration(
+                  labelText: 'Title',
+                  hintText: 'Short, scannable headline',
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _descCtrl,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  labelText: 'Description *',
+                  hintText: 'What the issue is',
+                ),
                 validator: (v) =>
                     v == null || v.trim().isEmpty ? 'Required' : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _impactCtrl,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  labelText: 'Impact statement',
+                  hintText:
+                      'What happens to the project if this isn\'t resolved',
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: Checkbox(
+                      value: _escalationRequired,
+                      onChanged: (v) => setState(
+                          () => _escalationRequired = v ?? false),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.arrow_upward,
+                      size: 13, color: KColors.red),
+                  const SizedBox(width: 5),
+                  const Expanded(
+                    child: Text(
+                      'Escalation required — needs a decision or action '
+                      'from above this project',
+                      style: TextStyle(color: KColors.text, fontSize: 12),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
               Row(
@@ -290,7 +405,20 @@ class _IssueFormDialogState extends State<IssueFormDialog> {
                   ),
                 ],
               ),
+              if (isEdit) ...[
+                const SizedBox(height: 16),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: RaidLinksSection(
+                    db: widget.db,
+                    projectId: widget.projectId,
+                    itemType: RaidKind.issue,
+                    itemId: widget.issue!.id,
+                  ),
+                ),
+              ],
             ],
+          ),
           ),
         ),
       ),

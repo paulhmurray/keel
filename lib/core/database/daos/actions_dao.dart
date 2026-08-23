@@ -79,6 +79,45 @@ class ActionsDao extends DatabaseAccessor<AppDatabase> with _$ActionsDaoMixin {
     ));
   }
 
+  /// Nests [childId] under [parentId], flagging the target as a group
+  /// parent if it isn't one yet — used by drop-onto-card nesting.
+  Future<void> nestUnder(String childId, String parentId) async {
+    await transaction(() async {
+      final now = DateTime.now();
+      await (update(projectActions)..where((t) => t.id.equals(parentId)))
+          .write(ProjectActionsCompanion(
+        isParent: const Value(true),
+        updatedAt: Value(now),
+      ));
+      await (update(projectActions)..where((t) => t.id.equals(childId)))
+          .write(ProjectActionsCompanion(
+        parentActionId: Value(parentId),
+        updatedAt: Value(now),
+      ));
+    });
+  }
+
+  /// Sets only the group-parent flag.
+  Future<void> setIsParent(String id, bool isParent) {
+    return (update(projectActions)..where((t) => t.id.equals(id))).write(
+      ProjectActionsCompanion(
+        isParent: Value(isParent),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  /// Closes every action in [ids] that isn't already closed — used by
+  /// "Close group" to retire a parent and all its descendants at once.
+  Future<void> closeActions(List<String> ids) {
+    return (update(projectActions)
+          ..where((t) => t.id.isIn(ids) & t.status.equals('closed').not()))
+        .write(ProjectActionsCompanion(
+      status: const Value('closed'),
+      updatedAt: Value(DateTime.now()),
+    ));
+  }
+
   Future<void> upsertAction(ProjectActionsCompanion entry) {
     return into(projectActions).insertOnConflictUpdate(entry);
   }

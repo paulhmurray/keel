@@ -1,15 +1,19 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/database/database.dart';
+import '../../core/helm/day_plan_logic.dart';
 import '../../providers/project_provider.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/widgets/update_banner.dart';
 import '../../shared/widgets/rag_badge.dart';
 import '../../shared/widgets/status_chip.dart';
 import '../../shared/utils/date_utils.dart' as du;
+import '../helm/helm_view.dart' show blockKindColor;
 
 class LeftPanel extends StatelessWidget {
   // Section-level navigation (used when the section is empty or as a
@@ -29,6 +33,10 @@ class LeftPanel extends StatelessWidget {
   final void Function(JournalEntry)? onOpenJournal;
   final void Function(String stageId)? onOpenPlaybookStage;
 
+  // Helm is GLOBAL — the My Day section at the top stays put when the
+  // active project changes.
+  final VoidCallback? onNavigateToHelm;
+
   const LeftPanel({
     super.key,
     this.onNavigateToRaid,
@@ -37,6 +45,7 @@ class LeftPanel extends StatelessWidget {
     this.onNavigateToJournal,
     this.onNavigateToPlaybook,
     this.onNavigateToProgramme,
+    this.onNavigateToHelm,
     this.onOpenRisk,
     this.onOpenDecision,
     this.onOpenAction,
@@ -53,9 +62,19 @@ class LeftPanel extends StatelessWidget {
     return Container(
       width: 240,
       color: KColors.surface,
-      child: Column(
+      child: LayoutBuilder(
+        builder: (context, constraints) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // My Day rides above the project pulse and survives project
+          // switches — the user's day is global. It gets the lion's share
+          // of the panel (up to ~half) so the WHOLE day reads at a
+          // glance; the pulse below is deliberately condensed.
+          ConstrainedBox(
+            constraints:
+                BoxConstraints(maxHeight: constraints.maxHeight * 0.52),
+            child: _MyDaySection(db: db, onOpen: onNavigateToHelm),
+          ),
           Expanded(
             child: projectId == null
                 ? _NoProjectPlaceholder()
@@ -116,6 +135,339 @@ class LeftPanel extends StatelessWidget {
           ),
           const StandardUpdateNotice(),
         ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// My Day — the Helm readout. Global (not project-scoped): shows the
+// current block by wall clock plus what's next, so the morning's plan
+// stays in view all day. Distinct amber treatment marks it as "you"
+// above "the project".
+// ---------------------------------------------------------------------------
+
+class _MyDaySection extends StatefulWidget {
+  final AppDatabase db;
+  final VoidCallback? onOpen;
+
+  const _MyDaySection({required this.db, this.onOpen});
+
+  @override
+  State<_MyDaySection> createState() => _MyDaySectionState();
+}
+
+class _MyDaySectionState extends State<_MyDaySection> {
+  Timer? _clock;
+
+  // Memoized streams: the minute tick rebuilds this widget, and streams
+  // created inline in build would make the StreamBuilders resubscribe
+  // and blink to their empty state every tick. Re-anchored at midnight.
+  Stream<DayPlan?>? _planStream;
+  String? _planStreamDate;
+  Stream<List<DayPlanBlock>>? _blocksStream;
+  String? _blocksStreamPlanId;
+
+  @override
+  void initState() {
+    super.initState();
+    _clock = Timer.periodic(
+        const Duration(minutes: 1), (_) => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _clock?.cancel();
+    super.dispose();
+  }
+
+  String get _todayIso {
+    final now = DateTime.now();
+    return '${now.year.toString().padLeft(4, '0')}-'
+        '${now.month.toString().padLeft(2, '0')}-'
+        '${now.day.toString().padLeft(2, '0')}';
+  }
+
+  Stream<DayPlan?> _planStreamForToday(String dateIso) {
+    if (_planStreamDate != dateIso) {
+      _planStreamDate = dateIso;
+      _planStream = widget.db.dayPlanDao.watchPlanForDate(dateIso);
+      _blocksStreamPlanId = null;
+      _blocksStream = null;
+    }
+    return _planStream!;
+  }
+
+  Stream<List<DayPlanBlock>> _blocksStreamFor(String planId) {
+    if (_blocksStreamPlanId != planId) {
+      _blocksStreamPlanId = planId;
+      _blocksStream = widget.db.dayPlanDao.watchBlocksForPlan(planId);
+    }
+    return _blocksStream!;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: KColors.surface2,
+        border: Border(
+          left: BorderSide(color: KColors.amber, width: 2),
+          bottom: BorderSide(color: KColors.border2, width: 1),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            onTap: widget.onOpen,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
+              child: Row(
+                children: [
+                  const Icon(Icons.explore_outlined,
+                      size: 13, color: KColors.amber),
+                  const SizedBox(width: 6),
+                  Text(
+                    'MY DAY',
+                    style: GoogleFonts.jetBrainsMono(
+                      color: KColors.amber,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  const Spacer(),
+                  const Icon(Icons.chevron_right,
+                      size: 14, color: KColors.textMuted),
+                ],
+              ),
+            ),
+          ),
+          Flexible(
+            child: StreamBuilder<DayPlan?>(
+              stream: _planStreamForToday(_todayIso),
+              builder: (context, planSnap) {
+                final plan = planSnap.data;
+                if (plan == null) {
+                  return _myDayNote('No plan yet — chart your day.');
+                }
+                return StreamBuilder<List<DayPlanBlock>>(
+                  stream: _blocksStreamFor(plan.id),
+                  builder: (context, blockSnap) {
+                    final blocks = blockSnap.data ?? const [];
+                    final starts =
+                        parseRevisionStarts(plan.revisionStartsJson);
+                    final now = DateTime.now();
+                    final nowMin = now.hour * 60 + now.minute;
+                    // The WHOLE effective day, not just what's next —
+                    // past blocks stay visible (dimmed) so the plan
+                    // reads at a glance; scrolls when the day is packed.
+                    final schedule = effectiveSchedule(blocks, starts);
+                    final home =
+                        imminentHomeBlock(blocks, starts, nowMin);
+                    if (schedule.isEmpty) {
+                      return _myDayNote('No blocks yet — chart your day.');
+                    }
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (home != null)
+                          _HomeCountdown(block: home, nowMin: nowMin),
+                        Flexible(
+                          child: GestureDetector(
+                            onTap: widget.onOpen,
+                            child: SingleChildScrollView(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: [
+                                  for (final b in schedule)
+                                    _MyDayRow(
+                                      block: b,
+                                      isNow: b.startMinute <= nowMin &&
+                                          nowMin < b.endMinute,
+                                      isPast: b.endMinute <= nowMin,
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _myDayNote(String text) {
+    return InkWell(
+      onTap: widget.onOpen,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+        child: Text(
+          text,
+          style: const TextStyle(color: KColors.textDim, fontSize: 11),
+        ),
+      ),
+    );
+  }
+}
+
+/// The hard-stop banner: a home block is imminent (or in progress).
+/// The whole point of blocking school pickup is not looking up at 15:31 —
+/// this escalates from violet to red as the departure closes in.
+class _HomeCountdown extends StatelessWidget {
+  final DayPlanBlock block;
+  final int nowMin;
+
+  const _HomeCountdown({required this.block, required this.nowMin});
+
+  @override
+  Widget build(BuildContext context) {
+    final minutesLeft = block.startMinute - nowMin;
+    final started = minutesLeft <= 0;
+    final urgent = started || minutesLeft <= 10;
+    final fg = urgent ? KColors.red : KColors.violet;
+    final bg = urgent ? KColors.redDim : KColors.violetDim;
+    final headline = started
+        ? 'GO NOW'
+        : minutesLeft >= 60
+            ? 'LEAVE IN 1H'
+            : 'LEAVE IN ${minutesLeft}M';
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 2, 12, 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: bg,
+        border: Border.all(color: fg.withValues(alpha: 0.6)),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.directions_walk, size: 14, color: fg),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  headline,
+                  style: GoogleFonts.jetBrainsMono(
+                    color: fg,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                Text(
+                  '${formatMinute(block.startMinute)} · ${block.label}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style:
+                      const TextStyle(color: KColors.text, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MyDayRow extends StatelessWidget {
+  final DayPlanBlock block;
+  final bool isNow;
+  final bool isPast;
+
+  const _MyDayRow({
+    required this.block,
+    required this.isNow,
+    this.isPast = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final labelColor = isNow
+        ? KColors.text
+        : isPast
+            ? KColors.textMuted
+            : KColors.textDim;
+    return Container(
+      color: isNow
+          ? KColors.amber.withValues(alpha: 0.08)
+          : Colors.transparent,
+      padding: const EdgeInsets.fromLTRB(12, 3, 12, 3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 34,
+            child: Text(
+              formatMinute(block.startMinute),
+              style: GoogleFonts.jetBrainsMono(
+                color: isNow ? KColors.amber : KColors.textMuted,
+                fontSize: 9,
+                fontWeight: isNow ? FontWeight.w700 : FontWeight.w400,
+              ),
+            ),
+          ),
+          Container(
+            width: 2,
+            height: 14,
+            color: isPast
+                ? blockKindColor(block.kind).withValues(alpha: 0.4)
+                : blockKindColor(block.kind),
+            margin: const EdgeInsets.only(right: 6),
+          ),
+          Expanded(
+            child: Text(
+              block.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: labelColor,
+                fontSize: 11,
+                fontWeight: isNow ? FontWeight.w600 : FontWeight.w400,
+                // Strikethrough means DONE — a past block left unticked
+                // stays legible; it's tomorrow's carry-over signal.
+                decoration:
+                    block.done ? TextDecoration.lineThrough : null,
+                decorationColor: KColors.textMuted,
+              ),
+            ),
+          ),
+          if (isNow)
+            Container(
+              margin: const EdgeInsets.only(left: 4),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              decoration: BoxDecoration(
+                color: KColors.amber,
+                borderRadius: BorderRadius.circular(2),
+              ),
+              child: Text(
+                'NOW',
+                style: GoogleFonts.jetBrainsMono(
+                  color: KColors.bg,
+                  fontSize: 8,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -129,17 +481,19 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Deliberately tight — the pulse is the SMALL half of the panel now;
+    // My Day above it gets the space.
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 6),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 5),
       child: Row(
         children: [
-          Icon(icon, size: 13, color: KColors.textDim),
+          Icon(icon, size: 12, color: KColors.textDim),
           const SizedBox(width: 6),
           Text(
             label.toUpperCase(),
             style: const TextStyle(
               color: KColors.textDim,
-              fontSize: 11,
+              fontSize: 10,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.15,
             ),
@@ -339,6 +693,8 @@ class _PulseItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Condensed single-line rows: the trailing badge sits beside the
+    // label instead of under it, halving each row's height.
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -347,36 +703,31 @@ class _PulseItem extends StatelessWidget {
             bottom: BorderSide(color: KColors.border, width: 1),
           ),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
               width: 2,
-              height: 40,
+              height: 20,
               color: barColor,
-              margin: const EdgeInsets.only(right: 10),
+              margin: const EdgeInsets.only(right: 8),
             ),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      color: KColors.text,
-                      fontSize: 12,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (trailing != null) ...[
-                    const SizedBox(height: 3),
-                    trailing!,
-                  ],
-                ],
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: KColors.text,
+                  fontSize: 11,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
+            if (trailing != null) ...[
+              const SizedBox(width: 6),
+              trailing!,
+            ],
           ],
         ),
       ),
@@ -558,20 +909,11 @@ class _PlaybookStageSection extends StatelessWidget {
                 return _PulseItem(
                   label: 'Stage $stageIdx: ${current.name}',
                   barColor: barColor,
-                  trailing: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _statusLabel(status),
-                        style: TextStyle(color: barColor, fontSize: 10),
-                      ),
-                      if (totalCount > 0)
-                        Text(
-                          '$checkedCount of $totalCount checklist done',
-                          style: const TextStyle(
-                              color: KColors.textMuted, fontSize: 10),
-                        ),
-                    ],
+                  trailing: Text(
+                    totalCount > 0
+                        ? '${_statusLabel(status)} · $checkedCount/$totalCount'
+                        : _statusLabel(status),
+                    style: TextStyle(color: barColor, fontSize: 10),
                   ),
                   onTap: onOpenStage != null
                       ? () => onOpenStage!(stageId)

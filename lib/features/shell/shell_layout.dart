@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/analytics/keel_events.dart';
 import '../../core/cascade/cascade_factory.dart';
@@ -36,8 +37,13 @@ import '../journal/journal_history_view.dart';
 import '../journal/journal_overlay.dart';
 import '../playbook/playbook_view.dart';
 import '../raid/risk_form.dart';
+import '../raid/issue_form.dart';
+import '../raid/assumption_form.dart';
+import '../raid/dependency_form.dart';
 import '../status/status_view.dart';
 import '../charter/charter_view.dart';
+import '../finance/finance_view.dart';
+import '../helm/helm_view.dart';
 import '../charter/charter_migration_notice.dart';
 import '../../core/charter/charter_migration.dart';
 import '../../shared/widgets/update_banner.dart';
@@ -94,6 +100,8 @@ class _ShellLayoutState extends State<ShellLayout> {
   int? _raidInitialTab;
   bool _raidTriggerNew = false;
   bool _decisionsTriggerNew = false;
+  bool _financeTriggerNew = false;
+  int _financeNavSeq = 0;
 
   // Sequence counters — increment on every navigation action so ValueKey
   // forces a widget remount even when _selectedIndex doesn't change.
@@ -123,12 +131,118 @@ class _ShellLayoutState extends State<ShellLayout> {
   bool _charterMigrationTriggered = false;
 
   static const double _leftPanelWidth = 220.0;
-  static const double _rightPanelWidth = 280.0;
+  // Claude panel: user-resizable between min/max, with a one-click
+  // normal ↔ wide toggle. Width persists across sessions.
+  static const double _rightPanelDefaultWidth = 280.0;
+  static const double _rightPanelWideWidth = 560.0;
+  static const double _rightPanelMinWidth = 240.0;
+  static const double _rightPanelMaxWidth = 720.0;
+  static const String _rightPanelWidthPrefKey = 'keel_claude_panel_width';
+  double _rightPanelWidth = _rightPanelDefaultWidth;
+  bool _resizingRightPanel = false;
+
+  // Docked journal pane (Ctrl+Alt+J) — take meeting notes while
+  // navigating the app. The Ctrl+J modal overlay remains for quick capture.
+  static const double _journalDockDefaultWidth = 420.0;
+  static const double _journalDockMinWidth = 320.0;
+  static const double _journalDockMaxWidth = 720.0;
+  static const String _journalDockWidthPrefKey = 'keel_journal_dock_width';
+  bool _journalDockVisible = false;
+  double _journalDockWidth = _journalDockDefaultWidth;
+  bool _resizingJournalDock = false;
+  // Entry loaded in the dock (null = fresh note). The GlobalKey lets the
+  // shell ask the pane about unsaved text before swapping its content.
+  JournalEntry? _journalDockEntry;
+  final _journalDockKey = GlobalKey<JournalOverlayState>();
+
+  Future<void> _loadRightPanelWidth() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getDouble(_rightPanelWidthPrefKey);
+    final savedDock = prefs.getDouble(_journalDockWidthPrefKey);
+    if (!mounted) return;
+    setState(() {
+      if (saved != null) {
+        _rightPanelWidth =
+            saved.clamp(_rightPanelMinWidth, _rightPanelMaxWidth);
+      }
+      if (savedDock != null) {
+        _journalDockWidth =
+            savedDock.clamp(_journalDockMinWidth, _journalDockMaxWidth);
+      }
+    });
+  }
+
+  Future<void> _saveJournalDockWidth() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(_journalDockWidthPrefKey, _journalDockWidth);
+  }
+
+  /// Confirms discarding unsaved text in the docked note. True = proceed.
+  Future<bool> _confirmDiscardDockNote() async {
+    if (!(_journalDockKey.currentState?.hasUnsavedChanges ?? false)) {
+      return true;
+    }
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Unsaved note in split view'),
+        content: const Text(
+            'The docked journal has unsaved changes. Discard them?'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Keep editing')),
+          ElevatedButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Discard')),
+        ],
+      ),
+    );
+    return discard == true;
+  }
+
+  Future<void> _toggleJournalDock() async {
+    final projectId = context.read<ProjectProvider>().currentProjectId;
+    if (projectId == null) return;
+    // Hiding unmounts the pane — don't silently eat unsaved text.
+    if (_journalDockVisible && !await _confirmDiscardDockNote()) return;
+    setState(() => _journalDockVisible = !_journalDockVisible);
+  }
+
+  /// Opens (or reveals) the docked journal. With [entry], loads that
+  /// entry; with null, a fresh note.
+  Future<void> _openJournalDock({JournalEntry? entry}) async {
+    final projectId = context.read<ProjectProvider>().currentProjectId;
+    if (projectId == null) return;
+    final changingContent =
+        _journalDockVisible && _journalDockEntry?.id != entry?.id;
+    if (changingContent && !await _confirmDiscardDockNote()) return;
+    setState(() {
+      _journalDockEntry = entry;
+      _journalDockVisible = true;
+    });
+  }
+
+  Future<void> _saveRightPanelWidth() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(_rightPanelWidthPrefKey, _rightPanelWidth);
+  }
+
+  void _toggleRightPanelWide() {
+    setState(() {
+      // From anywhere below wide → jump to wide; from wide-ish → default.
+      _rightPanelWidth = _rightPanelWidth < _rightPanelWideWidth
+          ? _rightPanelWideWidth
+          : _rightPanelDefaultWidth;
+    });
+    _saveRightPanelWidth();
+  }
 
   @override
   void initState() {
     super.initState();
     _rootMenu = _buildRootMenu();
+    _loadRightPanelWidth();
     if (!kIsWeb) {
       HardwareKeyboard.instance.addHandler(_handleGlobalKey);
     }
@@ -259,6 +373,10 @@ class _ShellLayoutState extends State<ShellLayout> {
         return KeelSection.status;
       case 14:
         return KeelSection.charter;
+      case 15:
+        return KeelSection.finance;
+      case 16:
+        return KeelSection.helm;
       default:
         return null;
     }
@@ -267,6 +385,7 @@ class _ShellLayoutState extends State<ShellLayout> {
   _MenuNode _buildRootMenu() {
     return _MenuNode('Navigate to…', {
       ' ':  _ActionNode('Overview',   () { _selectedIndex = 0; }),
+      'h':  _ActionNode('Helm — my day', () { _selectedIndex = 16; }),
       't':  _MenuNode('Canvas', {
         'n': _ActionNode('Quick-capture', () {
           _selectedIndex = 1;
@@ -342,12 +461,24 @@ class _ShellLayoutState extends State<ShellLayout> {
           _selectedIndex = 2; _raidInitialTab = 3; _raidTriggerNew = false; _raidNavSeq++;
         }),
       }),
-      'j':  _ActionNode('Journal',    () { _selectedIndex = 10; }),
+      'j':  _MenuNode('Journal', {
+        'n': _ActionNode('New entry (split view)', () {
+          _openJournalDock();
+        }),
+        'q': _ActionNode('Quick capture', () { _openJournalOverlay(); }),
+      }, onEnter: () { _selectedIndex = 10; }),
       'P':  _ActionNode('Playbook',   () { _selectedIndex = 11; }),
       'g':  _ActionNode('Plan',       () { _selectedIndex = 12; }),
       's':  _ActionNode('Status',     () { _selectedIndex = 13; }),
       'S':  _ActionNode('Settings',   () { _selectedIndex = 9; }),
       'C':  _ActionNode('Charter',    () { _selectedIndex = 14; }),
+      'f':  _MenuNode('Finance', {
+        'n': _ActionNode('New budget line', () {
+          _selectedIndex = 15; _financeTriggerNew = true; _financeNavSeq++;
+        }),
+      }, onEnter: () {
+        _selectedIndex = 15; _financeTriggerNew = false; _financeNavSeq++;
+      }),
     });
   }
 
@@ -550,7 +681,10 @@ class _ShellLayoutState extends State<ShellLayout> {
 
     if (event.logicalKey == LogicalKeyboardKey.keyJ) {
       final isShift = HardwareKeyboard.instance.isShiftPressed;
-      if (isShift) {
+      final isAlt = HardwareKeyboard.instance.isAltPressed;
+      if (isAlt) {
+        _toggleJournalDock();
+      } else if (isShift) {
         setState(() => _selectedIndex = 10);
       } else {
         _openJournalOverlay();
@@ -715,6 +849,125 @@ class _ShellLayoutState extends State<ShellLayout> {
     });
   }
 
+  // ── Helm rail "open this item" actions ─────────────────────────────
+  // Rail items span EVERY project, so unlike the sidebar openers these
+  // first switch the active project, then land on the item's section
+  // with its form dialog open in view mode.
+
+  void _switchProjectForHelmItem(String projectId) {
+    final pp = context.read<ProjectProvider>();
+    if (pp.currentProjectId != projectId) pp.selectProjectById(projectId);
+  }
+
+  void _openActionFromHelm(ProjectAction a) {
+    _switchProjectForHelmItem(a.projectId);
+    final db = context.read<AppDatabase>();
+    setState(() => _selectedIndex = 5);
+    showDialog(
+      context: context,
+      builder: (_) => ActionFormDialog(
+        projectId: a.projectId,
+        db: db,
+        action: a,
+        startInViewMode: true,
+      ),
+    );
+  }
+
+  void _openRiskFromHelm(Risk r) {
+    _switchProjectForHelmItem(r.projectId);
+    final db = context.read<AppDatabase>();
+    setState(() {
+      _selectedIndex = 2;
+      _raidInitialTab = 0;
+      _raidNavSeq++;
+    });
+    showDialog(
+      context: context,
+      builder: (_) => RiskFormDialog(
+        projectId: r.projectId,
+        db: db,
+        risk: r,
+        startInViewMode: true,
+      ),
+    );
+  }
+
+  void _openIssueFromHelm(Issue i) {
+    _switchProjectForHelmItem(i.projectId);
+    final db = context.read<AppDatabase>();
+    setState(() {
+      _selectedIndex = 2;
+      _raidInitialTab = 2;
+      _raidNavSeq++;
+    });
+    showDialog(
+      context: context,
+      builder: (_) => IssueFormDialog(
+        projectId: i.projectId,
+        db: db,
+        issue: i,
+        startInViewMode: true,
+      ),
+    );
+  }
+
+  void _openAssumptionFromHelm(Assumption a) {
+    _switchProjectForHelmItem(a.projectId);
+    final db = context.read<AppDatabase>();
+    setState(() {
+      _selectedIndex = 2;
+      _raidInitialTab = 1;
+      _raidNavSeq++;
+    });
+    showDialog(
+      context: context,
+      builder: (_) => AssumptionFormDialog(
+        projectId: a.projectId,
+        db: db,
+        assumption: a,
+        startInViewMode: true,
+      ),
+    );
+  }
+
+  void _openDependencyFromHelm(ProgramDependency d) {
+    _switchProjectForHelmItem(d.projectId);
+    final db = context.read<AppDatabase>();
+    setState(() {
+      _selectedIndex = 2;
+      _raidInitialTab = 3;
+      _raidNavSeq++;
+    });
+    showDialog(
+      context: context,
+      builder: (_) => DependencyFormDialog(
+        projectId: d.projectId,
+        db: db,
+        dependency: d,
+        startInViewMode: true,
+      ),
+    );
+  }
+
+  void _openDecisionFromHelm(Decision d) {
+    _switchProjectForHelmItem(d.projectId);
+    final db = context.read<AppDatabase>();
+    setState(() {
+      _selectedIndex = 3;
+      _decisionsNavSeq++;
+    });
+    showDialog(
+      context: context,
+      builder: (_) => DecisionFormDialog(
+        projectId: d.projectId,
+        db: db,
+        decision: d,
+        startInViewMode: true,
+      ),
+    );
+  }
+
   void _showNewProjectDialog(BuildContext context) {
     final projectProvider = context.read<ProjectProvider>();
     final nameCtrl = TextEditingController();
@@ -816,7 +1069,10 @@ class _ShellLayoutState extends State<ShellLayout> {
       case 9:
         return const SettingsView();
       case 10:
-        return const JournalHistoryView();
+        return JournalHistoryView(
+          onNewEntryDocked: () => _openJournalDock(),
+          onOpenEntryDocked: (e) => _openJournalDock(entry: e),
+        );
       case 11:
         final focus = _playbookFocusStageId;
         // Consume so re-renders don't keep re-expanding.
@@ -834,6 +1090,19 @@ class _ShellLayoutState extends State<ShellLayout> {
         return const StatusView();
       case 14:
         return const CharterView();
+      case 15:
+        final doNew = _financeTriggerNew;
+        _financeTriggerNew = false;
+        return FinanceView(key: ValueKey(_financeNavSeq), triggerNew: doNew);
+      case 16:
+        return HelmView(
+          onOpenAction: _openActionFromHelm,
+          onOpenRisk: _openRiskFromHelm,
+          onOpenIssue: _openIssueFromHelm,
+          onOpenAssumption: _openAssumptionFromHelm,
+          onOpenDependency: _openDependencyFromHelm,
+          onOpenDecision: _openDecisionFromHelm,
+        );
       default:
         return ProgrammeView(
           onNavigateToCanvas: () => setState(() => _selectedIndex = 1),
@@ -913,6 +1182,8 @@ class _ShellLayoutState extends State<ShellLayout> {
                                     setState(() => _selectedIndex = 11),
                                 onNavigateToProgramme: () =>
                                     setState(() => _selectedIndex = 0),
+                                onNavigateToHelm: () =>
+                                    setState(() => _selectedIndex = 16),
                                 onOpenRisk: (r) =>
                                     _openRiskFromSidebar(r),
                                 onOpenDecision: (d) =>
@@ -994,6 +1265,56 @@ class _ShellLayoutState extends State<ShellLayout> {
                       ),
                     ),
 
+                    // Docked journal — running meeting notes beside the app
+                    if (_journalDockVisible && projectId != null) ...[
+                      Container(width: 1, color: KColors.border),
+                      MouseRegion(
+                        cursor: SystemMouseCursors.resizeColumn,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onHorizontalDragStart: (_) =>
+                              setState(() => _resizingJournalDock = true),
+                          onHorizontalDragUpdate: (d) => setState(() {
+                            _journalDockWidth =
+                                (_journalDockWidth - d.delta.dx).clamp(
+                                    _journalDockMinWidth,
+                                    _journalDockMaxWidth);
+                          }),
+                          onHorizontalDragEnd: (_) {
+                            setState(() => _resizingJournalDock = false);
+                            _saveJournalDockWidth();
+                          },
+                          child: Container(
+                            width: 5,
+                            color: _resizingJournalDock
+                                ? KColors.amber.withValues(alpha: 0.4)
+                                : Colors.transparent,
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        width: _journalDockWidth,
+                        child: JournalOverlay(
+                          key: _journalDockKey,
+                          projectId: projectId,
+                          db: context.read<AppDatabase>(),
+                          settings:
+                              context.read<SettingsProvider>().settings,
+                          // A stale entry from another project reverts
+                          // the dock to a fresh note.
+                          existingEntry:
+                              _journalDockEntry?.projectId == projectId
+                                  ? _journalDockEntry
+                                  : null,
+                          docked: true,
+                          onCloseDock: () => setState(() {
+                            _journalDockVisible = false;
+                            _journalDockEntry = null;
+                          }),
+                        ),
+                      ),
+                    ],
+
                     Container(width: 1, color: KColors.border),
 
                     // Right panel toggle
@@ -1005,13 +1326,48 @@ class _ShellLayoutState extends State<ShellLayout> {
                         isLeft: false,
                       ),
 
+                    // Drag handle — resize the Claude panel
+                    if (showRight)
+                      MouseRegion(
+                        cursor: SystemMouseCursors.resizeColumn,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onHorizontalDragStart: (_) =>
+                              setState(() => _resizingRightPanel = true),
+                          onHorizontalDragUpdate: (d) => setState(() {
+                            _rightPanelWidth =
+                                (_rightPanelWidth - d.delta.dx).clamp(
+                                    _rightPanelMinWidth,
+                                    _rightPanelMaxWidth);
+                          }),
+                          onHorizontalDragEnd: (_) {
+                            setState(() => _resizingRightPanel = false);
+                            _saveRightPanelWidth();
+                          },
+                          child: Container(
+                            width: 5,
+                            color: _resizingRightPanel
+                                ? KColors.amber.withValues(alpha: 0.4)
+                                : Colors.transparent,
+                          ),
+                        ),
+                      ),
+
                     // Right panel — Claude
                     AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
+                      duration: _resizingRightPanel
+                          ? Duration.zero
+                          : const Duration(milliseconds: 200),
                       curve: Curves.easeInOut,
                       width: showRight ? _rightPanelWidth : 0,
                       child: showRight
-                          ? const ClipRect(child: ClaudePanel())
+                          ? ClipRect(
+                              child: ClaudePanel(
+                                isWide: _rightPanelWidth >=
+                                    _rightPanelWideWidth,
+                                onToggleWidth: _toggleRightPanelWide,
+                              ),
+                            )
                           : const SizedBox.shrink(),
                     ),
                   ],

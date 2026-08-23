@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/database/database.dart';
+import '../../../core/finance/variance.dart';
 import '../../../shared/theme/keel_colors.dart';
+import '../../../shared/utils/money.dart';
 
 // ---------------------------------------------------------------------------
 // Pressure model
 // ---------------------------------------------------------------------------
 
-enum _PressureIcon { warning, decision, milestone, stalled }
+enum _PressureIcon { warning, decision, milestone, stalled, finance }
 
 class _Pressure {
   final _PressureIcon icon;
@@ -86,6 +88,42 @@ class _PressuresSectionState extends State<PressuresSection> {
             : 'At-risk dependency · ${d.owner ?? 'no owner'}',
         priority: 1,
       ));
+    }
+
+    // Priority 2: forecast variance beyond tolerance (Finance v2 — slots
+    // between blocked dependencies and stakeholder gaps per the spec).
+    final approvedBudget =
+        await db.financeDao.getApprovedBudget(projectId);
+    if (approvedBudget != null) {
+      final snapshots = await db.financeDao.getSnapshots(projectId);
+      final snapshot =
+          snapshots.where((s) => s.status == 'working').firstOrNull ??
+              snapshots.firstOrNull;
+      if (snapshot != null) {
+        final budgetTotals =
+            await db.financeDao.getTotals(approvedBudget.id);
+        final forecastTotals =
+            await db.financeDao.getForecastTotals(snapshot.id);
+        final bp = VarianceRow.bpOf(
+            forecastTotals.totalMinor - budgetTotals.totalMinor,
+            budgetTotals.totalMinor);
+        final tol = approvedBudget.varianceToleranceBp;
+        if (bp != null && bp.abs() > tol) {
+          final cur = approvedBudget.currency;
+          all.add(_Pressure(
+            icon: _PressureIcon.finance,
+            title: 'Forecast '
+                '${Money.formatMinorCompact(forecastTotals.totalMinor, cur)} '
+                'vs budget '
+                '${Money.formatMinorCompact(budgetTotals.totalMinor, cur)} '
+                '(${Money.formatBp(bp)})',
+            subtitle: 'Forecast variance beyond tolerance '
+                '±${Money.formatBp(tol).replaceAll('+', '')} '
+                '· ${snapshot.period} snapshot',
+            priority: 2,
+          ));
+        }
+      }
     }
 
     // Priority 2: critical stakeholder gaps
@@ -240,6 +278,8 @@ class _PressureRow extends StatelessWidget {
         return Icons.diamond_outlined;
       case _PressureIcon.stalled:
         return Icons.pause_circle_outline;
+      case _PressureIcon.finance:
+        return Icons.trending_up;
     }
   }
 

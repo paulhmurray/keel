@@ -41,6 +41,9 @@ class JournalLinker {
         meetingContext: Value(existing.meetingContext),
         parsed: const Value(true),
         confirmedAt: Value(DateTime.now()),
+        // The whole current body is now covered by a completed parse —
+        // future edits only re-parse text added after this point.
+        lastParsedBody: Value(existing.body),
         createdAt: Value(existing.createdAt),
         updatedAt: Value(DateTime.now()),
       ));

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
 import 'package:drift/drift.dart' show Value;
 import '../../core/database/database.dart';
+import '../../core/journal/journal_incremental.dart';
 import '../../core/journal/journal_parser.dart';
 import '../../core/journal/journal_linker.dart';
 import '../../core/llm/llm_client.dart';
@@ -25,6 +26,12 @@ class JournalOverlay extends StatefulWidget {
   /// Pre-select a series for a new entry (used by "New entry in series").
   final String? initialSeriesId;
 
+  /// Docked mode: rendered inside the shell's right-side journal pane
+  /// instead of as a modal. Save/parse/review cycles return to the
+  /// running note rather than closing; only [onCloseDock] closes it.
+  final bool docked;
+  final VoidCallback? onCloseDock;
+
   const JournalOverlay({
     super.key,
     required this.projectId,
@@ -32,13 +39,15 @@ class JournalOverlay extends StatefulWidget {
     required this.settings,
     this.existingEntry,
     this.initialSeriesId,
+    this.docked = false,
+    this.onCloseDock,
   });
 
   @override
-  State<JournalOverlay> createState() => _JournalOverlayState();
+  State<JournalOverlay> createState() => JournalOverlayState();
 }
 
-class _JournalOverlayState extends State<JournalOverlay> {
+class JournalOverlayState extends State<JournalOverlay> {
   _OverlayPhase _phase = _OverlayPhase.editor;
   late TextEditingController _titleCtrl;
   late TextEditingController _bodyCtrl;
@@ -54,11 +63,21 @@ class _JournalOverlayState extends State<JournalOverlay> {
   String? _seriesId;
   List<JournalSeries> _allSeries = const [];
 
+  // In docked mode the widget outlives save cycles, so parse state must
+  // also be tracked locally, not just on the (stale) existingEntry.
+  bool _parsedThisSession = false;
+
   bool get _hasChanges =>
       _bodyCtrl.text.trim() != _originalBody.trim() ||
       _titleCtrl.text.trim() != _originalTitle.trim();
 
-  bool get _alreadyParsed => widget.existingEntry?.parsed ?? false;
+  /// True when the docked note has typed-but-unsaved content — the shell
+  /// checks this before swapping the dock to a different entry.
+  bool get hasUnsavedChanges =>
+      _hasChanges && _bodyCtrl.text.trim().isNotEmpty;
+
+  bool get _alreadyParsed =>
+      _parsedThisSession || (widget.existingEntry?.parsed ?? false);
 
   @override
   void initState() {
@@ -81,6 +100,40 @@ class _JournalOverlayState extends State<JournalOverlay> {
     final all =
         await widget.db.journalSeriesDao.getForProject(widget.projectId);
     if (mounted) setState(() => _allSeries = all);
+  }
+
+  @override
+  void didUpdateWidget(JournalOverlay old) {
+    super.didUpdateWidget(old);
+    // Docked pane persists across shell rebuilds; when the shell points
+    // it at a different entry (or project), reload the editor for it.
+    if (widget.docked &&
+        (old.existingEntry?.id != widget.existingEntry?.id ||
+            old.projectId != widget.projectId)) {
+      _resetForEntry();
+      if (old.projectId != widget.projectId) {
+        _loadPersons();
+        _loadGlossaryEntries();
+        _loadSeries();
+      }
+    }
+  }
+
+  void _resetForEntry() {
+    final e = widget.existingEntry;
+    setState(() {
+      _originalBody = e?.body ?? '';
+      _originalTitle = e?.title ?? '';
+      _titleCtrl.text = _originalTitle;
+      _bodyCtrl.text = _originalBody;
+      _savedEntryId = e?.id;
+      _seriesId = e?.seriesId ?? widget.initialSeriesId;
+      _parsedThisSession = false;
+      _deltas = [];
+      _phase = _OverlayPhase.editor;
+    });
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _bodyFocus.requestFocus());
   }
 
   @override
@@ -165,7 +218,7 @@ class _JournalOverlayState extends State<JournalOverlay> {
   Future<void> _saveAndParse() async {
     final body = _bodyCtrl.text.trim();
     if (body.isEmpty) {
-      _close();
+      if (!widget.docked) _close();
       return;
     }
 
@@ -193,7 +246,36 @@ class _JournalOverlayState extends State<JournalOverlay> {
           updatedAt: Value(now),
         ));
       }
-      _close();
+      _finishCycle();
+      return;
+    }
+
+    // What was parsed last time — read BEFORE overwriting the row.
+    final dbEntry = await widget.db.journalDao.getEntryById(entryId);
+
+    // Incremental parse: a running note only re-parses text not covered
+    // by the last parse. "Re-parse" forces the full body through again.
+    final textToParse = _forceReparse
+        ? body
+        : unparsedText(lastParsedBody: dbEntry?.lastParsedBody, body: body);
+
+    // Nothing new to parse (e.g. whitespace-only edits to parsed text):
+    // save the edits, keep the parsed state, and close without review.
+    if (textToParse.isEmpty && dbEntry != null) {
+      await widget.db.journalDao.upsertEntry(JournalEntriesCompanion(
+        id: Value(entryId),
+        projectId: Value(widget.projectId),
+        title: Value(title),
+        body: Value(body),
+        entryDate: Value(_entryDate),
+        parsed: Value(dbEntry.parsed),
+        confirmedAt: Value(dbEntry.confirmedAt),
+        lastParsedBody: Value(body),
+        seriesId: Value(_seriesId),
+        createdAt: Value(dbEntry.createdAt),
+        updatedAt: Value(now),
+      ));
+      _finishCycle();
       return;
     }
 
@@ -222,7 +304,7 @@ class _JournalOverlayState extends State<JournalOverlay> {
     }
 
     final parser = JournalParser(llmClient: llmClient);
-    final deltas = await parser.parse(body);
+    final deltas = await parser.parse(textToParse);
 
     // Filter out items already extracted from this entry in a previous parse
     final filteredDeltas = await _filterAlreadyExtracted(entryId, deltas);
@@ -291,7 +373,7 @@ class _JournalOverlayState extends State<JournalOverlay> {
 
   Future<void> _commitAndClose() async {
     if (_savedEntryId == null) {
-      _close();
+      _finishCycle();
       return;
     }
     final linker = JournalLinker(
@@ -300,11 +382,32 @@ class _JournalOverlayState extends State<JournalOverlay> {
       entryId: _savedEntryId!,
     );
     await linker.commitDeltas(_deltas);
-    if (mounted) _close();
+    if (mounted) _finishCycle();
   }
 
   void _close() {
-    Navigator.of(context).pop();
+    if (widget.docked) {
+      widget.onCloseDock?.call();
+    } else {
+      Navigator.of(context).pop();
+    }
+  }
+
+  /// Ends a save/parse cycle. Modal: closes the overlay. Docked: stays on
+  /// the running note — resets to the editor with the saved text as the
+  /// new baseline, ready for the next addition.
+  void _finishCycle() {
+    if (!widget.docked) {
+      _close();
+      return;
+    }
+    setState(() {
+      _phase = _OverlayPhase.editor;
+      _deltas = [];
+      _originalBody = _bodyCtrl.text;
+      _originalTitle = _titleCtrl.text;
+      _parsedThisSession = true;
+    });
   }
 
   void _attemptClose() {
@@ -348,6 +451,22 @@ class _JournalOverlayState extends State<JournalOverlay> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.docked) {
+      // Docked: fill the shell's side pane — no modal chrome.
+      return Focus(
+        onKeyEvent: _handleKey,
+        child: Material(
+          color: KColors.bg,
+          child: Column(
+            children: [
+              _buildTitleBar(),
+              Expanded(child: _buildContent()),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Focus(
       onKeyEvent: _handleKey,
       child: Material(
@@ -398,15 +517,18 @@ class _JournalOverlayState extends State<JournalOverlay> {
         children: [
           const Icon(Icons.menu_book_outlined, size: 14, color: KColors.amber),
           const SizedBox(width: 8),
-          Text(
-            _phase == _OverlayPhase.reviewing
-                ? 'REVIEW CHANGES — ${_formatDisplayDate(_entryDate)}'
-                : 'JOURNAL — ${_formatDisplayDate(_entryDate)}',
-            style: const TextStyle(
-              color: KColors.amber,
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.08,
+          Flexible(
+            child: Text(
+              _phase == _OverlayPhase.reviewing
+                  ? 'REVIEW CHANGES — ${_formatDisplayDate(_entryDate)}'
+                  : 'JOURNAL — ${_formatDisplayDate(_entryDate)}',
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: KColors.amber,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.08,
+              ),
             ),
           ),
           const Spacer(),
@@ -448,10 +570,11 @@ class _JournalOverlayState extends State<JournalOverlay> {
                 ),
               ),
             const SizedBox(width: 8),
-            const Text(
-              'Cmd+Enter to save · Esc to close',
-              style: TextStyle(color: KColors.textMuted, fontSize: 10),
-            ),
+            if (!widget.docked)
+              const Text(
+                'Cmd+Enter to save · Esc to close',
+                style: TextStyle(color: KColors.textMuted, fontSize: 10),
+              ),
           ],
           const SizedBox(width: 16),
           InkWell(
@@ -501,6 +624,16 @@ class _JournalOverlayState extends State<JournalOverlay> {
         );
 
       case _OverlayPhase.reviewing:
+        // Docked pane is too narrow for the side-by-side review — the
+        // delta panel takes the whole pane; confirming or dismissing
+        // returns to the running note.
+        if (widget.docked) {
+          return JournalDeltaPanel(
+            deltas: _deltas,
+            onConfirmAll: _confirmAll,
+            onDismiss: _commitAndClose,
+          );
+        }
         return Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

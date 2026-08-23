@@ -4,9 +4,11 @@ import 'package:drift/drift.dart' show Value;
 
 import '../../core/analytics/keel_events.dart';
 import '../../core/database/database.dart';
+import '../../core/raid/raid_conversion_service.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/widgets/dropdown_field.dart';
 import '../../shared/widgets/person_picker_field.dart';
+import 'raid_convert_button.dart';
 
 class AssumptionFormDialog extends StatefulWidget {
   final String projectId;
@@ -175,7 +177,20 @@ class _AssumptionFormDialogState extends State<AssumptionFormDialog> {
     final isEdit = widget.assumption != null;
 
     return AlertDialog(
-      title: Text(isEdit ? 'Edit Assumption' : 'New Assumption'),
+      title: Row(
+        children: [
+          Text(isEdit ? 'Edit Assumption' : 'New Assumption'),
+          const Spacer(),
+          if (isEdit)
+            RaidConvertButton(
+              db: widget.db,
+              from: RaidKind.assumption,
+              itemId: widget.assumption!.id,
+              itemRef: widget.assumption!.ref,
+              sourceProjectId: widget.assumption!.sourceProjectId,
+            ),
+        ],
+      ),
       content: SizedBox(
         width: 460,
         child: Form(

@@ -130,7 +130,7 @@ class StatusHtmlExporter {
 
     // Upcoming milestones
     if (data.upcomingMilestones.isNotEmpty) {
-      sb.writeln('<h2>Upcoming Milestones (next 30 days)</h2>');
+      sb.writeln('<h2>Upcoming Milestones (next 3 months)</h2>');
       sb.writeln('<div class="card">');
       for (final m in data.upcomingMilestones) {
         final icon = switch (m.activityType) {

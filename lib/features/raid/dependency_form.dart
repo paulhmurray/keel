@@ -4,10 +4,12 @@ import 'package:drift/drift.dart' show Value;
 
 import '../../core/analytics/keel_events.dart';
 import '../../core/database/database.dart';
+import '../../core/raid/raid_conversion_service.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/widgets/dropdown_field.dart';
 import '../../shared/widgets/date_picker_field.dart';
 import '../../shared/widgets/person_picker_field.dart';
+import 'raid_convert_button.dart';
 
 class DependencyFormDialog extends StatefulWidget {
   final String projectId;
@@ -191,7 +193,20 @@ class _DependencyFormDialogState extends State<DependencyFormDialog> {
     final isEdit = widget.dependency != null;
 
     return AlertDialog(
-      title: Text(isEdit ? 'Edit Dependency' : 'New Dependency'),
+      title: Row(
+        children: [
+          Text(isEdit ? 'Edit Dependency' : 'New Dependency'),
+          const Spacer(),
+          if (isEdit)
+            RaidConvertButton(
+              db: widget.db,
+              from: RaidKind.dependency,
+              itemId: widget.dependency!.id,
+              itemRef: widget.dependency!.ref,
+              sourceProjectId: widget.dependency!.sourceProjectId,
+            ),
+        ],
+      ),
       content: SizedBox(
         width: 460,
         child: Form(

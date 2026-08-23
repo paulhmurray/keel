@@ -8,6 +8,7 @@ class KeybindingsTable extends StatelessWidget {
     // --- Navigation ---
     ('Leader key (Spacebar)', 'SPC'),
     ('  → Programme overview', 'SPC SPC'),
+    ('  → Helm — my day', 'SPC h'),
     ('  → Canvas', 'SPC t'),
     ('  → Canvas › Quick-capture', 'SPC t n'),
     ('  → Plan (Gantt)', 'SPC g'),
@@ -35,9 +36,12 @@ class KeybindingsTable extends StatelessWidget {
     ('  → Context › Glossary › New term', 'SPC c g n'),
     ('  → Reports', 'SPC R'),
     ('  → Journal', 'SPC j'),
+    ('  → Journal › New entry (split view)', 'SPC j n'),
+    ('  → Journal › Quick capture', 'SPC j q'),
     ('  → Playbook', 'SPC P'),
     // --- Global shortcuts ---
-    ('Open Journal (new entry)', 'Ctrl+j'),
+    ('Journal quick note (overlay)', 'Ctrl+j'),
+    ('Journal split view (toggle)', 'Ctrl+Alt+j'),
     ('Open Journal (history)', 'Ctrl+Shift+j'),
     ('Save journal entry', 'Ctrl+Enter'),
     ('Open Inbox', 'Ctrl+i'),

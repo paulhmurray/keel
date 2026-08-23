@@ -1,6 +1,7 @@
 part of '../database.dart';
 
-@DriftAccessor(tables: [Risks, Assumptions, Issues, ProgramDependencies])
+@DriftAccessor(
+    tables: [Risks, Assumptions, Issues, ProgramDependencies, RaidItemLinks])
 class RaidDao extends DatabaseAccessor<AppDatabase> with _$RaidDaoMixin {
   RaidDao(super.db);
 
@@ -245,4 +246,40 @@ class RaidDao extends DatabaseAccessor<AppDatabase> with _$RaidDaoMixin {
                 t.escalatedAt.isNotNull() &
                 t.sourceProjectId.isNull()))
           .get();
+
+  // ── Cross-references between RAID items / decisions ───────────────────
+
+  Future<List<RaidItemLink>> getLinksForProject(String projectId) {
+    return (select(raidItemLinks)
+          ..where((t) => t.projectId.equals(projectId)))
+        .get();
+  }
+
+  /// Links touching [itemId], in either direction.
+  Future<List<RaidItemLink>> getLinksForItem(String itemId) {
+    return (select(raidItemLinks)
+          ..where((t) => t.fromId.equals(itemId) | t.toId.equals(itemId)))
+        .get();
+  }
+
+  Stream<List<RaidItemLink>> watchLinksForItem(String itemId) {
+    return (select(raidItemLinks)
+          ..where((t) => t.fromId.equals(itemId) | t.toId.equals(itemId)))
+        .watch();
+  }
+
+  Future<void> insertItemLink(RaidItemLinksCompanion link) {
+    return into(raidItemLinks).insertOnConflictUpdate(link);
+  }
+
+  Future<int> deleteItemLink(String id) {
+    return (delete(raidItemLinks)..where((t) => t.id.equals(id))).go();
+  }
+
+  /// Removes every link touching [itemId] — call when the item is deleted.
+  Future<int> deleteLinksForItem(String itemId) {
+    return (delete(raidItemLinks)
+          ..where((t) => t.fromId.equals(itemId) | t.toId.equals(itemId)))
+        .go();
+  }
 }

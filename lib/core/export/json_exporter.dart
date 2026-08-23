@@ -43,6 +43,7 @@ class JsonExporter {
     final risks = await db.raidDao.getRisksForProject(projectId);
     final assumptions = await db.raidDao.getAssumptionsForProject(projectId);
     final issues = await db.raidDao.getIssuesForProject(projectId);
+    final raidLinks = await db.raidDao.getLinksForProject(projectId);
     final deps = await db.raidDao.getDependenciesForProject(projectId);
     final decisions = await db.decisionsDao.getDecisionsForProject(projectId);
     final persons = await db.peopleDao.getPersonsForProject(projectId);
@@ -80,6 +81,11 @@ class JsonExporter {
         await db.canvasCardsDao.getSequencesForProject(projectId);
     final canvasTemplates =
         await db.canvasTemplatesDao.getTemplatesForProject(projectId);
+    // Helm day plans — GLOBAL (the user's day spans every project), so
+    // the full set rides in every project's blob. Import is guarded
+    // per-day by updatedAt on the importing side.
+    final dayPlans = await db.dayPlanDao.getAllPlans();
+    final dayPlanBlocks = await db.dayPlanDao.getAllBlocks();
     // Programme links owned by this entity — carries the connection to
     // linked projects/programmes AND the per-link encryption secret, so
     // the owner's portfolio reconnects on a new machine. The secret rides
@@ -224,7 +230,10 @@ class JsonExporter {
             .map((i) => {
                   'id': i.id,
                   'ref': i.ref,
+                  'title': i.title,
                   'description': i.description,
+                  'impact_statement': i.impactStatement,
+                  'escalation_required': i.escalationRequired,
                   'owner': i.owner,
                   'due_date': i.dueDate,
                   'priority': i.priority,
@@ -253,6 +262,16 @@ class JsonExporter {
                   'source_project_id': d.sourceProjectId,
                   'created_at': d.createdAt.toIso8601String(),
                   'updated_at': d.updatedAt.toIso8601String(),
+                })
+            .toList(),
+        'item_links': raidLinks
+            .map((l) => {
+                  'id': l.id,
+                  'from_type': l.fromType,
+                  'from_id': l.fromId,
+                  'to_type': l.toType,
+                  'to_id': l.toId,
+                  'created_at': l.createdAt.toIso8601String(),
                 })
             .toList(),
       },
@@ -391,6 +410,7 @@ class JsonExporter {
                 'linked_action_id': a.linkedActionId,
                 'plan_activity_id': a.planActivityId,
                 'parent_action_id': a.parentActionId,
+                'is_parent': a.isParent,
                 'created_at': a.createdAt.toIso8601String(),
                 'updated_at': a.updatedAt.toIso8601String(),
               })
@@ -453,6 +473,7 @@ class JsonExporter {
                   'entry_date': e.entryDate,
                   'meeting_context': e.meetingContext,
                   'parsed': e.parsed,
+                  'last_parsed_body': e.lastParsedBody,
                   'confirmed_at': e.confirmedAt?.toIso8601String(),
                   'is_favourite': e.isFavourite,
                   'series_id': e.seriesId,
@@ -578,6 +599,7 @@ class JsonExporter {
                   'owner': a.owner,
                   'owner_id': a.ownerId,
                   'activity_type': a.activityType,
+                  'parent_activity_id': a.parentActivityId,
                   'start_month': a.startMonth,
                   'end_month': a.endMonth,
                   'start_date': a.startDate,
@@ -696,6 +718,141 @@ class JsonExporter {
               'created_at': l.createdAt.toIso8601String(),
             })
         .toList();
+
+    // Finance — categories, versioned budgets with integer-minor-unit
+    // lines, and the audit trail. The audit log travels in the payload
+    // so history survives a machine move; import must never re-audit.
+    final costCategories = await db.financeDao.getCategories(projectId);
+    final budgets = await db.financeDao.getBudgets(projectId);
+    final budgetLines = <BudgetLine>[
+      for (final b in budgets) ...await db.financeDao.getLines(b.id),
+    ];
+    final forecastSnapshots = await db.financeDao.getSnapshots(projectId);
+    final forecastLines = <ForecastLine>[
+      for (final s in forecastSnapshots)
+        ...await db.financeDao.getForecastLines(s.id),
+    ];
+    final actualLines = await db.financeDao.getActuals(projectId);
+    final financeAudit = await db.financeDao.getAuditLog(projectId);
+    data['finance'] = {
+      'cost_categories': costCategories
+          .map((c) => {
+                'id': c.id,
+                'name': c.name,
+                'sort_order': c.sortOrder,
+                'created_at': c.createdAt.toIso8601String(),
+                'updated_at': c.updatedAt.toIso8601String(),
+              })
+          .toList(),
+      'budgets': budgets
+          .map((b) => {
+                'id': b.id,
+                'name': b.name,
+                'status': b.status,
+                'approved_by': b.approvedBy,
+                'approved_at': b.approvedAt?.toIso8601String(),
+                'currency': b.currency,
+                'funding_source': b.fundingSource,
+                'notes': b.notes,
+                'variance_tolerance_bp': b.varianceToleranceBp,
+                'created_at': b.createdAt.toIso8601String(),
+                'updated_at': b.updatedAt.toIso8601String(),
+              })
+          .toList(),
+      'budget_lines': budgetLines
+          .map((l) => {
+                'id': l.id,
+                'budget_id': l.budgetId,
+                'cost_category_id': l.costCategoryId,
+                'workstream_id': l.workstreamId,
+                'financial_year': l.financialYear,
+                'amount_minor': l.amountMinor,
+                'notes': l.notes,
+                'created_at': l.createdAt.toIso8601String(),
+                'updated_at': l.updatedAt.toIso8601String(),
+              })
+          .toList(),
+      'forecast_snapshots': forecastSnapshots
+          .map((s) => {
+                'id': s.id,
+                'period': s.period,
+                'status': s.status,
+                'submitted_at': s.submittedAt?.toIso8601String(),
+                'created_at': s.createdAt.toIso8601String(),
+                'updated_at': s.updatedAt.toIso8601String(),
+              })
+          .toList(),
+      'forecast_lines': forecastLines
+          .map((l) => {
+                'id': l.id,
+                'snapshot_id': l.snapshotId,
+                'cost_category_id': l.costCategoryId,
+                'workstream_id': l.workstreamId,
+                'financial_year': l.financialYear,
+                'amount_minor': l.amountMinor,
+                'notes': l.notes,
+                'created_at': l.createdAt.toIso8601String(),
+                'updated_at': l.updatedAt.toIso8601String(),
+              })
+          .toList(),
+      'actual_lines': actualLines
+          .map((l) => {
+                'id': l.id,
+                'period': l.period,
+                'cost_category_id': l.costCategoryId,
+                'workstream_id': l.workstreamId,
+                'amount_minor': l.amountMinor,
+                'source': l.source,
+                'source_ref': l.sourceRef,
+                'entered_by': l.enteredBy,
+                'notes': l.notes,
+                'created_at': l.createdAt.toIso8601String(),
+                'updated_at': l.updatedAt.toIso8601String(),
+              })
+          .toList(),
+      'audit_log': financeAudit
+          .map((a) => {
+                'id': a.id,
+                'entity_type': a.entityType,
+                'entity_id': a.entityId,
+                'field': a.field,
+                'old_value': a.oldValue,
+                'new_value': a.newValue,
+                'changed_by': a.changedBy,
+                'changed_at': a.changedAt.toIso8601String(),
+              })
+          .toList(),
+    };
+
+    // Helm day plans — see the comment where they're gathered above.
+    data['day_plans'] = {
+      'plans': dayPlans
+          .map((p) => {
+                'id': p.id,
+                'plan_date': p.planDate,
+                'current_revision': p.currentRevision,
+                'revision_starts_json': p.revisionStartsJson,
+                'created_at': p.createdAt.toIso8601String(),
+                'updated_at': p.updatedAt.toIso8601String(),
+              })
+          .toList(),
+      'blocks': dayPlanBlocks
+          .map((b) => {
+                'id': b.id,
+                'day_plan_id': b.dayPlanId,
+                'revision': b.revision,
+                'start_minute': b.startMinute,
+                'end_minute': b.endMinute,
+                'kind': b.kind,
+                'label': b.label,
+                'project_id': b.projectId,
+                'linked_action_id': b.linkedActionId,
+                'done': b.done,
+                'created_at': b.createdAt.toIso8601String(),
+                'updated_at': b.updatedAt.toIso8601String(),
+              })
+          .toList(),
+    };
 
     // Playbook — optional; only exported when a playbook is attached
     final projectPlaybook =

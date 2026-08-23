@@ -892,23 +892,34 @@ class _JournalEditorState extends State<JournalEditor> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Title field
-          TextField(
-            controller: widget.titleController,
-            style: const TextStyle(
-              color: KColors.text,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-            decoration: const InputDecoration(
-              hintText: 'Entry title (optional)',
-              hintStyle: TextStyle(color: KColors.textMuted, fontSize: 18),
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(vertical: 4),
-              prefixIcon: Padding(
-                padding: EdgeInsets.only(right: 8),
-                child: Icon(Icons.edit_note_outlined,
-                    color: KColors.amber, size: 20),
+          // Title field — Tab (or Enter) drops straight into the body.
+          Focus(
+            onKeyEvent: (node, event) {
+              if (event is KeyDownEvent &&
+                  event.logicalKey == LogicalKeyboardKey.tab) {
+                widget.bodyFocusNode.requestFocus();
+                return KeyEventResult.handled;
+              }
+              return KeyEventResult.ignored;
+            },
+            child: TextField(
+              controller: widget.titleController,
+              onSubmitted: (_) => widget.bodyFocusNode.requestFocus(),
+              style: const TextStyle(
+                color: KColors.text,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+              decoration: const InputDecoration(
+                hintText: 'Entry title (optional)',
+                hintStyle: TextStyle(color: KColors.textMuted, fontSize: 18),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(vertical: 4),
+                prefixIcon: Padding(
+                  padding: EdgeInsets.only(right: 8),
+                  child: Icon(Icons.edit_note_outlined,
+                      color: KColors.amber, size: 20),
+                ),
               ),
             ),
           ),
@@ -1040,21 +1051,22 @@ class _JournalEditorState extends State<JournalEditor> {
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Row(
               children: [
-                if (widget.vimMode) ...[
-                  _VimModeBadge(kind: _vimKind),
-                  const SizedBox(width: 12),
-                ] else ...[
-                  _buildHint('⌘↵', 'Save & parse'),
-                  const SizedBox(width: 16),
-                  _buildHint('/', 'Commands'),
-                  const SizedBox(width: 16),
-                  _buildHint('@', 'Person'),
-                  const SizedBox(width: 16),
-                  _buildHint('#', 'Glossary'),
-                  const SizedBox(width: 16),
-                  _buildHint('↑↓', 'Navigate menu'),
-                ],
-                const Spacer(),
+                // Hints wrap on narrow surfaces (e.g. the docked pane).
+                Expanded(
+                  child: widget.vimMode
+                      ? Row(children: [_VimModeBadge(kind: _vimKind)])
+                      : Wrap(
+                          spacing: 16,
+                          runSpacing: 4,
+                          children: [
+                            _buildHint('⌘↵', 'Save & parse'),
+                            _buildHint('/', 'Commands'),
+                            _buildHint('@', 'Person'),
+                            _buildHint('#', 'Glossary'),
+                            _buildHint('↑↓', 'Navigate menu'),
+                          ],
+                        ),
+                ),
                 ListenableBuilder(
                   listenable: widget.bodyController,
                   builder: (context, _) => Text(

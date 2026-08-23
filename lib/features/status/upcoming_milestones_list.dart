@@ -24,7 +24,7 @@ class UpcomingMilestonesList extends StatelessWidget {
     if (milestones.isEmpty) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 8),
-        child: Text('No milestones in the next 30 days.',
+        child: Text('No milestones in the next 3 months.',
             style: TextStyle(color: KColors.textMuted, fontSize: 12)),
       );
     }

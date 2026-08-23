@@ -484,6 +484,66 @@ void main() {
       expect(imported!.kind, 'programme');
     });
 
+    test('a pre-kind blob (no kind key) never demotes an existing programme',
+        () async {
+      // Blob pushed by an old build: no 'kind' / 'parent_programme_id' keys.
+      // Pulling it over an existing programme must not flip it to a project
+      // (that flip kills the PROG badge and the programme navigation).
+      await db.projectDao.insertProject(ProjectsCompanion.insert(
+        id: 'prog-old',
+        name: 'Portfolio',
+        kind: const Value('programme'),
+      ));
+      final data = _baseExport(projectId: 'prog-old', projectName: 'Portfolio');
+      await JsonImporter.importFromString(jsonEncode(data), db);
+
+      final after = await db.projectDao.getProjectById('prog-old');
+      expect(after!.kind, 'programme');
+    });
+
+    test('a blob claiming kind=project never demotes an existing programme',
+        () async {
+      // A demoted blob can end up on the server (pushed by a machine that
+      // itself imported a pre-kind blob). Kind is immutable in the UI, so
+      // an existing programme row always wins over incoming "project".
+      await db.projectDao.insertProject(ProjectsCompanion.insert(
+        id: 'prog-dem',
+        name: 'Portfolio',
+        kind: const Value('programme'),
+      ));
+      final data = _baseExport(projectId: 'prog-dem', projectName: 'Portfolio');
+      (data['project'] as Map<String, dynamic>)['kind'] = 'project';
+      await JsonImporter.importFromString(jsonEncode(data), db);
+
+      final after = await db.projectDao.getProjectById('prog-dem');
+      expect(after!.kind, 'programme');
+    });
+
+    test('a pre-kind blob keeps the existing parent programme linkage',
+        () async {
+      await db.projectDao.insertProject(ProjectsCompanion.insert(
+        id: 'proj-linked',
+        name: 'Child',
+        parentProgrammeId: const Value('prog-parent'),
+      ));
+      final data =
+          _baseExport(projectId: 'proj-linked', projectName: 'Child');
+      await JsonImporter.importFromString(jsonEncode(data), db);
+
+      final after = await db.projectDao.getProjectById('proj-linked');
+      expect(after!.parentProgrammeId, 'prog-parent');
+    });
+
+    test('a fresh import of a pre-kind blob defaults to kind=project',
+        () async {
+      final data = _baseExport(projectId: 'p-fresh', projectName: 'Fresh');
+      await JsonImporter.importFromString(jsonEncode(data), db);
+
+      final after = await db.projectDao.getProjectById('p-fresh');
+      expect(after!.kind, 'project');
+      expect(after.parentProgrammeId, isNull);
+    });
+
     test('a programme link + its encryption secret survive the round-trip',
         () async {
       await db.projectDao.insertProject(ProjectsCompanion.insert(
@@ -593,6 +653,101 @@ void main() {
       expect(action!.escalatedAt, esc);
       final decision = await fresh.decisionsDao.getDecisionById('d-esc');
       expect(decision!.escalatedAt, esc);
+    });
+
+    test(
+        'issue title/impact/escalation flag and raid item links survive '
+        'an export → import round trip', () async {
+      const projectId = 'p-issue-rt';
+      await db.into(db.projects).insert(ProjectsCompanion.insert(
+            id: projectId,
+            name: 'RT',
+          ));
+      await db.raidDao.insertIssue(IssuesCompanion(
+        id: const Value('i-rich'),
+        projectId: const Value(projectId),
+        ref: const Value('I1'),
+        title: const Value('No data stewardship exists'),
+        description: const Value(
+            'No owner for data quality or source-of-truth decisions'),
+        impactStatement: const Value(
+            'Integration design cannot be confirmed until authoritative '
+            'data sources are established'),
+        escalationRequired: const Value(true),
+      ));
+      await db.raidDao.insertDependency(ProgramDependenciesCompanion(
+        id: const Value('dep-1'),
+        projectId: const Value(projectId),
+        ref: const Value('D1'),
+        description: const Value('Authoritative source of truth confirmed'),
+      ));
+      await db.raidDao.insertItemLink(RaidItemLinksCompanion(
+        id: const Value('link-1'),
+        projectId: const Value(projectId),
+        fromType: const Value('issue'),
+        fromId: const Value('i-rich'),
+        toType: const Value('dependency'),
+        toId: const Value('dep-1'),
+      ));
+
+      final jsonStr = await JsonExporter.exportProjectToString(
+          projectId: projectId, db: db);
+      final fresh = AppDatabase.memory();
+      addTearDown(fresh.close);
+      await JsonImporter.importFromString(jsonStr, fresh);
+
+      final issue = await fresh.raidDao.getIssueById('i-rich');
+      expect(issue!.title, 'No data stewardship exists');
+      expect(issue.impactStatement, contains('authoritative'));
+      expect(issue.escalationRequired, isTrue);
+
+      final links = await fresh.raidDao.getLinksForItem('i-rich');
+      expect(links, hasLength(1));
+      expect(links.single.toId, 'dep-1');
+      expect(links.single.toType, 'dependency');
+    });
+
+    test('WBS task nesting (parent_activity_id) survives a round trip',
+        () async {
+      const projectId = 'p-wbs-rt';
+      await db.into(db.projects).insert(ProjectsCompanion.insert(
+            id: projectId,
+            name: 'RT',
+          ));
+      await db.programmeGanttDao
+          .upsertWorkPackage(TimelineWorkPackagesCompanion(
+        id: const Value('wp1'),
+        projectId: const Value(projectId),
+        name: const Value('Networking'),
+      ));
+      await db.programmeGanttDao.upsertActivity(TimelineActivitiesCompanion(
+        id: const Value('net'),
+        workPackageId: const Value('wp1'),
+        projectId: const Value(projectId),
+        name: const Value('Networking design'),
+      ));
+      await db.programmeGanttDao.upsertActivity(TimelineActivitiesCompanion(
+        id: const Value('tg'),
+        workPackageId: const Value('wp1'),
+        projectId: const Value(projectId),
+        name: const Value('Transit Gateway design'),
+        parentActivityId: const Value('net'),
+        startDate: const Value('2026-08-03'),
+        endDate: const Value('2026-08-21'),
+      ));
+
+      final jsonStr = await JsonExporter.exportProjectToString(
+          projectId: projectId, db: db);
+      final fresh = AppDatabase.memory();
+      addTearDown(fresh.close);
+      await JsonImporter.importFromString(jsonStr, fresh);
+
+      final tasks =
+          await fresh.programmeGanttDao.getTasksForActivity('net');
+      expect(tasks, hasLength(1));
+      expect(tasks.single.id, 'tg');
+      expect(tasks.single.startDate, '2026-08-03');
+      expect(tasks.single.endDate, '2026-08-21');
     });
   });
 }

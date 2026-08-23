@@ -43,7 +43,13 @@ class _ChatMessage {
 // ---------------------------------------------------------------------------
 
 class ClaudePanel extends StatefulWidget {
-  const ClaudePanel({super.key});
+  /// True when the shell is showing the panel at its wide width.
+  final bool isWide;
+
+  /// Toggles the panel between normal and wide width (shell-owned).
+  final VoidCallback? onToggleWidth;
+
+  const ClaudePanel({super.key, this.isWide = false, this.onToggleWidth});
 
   @override
   State<ClaudePanel> createState() => _ClaudePanelState();
@@ -311,6 +317,8 @@ class _ClaudePanelState extends State<ClaudePanel> {
               }
               setState(() => _showContextInfo = !_showContextInfo);
             },
+            isWide: widget.isWide,
+            onToggleWidth: widget.onToggleWidth,
           ),
 
           if (_showContextInfo && _contextSections.isNotEmpty)
@@ -560,11 +568,15 @@ class _PanelHeader extends StatelessWidget {
   final bool hasKey;
   final bool showContextInfo;
   final VoidCallback? onToggleContextInfo;
+  final bool isWide;
+  final VoidCallback? onToggleWidth;
 
   const _PanelHeader({
     required this.hasKey,
     this.showContextInfo = false,
     this.onToggleContextInfo,
+    this.isWide = false,
+    this.onToggleWidth,
   });
 
   @override
@@ -593,6 +605,23 @@ class _PanelHeader extends StatelessWidget {
             ),
           ),
           const Spacer(),
+          if (onToggleWidth != null)
+            IconButton(
+              icon: Icon(
+                isWide
+                    ? Icons.keyboard_double_arrow_right
+                    : Icons.keyboard_double_arrow_left,
+                size: 14,
+                color: isWide ? KColors.amber : KColors.textMuted,
+              ),
+              onPressed: onToggleWidth,
+              tooltip: isWide
+                  ? 'Restore panel width'
+                  : 'Widen panel (drag the edge for fine control)',
+              padding: EdgeInsets.zero,
+              constraints:
+                  const BoxConstraints(minWidth: 24, minHeight: 24),
+            ),
           IconButton(
             icon: Icon(
               Icons.info_outline,

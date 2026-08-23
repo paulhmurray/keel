@@ -68,8 +68,10 @@ dependencies:
   xml: ^6.5.0
   google_fonts: ^8.0.2
   flutter_svg: ^2.0.17
-  # Markdown rendering inside Canvas card bodies.
-  flutter_markdown: ^0.7.4
+  # Markdown rendering inside Canvas card bodies. flutter_markdown was
+  # discontinued by the Flutter team; flutter_markdown_plus is the
+  # designated drop-in community fork.
+  flutter_markdown_plus: ^1.0.12
   markdown: ^7.2.2
   url_launcher: ^6.3.2
   package_info_plus: ^8.0.0

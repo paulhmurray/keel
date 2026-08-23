@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/database/database.dart';
+import '../../core/finance/variance.dart';
 import '../../core/status/status_calculator.dart';
 import '../../core/status/status_snapshot_scheduler.dart';
 import '../../providers/project_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../shared/theme/keel_colors.dart';
+import 'financial_summary_panel.dart';
 import 'pending_decisions_panel.dart';
 import 'playbook_stage_summary.dart';
 import 'programme_rag_widget.dart';
@@ -55,6 +57,13 @@ class _StatusContentState extends State<_StatusContent> {
   String? _narrative;
   String? _loadError;
   bool _historyMode = false;
+  ProjectBudget? _approvedBudget;
+  BudgetTotals? _budgetTotals;
+  Map<String, String> _categoryNames = {};
+  int? _forecastTotalMinor;
+  String? _forecastPeriod;
+  int? _varianceBp;
+  int? _actualsToDateMinor;
 
   String get _projectId => widget.project.id;
 
@@ -127,7 +136,7 @@ class _StatusContentState extends State<_StatusContent> {
 
       // Upcoming milestones
       final upcoming = StatusCalculator.upcomingMilestones(
-          allActs, months, days: 30);
+          allActs, months, month0Date: header?.month0Date);
 
       // Top risks
       final top = StatusCalculator.topRisks(risks, limit: 3);
@@ -175,8 +184,46 @@ class _StatusContentState extends State<_StatusContent> {
         }
       }
 
+      // Finance — approved budget + latest forecast/actuals (v2).
+      final approvedBudget =
+          await db.financeDao.getApprovedBudget(_projectId);
+      final budgetTotals = approvedBudget == null
+          ? null
+          : await db.financeDao.getTotals(approvedBudget.id);
+      final financeCategories =
+          await db.financeDao.getCategories(_projectId);
+      int? forecastTotal;
+      String? forecastPeriod;
+      int? varianceBp;
+      int? actualsToDate;
+      if (approvedBudget != null) {
+        final snapshots = await db.financeDao.getSnapshots(_projectId);
+        final snapshot =
+            snapshots.where((s) => s.status == 'working').firstOrNull ??
+                snapshots.firstOrNull;
+        if (snapshot != null) {
+          final ft = await db.financeDao.getForecastTotals(snapshot.id);
+          forecastTotal = ft.totalMinor;
+          forecastPeriod = snapshot.period;
+          varianceBp = VarianceRow.bpOf(
+              ft.totalMinor - budgetTotals!.totalMinor,
+              budgetTotals.totalMinor);
+        }
+        final actuals = await db.financeDao.getActualsTotals(_projectId);
+        if (actuals.totalMinor != 0) actualsToDate = actuals.totalMinor;
+      }
+
       if (!mounted) return;
       setState(() {
+        _approvedBudget = approvedBudget;
+        _budgetTotals = budgetTotals;
+        _forecastTotalMinor = forecastTotal;
+        _forecastPeriod = forecastPeriod;
+        _varianceBp = varianceBp;
+        _actualsToDateMinor = actualsToDate;
+        _categoryNames = {
+          for (final c in financeCategories) c.id: c.name,
+        };
         _data = ProgrammeStatusData(
           programmeRag:        programmeRag,
           programmeTrend:      programmeTrend,
@@ -326,7 +373,7 @@ class _StatusContentState extends State<_StatusContent> {
                 const SizedBox(height: 20),
 
                 // Upcoming milestones
-                _SectionLabel('UPCOMING MILESTONES (NEXT 30 DAYS)'),
+                _SectionLabel('UPCOMING MILESTONES (NEXT 3 MONTHS)'),
                 UpcomingMilestonesList(
                   milestones:  data.upcomingMilestones,
                   monthLabels: _monthLabels,
@@ -348,6 +395,19 @@ class _StatusContentState extends State<_StatusContent> {
                 PlaybookStageSummary(
                   stage:    data.currentStage,
                   progress: data.stageProgress,
+                ),
+                const SizedBox(height: 20),
+
+                // Finance — approved budget only
+                _SectionLabel('FINANCIAL SUMMARY'),
+                FinancialSummaryPanel(
+                  approvedBudget:     _approvedBudget,
+                  totals:             _budgetTotals,
+                  categoryNames:      _categoryNames,
+                  forecastTotalMinor: _forecastTotalMinor,
+                  forecastPeriod:     _forecastPeriod,
+                  varianceBp:         _varianceBp,
+                  actualsToDateMinor: _actualsToDateMinor,
                 ),
                 const SizedBox(height: 20),
 

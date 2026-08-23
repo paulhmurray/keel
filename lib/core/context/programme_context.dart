@@ -34,6 +34,21 @@ class ProgrammeContext {
   final List<String> overdueActionDescriptions;
   final List<String> workstreamSummaries; // "Name: RAG"
 
+  // Finance v1 — the APPROVED budget only. All null/empty when no budget
+  // is approved (the prompt section is omitted entirely). Amounts are
+  // pre-formatted strings ("A$1,200,000") so no money maths happens
+  // outside the integer-minor-unit path.
+  final String? approvedBudgetName;
+  final String? approvedBudgetTotal;
+  final String? budgetApprovalNote; // "approved 12 Jul 2026 by Jane"
+  final List<String> budgetFySummaries; // "FY27: A$800,000"
+  final List<String> budgetCategorySummaries; // "People: A$500,000"
+
+  // Finance v2 — latest forecast + actuals; null until they exist.
+  final String? forecastSummary; // "£44.2M at completion (2026-07, +5.2%)"
+  final String? forecastToleranceNote; // "beyond ±5.0% tolerance" | "within..."
+  final String? actualsSummary; // "£12.4M actuals to date"
+
   final DateTime assembledAt;
 
   const ProgrammeContext({
@@ -59,6 +74,14 @@ class ProgrammeContext {
     this.pendingDecisionDescriptions = const [],
     this.overdueActionDescriptions = const [],
     this.workstreamSummaries = const [],
+    this.approvedBudgetName,
+    this.approvedBudgetTotal,
+    this.budgetApprovalNote,
+    this.budgetFySummaries = const [],
+    this.budgetCategorySummaries = const [],
+    this.forecastSummary,
+    this.forecastToleranceNote,
+    this.actualsSummary,
     required this.assembledAt,
   });
 }
