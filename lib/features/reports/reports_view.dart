@@ -919,7 +919,7 @@ class _RaidExportTabState extends State<_RaidExportTab> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1040,7 +1040,7 @@ class _NarrativeExportTabState extends State<_NarrativeExportTab> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1208,7 +1208,7 @@ class _HandoverPackTabState extends State<_HandoverPackTab> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1331,12 +1331,14 @@ class _ProgrammeWorkbookTabState extends State<_ProgrammeWorkbookTab> {
   String? _error;
 
   Future<void> _export() async {
+    final isProgramme = context.read<ProjectProvider>().isProgramme;
     setState(() { _exporting = true; _error = null; });
     try {
       await ProgrammeWorkbookExporter.export(
         db: widget.db,
         projectId: widget.projectId,
         projectName: widget.projectName,
+        isProgramme: isProgramme,
       );
     } catch (e) {
       setState(() { _error = e.toString(); });
@@ -1347,21 +1349,25 @@ class _ProgrammeWorkbookTabState extends State<_ProgrammeWorkbookTab> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    final isProgramme = context.watch<ProjectProvider>().isProgramme;
+    final kind = isProgramme ? 'Programme' : 'Project';
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Programme Workbook',
+          Text('$kind Workbook',
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
-          const Text(
-            'Exports a multi-sheet Excel workbook containing:\n'
-            '  • Programme Timeline (Gantt by work package)\n'
+          Text(
+            'Exports a multi-sheet Excel workbook — styled for Excel '
+            '(light, print-friendly), ready to send without touch-up:\n'
+            '  • $kind Timeline (Gantt by work package)\n'
+            '  • Plan Dependencies (the arrows, as a FROM → TO list)\n'
             '  • Stakeholder Map\n'
             '  • Scope & Prioritisation\n'
             '  • RAID Log',
-            style: TextStyle(color: KColors.textDim, fontSize: 13),
+            style: const TextStyle(color: KColors.textDim, fontSize: 13),
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
@@ -1373,7 +1379,9 @@ class _ProgrammeWorkbookTabState extends State<_ProgrammeWorkbookTab> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.table_chart_outlined, size: 18),
-            label: Text(_exporting ? 'Exporting…' : 'Export Programme Workbook (.xlsx)'),
+            label: Text(_exporting
+                ? 'Exporting…'
+                : 'Export $kind Workbook (.xlsx)'),
           ),
           if (_error != null) ...[
             const SizedBox(height: 16),

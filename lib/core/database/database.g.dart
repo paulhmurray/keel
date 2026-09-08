@@ -24838,6 +24838,61 @@ class $TimelineActivitiesTable extends TimelineActivities
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _likelyMonthMeta = const VerificationMeta(
+    'likelyMonth',
+  );
+  @override
+  late final GeneratedColumn<int> likelyMonth = GeneratedColumn<int>(
+    'likely_month',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _safeMonthMeta = const VerificationMeta(
+    'safeMonth',
+  );
+  @override
+  late final GeneratedColumn<int> safeMonth = GeneratedColumn<int>(
+    'safe_month',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _varianceRaidTypeMeta = const VerificationMeta(
+    'varianceRaidType',
+  );
+  @override
+  late final GeneratedColumn<String> varianceRaidType = GeneratedColumn<String>(
+    'variance_raid_type',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _varianceRaidIdMeta = const VerificationMeta(
+    'varianceRaidId',
+  );
+  @override
+  late final GeneratedColumn<String> varianceRaidId = GeneratedColumn<String>(
+    'variance_raid_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _varianceRaidLinksJsonMeta =
+      const VerificationMeta('varianceRaidLinksJson');
+  @override
+  late final GeneratedColumn<String> varianceRaidLinksJson =
+      GeneratedColumn<String>(
+        'variance_raid_links_json',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _statusMeta = const VerificationMeta('status');
   @override
   late final GeneratedColumn<String> status = GeneratedColumn<String>(
@@ -24992,6 +25047,11 @@ class $TimelineActivitiesTable extends TimelineActivities
     endMonth,
     startDate,
     endDate,
+    likelyMonth,
+    safeMonth,
+    varianceRaidType,
+    varianceRaidId,
+    varianceRaidLinksJson,
     status,
     isCritical,
     isBaseline,
@@ -25101,6 +25161,48 @@ class $TimelineActivitiesTable extends TimelineActivities
       context.handle(
         _endDateMeta,
         endDate.isAcceptableOrUnknown(data['end_date']!, _endDateMeta),
+      );
+    }
+    if (data.containsKey('likely_month')) {
+      context.handle(
+        _likelyMonthMeta,
+        likelyMonth.isAcceptableOrUnknown(
+          data['likely_month']!,
+          _likelyMonthMeta,
+        ),
+      );
+    }
+    if (data.containsKey('safe_month')) {
+      context.handle(
+        _safeMonthMeta,
+        safeMonth.isAcceptableOrUnknown(data['safe_month']!, _safeMonthMeta),
+      );
+    }
+    if (data.containsKey('variance_raid_type')) {
+      context.handle(
+        _varianceRaidTypeMeta,
+        varianceRaidType.isAcceptableOrUnknown(
+          data['variance_raid_type']!,
+          _varianceRaidTypeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('variance_raid_id')) {
+      context.handle(
+        _varianceRaidIdMeta,
+        varianceRaidId.isAcceptableOrUnknown(
+          data['variance_raid_id']!,
+          _varianceRaidIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('variance_raid_links_json')) {
+      context.handle(
+        _varianceRaidLinksJsonMeta,
+        varianceRaidLinksJson.isAcceptableOrUnknown(
+          data['variance_raid_links_json']!,
+          _varianceRaidLinksJsonMeta,
+        ),
       );
     }
     if (data.containsKey('status')) {
@@ -25244,6 +25346,26 @@ class $TimelineActivitiesTable extends TimelineActivities
         DriftSqlType.string,
         data['${effectivePrefix}end_date'],
       ),
+      likelyMonth: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}likely_month'],
+      ),
+      safeMonth: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}safe_month'],
+      ),
+      varianceRaidType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}variance_raid_type'],
+      ),
+      varianceRaidId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}variance_raid_id'],
+      ),
+      varianceRaidLinksJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}variance_raid_links_json'],
+      ),
       status: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}status'],
@@ -25315,6 +25437,11 @@ class TimelineActivity extends DataClass
   final int? endMonth;
   final String? startDate;
   final String? endDate;
+  final int? likelyMonth;
+  final int? safeMonth;
+  final String? varianceRaidType;
+  final String? varianceRaidId;
+  final String? varianceRaidLinksJson;
   final String status;
   final bool isCritical;
   final bool isBaseline;
@@ -25340,6 +25467,11 @@ class TimelineActivity extends DataClass
     this.endMonth,
     this.startDate,
     this.endDate,
+    this.likelyMonth,
+    this.safeMonth,
+    this.varianceRaidType,
+    this.varianceRaidId,
+    this.varianceRaidLinksJson,
     required this.status,
     required this.isCritical,
     required this.isBaseline,
@@ -25381,6 +25513,21 @@ class TimelineActivity extends DataClass
     }
     if (!nullToAbsent || endDate != null) {
       map['end_date'] = Variable<String>(endDate);
+    }
+    if (!nullToAbsent || likelyMonth != null) {
+      map['likely_month'] = Variable<int>(likelyMonth);
+    }
+    if (!nullToAbsent || safeMonth != null) {
+      map['safe_month'] = Variable<int>(safeMonth);
+    }
+    if (!nullToAbsent || varianceRaidType != null) {
+      map['variance_raid_type'] = Variable<String>(varianceRaidType);
+    }
+    if (!nullToAbsent || varianceRaidId != null) {
+      map['variance_raid_id'] = Variable<String>(varianceRaidId);
+    }
+    if (!nullToAbsent || varianceRaidLinksJson != null) {
+      map['variance_raid_links_json'] = Variable<String>(varianceRaidLinksJson);
     }
     map['status'] = Variable<String>(status);
     map['is_critical'] = Variable<bool>(isCritical);
@@ -25437,6 +25584,21 @@ class TimelineActivity extends DataClass
       endDate: endDate == null && nullToAbsent
           ? const Value.absent()
           : Value(endDate),
+      likelyMonth: likelyMonth == null && nullToAbsent
+          ? const Value.absent()
+          : Value(likelyMonth),
+      safeMonth: safeMonth == null && nullToAbsent
+          ? const Value.absent()
+          : Value(safeMonth),
+      varianceRaidType: varianceRaidType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(varianceRaidType),
+      varianceRaidId: varianceRaidId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(varianceRaidId),
+      varianceRaidLinksJson: varianceRaidLinksJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(varianceRaidLinksJson),
       status: Value(status),
       isCritical: Value(isCritical),
       isBaseline: Value(isBaseline),
@@ -25482,6 +25644,13 @@ class TimelineActivity extends DataClass
       endMonth: serializer.fromJson<int?>(json['endMonth']),
       startDate: serializer.fromJson<String?>(json['startDate']),
       endDate: serializer.fromJson<String?>(json['endDate']),
+      likelyMonth: serializer.fromJson<int?>(json['likelyMonth']),
+      safeMonth: serializer.fromJson<int?>(json['safeMonth']),
+      varianceRaidType: serializer.fromJson<String?>(json['varianceRaidType']),
+      varianceRaidId: serializer.fromJson<String?>(json['varianceRaidId']),
+      varianceRaidLinksJson: serializer.fromJson<String?>(
+        json['varianceRaidLinksJson'],
+      ),
       status: serializer.fromJson<String>(json['status']),
       isCritical: serializer.fromJson<bool>(json['isCritical']),
       isBaseline: serializer.fromJson<bool>(json['isBaseline']),
@@ -25512,6 +25681,13 @@ class TimelineActivity extends DataClass
       'endMonth': serializer.toJson<int?>(endMonth),
       'startDate': serializer.toJson<String?>(startDate),
       'endDate': serializer.toJson<String?>(endDate),
+      'likelyMonth': serializer.toJson<int?>(likelyMonth),
+      'safeMonth': serializer.toJson<int?>(safeMonth),
+      'varianceRaidType': serializer.toJson<String?>(varianceRaidType),
+      'varianceRaidId': serializer.toJson<String?>(varianceRaidId),
+      'varianceRaidLinksJson': serializer.toJson<String?>(
+        varianceRaidLinksJson,
+      ),
       'status': serializer.toJson<String>(status),
       'isCritical': serializer.toJson<bool>(isCritical),
       'isBaseline': serializer.toJson<bool>(isBaseline),
@@ -25540,6 +25716,11 @@ class TimelineActivity extends DataClass
     Value<int?> endMonth = const Value.absent(),
     Value<String?> startDate = const Value.absent(),
     Value<String?> endDate = const Value.absent(),
+    Value<int?> likelyMonth = const Value.absent(),
+    Value<int?> safeMonth = const Value.absent(),
+    Value<String?> varianceRaidType = const Value.absent(),
+    Value<String?> varianceRaidId = const Value.absent(),
+    Value<String?> varianceRaidLinksJson = const Value.absent(),
     String? status,
     bool? isCritical,
     bool? isBaseline,
@@ -25567,6 +25748,17 @@ class TimelineActivity extends DataClass
     endMonth: endMonth.present ? endMonth.value : this.endMonth,
     startDate: startDate.present ? startDate.value : this.startDate,
     endDate: endDate.present ? endDate.value : this.endDate,
+    likelyMonth: likelyMonth.present ? likelyMonth.value : this.likelyMonth,
+    safeMonth: safeMonth.present ? safeMonth.value : this.safeMonth,
+    varianceRaidType: varianceRaidType.present
+        ? varianceRaidType.value
+        : this.varianceRaidType,
+    varianceRaidId: varianceRaidId.present
+        ? varianceRaidId.value
+        : this.varianceRaidId,
+    varianceRaidLinksJson: varianceRaidLinksJson.present
+        ? varianceRaidLinksJson.value
+        : this.varianceRaidLinksJson,
     status: status ?? this.status,
     isCritical: isCritical ?? this.isCritical,
     isBaseline: isBaseline ?? this.isBaseline,
@@ -25606,6 +25798,19 @@ class TimelineActivity extends DataClass
       endMonth: data.endMonth.present ? data.endMonth.value : this.endMonth,
       startDate: data.startDate.present ? data.startDate.value : this.startDate,
       endDate: data.endDate.present ? data.endDate.value : this.endDate,
+      likelyMonth: data.likelyMonth.present
+          ? data.likelyMonth.value
+          : this.likelyMonth,
+      safeMonth: data.safeMonth.present ? data.safeMonth.value : this.safeMonth,
+      varianceRaidType: data.varianceRaidType.present
+          ? data.varianceRaidType.value
+          : this.varianceRaidType,
+      varianceRaidId: data.varianceRaidId.present
+          ? data.varianceRaidId.value
+          : this.varianceRaidId,
+      varianceRaidLinksJson: data.varianceRaidLinksJson.present
+          ? data.varianceRaidLinksJson.value
+          : this.varianceRaidLinksJson,
       status: data.status.present ? data.status.value : this.status,
       isCritical: data.isCritical.present
           ? data.isCritical.value
@@ -25648,6 +25853,11 @@ class TimelineActivity extends DataClass
           ..write('endMonth: $endMonth, ')
           ..write('startDate: $startDate, ')
           ..write('endDate: $endDate, ')
+          ..write('likelyMonth: $likelyMonth, ')
+          ..write('safeMonth: $safeMonth, ')
+          ..write('varianceRaidType: $varianceRaidType, ')
+          ..write('varianceRaidId: $varianceRaidId, ')
+          ..write('varianceRaidLinksJson: $varianceRaidLinksJson, ')
           ..write('status: $status, ')
           ..write('isCritical: $isCritical, ')
           ..write('isBaseline: $isBaseline, ')
@@ -25678,6 +25888,11 @@ class TimelineActivity extends DataClass
     endMonth,
     startDate,
     endDate,
+    likelyMonth,
+    safeMonth,
+    varianceRaidType,
+    varianceRaidId,
+    varianceRaidLinksJson,
     status,
     isCritical,
     isBaseline,
@@ -25707,6 +25922,11 @@ class TimelineActivity extends DataClass
           other.endMonth == this.endMonth &&
           other.startDate == this.startDate &&
           other.endDate == this.endDate &&
+          other.likelyMonth == this.likelyMonth &&
+          other.safeMonth == this.safeMonth &&
+          other.varianceRaidType == this.varianceRaidType &&
+          other.varianceRaidId == this.varianceRaidId &&
+          other.varianceRaidLinksJson == this.varianceRaidLinksJson &&
           other.status == this.status &&
           other.isCritical == this.isCritical &&
           other.isBaseline == this.isBaseline &&
@@ -25734,6 +25954,11 @@ class TimelineActivitiesCompanion extends UpdateCompanion<TimelineActivity> {
   final Value<int?> endMonth;
   final Value<String?> startDate;
   final Value<String?> endDate;
+  final Value<int?> likelyMonth;
+  final Value<int?> safeMonth;
+  final Value<String?> varianceRaidType;
+  final Value<String?> varianceRaidId;
+  final Value<String?> varianceRaidLinksJson;
   final Value<String> status;
   final Value<bool> isCritical;
   final Value<bool> isBaseline;
@@ -25760,6 +25985,11 @@ class TimelineActivitiesCompanion extends UpdateCompanion<TimelineActivity> {
     this.endMonth = const Value.absent(),
     this.startDate = const Value.absent(),
     this.endDate = const Value.absent(),
+    this.likelyMonth = const Value.absent(),
+    this.safeMonth = const Value.absent(),
+    this.varianceRaidType = const Value.absent(),
+    this.varianceRaidId = const Value.absent(),
+    this.varianceRaidLinksJson = const Value.absent(),
     this.status = const Value.absent(),
     this.isCritical = const Value.absent(),
     this.isBaseline = const Value.absent(),
@@ -25787,6 +26017,11 @@ class TimelineActivitiesCompanion extends UpdateCompanion<TimelineActivity> {
     this.endMonth = const Value.absent(),
     this.startDate = const Value.absent(),
     this.endDate = const Value.absent(),
+    this.likelyMonth = const Value.absent(),
+    this.safeMonth = const Value.absent(),
+    this.varianceRaidType = const Value.absent(),
+    this.varianceRaidId = const Value.absent(),
+    this.varianceRaidLinksJson = const Value.absent(),
     this.status = const Value.absent(),
     this.isCritical = const Value.absent(),
     this.isBaseline = const Value.absent(),
@@ -25817,6 +26052,11 @@ class TimelineActivitiesCompanion extends UpdateCompanion<TimelineActivity> {
     Expression<int>? endMonth,
     Expression<String>? startDate,
     Expression<String>? endDate,
+    Expression<int>? likelyMonth,
+    Expression<int>? safeMonth,
+    Expression<String>? varianceRaidType,
+    Expression<String>? varianceRaidId,
+    Expression<String>? varianceRaidLinksJson,
     Expression<String>? status,
     Expression<bool>? isCritical,
     Expression<bool>? isBaseline,
@@ -25844,6 +26084,12 @@ class TimelineActivitiesCompanion extends UpdateCompanion<TimelineActivity> {
       if (endMonth != null) 'end_month': endMonth,
       if (startDate != null) 'start_date': startDate,
       if (endDate != null) 'end_date': endDate,
+      if (likelyMonth != null) 'likely_month': likelyMonth,
+      if (safeMonth != null) 'safe_month': safeMonth,
+      if (varianceRaidType != null) 'variance_raid_type': varianceRaidType,
+      if (varianceRaidId != null) 'variance_raid_id': varianceRaidId,
+      if (varianceRaidLinksJson != null)
+        'variance_raid_links_json': varianceRaidLinksJson,
       if (status != null) 'status': status,
       if (isCritical != null) 'is_critical': isCritical,
       if (isBaseline != null) 'is_baseline': isBaseline,
@@ -25873,6 +26119,11 @@ class TimelineActivitiesCompanion extends UpdateCompanion<TimelineActivity> {
     Value<int?>? endMonth,
     Value<String?>? startDate,
     Value<String?>? endDate,
+    Value<int?>? likelyMonth,
+    Value<int?>? safeMonth,
+    Value<String?>? varianceRaidType,
+    Value<String?>? varianceRaidId,
+    Value<String?>? varianceRaidLinksJson,
     Value<String>? status,
     Value<bool>? isCritical,
     Value<bool>? isBaseline,
@@ -25900,6 +26151,12 @@ class TimelineActivitiesCompanion extends UpdateCompanion<TimelineActivity> {
       endMonth: endMonth ?? this.endMonth,
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
+      likelyMonth: likelyMonth ?? this.likelyMonth,
+      safeMonth: safeMonth ?? this.safeMonth,
+      varianceRaidType: varianceRaidType ?? this.varianceRaidType,
+      varianceRaidId: varianceRaidId ?? this.varianceRaidId,
+      varianceRaidLinksJson:
+          varianceRaidLinksJson ?? this.varianceRaidLinksJson,
       status: status ?? this.status,
       isCritical: isCritical ?? this.isCritical,
       isBaseline: isBaseline ?? this.isBaseline,
@@ -25954,6 +26211,23 @@ class TimelineActivitiesCompanion extends UpdateCompanion<TimelineActivity> {
     }
     if (endDate.present) {
       map['end_date'] = Variable<String>(endDate.value);
+    }
+    if (likelyMonth.present) {
+      map['likely_month'] = Variable<int>(likelyMonth.value);
+    }
+    if (safeMonth.present) {
+      map['safe_month'] = Variable<int>(safeMonth.value);
+    }
+    if (varianceRaidType.present) {
+      map['variance_raid_type'] = Variable<String>(varianceRaidType.value);
+    }
+    if (varianceRaidId.present) {
+      map['variance_raid_id'] = Variable<String>(varianceRaidId.value);
+    }
+    if (varianceRaidLinksJson.present) {
+      map['variance_raid_links_json'] = Variable<String>(
+        varianceRaidLinksJson.value,
+      );
     }
     if (status.present) {
       map['status'] = Variable<String>(status.value);
@@ -26012,6 +26286,11 @@ class TimelineActivitiesCompanion extends UpdateCompanion<TimelineActivity> {
           ..write('endMonth: $endMonth, ')
           ..write('startDate: $startDate, ')
           ..write('endDate: $endDate, ')
+          ..write('likelyMonth: $likelyMonth, ')
+          ..write('safeMonth: $safeMonth, ')
+          ..write('varianceRaidType: $varianceRaidType, ')
+          ..write('varianceRaidId: $varianceRaidId, ')
+          ..write('varianceRaidLinksJson: $varianceRaidLinksJson, ')
           ..write('status: $status, ')
           ..write('isCritical: $isCritical, ')
           ..write('isBaseline: $isBaseline, ')
@@ -39030,6 +39309,17 @@ class $DayPlanBlocksTable extends DayPlanBlocks
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _objectiveIdMeta = const VerificationMeta(
+    'objectiveId',
+  );
+  @override
+  late final GeneratedColumn<String> objectiveId = GeneratedColumn<String>(
+    'objective_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _doneMeta = const VerificationMeta('done');
   @override
   late final GeneratedColumn<bool> done = GeneratedColumn<bool>(
@@ -39078,6 +39368,7 @@ class $DayPlanBlocksTable extends DayPlanBlocks
     label,
     projectId,
     linkedActionId,
+    objectiveId,
     done,
     createdAt,
     updatedAt,
@@ -39161,6 +39452,15 @@ class $DayPlanBlocksTable extends DayPlanBlocks
         ),
       );
     }
+    if (data.containsKey('objective_id')) {
+      context.handle(
+        _objectiveIdMeta,
+        objectiveId.isAcceptableOrUnknown(
+          data['objective_id']!,
+          _objectiveIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('done')) {
       context.handle(
         _doneMeta,
@@ -39224,6 +39524,10 @@ class $DayPlanBlocksTable extends DayPlanBlocks
         DriftSqlType.string,
         data['${effectivePrefix}linked_action_id'],
       ),
+      objectiveId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}objective_id'],
+      ),
       done: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}done'],
@@ -39255,6 +39559,7 @@ class DayPlanBlock extends DataClass implements Insertable<DayPlanBlock> {
   final String label;
   final String? projectId;
   final String? linkedActionId;
+  final String? objectiveId;
   final bool done;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -39268,6 +39573,7 @@ class DayPlanBlock extends DataClass implements Insertable<DayPlanBlock> {
     required this.label,
     this.projectId,
     this.linkedActionId,
+    this.objectiveId,
     required this.done,
     required this.createdAt,
     required this.updatedAt,
@@ -39287,6 +39593,9 @@ class DayPlanBlock extends DataClass implements Insertable<DayPlanBlock> {
     }
     if (!nullToAbsent || linkedActionId != null) {
       map['linked_action_id'] = Variable<String>(linkedActionId);
+    }
+    if (!nullToAbsent || objectiveId != null) {
+      map['objective_id'] = Variable<String>(objectiveId);
     }
     map['done'] = Variable<bool>(done);
     map['created_at'] = Variable<DateTime>(createdAt);
@@ -39309,6 +39618,9 @@ class DayPlanBlock extends DataClass implements Insertable<DayPlanBlock> {
       linkedActionId: linkedActionId == null && nullToAbsent
           ? const Value.absent()
           : Value(linkedActionId),
+      objectiveId: objectiveId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(objectiveId),
       done: Value(done),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
@@ -39330,6 +39642,7 @@ class DayPlanBlock extends DataClass implements Insertable<DayPlanBlock> {
       label: serializer.fromJson<String>(json['label']),
       projectId: serializer.fromJson<String?>(json['projectId']),
       linkedActionId: serializer.fromJson<String?>(json['linkedActionId']),
+      objectiveId: serializer.fromJson<String?>(json['objectiveId']),
       done: serializer.fromJson<bool>(json['done']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -39348,6 +39661,7 @@ class DayPlanBlock extends DataClass implements Insertable<DayPlanBlock> {
       'label': serializer.toJson<String>(label),
       'projectId': serializer.toJson<String?>(projectId),
       'linkedActionId': serializer.toJson<String?>(linkedActionId),
+      'objectiveId': serializer.toJson<String?>(objectiveId),
       'done': serializer.toJson<bool>(done),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -39364,6 +39678,7 @@ class DayPlanBlock extends DataClass implements Insertable<DayPlanBlock> {
     String? label,
     Value<String?> projectId = const Value.absent(),
     Value<String?> linkedActionId = const Value.absent(),
+    Value<String?> objectiveId = const Value.absent(),
     bool? done,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -39379,6 +39694,7 @@ class DayPlanBlock extends DataClass implements Insertable<DayPlanBlock> {
     linkedActionId: linkedActionId.present
         ? linkedActionId.value
         : this.linkedActionId,
+    objectiveId: objectiveId.present ? objectiveId.value : this.objectiveId,
     done: done ?? this.done,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -39398,6 +39714,9 @@ class DayPlanBlock extends DataClass implements Insertable<DayPlanBlock> {
       linkedActionId: data.linkedActionId.present
           ? data.linkedActionId.value
           : this.linkedActionId,
+      objectiveId: data.objectiveId.present
+          ? data.objectiveId.value
+          : this.objectiveId,
       done: data.done.present ? data.done.value : this.done,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -39416,6 +39735,7 @@ class DayPlanBlock extends DataClass implements Insertable<DayPlanBlock> {
           ..write('label: $label, ')
           ..write('projectId: $projectId, ')
           ..write('linkedActionId: $linkedActionId, ')
+          ..write('objectiveId: $objectiveId, ')
           ..write('done: $done, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
@@ -39434,6 +39754,7 @@ class DayPlanBlock extends DataClass implements Insertable<DayPlanBlock> {
     label,
     projectId,
     linkedActionId,
+    objectiveId,
     done,
     createdAt,
     updatedAt,
@@ -39451,6 +39772,7 @@ class DayPlanBlock extends DataClass implements Insertable<DayPlanBlock> {
           other.label == this.label &&
           other.projectId == this.projectId &&
           other.linkedActionId == this.linkedActionId &&
+          other.objectiveId == this.objectiveId &&
           other.done == this.done &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
@@ -39466,6 +39788,7 @@ class DayPlanBlocksCompanion extends UpdateCompanion<DayPlanBlock> {
   final Value<String> label;
   final Value<String?> projectId;
   final Value<String?> linkedActionId;
+  final Value<String?> objectiveId;
   final Value<bool> done;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -39480,6 +39803,7 @@ class DayPlanBlocksCompanion extends UpdateCompanion<DayPlanBlock> {
     this.label = const Value.absent(),
     this.projectId = const Value.absent(),
     this.linkedActionId = const Value.absent(),
+    this.objectiveId = const Value.absent(),
     this.done = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -39495,6 +39819,7 @@ class DayPlanBlocksCompanion extends UpdateCompanion<DayPlanBlock> {
     required String label,
     this.projectId = const Value.absent(),
     this.linkedActionId = const Value.absent(),
+    this.objectiveId = const Value.absent(),
     this.done = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -39514,6 +39839,7 @@ class DayPlanBlocksCompanion extends UpdateCompanion<DayPlanBlock> {
     Expression<String>? label,
     Expression<String>? projectId,
     Expression<String>? linkedActionId,
+    Expression<String>? objectiveId,
     Expression<bool>? done,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -39529,6 +39855,7 @@ class DayPlanBlocksCompanion extends UpdateCompanion<DayPlanBlock> {
       if (label != null) 'label': label,
       if (projectId != null) 'project_id': projectId,
       if (linkedActionId != null) 'linked_action_id': linkedActionId,
+      if (objectiveId != null) 'objective_id': objectiveId,
       if (done != null) 'done': done,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -39546,6 +39873,7 @@ class DayPlanBlocksCompanion extends UpdateCompanion<DayPlanBlock> {
     Value<String>? label,
     Value<String?>? projectId,
     Value<String?>? linkedActionId,
+    Value<String?>? objectiveId,
     Value<bool>? done,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
@@ -39561,6 +39889,7 @@ class DayPlanBlocksCompanion extends UpdateCompanion<DayPlanBlock> {
       label: label ?? this.label,
       projectId: projectId ?? this.projectId,
       linkedActionId: linkedActionId ?? this.linkedActionId,
+      objectiveId: objectiveId ?? this.objectiveId,
       done: done ?? this.done,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -39598,6 +39927,9 @@ class DayPlanBlocksCompanion extends UpdateCompanion<DayPlanBlock> {
     if (linkedActionId.present) {
       map['linked_action_id'] = Variable<String>(linkedActionId.value);
     }
+    if (objectiveId.present) {
+      map['objective_id'] = Variable<String>(objectiveId.value);
+    }
     if (done.present) {
       map['done'] = Variable<bool>(done.value);
     }
@@ -39625,6 +39957,2088 @@ class DayPlanBlocksCompanion extends UpdateCompanion<DayPlanBlock> {
           ..write('label: $label, ')
           ..write('projectId: $projectId, ')
           ..write('linkedActionId: $linkedActionId, ')
+          ..write('objectiveId: $objectiveId, ')
+          ..write('done: $done, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $WeekPlansTable extends WeekPlans
+    with TableInfo<$WeekPlansTable, WeekPlan> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WeekPlansTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _weekStartDateMeta = const VerificationMeta(
+    'weekStartDate',
+  );
+  @override
+  late final GeneratedColumn<String> weekStartDate = GeneratedColumn<String>(
+    'week_start_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _dayMissionsJsonMeta = const VerificationMeta(
+    'dayMissionsJson',
+  );
+  @override
+  late final GeneratedColumn<String> dayMissionsJson = GeneratedColumn<String>(
+    'day_missions_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('{}'),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    weekStartDate,
+    dayMissionsJson,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'week_plans';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WeekPlan> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('week_start_date')) {
+      context.handle(
+        _weekStartDateMeta,
+        weekStartDate.isAcceptableOrUnknown(
+          data['week_start_date']!,
+          _weekStartDateMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_weekStartDateMeta);
+    }
+    if (data.containsKey('day_missions_json')) {
+      context.handle(
+        _dayMissionsJsonMeta,
+        dayMissionsJson.isAcceptableOrUnknown(
+          data['day_missions_json']!,
+          _dayMissionsJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  WeekPlan map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WeekPlan(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      weekStartDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}week_start_date'],
+      )!,
+      dayMissionsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}day_missions_json'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $WeekPlansTable createAlias(String alias) {
+    return $WeekPlansTable(attachedDatabase, alias);
+  }
+}
+
+class WeekPlan extends DataClass implements Insertable<WeekPlan> {
+  final String id;
+  final String weekStartDate;
+  final String dayMissionsJson;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const WeekPlan({
+    required this.id,
+    required this.weekStartDate,
+    required this.dayMissionsJson,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['week_start_date'] = Variable<String>(weekStartDate);
+    map['day_missions_json'] = Variable<String>(dayMissionsJson);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  WeekPlansCompanion toCompanion(bool nullToAbsent) {
+    return WeekPlansCompanion(
+      id: Value(id),
+      weekStartDate: Value(weekStartDate),
+      dayMissionsJson: Value(dayMissionsJson),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory WeekPlan.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WeekPlan(
+      id: serializer.fromJson<String>(json['id']),
+      weekStartDate: serializer.fromJson<String>(json['weekStartDate']),
+      dayMissionsJson: serializer.fromJson<String>(json['dayMissionsJson']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'weekStartDate': serializer.toJson<String>(weekStartDate),
+      'dayMissionsJson': serializer.toJson<String>(dayMissionsJson),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  WeekPlan copyWith({
+    String? id,
+    String? weekStartDate,
+    String? dayMissionsJson,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => WeekPlan(
+    id: id ?? this.id,
+    weekStartDate: weekStartDate ?? this.weekStartDate,
+    dayMissionsJson: dayMissionsJson ?? this.dayMissionsJson,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  WeekPlan copyWithCompanion(WeekPlansCompanion data) {
+    return WeekPlan(
+      id: data.id.present ? data.id.value : this.id,
+      weekStartDate: data.weekStartDate.present
+          ? data.weekStartDate.value
+          : this.weekStartDate,
+      dayMissionsJson: data.dayMissionsJson.present
+          ? data.dayMissionsJson.value
+          : this.dayMissionsJson,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WeekPlan(')
+          ..write('id: $id, ')
+          ..write('weekStartDate: $weekStartDate, ')
+          ..write('dayMissionsJson: $dayMissionsJson, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, weekStartDate, dayMissionsJson, createdAt, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WeekPlan &&
+          other.id == this.id &&
+          other.weekStartDate == this.weekStartDate &&
+          other.dayMissionsJson == this.dayMissionsJson &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class WeekPlansCompanion extends UpdateCompanion<WeekPlan> {
+  final Value<String> id;
+  final Value<String> weekStartDate;
+  final Value<String> dayMissionsJson;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const WeekPlansCompanion({
+    this.id = const Value.absent(),
+    this.weekStartDate = const Value.absent(),
+    this.dayMissionsJson = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WeekPlansCompanion.insert({
+    required String id,
+    required String weekStartDate,
+    this.dayMissionsJson = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       weekStartDate = Value(weekStartDate);
+  static Insertable<WeekPlan> custom({
+    Expression<String>? id,
+    Expression<String>? weekStartDate,
+    Expression<String>? dayMissionsJson,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (weekStartDate != null) 'week_start_date': weekStartDate,
+      if (dayMissionsJson != null) 'day_missions_json': dayMissionsJson,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WeekPlansCompanion copyWith({
+    Value<String>? id,
+    Value<String>? weekStartDate,
+    Value<String>? dayMissionsJson,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return WeekPlansCompanion(
+      id: id ?? this.id,
+      weekStartDate: weekStartDate ?? this.weekStartDate,
+      dayMissionsJson: dayMissionsJson ?? this.dayMissionsJson,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (weekStartDate.present) {
+      map['week_start_date'] = Variable<String>(weekStartDate.value);
+    }
+    if (dayMissionsJson.present) {
+      map['day_missions_json'] = Variable<String>(dayMissionsJson.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WeekPlansCompanion(')
+          ..write('id: $id, ')
+          ..write('weekStartDate: $weekStartDate, ')
+          ..write('dayMissionsJson: $dayMissionsJson, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $WeekPlanObjectivesTable extends WeekPlanObjectives
+    with TableInfo<$WeekPlanObjectivesTable, WeekPlanObjective> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WeekPlanObjectivesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _weekPlanIdMeta = const VerificationMeta(
+    'weekPlanId',
+  );
+  @override
+  late final GeneratedColumn<String> weekPlanId = GeneratedColumn<String>(
+    'week_plan_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES week_plans (id)',
+    ),
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _labelMeta = const VerificationMeta('label');
+  @override
+  late final GeneratedColumn<String> label = GeneratedColumn<String>(
+    'label',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _linkedActionIdMeta = const VerificationMeta(
+    'linkedActionId',
+  );
+  @override
+  late final GeneratedColumn<String> linkedActionId = GeneratedColumn<String>(
+    'linked_action_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _goalIdMeta = const VerificationMeta('goalId');
+  @override
+  late final GeneratedColumn<String> goalId = GeneratedColumn<String>(
+    'goal_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _targetBlocksMeta = const VerificationMeta(
+    'targetBlocks',
+  );
+  @override
+  late final GeneratedColumn<int> targetBlocks = GeneratedColumn<int>(
+    'target_blocks',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _doneMeta = const VerificationMeta('done');
+  @override
+  late final GeneratedColumn<bool> done = GeneratedColumn<bool>(
+    'done',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("done" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    weekPlanId,
+    sortOrder,
+    label,
+    projectId,
+    linkedActionId,
+    goalId,
+    targetBlocks,
+    done,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'week_plan_objectives';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WeekPlanObjective> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('week_plan_id')) {
+      context.handle(
+        _weekPlanIdMeta,
+        weekPlanId.isAcceptableOrUnknown(
+          data['week_plan_id']!,
+          _weekPlanIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_weekPlanIdMeta);
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
+    if (data.containsKey('label')) {
+      context.handle(
+        _labelMeta,
+        label.isAcceptableOrUnknown(data['label']!, _labelMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_labelMeta);
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    }
+    if (data.containsKey('linked_action_id')) {
+      context.handle(
+        _linkedActionIdMeta,
+        linkedActionId.isAcceptableOrUnknown(
+          data['linked_action_id']!,
+          _linkedActionIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('goal_id')) {
+      context.handle(
+        _goalIdMeta,
+        goalId.isAcceptableOrUnknown(data['goal_id']!, _goalIdMeta),
+      );
+    }
+    if (data.containsKey('target_blocks')) {
+      context.handle(
+        _targetBlocksMeta,
+        targetBlocks.isAcceptableOrUnknown(
+          data['target_blocks']!,
+          _targetBlocksMeta,
+        ),
+      );
+    }
+    if (data.containsKey('done')) {
+      context.handle(
+        _doneMeta,
+        done.isAcceptableOrUnknown(data['done']!, _doneMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  WeekPlanObjective map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WeekPlanObjective(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      weekPlanId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}week_plan_id'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+      label: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}label'],
+      )!,
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      ),
+      linkedActionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}linked_action_id'],
+      ),
+      goalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}goal_id'],
+      ),
+      targetBlocks: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}target_blocks'],
+      ),
+      done: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}done'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $WeekPlanObjectivesTable createAlias(String alias) {
+    return $WeekPlanObjectivesTable(attachedDatabase, alias);
+  }
+}
+
+class WeekPlanObjective extends DataClass
+    implements Insertable<WeekPlanObjective> {
+  final String id;
+  final String weekPlanId;
+  final int sortOrder;
+  final String label;
+  final String? projectId;
+  final String? linkedActionId;
+  final String? goalId;
+  final int? targetBlocks;
+  final bool done;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const WeekPlanObjective({
+    required this.id,
+    required this.weekPlanId,
+    required this.sortOrder,
+    required this.label,
+    this.projectId,
+    this.linkedActionId,
+    this.goalId,
+    this.targetBlocks,
+    required this.done,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['week_plan_id'] = Variable<String>(weekPlanId);
+    map['sort_order'] = Variable<int>(sortOrder);
+    map['label'] = Variable<String>(label);
+    if (!nullToAbsent || projectId != null) {
+      map['project_id'] = Variable<String>(projectId);
+    }
+    if (!nullToAbsent || linkedActionId != null) {
+      map['linked_action_id'] = Variable<String>(linkedActionId);
+    }
+    if (!nullToAbsent || goalId != null) {
+      map['goal_id'] = Variable<String>(goalId);
+    }
+    if (!nullToAbsent || targetBlocks != null) {
+      map['target_blocks'] = Variable<int>(targetBlocks);
+    }
+    map['done'] = Variable<bool>(done);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  WeekPlanObjectivesCompanion toCompanion(bool nullToAbsent) {
+    return WeekPlanObjectivesCompanion(
+      id: Value(id),
+      weekPlanId: Value(weekPlanId),
+      sortOrder: Value(sortOrder),
+      label: Value(label),
+      projectId: projectId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(projectId),
+      linkedActionId: linkedActionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(linkedActionId),
+      goalId: goalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(goalId),
+      targetBlocks: targetBlocks == null && nullToAbsent
+          ? const Value.absent()
+          : Value(targetBlocks),
+      done: Value(done),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory WeekPlanObjective.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WeekPlanObjective(
+      id: serializer.fromJson<String>(json['id']),
+      weekPlanId: serializer.fromJson<String>(json['weekPlanId']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      label: serializer.fromJson<String>(json['label']),
+      projectId: serializer.fromJson<String?>(json['projectId']),
+      linkedActionId: serializer.fromJson<String?>(json['linkedActionId']),
+      goalId: serializer.fromJson<String?>(json['goalId']),
+      targetBlocks: serializer.fromJson<int?>(json['targetBlocks']),
+      done: serializer.fromJson<bool>(json['done']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'weekPlanId': serializer.toJson<String>(weekPlanId),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+      'label': serializer.toJson<String>(label),
+      'projectId': serializer.toJson<String?>(projectId),
+      'linkedActionId': serializer.toJson<String?>(linkedActionId),
+      'goalId': serializer.toJson<String?>(goalId),
+      'targetBlocks': serializer.toJson<int?>(targetBlocks),
+      'done': serializer.toJson<bool>(done),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  WeekPlanObjective copyWith({
+    String? id,
+    String? weekPlanId,
+    int? sortOrder,
+    String? label,
+    Value<String?> projectId = const Value.absent(),
+    Value<String?> linkedActionId = const Value.absent(),
+    Value<String?> goalId = const Value.absent(),
+    Value<int?> targetBlocks = const Value.absent(),
+    bool? done,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => WeekPlanObjective(
+    id: id ?? this.id,
+    weekPlanId: weekPlanId ?? this.weekPlanId,
+    sortOrder: sortOrder ?? this.sortOrder,
+    label: label ?? this.label,
+    projectId: projectId.present ? projectId.value : this.projectId,
+    linkedActionId: linkedActionId.present
+        ? linkedActionId.value
+        : this.linkedActionId,
+    goalId: goalId.present ? goalId.value : this.goalId,
+    targetBlocks: targetBlocks.present ? targetBlocks.value : this.targetBlocks,
+    done: done ?? this.done,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  WeekPlanObjective copyWithCompanion(WeekPlanObjectivesCompanion data) {
+    return WeekPlanObjective(
+      id: data.id.present ? data.id.value : this.id,
+      weekPlanId: data.weekPlanId.present
+          ? data.weekPlanId.value
+          : this.weekPlanId,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      label: data.label.present ? data.label.value : this.label,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      linkedActionId: data.linkedActionId.present
+          ? data.linkedActionId.value
+          : this.linkedActionId,
+      goalId: data.goalId.present ? data.goalId.value : this.goalId,
+      targetBlocks: data.targetBlocks.present
+          ? data.targetBlocks.value
+          : this.targetBlocks,
+      done: data.done.present ? data.done.value : this.done,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WeekPlanObjective(')
+          ..write('id: $id, ')
+          ..write('weekPlanId: $weekPlanId, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('label: $label, ')
+          ..write('projectId: $projectId, ')
+          ..write('linkedActionId: $linkedActionId, ')
+          ..write('goalId: $goalId, ')
+          ..write('targetBlocks: $targetBlocks, ')
+          ..write('done: $done, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    weekPlanId,
+    sortOrder,
+    label,
+    projectId,
+    linkedActionId,
+    goalId,
+    targetBlocks,
+    done,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WeekPlanObjective &&
+          other.id == this.id &&
+          other.weekPlanId == this.weekPlanId &&
+          other.sortOrder == this.sortOrder &&
+          other.label == this.label &&
+          other.projectId == this.projectId &&
+          other.linkedActionId == this.linkedActionId &&
+          other.goalId == this.goalId &&
+          other.targetBlocks == this.targetBlocks &&
+          other.done == this.done &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class WeekPlanObjectivesCompanion extends UpdateCompanion<WeekPlanObjective> {
+  final Value<String> id;
+  final Value<String> weekPlanId;
+  final Value<int> sortOrder;
+  final Value<String> label;
+  final Value<String?> projectId;
+  final Value<String?> linkedActionId;
+  final Value<String?> goalId;
+  final Value<int?> targetBlocks;
+  final Value<bool> done;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const WeekPlanObjectivesCompanion({
+    this.id = const Value.absent(),
+    this.weekPlanId = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.label = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.linkedActionId = const Value.absent(),
+    this.goalId = const Value.absent(),
+    this.targetBlocks = const Value.absent(),
+    this.done = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WeekPlanObjectivesCompanion.insert({
+    required String id,
+    required String weekPlanId,
+    this.sortOrder = const Value.absent(),
+    required String label,
+    this.projectId = const Value.absent(),
+    this.linkedActionId = const Value.absent(),
+    this.goalId = const Value.absent(),
+    this.targetBlocks = const Value.absent(),
+    this.done = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       weekPlanId = Value(weekPlanId),
+       label = Value(label);
+  static Insertable<WeekPlanObjective> custom({
+    Expression<String>? id,
+    Expression<String>? weekPlanId,
+    Expression<int>? sortOrder,
+    Expression<String>? label,
+    Expression<String>? projectId,
+    Expression<String>? linkedActionId,
+    Expression<String>? goalId,
+    Expression<int>? targetBlocks,
+    Expression<bool>? done,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (weekPlanId != null) 'week_plan_id': weekPlanId,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (label != null) 'label': label,
+      if (projectId != null) 'project_id': projectId,
+      if (linkedActionId != null) 'linked_action_id': linkedActionId,
+      if (goalId != null) 'goal_id': goalId,
+      if (targetBlocks != null) 'target_blocks': targetBlocks,
+      if (done != null) 'done': done,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WeekPlanObjectivesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? weekPlanId,
+    Value<int>? sortOrder,
+    Value<String>? label,
+    Value<String?>? projectId,
+    Value<String?>? linkedActionId,
+    Value<String?>? goalId,
+    Value<int?>? targetBlocks,
+    Value<bool>? done,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return WeekPlanObjectivesCompanion(
+      id: id ?? this.id,
+      weekPlanId: weekPlanId ?? this.weekPlanId,
+      sortOrder: sortOrder ?? this.sortOrder,
+      label: label ?? this.label,
+      projectId: projectId ?? this.projectId,
+      linkedActionId: linkedActionId ?? this.linkedActionId,
+      goalId: goalId ?? this.goalId,
+      targetBlocks: targetBlocks ?? this.targetBlocks,
+      done: done ?? this.done,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (weekPlanId.present) {
+      map['week_plan_id'] = Variable<String>(weekPlanId.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (label.present) {
+      map['label'] = Variable<String>(label.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (linkedActionId.present) {
+      map['linked_action_id'] = Variable<String>(linkedActionId.value);
+    }
+    if (goalId.present) {
+      map['goal_id'] = Variable<String>(goalId.value);
+    }
+    if (targetBlocks.present) {
+      map['target_blocks'] = Variable<int>(targetBlocks.value);
+    }
+    if (done.present) {
+      map['done'] = Variable<bool>(done.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WeekPlanObjectivesCompanion(')
+          ..write('id: $id, ')
+          ..write('weekPlanId: $weekPlanId, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('label: $label, ')
+          ..write('projectId: $projectId, ')
+          ..write('linkedActionId: $linkedActionId, ')
+          ..write('goalId: $goalId, ')
+          ..write('targetBlocks: $targetBlocks, ')
+          ..write('done: $done, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $QuarterPlansTable extends QuarterPlans
+    with TableInfo<$QuarterPlansTable, QuarterPlan> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $QuarterPlansTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _quarterStartDateMeta = const VerificationMeta(
+    'quarterStartDate',
+  );
+  @override
+  late final GeneratedColumn<String> quarterStartDate = GeneratedColumn<String>(
+    'quarter_start_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _monthMissionsJsonMeta = const VerificationMeta(
+    'monthMissionsJson',
+  );
+  @override
+  late final GeneratedColumn<String> monthMissionsJson =
+      GeneratedColumn<String>(
+        'month_missions_json',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('{}'),
+      );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    quarterStartDate,
+    monthMissionsJson,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'quarter_plans';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<QuarterPlan> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('quarter_start_date')) {
+      context.handle(
+        _quarterStartDateMeta,
+        quarterStartDate.isAcceptableOrUnknown(
+          data['quarter_start_date']!,
+          _quarterStartDateMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_quarterStartDateMeta);
+    }
+    if (data.containsKey('month_missions_json')) {
+      context.handle(
+        _monthMissionsJsonMeta,
+        monthMissionsJson.isAcceptableOrUnknown(
+          data['month_missions_json']!,
+          _monthMissionsJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  QuarterPlan map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return QuarterPlan(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      quarterStartDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}quarter_start_date'],
+      )!,
+      monthMissionsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}month_missions_json'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $QuarterPlansTable createAlias(String alias) {
+    return $QuarterPlansTable(attachedDatabase, alias);
+  }
+}
+
+class QuarterPlan extends DataClass implements Insertable<QuarterPlan> {
+  final String id;
+  final String quarterStartDate;
+  final String monthMissionsJson;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const QuarterPlan({
+    required this.id,
+    required this.quarterStartDate,
+    required this.monthMissionsJson,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['quarter_start_date'] = Variable<String>(quarterStartDate);
+    map['month_missions_json'] = Variable<String>(monthMissionsJson);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  QuarterPlansCompanion toCompanion(bool nullToAbsent) {
+    return QuarterPlansCompanion(
+      id: Value(id),
+      quarterStartDate: Value(quarterStartDate),
+      monthMissionsJson: Value(monthMissionsJson),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory QuarterPlan.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return QuarterPlan(
+      id: serializer.fromJson<String>(json['id']),
+      quarterStartDate: serializer.fromJson<String>(json['quarterStartDate']),
+      monthMissionsJson: serializer.fromJson<String>(json['monthMissionsJson']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'quarterStartDate': serializer.toJson<String>(quarterStartDate),
+      'monthMissionsJson': serializer.toJson<String>(monthMissionsJson),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  QuarterPlan copyWith({
+    String? id,
+    String? quarterStartDate,
+    String? monthMissionsJson,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => QuarterPlan(
+    id: id ?? this.id,
+    quarterStartDate: quarterStartDate ?? this.quarterStartDate,
+    monthMissionsJson: monthMissionsJson ?? this.monthMissionsJson,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  QuarterPlan copyWithCompanion(QuarterPlansCompanion data) {
+    return QuarterPlan(
+      id: data.id.present ? data.id.value : this.id,
+      quarterStartDate: data.quarterStartDate.present
+          ? data.quarterStartDate.value
+          : this.quarterStartDate,
+      monthMissionsJson: data.monthMissionsJson.present
+          ? data.monthMissionsJson.value
+          : this.monthMissionsJson,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QuarterPlan(')
+          ..write('id: $id, ')
+          ..write('quarterStartDate: $quarterStartDate, ')
+          ..write('monthMissionsJson: $monthMissionsJson, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    quarterStartDate,
+    monthMissionsJson,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is QuarterPlan &&
+          other.id == this.id &&
+          other.quarterStartDate == this.quarterStartDate &&
+          other.monthMissionsJson == this.monthMissionsJson &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class QuarterPlansCompanion extends UpdateCompanion<QuarterPlan> {
+  final Value<String> id;
+  final Value<String> quarterStartDate;
+  final Value<String> monthMissionsJson;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const QuarterPlansCompanion({
+    this.id = const Value.absent(),
+    this.quarterStartDate = const Value.absent(),
+    this.monthMissionsJson = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  QuarterPlansCompanion.insert({
+    required String id,
+    required String quarterStartDate,
+    this.monthMissionsJson = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       quarterStartDate = Value(quarterStartDate);
+  static Insertable<QuarterPlan> custom({
+    Expression<String>? id,
+    Expression<String>? quarterStartDate,
+    Expression<String>? monthMissionsJson,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (quarterStartDate != null) 'quarter_start_date': quarterStartDate,
+      if (monthMissionsJson != null) 'month_missions_json': monthMissionsJson,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  QuarterPlansCompanion copyWith({
+    Value<String>? id,
+    Value<String>? quarterStartDate,
+    Value<String>? monthMissionsJson,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return QuarterPlansCompanion(
+      id: id ?? this.id,
+      quarterStartDate: quarterStartDate ?? this.quarterStartDate,
+      monthMissionsJson: monthMissionsJson ?? this.monthMissionsJson,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (quarterStartDate.present) {
+      map['quarter_start_date'] = Variable<String>(quarterStartDate.value);
+    }
+    if (monthMissionsJson.present) {
+      map['month_missions_json'] = Variable<String>(monthMissionsJson.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QuarterPlansCompanion(')
+          ..write('id: $id, ')
+          ..write('quarterStartDate: $quarterStartDate, ')
+          ..write('monthMissionsJson: $monthMissionsJson, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $QuarterGoalsTable extends QuarterGoals
+    with TableInfo<$QuarterGoalsTable, QuarterGoal> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $QuarterGoalsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _quarterPlanIdMeta = const VerificationMeta(
+    'quarterPlanId',
+  );
+  @override
+  late final GeneratedColumn<String> quarterPlanId = GeneratedColumn<String>(
+    'quarter_plan_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES quarter_plans (id)',
+    ),
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _labelMeta = const VerificationMeta('label');
+  @override
+  late final GeneratedColumn<String> label = GeneratedColumn<String>(
+    'label',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _whyMeta = const VerificationMeta('why');
+  @override
+  late final GeneratedColumn<String> why = GeneratedColumn<String>(
+    'why',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _linkedActionIdMeta = const VerificationMeta(
+    'linkedActionId',
+  );
+  @override
+  late final GeneratedColumn<String> linkedActionId = GeneratedColumn<String>(
+    'linked_action_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _targetObjectivesMeta = const VerificationMeta(
+    'targetObjectives',
+  );
+  @override
+  late final GeneratedColumn<int> targetObjectives = GeneratedColumn<int>(
+    'target_objectives',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _doneMeta = const VerificationMeta('done');
+  @override
+  late final GeneratedColumn<bool> done = GeneratedColumn<bool>(
+    'done',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("done" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    quarterPlanId,
+    sortOrder,
+    label,
+    why,
+    projectId,
+    linkedActionId,
+    targetObjectives,
+    done,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'quarter_goals';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<QuarterGoal> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('quarter_plan_id')) {
+      context.handle(
+        _quarterPlanIdMeta,
+        quarterPlanId.isAcceptableOrUnknown(
+          data['quarter_plan_id']!,
+          _quarterPlanIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_quarterPlanIdMeta);
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
+    if (data.containsKey('label')) {
+      context.handle(
+        _labelMeta,
+        label.isAcceptableOrUnknown(data['label']!, _labelMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_labelMeta);
+    }
+    if (data.containsKey('why')) {
+      context.handle(
+        _whyMeta,
+        why.isAcceptableOrUnknown(data['why']!, _whyMeta),
+      );
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    }
+    if (data.containsKey('linked_action_id')) {
+      context.handle(
+        _linkedActionIdMeta,
+        linkedActionId.isAcceptableOrUnknown(
+          data['linked_action_id']!,
+          _linkedActionIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('target_objectives')) {
+      context.handle(
+        _targetObjectivesMeta,
+        targetObjectives.isAcceptableOrUnknown(
+          data['target_objectives']!,
+          _targetObjectivesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('done')) {
+      context.handle(
+        _doneMeta,
+        done.isAcceptableOrUnknown(data['done']!, _doneMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  QuarterGoal map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return QuarterGoal(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      quarterPlanId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}quarter_plan_id'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+      label: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}label'],
+      )!,
+      why: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}why'],
+      ),
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      ),
+      linkedActionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}linked_action_id'],
+      ),
+      targetObjectives: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}target_objectives'],
+      ),
+      done: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}done'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $QuarterGoalsTable createAlias(String alias) {
+    return $QuarterGoalsTable(attachedDatabase, alias);
+  }
+}
+
+class QuarterGoal extends DataClass implements Insertable<QuarterGoal> {
+  final String id;
+  final String quarterPlanId;
+  final int sortOrder;
+  final String label;
+  final String? why;
+  final String? projectId;
+  final String? linkedActionId;
+  final int? targetObjectives;
+  final bool done;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const QuarterGoal({
+    required this.id,
+    required this.quarterPlanId,
+    required this.sortOrder,
+    required this.label,
+    this.why,
+    this.projectId,
+    this.linkedActionId,
+    this.targetObjectives,
+    required this.done,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['quarter_plan_id'] = Variable<String>(quarterPlanId);
+    map['sort_order'] = Variable<int>(sortOrder);
+    map['label'] = Variable<String>(label);
+    if (!nullToAbsent || why != null) {
+      map['why'] = Variable<String>(why);
+    }
+    if (!nullToAbsent || projectId != null) {
+      map['project_id'] = Variable<String>(projectId);
+    }
+    if (!nullToAbsent || linkedActionId != null) {
+      map['linked_action_id'] = Variable<String>(linkedActionId);
+    }
+    if (!nullToAbsent || targetObjectives != null) {
+      map['target_objectives'] = Variable<int>(targetObjectives);
+    }
+    map['done'] = Variable<bool>(done);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  QuarterGoalsCompanion toCompanion(bool nullToAbsent) {
+    return QuarterGoalsCompanion(
+      id: Value(id),
+      quarterPlanId: Value(quarterPlanId),
+      sortOrder: Value(sortOrder),
+      label: Value(label),
+      why: why == null && nullToAbsent ? const Value.absent() : Value(why),
+      projectId: projectId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(projectId),
+      linkedActionId: linkedActionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(linkedActionId),
+      targetObjectives: targetObjectives == null && nullToAbsent
+          ? const Value.absent()
+          : Value(targetObjectives),
+      done: Value(done),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory QuarterGoal.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return QuarterGoal(
+      id: serializer.fromJson<String>(json['id']),
+      quarterPlanId: serializer.fromJson<String>(json['quarterPlanId']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      label: serializer.fromJson<String>(json['label']),
+      why: serializer.fromJson<String?>(json['why']),
+      projectId: serializer.fromJson<String?>(json['projectId']),
+      linkedActionId: serializer.fromJson<String?>(json['linkedActionId']),
+      targetObjectives: serializer.fromJson<int?>(json['targetObjectives']),
+      done: serializer.fromJson<bool>(json['done']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'quarterPlanId': serializer.toJson<String>(quarterPlanId),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+      'label': serializer.toJson<String>(label),
+      'why': serializer.toJson<String?>(why),
+      'projectId': serializer.toJson<String?>(projectId),
+      'linkedActionId': serializer.toJson<String?>(linkedActionId),
+      'targetObjectives': serializer.toJson<int?>(targetObjectives),
+      'done': serializer.toJson<bool>(done),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  QuarterGoal copyWith({
+    String? id,
+    String? quarterPlanId,
+    int? sortOrder,
+    String? label,
+    Value<String?> why = const Value.absent(),
+    Value<String?> projectId = const Value.absent(),
+    Value<String?> linkedActionId = const Value.absent(),
+    Value<int?> targetObjectives = const Value.absent(),
+    bool? done,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => QuarterGoal(
+    id: id ?? this.id,
+    quarterPlanId: quarterPlanId ?? this.quarterPlanId,
+    sortOrder: sortOrder ?? this.sortOrder,
+    label: label ?? this.label,
+    why: why.present ? why.value : this.why,
+    projectId: projectId.present ? projectId.value : this.projectId,
+    linkedActionId: linkedActionId.present
+        ? linkedActionId.value
+        : this.linkedActionId,
+    targetObjectives: targetObjectives.present
+        ? targetObjectives.value
+        : this.targetObjectives,
+    done: done ?? this.done,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  QuarterGoal copyWithCompanion(QuarterGoalsCompanion data) {
+    return QuarterGoal(
+      id: data.id.present ? data.id.value : this.id,
+      quarterPlanId: data.quarterPlanId.present
+          ? data.quarterPlanId.value
+          : this.quarterPlanId,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      label: data.label.present ? data.label.value : this.label,
+      why: data.why.present ? data.why.value : this.why,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      linkedActionId: data.linkedActionId.present
+          ? data.linkedActionId.value
+          : this.linkedActionId,
+      targetObjectives: data.targetObjectives.present
+          ? data.targetObjectives.value
+          : this.targetObjectives,
+      done: data.done.present ? data.done.value : this.done,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QuarterGoal(')
+          ..write('id: $id, ')
+          ..write('quarterPlanId: $quarterPlanId, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('label: $label, ')
+          ..write('why: $why, ')
+          ..write('projectId: $projectId, ')
+          ..write('linkedActionId: $linkedActionId, ')
+          ..write('targetObjectives: $targetObjectives, ')
+          ..write('done: $done, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    quarterPlanId,
+    sortOrder,
+    label,
+    why,
+    projectId,
+    linkedActionId,
+    targetObjectives,
+    done,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is QuarterGoal &&
+          other.id == this.id &&
+          other.quarterPlanId == this.quarterPlanId &&
+          other.sortOrder == this.sortOrder &&
+          other.label == this.label &&
+          other.why == this.why &&
+          other.projectId == this.projectId &&
+          other.linkedActionId == this.linkedActionId &&
+          other.targetObjectives == this.targetObjectives &&
+          other.done == this.done &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class QuarterGoalsCompanion extends UpdateCompanion<QuarterGoal> {
+  final Value<String> id;
+  final Value<String> quarterPlanId;
+  final Value<int> sortOrder;
+  final Value<String> label;
+  final Value<String?> why;
+  final Value<String?> projectId;
+  final Value<String?> linkedActionId;
+  final Value<int?> targetObjectives;
+  final Value<bool> done;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const QuarterGoalsCompanion({
+    this.id = const Value.absent(),
+    this.quarterPlanId = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.label = const Value.absent(),
+    this.why = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.linkedActionId = const Value.absent(),
+    this.targetObjectives = const Value.absent(),
+    this.done = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  QuarterGoalsCompanion.insert({
+    required String id,
+    required String quarterPlanId,
+    this.sortOrder = const Value.absent(),
+    required String label,
+    this.why = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.linkedActionId = const Value.absent(),
+    this.targetObjectives = const Value.absent(),
+    this.done = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       quarterPlanId = Value(quarterPlanId),
+       label = Value(label);
+  static Insertable<QuarterGoal> custom({
+    Expression<String>? id,
+    Expression<String>? quarterPlanId,
+    Expression<int>? sortOrder,
+    Expression<String>? label,
+    Expression<String>? why,
+    Expression<String>? projectId,
+    Expression<String>? linkedActionId,
+    Expression<int>? targetObjectives,
+    Expression<bool>? done,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (quarterPlanId != null) 'quarter_plan_id': quarterPlanId,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (label != null) 'label': label,
+      if (why != null) 'why': why,
+      if (projectId != null) 'project_id': projectId,
+      if (linkedActionId != null) 'linked_action_id': linkedActionId,
+      if (targetObjectives != null) 'target_objectives': targetObjectives,
+      if (done != null) 'done': done,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  QuarterGoalsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? quarterPlanId,
+    Value<int>? sortOrder,
+    Value<String>? label,
+    Value<String?>? why,
+    Value<String?>? projectId,
+    Value<String?>? linkedActionId,
+    Value<int?>? targetObjectives,
+    Value<bool>? done,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return QuarterGoalsCompanion(
+      id: id ?? this.id,
+      quarterPlanId: quarterPlanId ?? this.quarterPlanId,
+      sortOrder: sortOrder ?? this.sortOrder,
+      label: label ?? this.label,
+      why: why ?? this.why,
+      projectId: projectId ?? this.projectId,
+      linkedActionId: linkedActionId ?? this.linkedActionId,
+      targetObjectives: targetObjectives ?? this.targetObjectives,
+      done: done ?? this.done,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (quarterPlanId.present) {
+      map['quarter_plan_id'] = Variable<String>(quarterPlanId.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (label.present) {
+      map['label'] = Variable<String>(label.value);
+    }
+    if (why.present) {
+      map['why'] = Variable<String>(why.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (linkedActionId.present) {
+      map['linked_action_id'] = Variable<String>(linkedActionId.value);
+    }
+    if (targetObjectives.present) {
+      map['target_objectives'] = Variable<int>(targetObjectives.value);
+    }
+    if (done.present) {
+      map['done'] = Variable<bool>(done.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QuarterGoalsCompanion(')
+          ..write('id: $id, ')
+          ..write('quarterPlanId: $quarterPlanId, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('label: $label, ')
+          ..write('why: $why, ')
+          ..write('projectId: $projectId, ')
+          ..write('linkedActionId: $linkedActionId, ')
+          ..write('targetObjectives: $targetObjectives, ')
           ..write('done: $done, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -39733,6 +42147,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $FinancialAuditLogTable(this);
   late final $DayPlansTable dayPlans = $DayPlansTable(this);
   late final $DayPlanBlocksTable dayPlanBlocks = $DayPlanBlocksTable(this);
+  late final $WeekPlansTable weekPlans = $WeekPlansTable(this);
+  late final $WeekPlanObjectivesTable weekPlanObjectives =
+      $WeekPlanObjectivesTable(this);
+  late final $QuarterPlansTable quarterPlans = $QuarterPlansTable(this);
+  late final $QuarterGoalsTable quarterGoals = $QuarterGoalsTable(this);
   late final ProjectDao projectDao = ProjectDao(this as AppDatabase);
   late final ProgrammeDao programmeDao = ProgrammeDao(this as AppDatabase);
   late final ProgrammeLinksDao programmeLinksDao = ProgrammeLinksDao(
@@ -39786,6 +42205,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final FinanceDao financeDao = FinanceDao(this as AppDatabase);
   late final DayPlanDao dayPlanDao = DayPlanDao(this as AppDatabase);
+  late final WeekPlanDao weekPlanDao = WeekPlanDao(this as AppDatabase);
+  late final QuarterPlanDao quarterPlanDao = QuarterPlanDao(
+    this as AppDatabase,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -39850,6 +42273,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     financialAuditLog,
     dayPlans,
     dayPlanBlocks,
+    weekPlans,
+    weekPlanObjectives,
+    quarterPlans,
+    quarterGoals,
   ];
 }
 
@@ -62120,6 +64547,11 @@ typedef $$TimelineActivitiesTableCreateCompanionBuilder =
       Value<int?> endMonth,
       Value<String?> startDate,
       Value<String?> endDate,
+      Value<int?> likelyMonth,
+      Value<int?> safeMonth,
+      Value<String?> varianceRaidType,
+      Value<String?> varianceRaidId,
+      Value<String?> varianceRaidLinksJson,
       Value<String> status,
       Value<bool> isCritical,
       Value<bool> isBaseline,
@@ -62148,6 +64580,11 @@ typedef $$TimelineActivitiesTableUpdateCompanionBuilder =
       Value<int?> endMonth,
       Value<String?> startDate,
       Value<String?> endDate,
+      Value<int?> likelyMonth,
+      Value<int?> safeMonth,
+      Value<String?> varianceRaidType,
+      Value<String?> varianceRaidId,
+      Value<String?> varianceRaidLinksJson,
       Value<String> status,
       Value<bool> isCritical,
       Value<bool> isBaseline,
@@ -62274,6 +64711,31 @@ class $$TimelineActivitiesTableFilterComposer
 
   ColumnFilters<String> get endDate => $composableBuilder(
     column: $table.endDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get likelyMonth => $composableBuilder(
+    column: $table.likelyMonth,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get safeMonth => $composableBuilder(
+    column: $table.safeMonth,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get varianceRaidType => $composableBuilder(
+    column: $table.varianceRaidType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get varianceRaidId => $composableBuilder(
+    column: $table.varianceRaidId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get varianceRaidLinksJson => $composableBuilder(
+    column: $table.varianceRaidLinksJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -62443,6 +64905,31 @@ class $$TimelineActivitiesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get likelyMonth => $composableBuilder(
+    column: $table.likelyMonth,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get safeMonth => $composableBuilder(
+    column: $table.safeMonth,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get varianceRaidType => $composableBuilder(
+    column: $table.varianceRaidType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get varianceRaidId => $composableBuilder(
+    column: $table.varianceRaidId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get varianceRaidLinksJson => $composableBuilder(
+    column: $table.varianceRaidLinksJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get status => $composableBuilder(
     column: $table.status,
     builder: (column) => ColumnOrderings(column),
@@ -62596,6 +65083,29 @@ class $$TimelineActivitiesTableAnnotationComposer
   GeneratedColumn<String> get endDate =>
       $composableBuilder(column: $table.endDate, builder: (column) => column);
 
+  GeneratedColumn<int> get likelyMonth => $composableBuilder(
+    column: $table.likelyMonth,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get safeMonth =>
+      $composableBuilder(column: $table.safeMonth, builder: (column) => column);
+
+  GeneratedColumn<String> get varianceRaidType => $composableBuilder(
+    column: $table.varianceRaidType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get varianceRaidId => $composableBuilder(
+    column: $table.varianceRaidId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get varianceRaidLinksJson => $composableBuilder(
+    column: $table.varianceRaidLinksJson,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
 
@@ -62737,6 +65247,11 @@ class $$TimelineActivitiesTableTableManager
                 Value<int?> endMonth = const Value.absent(),
                 Value<String?> startDate = const Value.absent(),
                 Value<String?> endDate = const Value.absent(),
+                Value<int?> likelyMonth = const Value.absent(),
+                Value<int?> safeMonth = const Value.absent(),
+                Value<String?> varianceRaidType = const Value.absent(),
+                Value<String?> varianceRaidId = const Value.absent(),
+                Value<String?> varianceRaidLinksJson = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<bool> isCritical = const Value.absent(),
                 Value<bool> isBaseline = const Value.absent(),
@@ -62763,6 +65278,11 @@ class $$TimelineActivitiesTableTableManager
                 endMonth: endMonth,
                 startDate: startDate,
                 endDate: endDate,
+                likelyMonth: likelyMonth,
+                safeMonth: safeMonth,
+                varianceRaidType: varianceRaidType,
+                varianceRaidId: varianceRaidId,
+                varianceRaidLinksJson: varianceRaidLinksJson,
                 status: status,
                 isCritical: isCritical,
                 isBaseline: isBaseline,
@@ -62791,6 +65311,11 @@ class $$TimelineActivitiesTableTableManager
                 Value<int?> endMonth = const Value.absent(),
                 Value<String?> startDate = const Value.absent(),
                 Value<String?> endDate = const Value.absent(),
+                Value<int?> likelyMonth = const Value.absent(),
+                Value<int?> safeMonth = const Value.absent(),
+                Value<String?> varianceRaidType = const Value.absent(),
+                Value<String?> varianceRaidId = const Value.absent(),
+                Value<String?> varianceRaidLinksJson = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<bool> isCritical = const Value.absent(),
                 Value<bool> isBaseline = const Value.absent(),
@@ -62817,6 +65342,11 @@ class $$TimelineActivitiesTableTableManager
                 endMonth: endMonth,
                 startDate: startDate,
                 endDate: endDate,
+                likelyMonth: likelyMonth,
+                safeMonth: safeMonth,
+                varianceRaidType: varianceRaidType,
+                varianceRaidId: varianceRaidId,
+                varianceRaidLinksJson: varianceRaidLinksJson,
                 status: status,
                 isCritical: isCritical,
                 isBaseline: isBaseline,
@@ -73062,6 +75592,7 @@ typedef $$DayPlanBlocksTableCreateCompanionBuilder =
       required String label,
       Value<String?> projectId,
       Value<String?> linkedActionId,
+      Value<String?> objectiveId,
       Value<bool> done,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -73078,6 +75609,7 @@ typedef $$DayPlanBlocksTableUpdateCompanionBuilder =
       Value<String> label,
       Value<String?> projectId,
       Value<String?> linkedActionId,
+      Value<String?> objectiveId,
       Value<bool> done,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -73158,6 +75690,11 @@ class $$DayPlanBlocksTableFilterComposer
 
   ColumnFilters<String> get linkedActionId => $composableBuilder(
     column: $table.linkedActionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get objectiveId => $composableBuilder(
+    column: $table.objectiveId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -73249,6 +75786,11 @@ class $$DayPlanBlocksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get objectiveId => $composableBuilder(
+    column: $table.objectiveId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get done => $composableBuilder(
     column: $table.done,
     builder: (column) => ColumnOrderings(column),
@@ -73325,6 +75867,11 @@ class $$DayPlanBlocksTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get objectiveId => $composableBuilder(
+    column: $table.objectiveId,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get done =>
       $composableBuilder(column: $table.done, builder: (column) => column);
 
@@ -73395,6 +75942,7 @@ class $$DayPlanBlocksTableTableManager
                 Value<String> label = const Value.absent(),
                 Value<String?> projectId = const Value.absent(),
                 Value<String?> linkedActionId = const Value.absent(),
+                Value<String?> objectiveId = const Value.absent(),
                 Value<bool> done = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -73409,6 +75957,7 @@ class $$DayPlanBlocksTableTableManager
                 label: label,
                 projectId: projectId,
                 linkedActionId: linkedActionId,
+                objectiveId: objectiveId,
                 done: done,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -73425,6 +75974,7 @@ class $$DayPlanBlocksTableTableManager
                 required String label,
                 Value<String?> projectId = const Value.absent(),
                 Value<String?> linkedActionId = const Value.absent(),
+                Value<String?> objectiveId = const Value.absent(),
                 Value<bool> done = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -73439,6 +75989,7 @@ class $$DayPlanBlocksTableTableManager
                 label: label,
                 projectId: projectId,
                 linkedActionId: linkedActionId,
+                objectiveId: objectiveId,
                 done: done,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -73510,6 +76061,1520 @@ typedef $$DayPlanBlocksTableProcessedTableManager =
       (DayPlanBlock, $$DayPlanBlocksTableReferences),
       DayPlanBlock,
       PrefetchHooks Function({bool dayPlanId})
+    >;
+typedef $$WeekPlansTableCreateCompanionBuilder =
+    WeekPlansCompanion Function({
+      required String id,
+      required String weekStartDate,
+      Value<String> dayMissionsJson,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$WeekPlansTableUpdateCompanionBuilder =
+    WeekPlansCompanion Function({
+      Value<String> id,
+      Value<String> weekStartDate,
+      Value<String> dayMissionsJson,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$WeekPlansTableReferences
+    extends BaseReferences<_$AppDatabase, $WeekPlansTable, WeekPlan> {
+  $$WeekPlansTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$WeekPlanObjectivesTable, List<WeekPlanObjective>>
+  _weekPlanObjectivesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.weekPlanObjectives,
+        aliasName: $_aliasNameGenerator(
+          db.weekPlans.id,
+          db.weekPlanObjectives.weekPlanId,
+        ),
+      );
+
+  $$WeekPlanObjectivesTableProcessedTableManager get weekPlanObjectivesRefs {
+    final manager = $$WeekPlanObjectivesTableTableManager(
+      $_db,
+      $_db.weekPlanObjectives,
+    ).filter((f) => f.weekPlanId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _weekPlanObjectivesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$WeekPlansTableFilterComposer
+    extends Composer<_$AppDatabase, $WeekPlansTable> {
+  $$WeekPlansTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get weekStartDate => $composableBuilder(
+    column: $table.weekStartDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get dayMissionsJson => $composableBuilder(
+    column: $table.dayMissionsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> weekPlanObjectivesRefs(
+    Expression<bool> Function($$WeekPlanObjectivesTableFilterComposer f) f,
+  ) {
+    final $$WeekPlanObjectivesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.weekPlanObjectives,
+      getReferencedColumn: (t) => t.weekPlanId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WeekPlanObjectivesTableFilterComposer(
+            $db: $db,
+            $table: $db.weekPlanObjectives,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$WeekPlansTableOrderingComposer
+    extends Composer<_$AppDatabase, $WeekPlansTable> {
+  $$WeekPlansTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get weekStartDate => $composableBuilder(
+    column: $table.weekStartDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get dayMissionsJson => $composableBuilder(
+    column: $table.dayMissionsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$WeekPlansTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WeekPlansTable> {
+  $$WeekPlansTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get weekStartDate => $composableBuilder(
+    column: $table.weekStartDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get dayMissionsJson => $composableBuilder(
+    column: $table.dayMissionsJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  Expression<T> weekPlanObjectivesRefs<T extends Object>(
+    Expression<T> Function($$WeekPlanObjectivesTableAnnotationComposer a) f,
+  ) {
+    final $$WeekPlanObjectivesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.weekPlanObjectives,
+          getReferencedColumn: (t) => t.weekPlanId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WeekPlanObjectivesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.weekPlanObjectives,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$WeekPlansTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WeekPlansTable,
+          WeekPlan,
+          $$WeekPlansTableFilterComposer,
+          $$WeekPlansTableOrderingComposer,
+          $$WeekPlansTableAnnotationComposer,
+          $$WeekPlansTableCreateCompanionBuilder,
+          $$WeekPlansTableUpdateCompanionBuilder,
+          (WeekPlan, $$WeekPlansTableReferences),
+          WeekPlan,
+          PrefetchHooks Function({bool weekPlanObjectivesRefs})
+        > {
+  $$WeekPlansTableTableManager(_$AppDatabase db, $WeekPlansTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WeekPlansTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$WeekPlansTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$WeekPlansTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> weekStartDate = const Value.absent(),
+                Value<String> dayMissionsJson = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WeekPlansCompanion(
+                id: id,
+                weekStartDate: weekStartDate,
+                dayMissionsJson: dayMissionsJson,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String weekStartDate,
+                Value<String> dayMissionsJson = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WeekPlansCompanion.insert(
+                id: id,
+                weekStartDate: weekStartDate,
+                dayMissionsJson: dayMissionsJson,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$WeekPlansTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({weekPlanObjectivesRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (weekPlanObjectivesRefs) db.weekPlanObjectives,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (weekPlanObjectivesRefs)
+                    await $_getPrefetchedData<
+                      WeekPlan,
+                      $WeekPlansTable,
+                      WeekPlanObjective
+                    >(
+                      currentTable: table,
+                      referencedTable: $$WeekPlansTableReferences
+                          ._weekPlanObjectivesRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$WeekPlansTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).weekPlanObjectivesRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.weekPlanId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$WeekPlansTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WeekPlansTable,
+      WeekPlan,
+      $$WeekPlansTableFilterComposer,
+      $$WeekPlansTableOrderingComposer,
+      $$WeekPlansTableAnnotationComposer,
+      $$WeekPlansTableCreateCompanionBuilder,
+      $$WeekPlansTableUpdateCompanionBuilder,
+      (WeekPlan, $$WeekPlansTableReferences),
+      WeekPlan,
+      PrefetchHooks Function({bool weekPlanObjectivesRefs})
+    >;
+typedef $$WeekPlanObjectivesTableCreateCompanionBuilder =
+    WeekPlanObjectivesCompanion Function({
+      required String id,
+      required String weekPlanId,
+      Value<int> sortOrder,
+      required String label,
+      Value<String?> projectId,
+      Value<String?> linkedActionId,
+      Value<String?> goalId,
+      Value<int?> targetBlocks,
+      Value<bool> done,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$WeekPlanObjectivesTableUpdateCompanionBuilder =
+    WeekPlanObjectivesCompanion Function({
+      Value<String> id,
+      Value<String> weekPlanId,
+      Value<int> sortOrder,
+      Value<String> label,
+      Value<String?> projectId,
+      Value<String?> linkedActionId,
+      Value<String?> goalId,
+      Value<int?> targetBlocks,
+      Value<bool> done,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$WeekPlanObjectivesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $WeekPlanObjectivesTable,
+          WeekPlanObjective
+        > {
+  $$WeekPlanObjectivesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $WeekPlansTable _weekPlanIdTable(_$AppDatabase db) =>
+      db.weekPlans.createAlias(
+        $_aliasNameGenerator(db.weekPlanObjectives.weekPlanId, db.weekPlans.id),
+      );
+
+  $$WeekPlansTableProcessedTableManager get weekPlanId {
+    final $_column = $_itemColumn<String>('week_plan_id')!;
+
+    final manager = $$WeekPlansTableTableManager(
+      $_db,
+      $_db.weekPlans,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_weekPlanIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$WeekPlanObjectivesTableFilterComposer
+    extends Composer<_$AppDatabase, $WeekPlanObjectivesTable> {
+  $$WeekPlanObjectivesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get label => $composableBuilder(
+    column: $table.label,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get projectId => $composableBuilder(
+    column: $table.projectId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get linkedActionId => $composableBuilder(
+    column: $table.linkedActionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get goalId => $composableBuilder(
+    column: $table.goalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get targetBlocks => $composableBuilder(
+    column: $table.targetBlocks,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get done => $composableBuilder(
+    column: $table.done,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$WeekPlansTableFilterComposer get weekPlanId {
+    final $$WeekPlansTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.weekPlanId,
+      referencedTable: $db.weekPlans,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WeekPlansTableFilterComposer(
+            $db: $db,
+            $table: $db.weekPlans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WeekPlanObjectivesTableOrderingComposer
+    extends Composer<_$AppDatabase, $WeekPlanObjectivesTable> {
+  $$WeekPlanObjectivesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get label => $composableBuilder(
+    column: $table.label,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get projectId => $composableBuilder(
+    column: $table.projectId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get linkedActionId => $composableBuilder(
+    column: $table.linkedActionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get goalId => $composableBuilder(
+    column: $table.goalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get targetBlocks => $composableBuilder(
+    column: $table.targetBlocks,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get done => $composableBuilder(
+    column: $table.done,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$WeekPlansTableOrderingComposer get weekPlanId {
+    final $$WeekPlansTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.weekPlanId,
+      referencedTable: $db.weekPlans,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WeekPlansTableOrderingComposer(
+            $db: $db,
+            $table: $db.weekPlans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WeekPlanObjectivesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WeekPlanObjectivesTable> {
+  $$WeekPlanObjectivesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<String> get label =>
+      $composableBuilder(column: $table.label, builder: (column) => column);
+
+  GeneratedColumn<String> get projectId =>
+      $composableBuilder(column: $table.projectId, builder: (column) => column);
+
+  GeneratedColumn<String> get linkedActionId => $composableBuilder(
+    column: $table.linkedActionId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get goalId =>
+      $composableBuilder(column: $table.goalId, builder: (column) => column);
+
+  GeneratedColumn<int> get targetBlocks => $composableBuilder(
+    column: $table.targetBlocks,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get done =>
+      $composableBuilder(column: $table.done, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$WeekPlansTableAnnotationComposer get weekPlanId {
+    final $$WeekPlansTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.weekPlanId,
+      referencedTable: $db.weekPlans,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WeekPlansTableAnnotationComposer(
+            $db: $db,
+            $table: $db.weekPlans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WeekPlanObjectivesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WeekPlanObjectivesTable,
+          WeekPlanObjective,
+          $$WeekPlanObjectivesTableFilterComposer,
+          $$WeekPlanObjectivesTableOrderingComposer,
+          $$WeekPlanObjectivesTableAnnotationComposer,
+          $$WeekPlanObjectivesTableCreateCompanionBuilder,
+          $$WeekPlanObjectivesTableUpdateCompanionBuilder,
+          (WeekPlanObjective, $$WeekPlanObjectivesTableReferences),
+          WeekPlanObjective,
+          PrefetchHooks Function({bool weekPlanId})
+        > {
+  $$WeekPlanObjectivesTableTableManager(
+    _$AppDatabase db,
+    $WeekPlanObjectivesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WeekPlanObjectivesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$WeekPlanObjectivesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$WeekPlanObjectivesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> weekPlanId = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<String> label = const Value.absent(),
+                Value<String?> projectId = const Value.absent(),
+                Value<String?> linkedActionId = const Value.absent(),
+                Value<String?> goalId = const Value.absent(),
+                Value<int?> targetBlocks = const Value.absent(),
+                Value<bool> done = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WeekPlanObjectivesCompanion(
+                id: id,
+                weekPlanId: weekPlanId,
+                sortOrder: sortOrder,
+                label: label,
+                projectId: projectId,
+                linkedActionId: linkedActionId,
+                goalId: goalId,
+                targetBlocks: targetBlocks,
+                done: done,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String weekPlanId,
+                Value<int> sortOrder = const Value.absent(),
+                required String label,
+                Value<String?> projectId = const Value.absent(),
+                Value<String?> linkedActionId = const Value.absent(),
+                Value<String?> goalId = const Value.absent(),
+                Value<int?> targetBlocks = const Value.absent(),
+                Value<bool> done = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WeekPlanObjectivesCompanion.insert(
+                id: id,
+                weekPlanId: weekPlanId,
+                sortOrder: sortOrder,
+                label: label,
+                projectId: projectId,
+                linkedActionId: linkedActionId,
+                goalId: goalId,
+                targetBlocks: targetBlocks,
+                done: done,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$WeekPlanObjectivesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({weekPlanId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (weekPlanId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.weekPlanId,
+                                referencedTable:
+                                    $$WeekPlanObjectivesTableReferences
+                                        ._weekPlanIdTable(db),
+                                referencedColumn:
+                                    $$WeekPlanObjectivesTableReferences
+                                        ._weekPlanIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$WeekPlanObjectivesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WeekPlanObjectivesTable,
+      WeekPlanObjective,
+      $$WeekPlanObjectivesTableFilterComposer,
+      $$WeekPlanObjectivesTableOrderingComposer,
+      $$WeekPlanObjectivesTableAnnotationComposer,
+      $$WeekPlanObjectivesTableCreateCompanionBuilder,
+      $$WeekPlanObjectivesTableUpdateCompanionBuilder,
+      (WeekPlanObjective, $$WeekPlanObjectivesTableReferences),
+      WeekPlanObjective,
+      PrefetchHooks Function({bool weekPlanId})
+    >;
+typedef $$QuarterPlansTableCreateCompanionBuilder =
+    QuarterPlansCompanion Function({
+      required String id,
+      required String quarterStartDate,
+      Value<String> monthMissionsJson,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$QuarterPlansTableUpdateCompanionBuilder =
+    QuarterPlansCompanion Function({
+      Value<String> id,
+      Value<String> quarterStartDate,
+      Value<String> monthMissionsJson,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$QuarterPlansTableReferences
+    extends BaseReferences<_$AppDatabase, $QuarterPlansTable, QuarterPlan> {
+  $$QuarterPlansTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$QuarterGoalsTable, List<QuarterGoal>>
+  _quarterGoalsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.quarterGoals,
+    aliasName: $_aliasNameGenerator(
+      db.quarterPlans.id,
+      db.quarterGoals.quarterPlanId,
+    ),
+  );
+
+  $$QuarterGoalsTableProcessedTableManager get quarterGoalsRefs {
+    final manager = $$QuarterGoalsTableTableManager(
+      $_db,
+      $_db.quarterGoals,
+    ).filter((f) => f.quarterPlanId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_quarterGoalsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$QuarterPlansTableFilterComposer
+    extends Composer<_$AppDatabase, $QuarterPlansTable> {
+  $$QuarterPlansTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get quarterStartDate => $composableBuilder(
+    column: $table.quarterStartDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get monthMissionsJson => $composableBuilder(
+    column: $table.monthMissionsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> quarterGoalsRefs(
+    Expression<bool> Function($$QuarterGoalsTableFilterComposer f) f,
+  ) {
+    final $$QuarterGoalsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.quarterGoals,
+      getReferencedColumn: (t) => t.quarterPlanId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$QuarterGoalsTableFilterComposer(
+            $db: $db,
+            $table: $db.quarterGoals,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$QuarterPlansTableOrderingComposer
+    extends Composer<_$AppDatabase, $QuarterPlansTable> {
+  $$QuarterPlansTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get quarterStartDate => $composableBuilder(
+    column: $table.quarterStartDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get monthMissionsJson => $composableBuilder(
+    column: $table.monthMissionsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$QuarterPlansTableAnnotationComposer
+    extends Composer<_$AppDatabase, $QuarterPlansTable> {
+  $$QuarterPlansTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get quarterStartDate => $composableBuilder(
+    column: $table.quarterStartDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get monthMissionsJson => $composableBuilder(
+    column: $table.monthMissionsJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  Expression<T> quarterGoalsRefs<T extends Object>(
+    Expression<T> Function($$QuarterGoalsTableAnnotationComposer a) f,
+  ) {
+    final $$QuarterGoalsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.quarterGoals,
+      getReferencedColumn: (t) => t.quarterPlanId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$QuarterGoalsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.quarterGoals,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$QuarterPlansTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $QuarterPlansTable,
+          QuarterPlan,
+          $$QuarterPlansTableFilterComposer,
+          $$QuarterPlansTableOrderingComposer,
+          $$QuarterPlansTableAnnotationComposer,
+          $$QuarterPlansTableCreateCompanionBuilder,
+          $$QuarterPlansTableUpdateCompanionBuilder,
+          (QuarterPlan, $$QuarterPlansTableReferences),
+          QuarterPlan,
+          PrefetchHooks Function({bool quarterGoalsRefs})
+        > {
+  $$QuarterPlansTableTableManager(_$AppDatabase db, $QuarterPlansTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$QuarterPlansTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$QuarterPlansTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$QuarterPlansTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> quarterStartDate = const Value.absent(),
+                Value<String> monthMissionsJson = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => QuarterPlansCompanion(
+                id: id,
+                quarterStartDate: quarterStartDate,
+                monthMissionsJson: monthMissionsJson,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String quarterStartDate,
+                Value<String> monthMissionsJson = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => QuarterPlansCompanion.insert(
+                id: id,
+                quarterStartDate: quarterStartDate,
+                monthMissionsJson: monthMissionsJson,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$QuarterPlansTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({quarterGoalsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (quarterGoalsRefs) db.quarterGoals],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (quarterGoalsRefs)
+                    await $_getPrefetchedData<
+                      QuarterPlan,
+                      $QuarterPlansTable,
+                      QuarterGoal
+                    >(
+                      currentTable: table,
+                      referencedTable: $$QuarterPlansTableReferences
+                          ._quarterGoalsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$QuarterPlansTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).quarterGoalsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where(
+                            (e) => e.quarterPlanId == item.id,
+                          ),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$QuarterPlansTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $QuarterPlansTable,
+      QuarterPlan,
+      $$QuarterPlansTableFilterComposer,
+      $$QuarterPlansTableOrderingComposer,
+      $$QuarterPlansTableAnnotationComposer,
+      $$QuarterPlansTableCreateCompanionBuilder,
+      $$QuarterPlansTableUpdateCompanionBuilder,
+      (QuarterPlan, $$QuarterPlansTableReferences),
+      QuarterPlan,
+      PrefetchHooks Function({bool quarterGoalsRefs})
+    >;
+typedef $$QuarterGoalsTableCreateCompanionBuilder =
+    QuarterGoalsCompanion Function({
+      required String id,
+      required String quarterPlanId,
+      Value<int> sortOrder,
+      required String label,
+      Value<String?> why,
+      Value<String?> projectId,
+      Value<String?> linkedActionId,
+      Value<int?> targetObjectives,
+      Value<bool> done,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$QuarterGoalsTableUpdateCompanionBuilder =
+    QuarterGoalsCompanion Function({
+      Value<String> id,
+      Value<String> quarterPlanId,
+      Value<int> sortOrder,
+      Value<String> label,
+      Value<String?> why,
+      Value<String?> projectId,
+      Value<String?> linkedActionId,
+      Value<int?> targetObjectives,
+      Value<bool> done,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$QuarterGoalsTableReferences
+    extends BaseReferences<_$AppDatabase, $QuarterGoalsTable, QuarterGoal> {
+  $$QuarterGoalsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $QuarterPlansTable _quarterPlanIdTable(_$AppDatabase db) =>
+      db.quarterPlans.createAlias(
+        $_aliasNameGenerator(db.quarterGoals.quarterPlanId, db.quarterPlans.id),
+      );
+
+  $$QuarterPlansTableProcessedTableManager get quarterPlanId {
+    final $_column = $_itemColumn<String>('quarter_plan_id')!;
+
+    final manager = $$QuarterPlansTableTableManager(
+      $_db,
+      $_db.quarterPlans,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_quarterPlanIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$QuarterGoalsTableFilterComposer
+    extends Composer<_$AppDatabase, $QuarterGoalsTable> {
+  $$QuarterGoalsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get label => $composableBuilder(
+    column: $table.label,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get why => $composableBuilder(
+    column: $table.why,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get projectId => $composableBuilder(
+    column: $table.projectId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get linkedActionId => $composableBuilder(
+    column: $table.linkedActionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get targetObjectives => $composableBuilder(
+    column: $table.targetObjectives,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get done => $composableBuilder(
+    column: $table.done,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$QuarterPlansTableFilterComposer get quarterPlanId {
+    final $$QuarterPlansTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.quarterPlanId,
+      referencedTable: $db.quarterPlans,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$QuarterPlansTableFilterComposer(
+            $db: $db,
+            $table: $db.quarterPlans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$QuarterGoalsTableOrderingComposer
+    extends Composer<_$AppDatabase, $QuarterGoalsTable> {
+  $$QuarterGoalsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get label => $composableBuilder(
+    column: $table.label,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get why => $composableBuilder(
+    column: $table.why,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get projectId => $composableBuilder(
+    column: $table.projectId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get linkedActionId => $composableBuilder(
+    column: $table.linkedActionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get targetObjectives => $composableBuilder(
+    column: $table.targetObjectives,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get done => $composableBuilder(
+    column: $table.done,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$QuarterPlansTableOrderingComposer get quarterPlanId {
+    final $$QuarterPlansTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.quarterPlanId,
+      referencedTable: $db.quarterPlans,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$QuarterPlansTableOrderingComposer(
+            $db: $db,
+            $table: $db.quarterPlans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$QuarterGoalsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $QuarterGoalsTable> {
+  $$QuarterGoalsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<String> get label =>
+      $composableBuilder(column: $table.label, builder: (column) => column);
+
+  GeneratedColumn<String> get why =>
+      $composableBuilder(column: $table.why, builder: (column) => column);
+
+  GeneratedColumn<String> get projectId =>
+      $composableBuilder(column: $table.projectId, builder: (column) => column);
+
+  GeneratedColumn<String> get linkedActionId => $composableBuilder(
+    column: $table.linkedActionId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get targetObjectives => $composableBuilder(
+    column: $table.targetObjectives,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get done =>
+      $composableBuilder(column: $table.done, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$QuarterPlansTableAnnotationComposer get quarterPlanId {
+    final $$QuarterPlansTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.quarterPlanId,
+      referencedTable: $db.quarterPlans,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$QuarterPlansTableAnnotationComposer(
+            $db: $db,
+            $table: $db.quarterPlans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$QuarterGoalsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $QuarterGoalsTable,
+          QuarterGoal,
+          $$QuarterGoalsTableFilterComposer,
+          $$QuarterGoalsTableOrderingComposer,
+          $$QuarterGoalsTableAnnotationComposer,
+          $$QuarterGoalsTableCreateCompanionBuilder,
+          $$QuarterGoalsTableUpdateCompanionBuilder,
+          (QuarterGoal, $$QuarterGoalsTableReferences),
+          QuarterGoal,
+          PrefetchHooks Function({bool quarterPlanId})
+        > {
+  $$QuarterGoalsTableTableManager(_$AppDatabase db, $QuarterGoalsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$QuarterGoalsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$QuarterGoalsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$QuarterGoalsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> quarterPlanId = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<String> label = const Value.absent(),
+                Value<String?> why = const Value.absent(),
+                Value<String?> projectId = const Value.absent(),
+                Value<String?> linkedActionId = const Value.absent(),
+                Value<int?> targetObjectives = const Value.absent(),
+                Value<bool> done = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => QuarterGoalsCompanion(
+                id: id,
+                quarterPlanId: quarterPlanId,
+                sortOrder: sortOrder,
+                label: label,
+                why: why,
+                projectId: projectId,
+                linkedActionId: linkedActionId,
+                targetObjectives: targetObjectives,
+                done: done,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String quarterPlanId,
+                Value<int> sortOrder = const Value.absent(),
+                required String label,
+                Value<String?> why = const Value.absent(),
+                Value<String?> projectId = const Value.absent(),
+                Value<String?> linkedActionId = const Value.absent(),
+                Value<int?> targetObjectives = const Value.absent(),
+                Value<bool> done = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => QuarterGoalsCompanion.insert(
+                id: id,
+                quarterPlanId: quarterPlanId,
+                sortOrder: sortOrder,
+                label: label,
+                why: why,
+                projectId: projectId,
+                linkedActionId: linkedActionId,
+                targetObjectives: targetObjectives,
+                done: done,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$QuarterGoalsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({quarterPlanId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (quarterPlanId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.quarterPlanId,
+                                referencedTable: $$QuarterGoalsTableReferences
+                                    ._quarterPlanIdTable(db),
+                                referencedColumn: $$QuarterGoalsTableReferences
+                                    ._quarterPlanIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$QuarterGoalsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $QuarterGoalsTable,
+      QuarterGoal,
+      $$QuarterGoalsTableFilterComposer,
+      $$QuarterGoalsTableOrderingComposer,
+      $$QuarterGoalsTableAnnotationComposer,
+      $$QuarterGoalsTableCreateCompanionBuilder,
+      $$QuarterGoalsTableUpdateCompanionBuilder,
+      (QuarterGoal, $$QuarterGoalsTableReferences),
+      QuarterGoal,
+      PrefetchHooks Function({bool quarterPlanId})
     >;
 
 class $AppDatabaseManager {
@@ -73639,6 +77704,14 @@ class $AppDatabaseManager {
       $$DayPlansTableTableManager(_db, _db.dayPlans);
   $$DayPlanBlocksTableTableManager get dayPlanBlocks =>
       $$DayPlanBlocksTableTableManager(_db, _db.dayPlanBlocks);
+  $$WeekPlansTableTableManager get weekPlans =>
+      $$WeekPlansTableTableManager(_db, _db.weekPlans);
+  $$WeekPlanObjectivesTableTableManager get weekPlanObjectives =>
+      $$WeekPlanObjectivesTableTableManager(_db, _db.weekPlanObjectives);
+  $$QuarterPlansTableTableManager get quarterPlans =>
+      $$QuarterPlansTableTableManager(_db, _db.quarterPlans);
+  $$QuarterGoalsTableTableManager get quarterGoals =>
+      $$QuarterGoalsTableTableManager(_db, _db.quarterGoals);
 }
 
 mixin _$ProjectDaoMixin on DatabaseAccessor<AppDatabase> {
@@ -74332,4 +78405,54 @@ class DayPlanDaoManager {
       );
   $$DecisionsTableTableManager get decisions =>
       $$DecisionsTableTableManager(_db.attachedDatabase, _db.decisions);
+}
+
+mixin _$WeekPlanDaoMixin on DatabaseAccessor<AppDatabase> {
+  $WeekPlansTable get weekPlans => attachedDatabase.weekPlans;
+  $WeekPlanObjectivesTable get weekPlanObjectives =>
+      attachedDatabase.weekPlanObjectives;
+  $DayPlansTable get dayPlans => attachedDatabase.dayPlans;
+  $DayPlanBlocksTable get dayPlanBlocks => attachedDatabase.dayPlanBlocks;
+  WeekPlanDaoManager get managers => WeekPlanDaoManager(this);
+}
+
+class WeekPlanDaoManager {
+  final _$WeekPlanDaoMixin _db;
+  WeekPlanDaoManager(this._db);
+  $$WeekPlansTableTableManager get weekPlans =>
+      $$WeekPlansTableTableManager(_db.attachedDatabase, _db.weekPlans);
+  $$WeekPlanObjectivesTableTableManager get weekPlanObjectives =>
+      $$WeekPlanObjectivesTableTableManager(
+        _db.attachedDatabase,
+        _db.weekPlanObjectives,
+      );
+  $$DayPlansTableTableManager get dayPlans =>
+      $$DayPlansTableTableManager(_db.attachedDatabase, _db.dayPlans);
+  $$DayPlanBlocksTableTableManager get dayPlanBlocks =>
+      $$DayPlanBlocksTableTableManager(_db.attachedDatabase, _db.dayPlanBlocks);
+}
+
+mixin _$QuarterPlanDaoMixin on DatabaseAccessor<AppDatabase> {
+  $QuarterPlansTable get quarterPlans => attachedDatabase.quarterPlans;
+  $QuarterGoalsTable get quarterGoals => attachedDatabase.quarterGoals;
+  $WeekPlansTable get weekPlans => attachedDatabase.weekPlans;
+  $WeekPlanObjectivesTable get weekPlanObjectives =>
+      attachedDatabase.weekPlanObjectives;
+  QuarterPlanDaoManager get managers => QuarterPlanDaoManager(this);
+}
+
+class QuarterPlanDaoManager {
+  final _$QuarterPlanDaoMixin _db;
+  QuarterPlanDaoManager(this._db);
+  $$QuarterPlansTableTableManager get quarterPlans =>
+      $$QuarterPlansTableTableManager(_db.attachedDatabase, _db.quarterPlans);
+  $$QuarterGoalsTableTableManager get quarterGoals =>
+      $$QuarterGoalsTableTableManager(_db.attachedDatabase, _db.quarterGoals);
+  $$WeekPlansTableTableManager get weekPlans =>
+      $$WeekPlansTableTableManager(_db.attachedDatabase, _db.weekPlans);
+  $$WeekPlanObjectivesTableTableManager get weekPlanObjectives =>
+      $$WeekPlanObjectivesTableTableManager(
+        _db.attachedDatabase,
+        _db.weekPlanObjectives,
+      );
 }

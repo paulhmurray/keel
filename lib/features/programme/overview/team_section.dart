@@ -97,11 +97,15 @@ class _TeamGroup extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              Text(
-                '$_filledCount of $_applicableCount filled',
-                style: const TextStyle(
-                  color: KColors.textMuted,
-                  fontSize: 10,
+              Flexible(
+                child: Text(
+                  '$_filledCount of $_applicableCount filled',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: KColors.textMuted,
+                    fontSize: 10,
+                  ),
                 ),
               ),
             ],

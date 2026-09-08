@@ -215,30 +215,36 @@ class _JournalDeltaItemWidgetState extends State<JournalDeltaItemWidget> {
             // Type badge row
             Row(
               children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: _typeBg,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(delta.typeIcon,
-                          style:
-                              TextStyle(color: _typeColor, fontSize: 12)),
-                      const SizedBox(width: 4),
-                      Text(
-                        delta.typeLabel.toUpperCase(),
-                        style: TextStyle(
-                          color: _typeColor,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.08,
+                Flexible(
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: _typeBg,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(delta.typeIcon,
+                            style:
+                                TextStyle(color: _typeColor, fontSize: 12)),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            delta.typeLabel.toUpperCase(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: _typeColor,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.08,
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
                 const Spacer(),

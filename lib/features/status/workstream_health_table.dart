@@ -44,6 +44,14 @@ class WorkstreamHealthTable extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.1))),
               SizedBox(
+                  width: 130,
+                  child: Text('MONTHS',
+                      style: TextStyle(
+                          color: KColors.textMuted,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.1))),
+              SizedBox(
                   width: 80,
                   child: Text('RAG',
                       style: TextStyle(
@@ -124,7 +132,18 @@ class _WorkstreamRow extends StatelessWidget {
             ws.wp.shortCode != null
                 ? '${ws.wp.shortCode} — ${ws.wp.name}'
                 : ws.wp.name,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(color: KColors.text, fontSize: 12),
+          ),
+        ),
+        SizedBox(
+          width: 130,
+          child: Text(
+            ws.spanLabel ?? '—',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: KColors.textDim, fontSize: 11),
           ),
         ),
         SizedBox(

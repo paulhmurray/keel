@@ -89,6 +89,7 @@ class SettingsView extends StatelessWidget {
 
           // Display section — not available on web
           if (!kIsWeb) _DisplaySection(),
+          _PlanningSection(),
 
           // File Watcher section — not available on web
           if (!kIsWeb) _WatcherSection(),
@@ -162,11 +163,15 @@ class _SettingsSection extends StatelessWidget {
               children: [
                 Icon(icon, size: 16, color: KColors.amber),
                 const SizedBox(width: 8),
-                Text(title,
-                    style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: KColors.amber)),
+                Flexible(
+                  child: Text(title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: KColors.amber)),
+                ),
               ],
             ),
             const Divider(height: 16),
@@ -256,6 +261,74 @@ class _DisplaySection extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
+// Planning Section — Helm quarter cycle
+// ---------------------------------------------------------------------------
+
+class _PlanningSection extends StatelessWidget {
+  static const _monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final settingsProvider = context.watch<SettingsProvider>();
+    final anchor = settingsProvider.settings.quarterAnchorMonth;
+
+    return _SettingsSection(
+      title: 'Planning (Helm)',
+      icon: Icons.explore_outlined,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Which month starts Q1 for Helm\'s quarterly planner. '
+            'January gives calendar quarters; July matches the '
+            'Australian financial year. Quarter plans are stored by '
+            'date, so changing this mid-year means quarters planned '
+            'under the old cycle stop lining up with navigation.',
+            style: TextStyle(color: KColors.textDim, fontSize: 12),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              const Text('Quarter cycle starts in',
+                  style: TextStyle(color: KColors.text, fontSize: 13)),
+              const SizedBox(width: 16),
+              Flexible(
+                child: DropdownButton<int>(
+                  value: anchor,
+                  dropdownColor: KColors.surface2,
+                  items: [
+                    for (var m = 1; m <= 12; m++)
+                      DropdownMenuItem(
+                        value: m,
+                        child: Text(
+                          m == 1
+                              ? 'January (calendar quarters)'
+                              : m == 7
+                                  ? 'July (Australian FY)'
+                                  : _monthNames[m - 1],
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                      ),
+                  ],
+                  onChanged: (v) {
+                    if (v != null) {
+                      settingsProvider.setQuarterAnchorMonth(v);
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Profile Section
 // ---------------------------------------------------------------------------
 
@@ -327,10 +400,14 @@ class _ProfileSectionState extends State<_ProfileSection> {
                   ),
                 ),
                 const SizedBox(width: 6),
-                Text(
-                  'Showing as "Me — ${settings.settings.myName}" in owner dropdowns',
-                  style: const TextStyle(
-                      color: KColors.phosphor, fontSize: 11),
+                Expanded(
+                  child: Text(
+                    'Showing as "Me — ${settings.settings.myName}" in owner dropdowns',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        color: KColors.phosphor, fontSize: 11),
+                  ),
                 ),
               ],
             ),
@@ -579,9 +656,12 @@ class _SettingsRow extends StatelessWidget {
                   fontSize: 13,
                   fontWeight: FontWeight.w500)),
         ),
-        Text(value,
-            style: TextStyle(
-                color: valueColor ?? KColors.text, fontSize: 13)),
+        Expanded(
+          child: Text(value,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                  color: valueColor ?? KColors.text, fontSize: 13)),
+        ),
       ],
     );
   }

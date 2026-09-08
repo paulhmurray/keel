@@ -166,4 +166,19 @@ void main() {
       expect(byId['a1'], 0); // untouched
     });
   });
+
+  group('setActivityStatus', () {
+    test('writes only the status, leaving the rest of the row intact',
+        () async {
+      await insertWp('wp1', 0);
+      await insertActivity('a1', 'wp1', 0, name: 'Keep me');
+      await db.programmeGanttDao.setActivityStatus('a1', 'at_risk');
+      final acts =
+          await db.programmeGanttDao.getActivitiesForProject('p1');
+      final a1 = acts.single;
+      expect(a1.status, 'at_risk');
+      expect(a1.name, 'Keep me');
+      expect(a1.startMonth, 0);
+    });
+  });
 }

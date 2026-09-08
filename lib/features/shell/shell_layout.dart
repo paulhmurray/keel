@@ -162,8 +162,12 @@ class _ShellLayoutState extends State<ShellLayout> {
     if (!mounted) return;
     setState(() {
       if (saved != null) {
-        _rightPanelWidth =
-            saved.clamp(_rightPanelMinWidth, _rightPanelMaxWidth);
+        // Wide is a session-only zoom: the panel never OPENS wide. A
+        // saved width at/above the wide threshold is a stale persisted
+        // wide-mode (the toggle used to save) — restore the default.
+        _rightPanelWidth = saved >= _rightPanelWideWidth
+            ? _rightPanelDefaultWidth
+            : saved.clamp(_rightPanelMinWidth, _rightPanelMaxWidth);
       }
       if (savedDock != null) {
         _journalDockWidth =
@@ -235,7 +239,9 @@ class _ShellLayoutState extends State<ShellLayout> {
           ? _rightPanelWideWidth
           : _rightPanelDefaultWidth;
     });
-    _saveRightPanelWidth();
+    // Deliberately NOT persisted: wide is a temporary reading zoom, and
+    // persisting it made the chat panel open huge on every restart.
+    // Drag-resize still persists (that's a deliberate width choice).
   }
 
   @override
@@ -1430,12 +1436,16 @@ class _LeaderHud extends StatelessWidget {
                     ),
                   )),
               const SizedBox(width: 6),
-              Text(
-                menu.description,
-                style: const TextStyle(
-                    color: KColors.textDim,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500),
+              Flexible(
+                child: Text(
+                  menu.description,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      color: KColors.textDim,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500),
+                ),
               ),
               const Spacer(),
               const Text(
@@ -1777,32 +1787,48 @@ class _TopBar extends StatelessWidget {
 
           const SizedBox(width: 24),
 
-          // Project selector
-          SizedBox(
-            width: 300,
-            child: _TopBarProjectSelector(
-              projectProvider: projectProvider,
-              db: db,
+          // Project selector — Expanded (not Flexible+Spacer: a loose
+          // Flexible splits the free space with the Spacer and its
+          // unused share becomes a gap that pushes the pills off the
+          // right edge). The Align keeps the selector left inside the
+          // full-width slot, capped at 300 but free to shrink under it.
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 300),
+                child: _TopBarProjectSelector(
+                  projectProvider: projectProvider,
+                  db: db,
+                ),
+              ),
             ),
           ),
 
-          const Spacer(),
-
           // Status pills
-          if (projectId != null) ...[
-            _OverdueActionsPill(projectId: projectId, db: db),
-            const SizedBox(width: 10),
-            _PendingDecisionsPill(projectId: projectId, db: db),
-            const SizedBox(width: 10),
-          ],
-          if (syncProvider.hasPendingChangesFor(projectId)) ...[
-            _SyncNeededPill(onTap: onSyncTap),
-            const SizedBox(width: 10),
-          ],
-          _LlmStatusPill(hasKey: hasKey),
-          const SizedBox(width: 10),
-          _KeybindingsButton(),
-          const SizedBox(width: 4),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            reverse: true,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (projectId != null) ...[
+                  _OverdueActionsPill(projectId: projectId, db: db),
+                  const SizedBox(width: 10),
+                  _PendingDecisionsPill(projectId: projectId, db: db),
+                  const SizedBox(width: 10),
+                ],
+                if (syncProvider.hasPendingChangesFor(projectId)) ...[
+                  _SyncNeededPill(onTap: onSyncTap),
+                  const SizedBox(width: 10),
+                ],
+                _LlmStatusPill(hasKey: hasKey),
+                const SizedBox(width: 10),
+                _KeybindingsButton(),
+                const SizedBox(width: 4),
+              ],
+            ),
+          ),
         ],
       ),
     );

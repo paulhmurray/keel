@@ -120,17 +120,25 @@ class _StatusContentState extends State<_StatusContent> {
       final programmeTrend =
           StatusCalculator.computeTrend(programmeRag, prevProgrammeRag);
 
+      String monthLabel(int idx) =>
+          idx >= 0 && idx < months.length ? months[idx] : 'M$idx';
       final wsStatuses = wps.map((wp) {
         final rag = ragFromString(wp.ragStatus);
         final prevRagStr = prevWsRag[wp.id];
         final prevRag =
             prevRagStr != null ? ragFromString(prevRagStr) : null;
         final trend = StatusCalculator.computeTrend(rag, prevRag);
+        final span = StatusCalculator.wpMonthSpan(wp, allActs);
         return WorkstreamRagStatus(
           wp: wp,
           rag: rag,
           trend: trend,
           previousRagLabel: prevRag?.label,
+          spanLabel: span == null
+              ? null
+              : span.start == span.end
+                  ? monthLabel(span.start)
+                  : '${monthLabel(span.start)} – ${monthLabel(span.end)}',
         );
       }).toList();
 

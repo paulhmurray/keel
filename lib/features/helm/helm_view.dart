@@ -7,7 +7,14 @@ import 'package:provider/provider.dart';
 
 import '../../core/database/database.dart';
 import '../../core/helm/day_plan_logic.dart';
+import '../../providers/settings_provider.dart';
 import '../../shared/theme/keel_colors.dart';
+import 'helm_quarter_view.dart';
+import 'helm_week_view.dart';
+
+/// The three planning wavelengths. Day allocates hours, week allocates
+/// intent, quarter allocates direction — never an hour grid above day.
+enum HelmScale { day, week, quarter }
 
 // ---------------------------------------------------------------------------
 // Helm — the global daily time-blocking planner (Cal Newport style).
@@ -62,17 +69,21 @@ int _nowMinute() {
   return now.hour * 60 + now.minute;
 }
 
-/// Payload for dragging a rail item onto the grid.
+/// Payload for dragging a rail item onto the grid (or, in week mode,
+/// onto the objectives panel — which reads label/projectId/linkedActionId
+/// dynamically).
 class _RailDrag {
   final String label;
   final String kind;
   final String? projectId;
   final String? linkedActionId;
+  final String? objectiveId;
   const _RailDrag({
     required this.label,
     required this.kind,
     this.projectId,
     this.linkedActionId,
+    this.objectiveId,
   });
 }
 
@@ -103,6 +114,7 @@ class HelmView extends StatefulWidget {
 class _HelmViewState extends State<HelmView> {
   DateTime _date = DateTime.now();
   Timer? _clock;
+  HelmScale _scale = HelmScale.day;
 
   // Streams are memoized, NOT created in build: the minute tick calls
   // setState, and a rebuild that hands StreamBuilder a fresh stream makes
@@ -112,6 +124,9 @@ class _HelmViewState extends State<HelmView> {
   String? _planStreamDate;
   Stream<List<DayPlanBlock>>? _blocksStream;
   String? _blocksStreamPlanId;
+  // This week's plan — feeds the day view its mission line.
+  Stream<WeekPlan?>? _weekPlanStream;
+  String? _weekPlanMondayIso;
 
   bool get _isToday => _isoDate(_date) == _isoDate(DateTime.now());
 
@@ -148,53 +163,56 @@ class _HelmViewState extends State<HelmView> {
     return _blocksStream!;
   }
 
+  Stream<WeekPlan?> _weekPlanStreamFor(AppDatabase db) {
+    final mondayIso = _isoDate(mondayOf(_date));
+    if (_weekPlanMondayIso != mondayIso) {
+      _weekPlanMondayIso = mondayIso;
+      _weekPlanStream = db.weekPlanDao.watchPlanForWeek(mondayIso);
+    }
+    return _weekPlanStream!;
+  }
+
   @override
   Widget build(BuildContext context) {
     final db = context.read<AppDatabase>();
     final dateIso = _isoDate(_date);
 
-    return Column(
-      children: [
-        _HelmHeader(
-          date: _date,
-          isToday: _isToday,
-          onPrev: () =>
-              setState(() => _date = _date.subtract(const Duration(days: 1))),
-          onNext: () =>
-              setState(() => _date = _date.add(const Duration(days: 1))),
-          onToday: () => setState(() => _date = DateTime.now()),
-        ),
-        Expanded(
-          child: StreamBuilder<DayPlan?>(
-            stream: _planStreamFor(db, dateIso),
-            builder: (context, planSnap) {
-              if (planSnap.connectionState == ConnectionState.waiting) {
-                return const Center(
-                    child: CircularProgressIndicator(strokeWidth: 1.5));
-              }
-              final plan = planSnap.data;
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    child: plan == null
-                        ? _EmptyDay(
-                            isToday: _isToday,
-                            onChart: () => db.dayPlanDao
-                                .getOrCreatePlanForDate(dateIso),
-                          )
-                        : StreamBuilder<List<DayPlanBlock>>(
-                            stream: _blocksStreamFor(db, plan.id),
-                            builder: (context, blockSnap) {
-                              return _TimeGrid(
-                                plan: plan,
-                                blocks: blockSnap.data ?? const [],
-                                isToday: _isToday,
-                                db: db,
-                              );
-                            },
-                          ),
-                  ),
+    final anchorMonth =
+        context.watch<SettingsProvider>().settings.quarterAnchorMonth;
+
+    void navigate(int direction) {
+      setState(() {
+        switch (_scale) {
+          case HelmScale.day:
+            _date = _date.add(Duration(days: direction));
+          case HelmScale.week:
+            _date = _date.add(Duration(days: 7 * direction));
+          case HelmScale.quarter:
+            final qs = quarterStartOf(_date, anchorMonth);
+            _date = DateTime(qs.year, qs.month + 3 * direction, 1);
+        }
+      });
+    }
+
+    final isCurrent = switch (_scale) {
+      HelmScale.day => _isToday,
+      HelmScale.week => _isoDate(mondayOf(_date)) ==
+          _isoDate(mondayOf(DateTime.now())),
+      HelmScale.quarter =>
+        quarterStartOf(_date, anchorMonth) ==
+            quarterStartOf(DateTime.now(), anchorMonth),
+    };
+
+    Widget scaledBody(Widget mainView, {double railMinWidth = 760}) {
+      return Expanded(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final showRail = constraints.maxWidth >= railMinWidth;
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(child: mainView),
+                if (showRail) ...[
                   Container(width: 1, color: KColors.border),
                   _PlanningRail(
                     db: db,
@@ -207,6 +225,109 @@ class _HelmViewState extends State<HelmView> {
                     onOpenDecision: widget.onOpenDecision,
                   ),
                 ],
+              ],
+            );
+          },
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        _HelmHeader(
+          date: _date,
+          scale: _scale,
+          anchorMonth: anchorMonth,
+          isCurrent: isCurrent,
+          onPrev: () => navigate(-1),
+          onNext: () => navigate(1),
+          onToday: () => setState(() => _date = DateTime.now()),
+          onScale: (s) => setState(() => _scale = s),
+        ),
+        if (_scale == HelmScale.quarter)
+          scaledBody(HelmQuarterView(
+            db: db,
+            date: _date,
+            anchorMonth: anchorMonth,
+            onOpenWeek: (monday) => setState(() {
+              _date = monday;
+              _scale = HelmScale.week;
+            }),
+          ))
+        else if (_scale == HelmScale.week)
+          scaledBody(HelmWeekView(
+            db: db,
+            date: _date,
+            anchorMonth: anchorMonth,
+            onOpenDay: (day) => setState(() {
+              _date = day;
+              _scale = HelmScale.day;
+            }),
+          ))
+        else
+        Expanded(
+          child: StreamBuilder<DayPlan?>(
+            stream: _planStreamFor(db, dateIso),
+            builder: (context, planSnap) {
+              if (planSnap.connectionState == ConnectionState.waiting) {
+                return const Center(
+                    child: CircularProgressIndicator(strokeWidth: 1.5));
+              }
+              final plan = planSnap.data;
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  // Hide the planning rail when there isn't room for it.
+                  final showRail = constraints.maxWidth >= 560;
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: plan == null
+                            ? _EmptyDay(
+                                isToday: _isToday,
+                                onChart: () => db.dayPlanDao
+                                    .getOrCreatePlanForDate(dateIso),
+                              )
+                            : StreamBuilder<List<DayPlanBlock>>(
+                                stream: _blocksStreamFor(db, plan.id),
+                                builder: (context, blockSnap) {
+                                  return StreamBuilder<WeekPlan?>(
+                                    stream: _weekPlanStreamFor(db),
+                                    builder: (context, weekSnap) {
+                                      final mission = weekSnap.data == null
+                                          ? null
+                                          : parseDayMissions(weekSnap
+                                                  .data!.dayMissionsJson)[
+                                              _date.weekday - 1];
+                                      return _TimeGrid(
+                                        plan: plan,
+                                        blocks:
+                                            blockSnap.data ?? const [],
+                                        isToday: _isToday,
+                                        db: db,
+                                        mission: mission,
+                                      );
+                                    },
+                                  );
+                                },
+                              ),
+                      ),
+                      if (showRail) ...[
+                        Container(width: 1, color: KColors.border),
+                        _PlanningRail(
+                          db: db,
+                          date: _date,
+                          onOpenAction: widget.onOpenAction,
+                          onOpenRisk: widget.onOpenRisk,
+                          onOpenIssue: widget.onOpenIssue,
+                          onOpenAssumption: widget.onOpenAssumption,
+                          onOpenDependency: widget.onOpenDependency,
+                          onOpenDecision: widget.onOpenDecision,
+                        ),
+                      ],
+                    ],
+                  );
+                },
               );
             },
           ),
@@ -222,15 +343,21 @@ class _HelmViewState extends State<HelmView> {
 
 class _HelmHeader extends StatelessWidget {
   final DateTime date;
-  final bool isToday;
+  final HelmScale scale;
+  final int anchorMonth;
+  final bool isCurrent; // today / this week / this quarter
   final VoidCallback onPrev, onNext, onToday;
+  final ValueChanged<HelmScale> onScale;
 
   const _HelmHeader({
     required this.date,
-    required this.isToday,
+    required this.scale,
+    required this.anchorMonth,
+    required this.isCurrent,
     required this.onPrev,
     required this.onNext,
     required this.onToday,
+    required this.onScale,
   });
 
   static const _weekdays = [
@@ -255,12 +382,20 @@ class _HelmHeader extends StatelessWidget {
       // shed the legend first, then the weekday, rather than overflow.
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final showLegend = constraints.maxWidth >= 920;
-          final compactDate = constraints.maxWidth < 640;
-          final label = compactDate
-              ? '${date.day} ${_months[date.month - 1]} ${date.year}'
-              : '${_weekdays[date.weekday - 1]} ${date.day} '
-                  '${_months[date.month - 1]} ${date.year}';
+          final showLegend =
+              constraints.maxWidth >= 1040 && scale == HelmScale.day;
+          final compactDate = constraints.maxWidth < 760;
+          final monday = mondayOf(date);
+          final label = switch (scale) {
+            HelmScale.quarter =>
+              quarterLabel(quarterStartOf(date, anchorMonth), anchorMonth),
+            HelmScale.week =>
+              'Week of ${monday.day} ${_months[monday.month - 1]} ${monday.year}',
+            HelmScale.day => compactDate
+                ? '${date.day} ${_months[date.month - 1]} ${date.year}'
+                : '${_weekdays[date.weekday - 1]} ${date.day} '
+                    '${_months[date.month - 1]} ${date.year}',
+          };
           return Row(
             children: [
               Text(
@@ -272,17 +407,29 @@ class _HelmHeader extends StatelessWidget {
                   letterSpacing: 0.2,
                 ),
               ),
-              const SizedBox(width: 10),
-              const Text(
-                'my day',
-                style: TextStyle(color: KColors.textMuted, fontSize: 12),
-              ),
-              const SizedBox(width: 24),
+              const SizedBox(width: 12),
+              for (final (s, chipLabel) in const [
+                (HelmScale.day, 'Day'),
+                (HelmScale.week, 'Week'),
+                (HelmScale.quarter, 'Quarter'),
+              ]) ...[
+                _RailModeChip(
+                  label: chipLabel,
+                  selected: scale == s,
+                  onTap: () => onScale(s),
+                ),
+                const SizedBox(width: 4),
+              ],
+              const SizedBox(width: 12),
               IconButton(
                 icon: const Icon(Icons.chevron_left,
                     size: 18, color: KColors.textDim),
                 onPressed: onPrev,
-                tooltip: 'Previous day',
+                tooltip: switch (scale) {
+                  HelmScale.day => 'Previous day',
+                  HelmScale.week => 'Previous week',
+                  HelmScale.quarter => 'Previous quarter',
+                },
               ),
               Flexible(
                 child: Text(
@@ -300,14 +447,23 @@ class _HelmHeader extends StatelessWidget {
                 icon: const Icon(Icons.chevron_right,
                     size: 18, color: KColors.textDim),
                 onPressed: onNext,
-                tooltip: 'Next day',
+                tooltip: switch (scale) {
+                  HelmScale.day => 'Next day',
+                  HelmScale.week => 'Next week',
+                  HelmScale.quarter => 'Next quarter',
+                },
               ),
-              if (!isToday)
+              if (!isCurrent)
                 TextButton(
                   onPressed: onToday,
-                  child: const Text('Today',
-                      style:
-                          TextStyle(color: KColors.amber, fontSize: 12)),
+                  child: Text(
+                      switch (scale) {
+                        HelmScale.day => 'Today',
+                        HelmScale.week => 'This week',
+                        HelmScale.quarter => 'This quarter',
+                      },
+                      style: const TextStyle(
+                          color: KColors.amber, fontSize: 12)),
                 ),
               const Spacer(),
               if (showLegend)
@@ -394,12 +550,15 @@ class _TimeGrid extends StatelessWidget {
   final List<DayPlanBlock> blocks;
   final bool isToday;
   final AppDatabase db;
+  // The day's one-line mission from the weekly plan, when set.
+  final String? mission;
 
   const _TimeGrid({
     required this.plan,
     required this.blocks,
     required this.isToday,
     required this.db,
+    this.mission,
   });
 
   @override
@@ -417,6 +576,23 @@ class _TimeGrid extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
           child: Row(
             children: [
+              if (mission != null) ...[
+                const Icon(Icons.flag, size: 12, color: KColors.amber),
+                const SizedBox(width: 5),
+                Flexible(
+                  flex: 2,
+                  child: Text(
+                    mission!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        color: KColors.text,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600),
+                  ),
+                ),
+                const SizedBox(width: 14),
+              ],
               Flexible(child: _focusSummary(starts)),
               const Spacer(),
               if (isToday)
@@ -674,6 +850,7 @@ class _RevisionColumn extends StatelessWidget {
         kind: payload.kind,
         projectId: payload.projectId,
         linkedActionId: payload.linkedActionId,
+        objectiveId: payload.objectiveId,
       );
     }
   }
@@ -1071,6 +1248,12 @@ class _PlanningRailState extends State<_PlanningRail> {
   String? _carryDateIso;
   Stream<List<DayPlanBlock>>? _carryBlocksStream;
   String? _carryPlanId;
+  // This week's objectives — the top of the suggested rail, so the
+  // morning ritual starts from the week's big rocks.
+  Stream<WeekPlan?>? _weekPlanStream;
+  String? _weekMondayIso;
+  Stream<List<WeekPlanObjective>>? _weekObjectivesStream;
+  String? _weekObjectivesPlanId;
 
   AppDatabase get db => widget.db;
 
@@ -1090,6 +1273,10 @@ class _PlanningRailState extends State<_PlanningRail> {
       _carryPlanStream = null;
       _carryPlanId = null;
       _carryBlocksStream = null;
+      _weekMondayIso = null;
+      _weekPlanStream = null;
+      _weekObjectivesPlanId = null;
+      _weekObjectivesStream = null;
     }
   }
 
@@ -1176,6 +1363,7 @@ class _PlanningRailState extends State<_PlanningRail> {
   }
 
   List<Widget> _suggestedSections(String yesterdayIso) => [
+        _thisWeekSection(),
         _carryOverSection(yesterdayIso),
         _actionSection(
           title: 'Due today',
@@ -1217,6 +1405,61 @@ class _PlanningRailState extends State<_PlanningRail> {
         _dependencySection(),
         _decisionSection(showCount: true, collapseKey: 'decisions'),
       ];
+
+  /// The week's big rocks, draggable straight onto the grid — a dropped
+  /// rock becomes a focus block whose done state counts toward the
+  /// objective's target.
+  Widget _thisWeekSection() {
+    final mondayIso = _isoDate(mondayOf(widget.date));
+    if (_weekMondayIso != mondayIso) {
+      _weekMondayIso = mondayIso;
+      _weekPlanStream = db.weekPlanDao.watchPlanForWeek(mondayIso);
+      _weekObjectivesPlanId = null;
+      _weekObjectivesStream = null;
+    }
+    return StreamBuilder<WeekPlan?>(
+      stream: _weekPlanStream,
+      builder: (context, planSnap) {
+        final plan = planSnap.data;
+        if (plan == null) return const SizedBox.shrink();
+        if (_weekObjectivesPlanId != plan.id) {
+          _weekObjectivesPlanId = plan.id;
+          _weekObjectivesStream =
+              db.weekPlanDao.watchObjectivesForPlan(plan.id);
+        }
+        return StreamBuilder<List<WeekPlanObjective>>(
+          stream: _weekObjectivesStream,
+          builder: (context, objSnap) {
+            final open = (objSnap.data ?? const [])
+                .where((o) => !o.done)
+                .toList();
+            if (open.isEmpty) return const SizedBox.shrink();
+            return _RailSection(
+              title: 'This week — big rocks',
+              icon: Icons.flag,
+              children: [
+                for (final o in open)
+                  _RailItem(
+                    label: o.label,
+                    detail: o.targetBlocks != null
+                        ? 'target ${o.targetBlocks} block${o.targetBlocks == 1 ? '' : 's'}'
+                        : 'weekly objective',
+                    barColor: KColors.amber,
+                    payload: _RailDrag(
+                      label: o.label,
+                      kind: 'focus',
+                      projectId: o.projectId,
+                      linkedActionId: o.linkedActionId,
+                      objectiveId: o.id,
+                    ),
+                  ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
   Widget _carryOverSection(String yesterdayIso) {
     if (_carryDateIso != yesterdayIso) {

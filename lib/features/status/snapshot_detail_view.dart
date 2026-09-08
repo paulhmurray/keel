@@ -40,16 +40,22 @@ class SnapshotDetailView extends StatelessWidget {
               label: const Text('Back to history'),
             ),
             const SizedBox(width: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: KColors.amberDim,
-                borderRadius: BorderRadius.circular(3),
-                border: Border.all(color: KColors.amber.withValues(alpha: 0.4)),
-              ),
-              child: Text(
-                'Snapshot — week ending ${fmt.format(snapshot.weekEnding)}',
-                style: const TextStyle(color: KColors.amber, fontSize: 11),
+            Flexible(
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: KColors.amberDim,
+                  borderRadius: BorderRadius.circular(3),
+                  border:
+                      Border.all(color: KColors.amber.withValues(alpha: 0.4)),
+                ),
+                child: Text(
+                  'Snapshot — week ending ${fmt.format(snapshot.weekEnding)}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: KColors.amber, fontSize: 11),
+                ),
               ),
             ),
           ]),

@@ -86,6 +86,10 @@ class JsonExporter {
     // per-day by updatedAt on the importing side.
     final dayPlans = await db.dayPlanDao.getAllPlans();
     final dayPlanBlocks = await db.dayPlanDao.getAllBlocks();
+    final weekPlans = await db.weekPlanDao.getAllPlans();
+    final weekPlanObjectives = await db.weekPlanDao.getAllObjectives();
+    final quarterPlans = await db.quarterPlanDao.getAllPlans();
+    final quarterGoals = await db.quarterPlanDao.getAllGoals();
     // Programme links owned by this entity — carries the connection to
     // linked projects/programmes AND the per-link encryption secret, so
     // the owner's portfolio reconnects on a new machine. The secret rides
@@ -604,6 +608,11 @@ class JsonExporter {
                   'end_month': a.endMonth,
                   'start_date': a.startDate,
                   'end_date': a.endDate,
+                  'likely_month': a.likelyMonth,
+                  'safe_month': a.safeMonth,
+                  'variance_raid_type': a.varianceRaidType,
+                  'variance_raid_id': a.varianceRaidId,
+                  'variance_raid_links': a.varianceRaidLinksJson,
                   'status': a.status,
                   'is_critical': a.isCritical,
                   'is_baseline': a.isBaseline,
@@ -624,6 +633,10 @@ class JsonExporter {
                   'from_activity_id': d.fromActivityId,
                   'to_activity_id': d.toActivityId,
                   'dependency_type': d.dependencyType,
+                  // Missing until Sep 2026 — its absence made every
+                  // sync round-trip strip external deps' labels,
+                  // leaving corrupt type='external' label=null rows.
+                  'external_label': d.externalLabel,
                   'notes': d.notes,
                   'created_at': d.createdAt.toIso8601String(),
                 })
@@ -847,9 +860,66 @@ class JsonExporter {
                 'label': b.label,
                 'project_id': b.projectId,
                 'linked_action_id': b.linkedActionId,
+                'objective_id': b.objectiveId,
                 'done': b.done,
                 'created_at': b.createdAt.toIso8601String(),
                 'updated_at': b.updatedAt.toIso8601String(),
+              })
+          .toList(),
+    };
+
+    // Helm weekly layer — same global ride-in-every-blob rules.
+    data['week_plans'] = {
+      'plans': weekPlans
+          .map((p) => {
+                'id': p.id,
+                'week_start_date': p.weekStartDate,
+                'day_missions_json': p.dayMissionsJson,
+                'created_at': p.createdAt.toIso8601String(),
+                'updated_at': p.updatedAt.toIso8601String(),
+              })
+          .toList(),
+      'objectives': weekPlanObjectives
+          .map((o) => {
+                'id': o.id,
+                'week_plan_id': o.weekPlanId,
+                'sort_order': o.sortOrder,
+                'label': o.label,
+                'project_id': o.projectId,
+                'linked_action_id': o.linkedActionId,
+                'goal_id': o.goalId,
+                'target_blocks': o.targetBlocks,
+                'done': o.done,
+                'created_at': o.createdAt.toIso8601String(),
+                'updated_at': o.updatedAt.toIso8601String(),
+              })
+          .toList(),
+    };
+
+    // Helm quarterly layer — same global ride-in-every-blob rules.
+    data['quarter_plans'] = {
+      'plans': quarterPlans
+          .map((p) => {
+                'id': p.id,
+                'quarter_start_date': p.quarterStartDate,
+                'month_missions_json': p.monthMissionsJson,
+                'created_at': p.createdAt.toIso8601String(),
+                'updated_at': p.updatedAt.toIso8601String(),
+              })
+          .toList(),
+      'goals': quarterGoals
+          .map((g) => {
+                'id': g.id,
+                'quarter_plan_id': g.quarterPlanId,
+                'sort_order': g.sortOrder,
+                'label': g.label,
+                'why': g.why,
+                'project_id': g.projectId,
+                'linked_action_id': g.linkedActionId,
+                'target_objectives': g.targetObjectives,
+                'done': g.done,
+                'created_at': g.createdAt.toIso8601String(),
+                'updated_at': g.updatedAt.toIso8601String(),
               })
           .toList(),
     };

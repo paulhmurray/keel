@@ -86,28 +86,36 @@ class JournalEntryCard extends StatelessWidget {
                         ),
                         if (seriesName != null) ...[
                           const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: KColors.blueDim,
-                              borderRadius: BorderRadius.circular(3),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.repeat,
-                                    size: 9, color: KColors.blue),
-                                const SizedBox(width: 3),
-                                Text(
-                                  seriesName!,
-                                  style: const TextStyle(
-                                    color: KColors.blue,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
+                          // Flexible: a long series name shrinks with an
+                          // ellipsis instead of overflowing the card.
+                          Flexible(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: KColors.blueDim,
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.repeat,
+                                      size: 9, color: KColors.blue),
+                                  const SizedBox(width: 3),
+                                  Flexible(
+                                    child: Text(
+                                      seriesName!,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: KColors.blue,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ],
@@ -138,26 +146,40 @@ class JournalEntryCard extends StatelessWidget {
                         const Icon(Icons.calendar_today_outlined,
                             size: 10, color: KColors.textDim),
                         const SizedBox(width: 4),
-                        Text(
-                          du.formatDate(entry.entryDate),
-                          style: const TextStyle(
-                              color: KColors.textDim, fontSize: 10),
+                        Flexible(
+                          child: Text(
+                            du.formatDate(entry.entryDate),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                color: KColors.textDim, fontSize: 10),
+                          ),
                         ),
                         const SizedBox(width: 12),
                         if (entry.confirmedAt != null) ...[
                           const Icon(Icons.check_circle_outline,
                               size: 10, color: KColors.phosphor),
                           const SizedBox(width: 3),
-                          const Text('Parsed',
-                              style: TextStyle(
-                                  color: KColors.phosphor, fontSize: 10)),
+                          const Flexible(
+                            child: Text('Parsed',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                    color: KColors.phosphor,
+                                    fontSize: 10)),
+                          ),
                         ] else ...[
                           const Icon(Icons.hourglass_empty_outlined,
                               size: 10, color: KColors.textMuted),
                           const SizedBox(width: 3),
-                          const Text('Draft',
-                              style: TextStyle(
-                                  color: KColors.textMuted, fontSize: 10)),
+                          const Flexible(
+                            child: Text('Draft',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                    color: KColors.textMuted,
+                                    fontSize: 10)),
+                          ),
                         ],
                         if (entry.meetingContext != null) ...[
                           const SizedBox(width: 12),

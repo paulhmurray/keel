@@ -363,7 +363,15 @@ class _PinnedSection extends StatelessWidget {
             borderRadius: BorderRadius.circular(4),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
-              child: Row(
+              // The journal view lives in the shell's flexible centre,
+              // which can be squeezed to ~100px when the journal dock
+              // and Claude panel are both open — shed the counts, then
+              // the button label, then the button, rather than overflow.
+              child: LayoutBuilder(builder: (context, c) {
+                final showCounts = c.maxWidth >= 300;
+                final compactButton = c.maxWidth < 300;
+                final showButton = c.maxWidth >= 170;
+                return Row(
                 children: [
                   Icon(
                     expanded ? Icons.expand_more : Icons.chevron_right,
@@ -371,22 +379,46 @@ class _PinnedSection extends StatelessWidget {
                     color: KColors.amber,
                   ),
                   const SizedBox(width: 4),
-                  const Text(
-                    'PINNED',
-                    style: TextStyle(
-                      color: KColors.amber,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.15,
+                  const Flexible(
+                    child: Text(
+                      'PINNED',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: KColors.amber,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.15,
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '${entries.length} starred · ${series.length} series',
-                    style: const TextStyle(
-                        color: KColors.textMuted, fontSize: 10),
-                  ),
+                  if (showCounts) ...[
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        '${entries.length} starred · ${series.length} series',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            color: KColors.textMuted, fontSize: 10),
+                      ),
+                    ),
+                  ],
                   const Spacer(),
+                  if (showButton && compactButton)
+                    Tooltip(
+                      message: 'New series',
+                      child: InkWell(
+                        onTap: onNewSeries,
+                        borderRadius: BorderRadius.circular(3),
+                        child: const Padding(
+                          padding: EdgeInsets.all(4),
+                          child: Icon(Icons.add,
+                              size: 14, color: KColors.textDim),
+                        ),
+                      ),
+                    )
+                  else if (showButton)
                   TextButton.icon(
                     onPressed: onNewSeries,
                     icon: const Icon(Icons.add, size: 12),
@@ -401,7 +433,8 @@ class _PinnedSection extends StatelessWidget {
                     ),
                   ),
                 ],
-              ),
+                );
+              }),
             ),
           ),
           if (expanded) ...[
@@ -607,12 +640,19 @@ class _SeriesFilterBanner extends StatelessWidget {
             border: Border.all(color: KColors.blue.withValues(alpha: 0.4)),
             borderRadius: BorderRadius.circular(4),
           ),
-          child: Row(
+          // Sheds under squeeze (journal dock + Claude panel open): the
+          // lead text drops first, then the button collapses to its icon.
+          child: LayoutBuilder(builder: (context, c) {
+            final showLead = c.maxWidth >= 380;
+            final compactButton = c.maxWidth < 320;
+            return Row(
             children: [
               const Icon(Icons.repeat, size: 13, color: KColors.blue),
               const SizedBox(width: 6),
-              const Text('Filtering by series · ',
-                  style: TextStyle(color: KColors.textDim, fontSize: 11)),
+              if (showLead)
+                const Text('Filtering by series · ',
+                    style:
+                        TextStyle(color: KColors.textDim, fontSize: 11)),
               // Expanded — not Flexible — so the name consumes all the
               // leftover space and the buttons sit flush against the
               // banner's right edge. Flexible+Spacer was claiming the
@@ -628,6 +668,20 @@ class _SeriesFilterBanner extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
+              if (compactButton)
+                Tooltip(
+                  message: 'New in series',
+                  child: InkWell(
+                    onTap: onAddEntry,
+                    borderRadius: BorderRadius.circular(3),
+                    child: const Padding(
+                      padding: EdgeInsets.all(4),
+                      child:
+                          Icon(Icons.add, size: 14, color: KColors.blue),
+                    ),
+                  ),
+                )
+              else
               ElevatedButton.icon(
                 onPressed: onAddEntry,
                 icon: const Icon(Icons.add, size: 12),
@@ -653,7 +707,8 @@ class _SeriesFilterBanner extends StatelessWidget {
                 ),
               ),
             ],
-          ),
+            );
+          }),
         ),
       ],
     );

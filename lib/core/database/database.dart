@@ -35,6 +35,8 @@ part 'daos/canvas_cards_dao.dart';
 part 'daos/canvas_templates_dao.dart';
 part 'daos/finance_dao.dart';
 part 'daos/day_plan_dao.dart';
+part 'daos/week_plan_dao.dart';
+part 'daos/quarter_plan_dao.dart';
 
 // ---------------------------------------------------------------------------
 // Tables
@@ -877,6 +879,24 @@ class TimelineActivities extends Table {
   IntColumn get endMonth => integer().nullable()();
   TextColumn get startDate => text().nullable()();
   TextColumn get endDate => text().nullable()();
+  // Schedule scenarios (reference-class / black-swan planning). The
+  // anchor date is startMonth; these two OPTIONAL months are the
+  // B-Likely and C-Safe variants. Null = single-date item (most
+  // activities, external one-date rows, and hard_deadline types — a
+  // hard date is precisely one with no variants). Variance lives where
+  // its CAUSE lives; downstream items inherit it via dependencies
+  // rather than duplicating dates.
+  IntColumn get likelyMonth => integer().nullable()();
+  IntColumn get safeMonth => integer().nullable()();
+  // Why the date varies — link to the RAID item that drives the spread.
+  // varianceRaidType: 'risk' | 'assumption' | 'issue' | 'dependency'.
+  // LEGACY single link (pre-v57): kept in sync with the first entry of
+  // varianceRaidLinksJson so older readers keep working.
+  TextColumn get varianceRaidType => text().nullable()();
+  TextColumn get varianceRaidId => text().nullable()();
+  // Up to 5 links, JSON array of {"type","id"} — a spread is usually
+  // driven by several RAID items at once (R19 + A3 + A6 in practice).
+  TextColumn get varianceRaidLinksJson => text().nullable()();
   // not_started | on_track | at_risk | complete | overdue
   TextColumn get status =>
       text().withDefault(const Constant('not_started'))();
@@ -1372,6 +1392,99 @@ class DayPlanBlocks extends Table {
   // is global and outlives per-project lifecycles.
   TextColumn get projectId => text().nullable()();
   TextColumn get linkedActionId => text().nullable()();
+  // Optional link to a weekly objective — how the week's big rocks track
+  // themselves: done blocks with this id count toward the objective's
+  // target with zero bookkeeping.
+  TextColumn get objectiveId => text().nullable()();
+  BoolColumn get done => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// The weekly layer above DayPlans — Cal Newport's weekly plan is an
+/// ALLOCATION OF INTENT, not a bigger time grid: which big rocks this
+/// week, which day gets what. Hours stay the morning ritual's job.
+/// GLOBAL like day plans, with the same ride-in-every-blob sync and the
+/// same per-week updatedAt import guard (touch updatedAt on EVERY
+/// objective/mission mutation).
+class WeekPlans extends Table {
+  TextColumn get id => text().named('id')();
+  // ISO date of the week's MONDAY — the week key.
+  TextColumn get weekStartDate => text().unique()();
+  // Day missions: JSON object mapping weekday index ("0" = Monday …
+  // "6" = Sunday) to a one-line mission for that day.
+  TextColumn get dayMissionsJson =>
+      text().withDefault(const Constant('{}'))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class WeekPlanObjectives extends Table {
+  TextColumn get id => text().named('id')();
+  TextColumn get weekPlanId => text().references(WeekPlans, #id)();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  TextColumn get label => text()();
+  // Optional links back to project work; label is denormalised so the
+  // objective outlives them (global vs per-project lifecycle).
+  TextColumn get projectId => text().nullable()();
+  TextColumn get linkedActionId => text().nullable()();
+  // Optional link up to a quarterly goal — met objectives count toward
+  // the goal's target, completing the block → objective → goal cascade.
+  TextColumn get goalId => text().nullable()();
+  // Optional target: "worth N focus blocks this week". Progress is
+  // computed from done DayPlanBlocks carrying this objective's id.
+  IntColumn get targetBlocks => integer().nullable()();
+  // Manual completion for objectives without block targets.
+  BoolColumn get done => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// The quarterly layer above WeekPlans — Cal Newport's seasonal plan:
+/// a handful of goals with their WHY, and a mission per month. Never a
+/// schedule (delivery timelines live in the Plan view; goals LINK to
+/// plan items rather than re-declaring dates). GLOBAL, same
+/// ride-in-every-blob sync and per-quarter updatedAt guard as the day
+/// and week layers. Keyed by start DATE so the user-configurable
+/// quarter anchor (calendar vs financial year) never rewrites data.
+class QuarterPlans extends Table {
+  TextColumn get id => text().named('id')();
+  // ISO date of the quarter's first day — the quarter key.
+  TextColumn get quarterStartDate => text().unique()();
+  // Month missions: JSON object mapping month index within the quarter
+  // ("0" | "1" | "2") to a one-line mission for that month.
+  TextColumn get monthMissionsJson =>
+      text().withDefault(const Constant('{}'))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class QuarterGoals extends Table {
+  TextColumn get id => text().named('id')();
+  TextColumn get quarterPlanId => text().references(QuarterPlans, #id)();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  TextColumn get label => text()();
+  // The motivation — what makes the mid-quarter review honest.
+  TextColumn get why => text().nullable()();
+  // Optional links back to project work; label is denormalised so the
+  // goal outlives them.
+  TextColumn get projectId => text().nullable()();
+  TextColumn get linkedActionId => text().nullable()();
+  // Optional target: "worth N met weekly objectives this quarter".
+  // Progress is computed from met WeekPlanObjectives carrying goalId.
+  IntColumn get targetObjectives => integer().nullable()();
   BoolColumn get done => boolean().withDefault(const Constant(false))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
@@ -1445,6 +1558,10 @@ class DayPlanBlocks extends Table {
     FinancialAuditLog,
     DayPlans,
     DayPlanBlocks,
+    WeekPlans,
+    WeekPlanObjectives,
+    QuarterPlans,
+    QuarterGoals,
   ],
   daos: [
     ProjectDao,
@@ -1476,6 +1593,8 @@ class DayPlanBlocks extends Table {
     CanvasTemplatesDao,
     FinanceDao,
     DayPlanDao,
+    WeekPlanDao,
+    QuarterPlanDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -1487,7 +1606,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(QueryExecutor executor) : super(executor);
 
   @override
-  int get schemaVersion => 53;
+  int get schemaVersion => 58;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1874,6 +1993,61 @@ class AppDatabase extends _$AppDatabase {
             await ensureTable(dayPlans);
             await ensureTable(dayPlanBlocks);
           }
+          if (from < 54) {
+            // Helm weekly layer: objectives + day missions, and the
+            // block→objective link that makes progress self-tracking.
+            await ensureTable(weekPlans);
+            await ensureTable(weekPlanObjectives);
+            await ensureColumn(dayPlanBlocks, dayPlanBlocks.objectiveId);
+          }
+          if (from < 55) {
+            // Helm quarterly layer: goals + month missions, and the
+            // objective→goal link completing the progress cascade.
+            await ensureTable(quarterPlans);
+            await ensureTable(quarterGoals);
+            await ensureColumn(
+                weekPlanObjectives, weekPlanObjectives.goalId);
+          }
+          if (from < 56) {
+            // Plan scenario dates (A-Anchor / B-Likely / C-Safe) with a
+            // RAID link naming why the date varies.
+            await ensureColumn(
+                timelineActivities, timelineActivities.likelyMonth);
+            await ensureColumn(
+                timelineActivities, timelineActivities.safeMonth);
+            await ensureColumn(timelineActivities,
+                timelineActivities.varianceRaidType);
+            await ensureColumn(
+                timelineActivities, timelineActivities.varianceRaidId);
+          }
+          if (from < 57) {
+            // Variance links become a list (up to 5). Backfill existing
+            // single links into the JSON so nothing is lost; the legacy
+            // columns stay populated with the first link.
+            await ensureColumn(timelineActivities,
+                timelineActivities.varianceRaidLinksJson);
+            try {
+              await customStatement(
+                  "UPDATE timeline_activities SET variance_raid_links_json = "
+                  "'[{\"type\":\"' || variance_raid_type || '\",\"id\":\"' || variance_raid_id || '\"}]' "
+                  "WHERE variance_raid_id IS NOT NULL "
+                  "AND variance_raid_type IS NOT NULL "
+                  "AND variance_raid_links_json IS NULL");
+            } catch (_) {}
+          }
+          if (from < 58) {
+            // Repair external timeline deps whose labels were stripped
+            // by the pre-Sep-2026 sync exporter (external_label was
+            // never exported, so every pull nulled it). The placeholder
+            // keeps the row valid; the PM can rename it in the form.
+            try {
+              await customStatement(
+                  "UPDATE timeline_dependencies "
+                  "SET external_label = '(external — label lost in sync)' "
+                  "WHERE dependency_type = 'external' "
+                  "AND external_label IS NULL");
+            } catch (_) {}
+          }
         },
       );
 
@@ -1967,11 +2141,23 @@ class AppDatabase extends _$AppDatabase {
       await (delete(actualLines)..where((t) => t.projectId.equals(projectId))).go();
       await (delete(costCategories)..where((t) => t.projectId.equals(projectId))).go();
       await (delete(financialAuditLog)..where((t) => t.projectId.equals(projectId))).go();
-      // Helm blocks are global — keep them (the denormalised label still
-      // reads fine) but drop the dangling references to the dead project.
+      // Helm blocks/objectives are global — keep them (the denormalised
+      // label still reads fine) but drop dangling refs to the dead project.
       await (update(dayPlanBlocks)
             ..where((t) => t.projectId.equals(projectId)))
           .write(const DayPlanBlocksCompanion(
+        projectId: Value(null),
+        linkedActionId: Value(null),
+      ));
+      await (update(weekPlanObjectives)
+            ..where((t) => t.projectId.equals(projectId)))
+          .write(const WeekPlanObjectivesCompanion(
+        projectId: Value(null),
+        linkedActionId: Value(null),
+      ));
+      await (update(quarterGoals)
+            ..where((t) => t.projectId.equals(projectId)))
+          .write(const QuarterGoalsCompanion(
         projectId: Value(null),
         linkedActionId: Value(null),
       ));

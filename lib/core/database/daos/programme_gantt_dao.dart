@@ -103,6 +103,15 @@ class ProgrammeGanttDao extends DatabaseAccessor<AppDatabase>
             baselineEnd:   Value.absent(),
           ));
 
+  /// Sets just the status — used by the Plan's inline status dropdown.
+  Future<void> setActivityStatus(String id, String status) {
+    return (update(timelineActivities)..where((t) => t.id.equals(id)))
+        .write(TimelineActivitiesCompanion(
+      status: Value(status),
+      updatedAt: Value(DateTime.now()),
+    ));
+  }
+
   Future<void> deleteActivity(String id) =>
       (delete(timelineActivities)..where((t) => t.id.equals(id))).go();
 

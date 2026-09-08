@@ -29,8 +29,12 @@ class GovernanceView extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text('Governance Cadences',
-                  style: Theme.of(context).textTheme.headlineSmall),
+              Flexible(
+                child: Text('Governance Cadences',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.headlineSmall),
+              ),
               const Spacer(),
               ElevatedButton.icon(
                 onPressed: () => _showForm(context, projectId, db, null),

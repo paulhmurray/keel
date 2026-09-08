@@ -76,6 +76,14 @@ const Set<String> syncedTables = {
   // clobber a newer plan; _clearSyncedTables deliberately skips them.
   'day_plans',
   'day_plan_blocks',
+  // Weekly layer — same global/guarded pattern as day plans (per-week
+  // updatedAt guard in WeekPlanDao.applyImportedPlan).
+  'week_plans',
+  'week_plan_objectives',
+  // Quarterly layer — same pattern again (per-quarter guard in
+  // QuarterPlanDao.applyImportedPlan).
+  'quarter_plans',
+  'quarter_goals',
   // Playbook: catalog tables are upsert-only on import (shared across
   // projects); the per-project attachment + progress are cleared+reimported.
   'organisations',

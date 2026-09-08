@@ -1234,8 +1234,12 @@ class _VimModeBadge extends StatelessWidget {
         ),
         if (isNormal) ...[
           const SizedBox(width: 10),
-          Text('i/a insert  o new line  w/e/b words  \$ end  gg/G top/end  dd delete  u undo  ^r redo',
-              style: const TextStyle(color: KColors.textMuted, fontSize: 10)),
+          Flexible(
+            child: Text('i/a insert  o new line  w/e/b words  \$ end  gg/G top/end  dd delete  u undo  ^r redo',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: KColors.textMuted, fontSize: 10)),
+          ),
         ] else ...[
           const SizedBox(width: 10),
           Text('Esc  normal mode',

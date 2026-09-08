@@ -28,8 +28,12 @@ class WorkstreamsView extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text('Workstreams',
-                  style: Theme.of(context).textTheme.headlineSmall),
+              Flexible(
+                child: Text('Workstreams',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.headlineSmall),
+              ),
               const Spacer(),
               ElevatedButton.icon(
                 onPressed: () => showDialog(

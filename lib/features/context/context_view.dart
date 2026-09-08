@@ -96,8 +96,12 @@ class _ContextViewState extends State<ContextView>
               const Icon(Icons.library_books,
                   color: KColors.amber, size: 22),
               const SizedBox(width: 10),
-              Text('Context',
-                  style: Theme.of(context).textTheme.headlineSmall),
+              Flexible(
+                child: Text('Context',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.headlineSmall),
+              ),
             ],
           ),
         ),
@@ -1542,13 +1546,17 @@ class _GlossaryTabState extends State<_GlossaryTab> {
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 12),
               child: Row(
                 children: [
-                  const Text(
-                    'SYSTEMS & TERMS',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.15,
-                      color: KColors.textMuted,
+                  const Flexible(
+                    child: Text(
+                      'SYSTEMS & TERMS',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.15,
+                        color: KColors.textMuted,
+                      ),
                     ),
                   ),
                   const Spacer(),

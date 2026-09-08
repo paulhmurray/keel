@@ -278,7 +278,8 @@ class _RaciViewState extends State<RaciView> {
       child: SingleChildScrollView(
         controller: _hScroll,
         scrollDirection: Axis.horizontal,
-        child: Column(
+        child: SingleChildScrollView(
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header row.
@@ -340,6 +341,7 @@ class _RaciViewState extends State<RaciView> {
                 ],
               ),
           ],
+          ),
         ),
       ),
     );

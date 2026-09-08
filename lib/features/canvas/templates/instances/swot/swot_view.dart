@@ -472,13 +472,17 @@ class _Quadrant extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      SwotQuadrant.label(quadrant).toUpperCase(),
-                      style: TextStyle(
-                        color: accent,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.4,
+                    Flexible(
+                      child: Text(
+                        SwotQuadrant.label(quadrant).toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: accent,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.4,
+                        ),
                       ),
                     ),
                     const Spacer(),

@@ -125,19 +125,27 @@ class ProgrammePulseWidget extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   if (trend != RagTrend.noData)
-                    Text(
-                      '${trend.arrow} ${trend.label}',
-                      style: const TextStyle(
-                          color: KColors.textDim, fontSize: 11),
+                    Flexible(
+                      child: Text(
+                        '${trend.arrow} ${trend.label}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            color: KColors.textDim, fontSize: 11),
+                      ),
                     ),
                   if (lastSnapshot != null && trend != RagTrend.noData) ...[
                     const Text('  ·  ',
                         style: TextStyle(
                             color: KColors.border2, fontSize: 11)),
-                    Text(
-                      'was ${lastSnapshot!.programmeRag}',
-                      style: const TextStyle(
-                          color: KColors.textMuted, fontSize: 11),
+                    Flexible(
+                      child: Text(
+                        'was ${lastSnapshot!.programmeRag}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            color: KColors.textMuted, fontSize: 11),
+                      ),
                     ),
                   ],
                 ]),
@@ -158,7 +166,9 @@ class ProgrammePulseWidget extends StatelessWidget {
                         color: KColors.textMuted, fontSize: 12),
                   ),
                 const SizedBox(height: 12),
-                Row(children: [
+                // Wrap, not Row — the pane can be squeezed well below
+                // the two buttons' combined width.
+                Wrap(spacing: 8, runSpacing: 4, children: [
                   TextButton.icon(
                     onPressed: onEditNarrative,
                     icon: const Icon(Icons.edit_outlined, size: 13),
@@ -167,7 +177,6 @@ class ProgrammePulseWidget extends StatelessWidget {
                     style: TextButton.styleFrom(
                         foregroundColor: KColors.textDim),
                   ),
-                  const SizedBox(width: 8),
                   _RagOverrideButton(
                     projectId: projectId,
                     db: db,

@@ -90,6 +90,7 @@ class DayPlanDao extends DatabaseAccessor<AppDatabase>
     String kind = 'focus',
     String? projectId,
     String? linkedActionId,
+    String? objectiveId,
   }) async {
     final id = _uuid.v4();
     await transaction(() async {
@@ -103,6 +104,7 @@ class DayPlanDao extends DatabaseAccessor<AppDatabase>
         label: label,
         projectId: Value(projectId),
         linkedActionId: Value(linkedActionId),
+        objectiveId: Value(objectiveId),
       ));
       await _touchPlan(planId);
     });
@@ -189,6 +191,7 @@ class DayPlanDao extends DatabaseAccessor<AppDatabase>
           label: b.label,
           projectId: Value(b.projectId),
           linkedActionId: Value(b.linkedActionId),
+          objectiveId: Value(b.objectiveId),
           done: Value(b.done),
         ));
       }

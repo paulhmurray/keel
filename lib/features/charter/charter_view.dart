@@ -370,13 +370,17 @@ class _LinkedProjectCharters extends StatelessWidget {
                 const Icon(Icons.account_tree_outlined,
                     color: KColors.amber, size: 16),
                 const SizedBox(width: 8),
-                Text(
-                  'LINKED PROJECT CHARTERS · ${charters.length}',
-                  style: const TextStyle(
-                    color: KColors.amber,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.4,
+                Flexible(
+                  child: Text(
+                    'LINKED PROJECT CHARTERS · ${charters.length}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: KColors.amber,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.4,
+                    ),
                   ),
                 ),
               ],

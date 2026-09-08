@@ -117,46 +117,58 @@ class _ForecastTabState extends State<ForecastTab> {
               ),
             ),
           ),
-        const Spacer(),
-        if (selected != null && selected.status == 'working') ...[
-          OutlinedButton.icon(
-            onPressed: () async {
-              await db.financeDao
-                  .submitSnapshot(selected.id, changedBy: widget.actor);
-            },
-            icon: const Icon(Icons.check, size: 14),
-            label: Text('Submit ${selected.period}'),
+        const SizedBox(width: 12),
+        Expanded(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            reverse: true,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (selected != null && selected.status == 'working') ...[
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      await db.financeDao
+                          .submitSnapshot(selected.id, changedBy: widget.actor);
+                    },
+                    icon: const Icon(Icons.check, size: 14),
+                    label: Text('Submit ${selected.period}'),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                ElevatedButton.icon(
+                  onPressed: () => _newMonth(context, snapshots, approved),
+                  icon: const Icon(Icons.add, size: 14),
+                  label: const Text('New Month'),
+                ),
+                if (selected != null)
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert,
+                        size: 18, color: KColors.textMuted),
+                    onSelected: (val) async {
+                      if (val == 'reopen') {
+                        await db.financeDao.reopenSnapshot(selected.id,
+                            changedBy: widget.actor);
+                      } else if (val == 'delete') {
+                        await db.financeDao.deleteWorkingSnapshot(selected.id,
+                            changedBy: widget.actor);
+                        setState(() => _selectedSnapshotId = null);
+                      }
+                    },
+                    itemBuilder: (_) => [
+                      if (selected.status == 'submitted')
+                        const PopupMenuItem(
+                            value: 'reopen', child: Text('Reopen for editing')),
+                      if (selected.status == 'working')
+                        const PopupMenuItem(
+                            value: 'delete',
+                            child: Text('Delete working snapshot')),
+                    ],
+                  ),
+              ],
+            ),
           ),
-          const SizedBox(width: 8),
-        ],
-        ElevatedButton.icon(
-          onPressed: () => _newMonth(context, snapshots, approved),
-          icon: const Icon(Icons.add, size: 14),
-          label: const Text('New Month'),
         ),
-        if (selected != null)
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert,
-                size: 18, color: KColors.textMuted),
-            onSelected: (val) async {
-              if (val == 'reopen') {
-                await db.financeDao
-                    .reopenSnapshot(selected.id, changedBy: widget.actor);
-              } else if (val == 'delete') {
-                await db.financeDao.deleteWorkingSnapshot(selected.id,
-                    changedBy: widget.actor);
-                setState(() => _selectedSnapshotId = null);
-              }
-            },
-            itemBuilder: (_) => [
-              if (selected.status == 'submitted')
-                const PopupMenuItem(
-                    value: 'reopen', child: Text('Reopen for editing')),
-              if (selected.status == 'working')
-                const PopupMenuItem(
-                    value: 'delete', child: Text('Delete working snapshot')),
-            ],
-          ),
       ],
     );
   }

@@ -56,12 +56,16 @@ class WorkstreamRagStatus {
   final Rag rag;
   final RagTrend trend;
   final String? previousRagLabel;
+  // "Nov 26 – Mar 27" — the WP's month window, so the RAG carries its
+  // timeframe (red with one month left ≠ red with six months of runway).
+  final String? spanLabel;
 
   const WorkstreamRagStatus({
     required this.wp,
     required this.rag,
     required this.trend,
     this.previousRagLabel,
+    this.spanLabel,
   });
 }
 
@@ -178,6 +182,26 @@ class StatusCalculator {
   /// preferred anchor for converting a month index to a calendar month;
   /// parsing [monthLabels] is the fallback for headers that predate it.
   /// [now] is injectable for tests.
+  /// The month window a work package occupies — min activity start to
+  /// max activity end. Cascaded WPs whose activities stayed private on
+  /// the source project fall back to the cascade span. Null when
+  /// nothing carries a month.
+  static ({int start, int end})? wpMonthSpan(
+      TimelineWorkPackage wp, Iterable<TimelineActivity> allActs) {
+    int? lo, hi;
+    for (final a in allActs) {
+      if (a.workPackageId != wp.id) continue;
+      final s = a.startMonth;
+      final e = a.endMonth ?? a.startMonth;
+      if (s != null && (lo == null || s < lo)) lo = s;
+      if (e != null && (hi == null || e > hi)) hi = e;
+    }
+    lo ??= wp.cascadeStartMonth;
+    hi ??= wp.cascadeEndMonth ?? lo;
+    if (lo == null || hi == null) return null;
+    return (start: lo, end: hi);
+  }
+
   static List<TimelineActivity> upcomingMilestones(
     List<TimelineActivity> all,
     List<String> monthLabels, {

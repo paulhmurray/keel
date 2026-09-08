@@ -20,7 +20,11 @@ class ContextBuilder {
   /// 6. Open & overdue actions (up to 8)
   /// 7. Recent context entries (up to 10)
   /// 8. Document summaries (up to 5)
-  Future<String> buildSystemPrompt(String projectId) async {
+  ///
+  /// [quarterAnchorMonth] locates "this quarter" for the Helm section
+  /// (1 = calendar quarters, 7 = Australian FY).
+  Future<String> buildSystemPrompt(String projectId,
+      {int quarterAnchorMonth = 1}) async {
     final buffer = StringBuffer();
 
     // --- Base persona ---
@@ -464,6 +468,84 @@ class ContextBuilder {
           buffer.writeln(
               'The day has been re-planned ${dayPlan.currentRevision} '
               'time(s) (Cal Newport-style revision columns).');
+        }
+        buffer.writeln();
+      }
+    }
+
+    // --- This week's Helm plan (objectives + today's mission, global) ---
+    final monday = mondayOf(today);
+    final mondayIso =
+        '${monday.year}-${monday.month.toString().padLeft(2, '0')}-${monday.day.toString().padLeft(2, '0')}';
+    final weekPlan = await db.weekPlanDao.getPlanForWeek(mondayIso);
+    if (weekPlan != null) {
+      final objectives =
+          await db.weekPlanDao.getObjectivesForPlan(weekPlan.id);
+      final missions = parseDayMissions(weekPlan.dayMissionsJson);
+      final todayMission = missions[today.weekday - 1];
+      if (objectives.isNotEmpty || todayMission != null) {
+        buffer.writeln('## This Week — Helm (week of $mondayIso)');
+        buffer.writeln(
+            '(The PM\'s weekly plan: big rocks for the week and a '
+            'mission per day. Global across all their projects.)');
+        if (todayMission != null) {
+          buffer.writeln('Today\'s mission: $todayMission');
+        }
+        if (objectives.isNotEmpty) {
+          // Progress = done blocks carrying each objective's id.
+          final sundayIso = '${monday.add(const Duration(days: 6)).year}-'
+              '${monday.add(const Duration(days: 6)).month.toString().padLeft(2, '0')}-'
+              '${monday.add(const Duration(days: 6)).day.toString().padLeft(2, '0')}';
+          final weekRows = await db.weekPlanDao
+              .watchBlocksForWeek(mondayIso, sundayIso)
+              .first;
+          final startsByPlan = <String, List<int>>{
+            for (final r in weekRows)
+              r.plan.id: parseRevisionStarts(r.plan.revisionStartsJson),
+          };
+          final weekBlocks = weekRows.map((r) => r.block).toList();
+          for (final o in objectives) {
+            final done =
+                objectiveDoneBlocks(o.id, weekBlocks, startsByPlan);
+            final progress = o.targetBlocks != null
+                ? ' [$done of ${o.targetBlocks} blocks done]'
+                : (o.done ? ' [done]' : '');
+            buffer.writeln('- ${o.label}$progress');
+          }
+        }
+        buffer.writeln();
+      }
+    }
+
+    // --- This quarter's Helm plan (goals + month mission, global) ---
+    final quarterStart = quarterStartOf(today, quarterAnchorMonth);
+    final quarterStartIso =
+        '${quarterStart.year}-${quarterStart.month.toString().padLeft(2, '0')}-01';
+    final quarterPlan =
+        await db.quarterPlanDao.getPlanForQuarter(quarterStartIso);
+    if (quarterPlan != null) {
+      final goals =
+          await db.quarterPlanDao.getGoalsForPlan(quarterPlan.id);
+      final monthMissions = parseDayMissions(quarterPlan.monthMissionsJson);
+      final monthIndex = (today.month - quarterStart.month + 12) % 12;
+      final thisMonthMission = monthMissions[monthIndex];
+      if (goals.isNotEmpty || thisMonthMission != null) {
+        buffer.writeln(
+            '## This Quarter — Helm (${quarterLabel(quarterStart, quarterAnchorMonth)})');
+        buffer.writeln(
+            '(The PM\'s seasonal plan: a few goals with their WHY, and '
+            'a mission per month. Global across all their projects.)');
+        if (thisMonthMission != null) {
+          buffer.writeln('This month\'s mission: $thisMonthMission');
+        }
+        for (final g in goals) {
+          final why = g.why != null && g.why!.isNotEmpty
+              ? ' — why: ${g.why}'
+              : '';
+          final progress = g.targetObjectives != null
+              ? ' [target: ${g.targetObjectives} weekly objectives]'
+              : (g.done ? ' [done]' : '');
+          buffer.writeln('- ${g.label}$why$progress');
         }
         buffer.writeln();
       }

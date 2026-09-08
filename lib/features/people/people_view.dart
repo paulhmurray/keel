@@ -1726,12 +1726,16 @@ class _PortfolioCoverageStrip extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.4)),
             const Spacer(),
-            Text(
-                '$projectCount project${projectCount == 1 ? '' : 's'}'
-                ' · $stakeholderCount stakeholder${stakeholderCount == 1 ? '' : 's'}'
-                '${gapCount > 0 ? ' · $gapCount gap${gapCount == 1 ? '' : 's'}' : ''}',
-                style: const TextStyle(
-                    color: KColors.textMuted, fontSize: 11)),
+            Flexible(
+              child: Text(
+                  '$projectCount project${projectCount == 1 ? '' : 's'}'
+                  ' · $stakeholderCount stakeholder${stakeholderCount == 1 ? '' : 's'}'
+                  '${gapCount > 0 ? ' · $gapCount gap${gapCount == 1 ? '' : 's'}' : ''}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      color: KColors.textMuted, fontSize: 11)),
+            ),
           ]),
           const SizedBox(height: 12),
           _PortfolioBar(label: 'Stakeholders', result: stakeholders),
@@ -1938,9 +1942,13 @@ class _ReadOnlyTier extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.15)),
             const Spacer(),
-            Text('$filled of ${roles.length} filled',
-                style: const TextStyle(
-                    color: KColors.textMuted, fontSize: 10)),
+            Flexible(
+              child: Text('$filled of ${roles.length} filled',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      color: KColors.textMuted, fontSize: 10)),
+            ),
           ]),
         ),
         for (final role in roles)

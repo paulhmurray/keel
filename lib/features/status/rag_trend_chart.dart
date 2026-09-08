@@ -104,12 +104,16 @@ class RagTrendChart extends StatelessWidget {
           _StatPill('${stats.redWeeks}w', 'red', KColors.red),
           const SizedBox(width: 16),
           if (stats.currentRag != null)
-            Text(
-              'Currently ${stats.currentRag!.toUpperCase()} '
-              'for ${stats.currentStreak} '
-              'week${stats.currentStreak == 1 ? "" : "s"}',
-              style: const TextStyle(
-                  color: KColors.textDim, fontSize: 12),
+            Flexible(
+              child: Text(
+                'Currently ${stats.currentRag!.toUpperCase()} '
+                'for ${stats.currentStreak} '
+                'week${stats.currentStreak == 1 ? "" : "s"}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                    color: KColors.textDim, fontSize: 12),
+              ),
             ),
         ]),
         const SizedBox(height: 12),

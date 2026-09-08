@@ -203,10 +203,14 @@ class _JournalDeltaPanelState extends State<JournalDeltaPanel> {
                   ),
                   const Spacer(),
                   if (confirmedCount > 0)
-                    Text(
-                      '$confirmedCount confirmed',
-                      style: const TextStyle(
-                          color: KColors.phosphor, fontSize: 10),
+                    Flexible(
+                      child: Text(
+                        '$confirmedCount confirmed',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            color: KColors.phosphor, fontSize: 10),
+                      ),
                     ),
                 ],
               ),

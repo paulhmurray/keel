@@ -88,4 +88,14 @@ void main() {
       expect(after, before);
     });
   });
+
+  group('setStatus', () {
+    test('round-trips a sub-task between closed and open', () async {
+      await _seedAction(db, id: 'sub');
+      await db.actionsDao.setStatus('sub', 'closed');
+      expect((await db.actionsDao.getActionById('sub'))!.status, 'closed');
+      await db.actionsDao.setStatus('sub', 'open');
+      expect((await db.actionsDao.getActionById('sub'))!.status, 'open');
+    });
+  });
 }

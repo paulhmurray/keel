@@ -786,6 +786,12 @@ class JsonImporter {
           endMonth: Value(am['end_month'] as int?),
           startDate: Value(am['start_date'] as String?),
           endDate: Value(am['end_date'] as String?),
+          likelyMonth: Value(am['likely_month'] as int?),
+          safeMonth: Value(am['safe_month'] as int?),
+          varianceRaidType: Value(am['variance_raid_type'] as String?),
+          varianceRaidId: Value(am['variance_raid_id'] as String?),
+          varianceRaidLinksJson:
+              Value(am['variance_raid_links'] as String?),
           status: Value(am['status'] as String? ?? 'not_started'),
           isCritical: Value(am['is_critical'] as bool? ?? false),
           isBaseline: Value(am['is_baseline'] as bool? ?? false),
@@ -807,6 +813,7 @@ class JsonImporter {
           toActivityId: Value(dm['to_activity_id'] as String),
           dependencyType:
               Value(dm['dependency_type'] as String? ?? 'finish_to_start'),
+          externalLabel: Value(dm['external_label'] as String?),
           notes: Value(dm['notes'] as String?),
         ));
       }
@@ -1038,6 +1045,7 @@ class JsonImporter {
               label: Value(bm['label'] as String? ?? ''),
               projectId: Value(bm['project_id'] as String?),
               linkedActionId: Value(bm['linked_action_id'] as String?),
+              objectiveId: Value(bm['objective_id'] as String?),
               done: Value(bm['done'] as bool? ?? false),
               createdAt: Value(_parseDt(bm['created_at']) ?? DateTime.now()),
               updatedAt: Value(_parseDt(bm['updated_at']) ?? DateTime.now()),
@@ -1057,6 +1065,88 @@ class JsonImporter {
             updatedAt: Value(_parseDt(pm['updated_at']) ?? DateTime.now()),
           ),
           blocks: blocksByPlan[planId] ?? const [],
+        );
+      }
+    }
+
+    // Helm week plans — same GLOBAL guarded-replace rules as day plans:
+    // matched by week_start_date, replaced only when strictly newer.
+    // Missing key on pre-weekly exports is fine (skipped).
+    final weekPlanData = data['week_plans'] as Map<String, dynamic>?;
+    if (weekPlanData != null) {
+      final objectivesByPlan =
+          <String, List<WeekPlanObjectivesCompanion>>{};
+      for (final o in (weekPlanData['objectives'] as List? ?? [])) {
+        final om = o as Map<String, dynamic>;
+        objectivesByPlan
+            .putIfAbsent(om['week_plan_id'] as String, () => [])
+            .add(WeekPlanObjectivesCompanion(
+              id: Value(om['id'] as String),
+              weekPlanId: Value(om['week_plan_id'] as String),
+              sortOrder: Value(om['sort_order'] as int? ?? 0),
+              label: Value(om['label'] as String? ?? ''),
+              projectId: Value(om['project_id'] as String?),
+              linkedActionId: Value(om['linked_action_id'] as String?),
+              goalId: Value(om['goal_id'] as String?),
+              targetBlocks: Value(om['target_blocks'] as int?),
+              done: Value(om['done'] as bool? ?? false),
+              createdAt: Value(_parseDt(om['created_at']) ?? DateTime.now()),
+              updatedAt: Value(_parseDt(om['updated_at']) ?? DateTime.now()),
+            ));
+      }
+      for (final p in (weekPlanData['plans'] as List? ?? [])) {
+        final pm = p as Map<String, dynamic>;
+        final planId = pm['id'] as String;
+        await db.weekPlanDao.applyImportedPlan(
+          plan: WeekPlansCompanion(
+            id: Value(planId),
+            weekStartDate: Value(pm['week_start_date'] as String),
+            dayMissionsJson:
+                Value(pm['day_missions_json'] as String? ?? '{}'),
+            createdAt: Value(_parseDt(pm['created_at']) ?? DateTime.now()),
+            updatedAt: Value(_parseDt(pm['updated_at']) ?? DateTime.now()),
+          ),
+          objectives: objectivesByPlan[planId] ?? const [],
+        );
+      }
+    }
+
+    // Helm quarter plans — same GLOBAL guarded-replace rules, matched by
+    // quarter_start_date. Missing key on older exports is fine (skipped).
+    final quarterPlanData = data['quarter_plans'] as Map<String, dynamic>?;
+    if (quarterPlanData != null) {
+      final goalsByPlan = <String, List<QuarterGoalsCompanion>>{};
+      for (final g in (quarterPlanData['goals'] as List? ?? [])) {
+        final gm = g as Map<String, dynamic>;
+        goalsByPlan
+            .putIfAbsent(gm['quarter_plan_id'] as String, () => [])
+            .add(QuarterGoalsCompanion(
+              id: Value(gm['id'] as String),
+              quarterPlanId: Value(gm['quarter_plan_id'] as String),
+              sortOrder: Value(gm['sort_order'] as int? ?? 0),
+              label: Value(gm['label'] as String? ?? ''),
+              why: Value(gm['why'] as String?),
+              projectId: Value(gm['project_id'] as String?),
+              linkedActionId: Value(gm['linked_action_id'] as String?),
+              targetObjectives: Value(gm['target_objectives'] as int?),
+              done: Value(gm['done'] as bool? ?? false),
+              createdAt: Value(_parseDt(gm['created_at']) ?? DateTime.now()),
+              updatedAt: Value(_parseDt(gm['updated_at']) ?? DateTime.now()),
+            ));
+      }
+      for (final p in (quarterPlanData['plans'] as List? ?? [])) {
+        final pm = p as Map<String, dynamic>;
+        final planId = pm['id'] as String;
+        await db.quarterPlanDao.applyImportedPlan(
+          plan: QuarterPlansCompanion(
+            id: Value(planId),
+            quarterStartDate: Value(pm['quarter_start_date'] as String),
+            monthMissionsJson:
+                Value(pm['month_missions_json'] as String? ?? '{}'),
+            createdAt: Value(_parseDt(pm['created_at']) ?? DateTime.now()),
+            updatedAt: Value(_parseDt(pm['updated_at']) ?? DateTime.now()),
+          ),
+          goals: goalsByPlan[planId] ?? const [],
         );
       }
     }

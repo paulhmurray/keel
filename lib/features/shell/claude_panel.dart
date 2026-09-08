@@ -153,9 +153,12 @@ class _ClaudePanelState extends State<ClaudePanel> {
     _scrollToBottom();
 
     try {
+      final quarterAnchor =
+          context.read<SettingsProvider>().settings.quarterAnchorMonth;
       final contextBuilder = ContextBuilder(db);
       final systemPrompt = projectId != null
-          ? await contextBuilder.buildSystemPrompt(projectId)
+          ? await contextBuilder.buildSystemPrompt(projectId,
+              quarterAnchorMonth: quarterAnchor)
           : _defaultSystemPrompt();
 
       // For Ollama: ensure the server is running, starting it if needed
@@ -328,26 +331,49 @@ class _ClaudePanelState extends State<ClaudePanel> {
                 color: KColors.surface2,
                 border: Border(bottom: BorderSide(color: KColors.border)),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'CONTEXT INJECTED',
-                    style: TextStyle(color: KColors.textMuted, fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.1),
-                  ),
-                  const SizedBox(height: 6),
-                  ..._contextSections.map((s) => Padding(
-                    padding: const EdgeInsets.only(bottom: 3),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.check, size: 10, color: KColors.phosphor),
-                        const SizedBox(width: 5),
-                        Expanded(child: Text(s.label, style: const TextStyle(color: KColors.textDim, fontSize: 10))),
-                        if (s.count > 0) Text('${s.count}', style: const TextStyle(color: KColors.textMuted, fontSize: 10)),
-                      ],
+              // Height-capped + scrollable, labels single-line: at tiny
+              // widths (collapse animation) wrapping labels once made
+              // this Column ~1200px tall and blew out the panel bottom.
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 220),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'CONTEXT INJECTED',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: KColors.textMuted, fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.1),
                     ),
-                  )),
-                ],
+                    const SizedBox(height: 6),
+                    Flexible(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ..._contextSections.map((s) => Padding(
+                              padding: const EdgeInsets.only(bottom: 3),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.check, size: 10, color: KColors.phosphor),
+                                  const SizedBox(width: 5),
+                                  Expanded(
+                                    child: Text(s.label,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(color: KColors.textDim, fontSize: 10)),
+                                  ),
+                                  if (s.count > 0) Text('${s.count}', style: const TextStyle(color: KColors.textMuted, fontSize: 10)),
+                                ],
+                              ),
+                            )),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
 
@@ -588,13 +614,20 @@ class _PanelHeader extends StatelessWidget {
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: KColors.border)),
       ),
-      child: Row(
+      // Sheds under squeeze — the panel animates through tiny widths on
+      // collapse, and rigid trailing content overflows (clipped, but an
+      // overflow is an overflow).
+      child: LayoutBuilder(builder: (context, c) {
+        final showBadge = c.maxWidth >= 200;
+        final showButtons = c.maxWidth >= 110;
+        return Row(
         children: [
           const Icon(Icons.auto_awesome, size: 13, color: KColors.phosphor),
           const SizedBox(width: 6),
           Flexible(
             child: Text(
               '⊹ $name',
+              maxLines: 1,
               style: GoogleFonts.syne(
                 color: KColors.phosphor,
                 fontSize: 12,
@@ -605,7 +638,7 @@ class _PanelHeader extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          if (onToggleWidth != null)
+          if (showButtons && onToggleWidth != null)
             IconButton(
               icon: Icon(
                 isWide
@@ -622,35 +655,45 @@ class _PanelHeader extends StatelessWidget {
               constraints:
                   const BoxConstraints(minWidth: 24, minHeight: 24),
             ),
-          IconButton(
-            icon: Icon(
-              Icons.info_outline,
-              size: 14,
-              color: showContextInfo ? KColors.amber : KColors.textMuted,
+          if (showButtons)
+            IconButton(
+              icon: Icon(
+                Icons.info_outline,
+                size: 14,
+                color: showContextInfo ? KColors.amber : KColors.textMuted,
+              ),
+              onPressed: onToggleContextInfo,
+              tooltip: 'Context injected',
+              padding: EdgeInsets.zero,
+              constraints:
+                  const BoxConstraints(minWidth: 24, minHeight: 24),
             ),
-            onPressed: onToggleContextInfo,
-            tooltip: 'Context injected',
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
-          ),
-          const SizedBox(width: 4),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-            decoration: BoxDecoration(
-              color: hasKey ? KColors.phosDim : KColors.amberDim,
-              borderRadius: BorderRadius.circular(2),
-            ),
-            child: Text(
-              hasKey ? 'Connected' : 'Not configured',
-              style: TextStyle(
-                color: hasKey ? KColors.phosphor : KColors.amber,
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
+          if (showBadge) ...[
+            const SizedBox(width: 4),
+            Flexible(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 5, vertical: 2),
+                decoration: BoxDecoration(
+                  color: hasKey ? KColors.phosDim : KColors.amberDim,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+                child: Text(
+                  hasKey ? 'Connected' : 'Not configured',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: hasKey ? KColors.phosphor : KColors.amber,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ),
-          ),
+          ],
         ],
-      ),
+        );
+      }),
     );
   }
 }

@@ -12,6 +12,7 @@ import 'package:uuid/uuid.dart';
 import '../../../core/cascade/cascade_service.dart';
 import '../../../core/cascade/cascade_factory.dart';
 import '../../../core/database/database.dart';
+import '../../../core/plan/variance_links.dart';
 import 'date_precision.dart';
 import 'dependency_chains.dart';
 import '../../../providers/project_provider.dart';
@@ -20,10 +21,17 @@ import '../../../shared/theme/keel_colors.dart';
 import '../../../shared/widgets/date_picker_field.dart';
 import '../../../shared/widgets/person_picker_field.dart';
 import '../../actions/action_form.dart';
+import '../../raid/risk_form.dart';
+import '../../raid/assumption_form.dart';
 import 'milestone_tracker_view.dart';
 
 // ─── Layout constants ─────────────────────────────────────────────────────────
-const _kNameW = 350.0;
+// Name pane width includes the STATUS column slot (_kStatusW) at its
+// right edge — one constant keeps the month grid aligned. Generous on
+// purpose: the month grid scrolls (scrollbar + shift-wheel), so name
+// legibility wins the space trade.
+const _kNameW = 540.0;
+const _kStatusW = 108.0;
 const _kCellW = 56.0;
 const _kHeaderH = 40.0;
 const _kWpRowH = 38.0;
@@ -264,6 +272,8 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
 
   // ── Dependency arrows ────────────────────────────────────────────────────
   List<TimelineDependency> _deps = [];
+  // Activity ids that inherit schedule variance from a predecessor.
+  Set<String> _inheritsVariance = {};
   // When non-null, the painter spotlights the upstream + downstream
   // chains for this activity and dims everything else.
   String? _hoveredActivityId;
@@ -404,6 +414,22 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
       }
     }
 
+    // Variance propagation marker: an activity whose direct predecessor
+    // carries scenario variance inherits the exposure — mark it without
+    // duplicating dates onto it.
+    final variantIds = {
+      for (final a in actMap.values)
+        if (a.likelyMonth != null ||
+            a.safeMonth != null ||
+            a.varianceRaidId != null ||
+            (a.varianceRaidLinksJson?.isNotEmpty ?? false))
+          a.id,
+    };
+    final inherits = {
+      for (final d in deps)
+        if (variantIds.contains(d.fromActivityId)) d.toActivityId,
+    };
+
     if (mounted) {
       setState(() {
         _header  = header;
@@ -415,6 +441,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
         _rows          = rows;
         _loading       = false;
         _actionSummary = actionSummary;
+        _inheritsVariance = inherits;
       });
     }
   }
@@ -1256,10 +1283,23 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
               ),
               alignment: Alignment.centerLeft,
               padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: const Text('WORK PACKAGE / ACTIVITY',
-                  style: TextStyle(
-                      color: KColors.textMuted, fontSize: 10,
-                      fontWeight: FontWeight.w700, letterSpacing: 0.1)),
+              child: const Row(children: [
+                Expanded(
+                  child: Text('WORK PACKAGE / ACTIVITY',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          color: KColors.textMuted, fontSize: 10,
+                          fontWeight: FontWeight.w700, letterSpacing: 0.1)),
+                ),
+                SizedBox(
+                  width: _kStatusW,
+                  child: Text('STATUS',
+                      style: TextStyle(
+                          color: KColors.textMuted, fontSize: 10,
+                          fontWeight: FontWeight.w700, letterSpacing: 0.1)),
+                ),
+              ]),
             ),
             // Column header cells
             Expanded(child: SingleChildScrollView(
@@ -1293,18 +1333,32 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                 onPointerSignal: (event) {
                   if (event is PointerScrollEvent) {
                     final dx = event.scrollDelta.dx;
-                    if (dx.abs() > event.scrollDelta.dy.abs() &&
-                        _horizBody.hasClients) {
+                    final dy = event.scrollDelta.dy;
+                    // Trackpads pan sideways natively (dx); mouse wheels
+                    // only emit dy, so Shift+wheel maps to horizontal —
+                    // otherwise a mouse has no way to reach later months.
+                    final horizontalIntent = dx.abs() > dy.abs()
+                        ? dx
+                        : (HardwareKeyboard.instance.isShiftPressed
+                            ? dy
+                            : 0.0);
+                    if (horizontalIntent != 0 && _horizBody.hasClients) {
                       try {
                         _horizBody.jumpTo(
-                          (_horizBody.offset + dx)
+                          (_horizBody.offset + horizontalIntent)
                               .clamp(0.0, _horizBody.position.maxScrollExtent),
                         );
                       } catch (_) {}
                     }
                   }
                 },
-                child: SingleChildScrollView(
+                // Always-visible horizontal scrollbar — the grid is
+                // almost always wider than the viewport, and without a
+                // visible thumb a mouse user can't tell it pans at all.
+                child: Scrollbar(
+                  controller: _horizBody,
+                  thumbVisibility: true,
+                  child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   controller: _horizBody,
                   child: SizedBox(
@@ -1315,6 +1369,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                       itemBuilder: (ctx2, i) => _fadeNonCritical(
                           _rows[i], _buildCellRow(_rows[i], cols)),
                     ),
+                  ),
                   ),
                 ),
               ),
@@ -1456,14 +1511,13 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
               ],
               _RagDot(row.wp.ragStatus),
               const SizedBox(width: 4),
-              if (!isCascaded) ...[
-                GestureDetector(
+              if (!isCascaded)
+                _RowIconButton(
+                  icon: Icons.add_circle_outline,
+                  tooltip: 'Add activity',
+                  color: c,
                   onTap: () => _openAddActivity(row.wp),
-                  child: Icon(Icons.add_circle_outline,
-                      size: 14, color: c.withValues(alpha: 0.7)),
                 ),
-                const SizedBox(width: 2),
-              ],
             ]),
           ),
         ),
@@ -1616,34 +1670,9 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                   ),
                 ),
         ),
-        // Add-task (activities only — tasks don't nest further)
-        if (!row.isTask)
-          Tooltip(
-            message: 'Add task under this activity',
-            waitDuration: const Duration(milliseconds: 400),
-            child: GestureDetector(
-              onTap: () => _openAddActivity(row.wp,
-                  parentActivityId: act.id),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 2),
-                child: Icon(Icons.add,
-                    size: 11,
-                    color: KColors.textMuted.withValues(alpha: 0.6)),
-              ),
-            ),
-          ),
-        // Edit icon (always visible for clarity)
-        GestureDetector(
-          onTap: () => _openEditActivity(act, row.wp),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Icon(Icons.edit_outlined,
-                size: 10, color: KColors.textMuted.withValues(alpha: 0.6)),
-          ),
-        ),
         if (act.isCritical)
           const Padding(
-            padding: EdgeInsets.only(right: 4),
+            padding: EdgeInsets.only(right: 2),
             child: Icon(Icons.priority_high, size: 10, color: KColors.red),
           ),
         if (row.isSummary && _tasksBreachWindow(row))
@@ -1652,7 +1681,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                 'window — widen the window or move the tasks',
             waitDuration: Duration(milliseconds: 350),
             child: Padding(
-              padding: EdgeInsets.only(right: 4),
+              padding: EdgeInsets.only(right: 2),
               child: Icon(Icons.warning_amber_outlined,
                   size: 11, color: KColors.red),
             ),
@@ -1663,6 +1692,38 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
             summary: _actionSummary[act.id]!,
             onTap: () => _showActionsPopover(context, act),
           ),
+        // Row actions — real 24px hit targets with hover feedback, kept
+        // clear of the pane edge (the status slot sits between them and
+        // any scrollbar).
+        if (!row.isTask)
+          _RowIconButton(
+            icon: Icons.add,
+            tooltip: 'Add task under this activity',
+            onTap: () =>
+                _openAddActivity(row.wp, parentActivityId: act.id),
+          ),
+        _RowIconButton(
+          icon: Icons.edit_outlined,
+          tooltip: 'Edit',
+          onTap: () => _openEditActivity(act, row.wp),
+        ),
+        const SizedBox(width: 2),
+        // STATUS column — the chip IS the control: click for the
+        // status menu, no need to open the full edit dialog.
+        SizedBox(
+          width: _kStatusW,
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: _StatusDropdown(
+              status: act.status,
+              onChanged: (s) async {
+                await _db.programmeGanttDao
+                    .setActivityStatus(act.id, s);
+                _load();
+              },
+            ),
+          ),
+        ),
       ]),
     ),
     ),
@@ -1930,6 +1991,105 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
       }
     }
 
+    // ── Scenario ghosts (A-Anchor / B-Likely / C-Safe) ────────────────
+    // The anchor ◆ renders above; B and C echo it as ◇ and ○ in their
+    // own months so the possible spread reads directly off the chart.
+    bool inCol(int? m) => m != null && m >= col.start && m <= col.end;
+    if (!isActive && isSingle) {
+      if (inCol(act.likelyMonth)) {
+        child = Tooltip(
+          message: 'B — Likely',
+          child: Center(
+            child: Text('◇',
+                style: TextStyle(
+                    color: c.withValues(alpha: 0.8),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700)),
+          ),
+        );
+      } else if (inCol(act.safeMonth)) {
+        child = Tooltip(
+          message: 'C — Safe',
+          child: Center(
+            child: Text('○',
+                style: TextStyle(
+                    color: c.withValues(alpha: 0.5),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700)),
+          ),
+        );
+      }
+    }
+
+    // A subtle dotted thread joins ◆ → ◇ → ○ so the scenario spread
+    // reads as one object. It runs UNDER the glyphs, from the centre of
+    // the range's first cell to the centre of its last — so consecutive
+    // months (Apr → May → Jun) connect too, not just gapped spreads.
+    if (isSingle &&
+        (act.likelyMonth != null || act.safeMonth != null) &&
+        act.startMonth != null) {
+      var lo = act.startMonth!, hi = act.startMonth!;
+      for (final m in [act.likelyMonth, act.safeMonth]) {
+        if (m == null) continue;
+        if (m < lo) lo = m;
+        if (m > hi) hi = m;
+      }
+      final containsLo = lo >= col.start && lo <= col.end;
+      final containsHi = hi >= col.start && hi <= col.end;
+      final overlaps = col.start <= hi && col.end >= lo && lo != hi;
+      if (overlaps && !(containsLo && containsHi)) {
+        final thread = CustomPaint(
+          size: Size.infinite,
+          painter: _ScenarioThreadPainter(
+            color: c.withValues(alpha: 0.35),
+            // Half-runs on the boundary cells so the thread starts and
+            // ends at the glyph centres rather than the cell edges.
+            startFraction: containsLo ? 0.5 : 0.0,
+            endFraction: containsHi ? 0.5 : 1.0,
+          ),
+        );
+        child = Stack(children: [
+          Positioned.fill(child: thread),
+          Positioned.fill(child: child),
+        ]);
+      }
+    }
+
+    // Variance badges on the anchor cell: red dot = this item's date
+    // varies (a RAID item names why — open the activity to see it);
+    // violet dot = variance inherited from a predecessor.
+    if (isActive && isFirst) {
+      final ownVariance = act.varianceRaidId != null ||
+          (act.varianceRaidLinksJson?.isNotEmpty ?? false) ||
+          act.likelyMonth != null ||
+          act.safeMonth != null;
+      final inherited = _inheritsVariance.contains(act.id);
+      if (ownVariance || inherited) {
+        child = Tooltip(
+          message: ownVariance
+              ? 'Date varies (A/B/C) — open for the linked RAID item'
+              : 'Inherits schedule variance from a predecessor',
+          child: Stack(children: [
+            Positioned.fill(child: child),
+            Positioned(
+              top: 2,
+              right: 3,
+              child: Container(
+                width: 5,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: ownVariance
+                      ? KColors.red
+                      : const Color(0xFF8B5CF6),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+          ]),
+        );
+      }
+    }
+
     final borderLeft = isFirst && (act.activityType == 'activity' ||
             act.activityType == 'dependency_marker' ||
             act.activityType == 'ongoing')
@@ -2088,9 +2248,56 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     // the fill painted as a positioned child rather than cell background.
     final useInsetFill = isActive && isBarType && hasDatePrecision;
 
+    // A bar whose exact dates collapse to a single day (e.g. "business
+    // case approved 24 Nov") is a POINT, not a bar — the day-accurate
+    // sliver renders ~2px wide and vanishes. Draw a pin at the right
+    // day instead: ◆ with the day number under it.
+    final isPointDate = isActive &&
+        isBarType &&
+        act.startDate != null &&
+        act.endDate == act.startDate;
+
     Widget cellContent;
     Color? cellBg;
-    if (useInsetFill) {
+    if (isPointDate) {
+      final markerColor = act.activityType == 'dependency_marker'
+          ? const Color(0xFF8B5CF6)
+          : c;
+      final date = DateTime.tryParse(act.startDate!);
+      cellBg = null;
+      cellContent = Stack(clipBehavior: Clip.none, children: [
+        Positioned(
+          left: (dateInsets.left - 8).clamp(0.0, _cellW - 16.0),
+          top: 0,
+          bottom: 0,
+          child: Tooltip(
+            message: date != null
+                ? '${act.name} — ${intl.DateFormat('d MMM yyyy').format(date)}'
+                : act.name,
+            waitDuration: const Duration(milliseconds: 300),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('◆',
+                    style: TextStyle(
+                        color: markerColor,
+                        fontSize: 13,
+                        height: 1,
+                        fontWeight: FontWeight.w700)),
+                if (date != null)
+                  Text('${date.day}',
+                      style: TextStyle(
+                          color: markerColor.withValues(alpha: 0.85),
+                          fontSize: 7,
+                          height: 1.2,
+                          fontWeight: FontWeight.w600)),
+              ],
+            ),
+          ),
+        ),
+        if (ghostBar != null) ghostBar,
+      ]);
+    } else if (useInsetFill) {
       cellBg = null;
       cellContent = Stack(children: [
         Positioned(
@@ -2127,7 +2334,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
       decoration: BoxDecoration(
         color: cellBg,
         border: Border(
-          left: useInsetFill
+          left: useInsetFill || isPointDate
               ? const BorderSide(color: Colors.transparent)
               : borderLeft,
           right: BorderSide(color: KColors.border.withValues(alpha: 0.3)),
@@ -2489,7 +2696,12 @@ class _DependsOnEditor extends StatelessWidget {
                   SizedBox(
                     width: 64,
                     child: DropdownButton<String>(
-                      value: p.dependencyType,
+                      // Guard: coerce unknown types into the option set
+                      // so a stray value can never assert the dropdown.
+                      value: _typeOptions
+                              .any((t) => t.$1 == p.dependencyType)
+                          ? p.dependencyType
+                          : _typeOptions.first.$1,
                       isDense: true,
                       isExpanded: true,
                       dropdownColor: KColors.surface2,
@@ -3250,6 +3462,13 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
   String?  _parentActivityId;
   bool     _isCritical = false;
   bool     _saving     = false;
+  // Schedule scenarios (A-Anchor = startMonth; these are B and C).
+  int?     _likelyMonth;
+  int?     _safeMonth;
+  // Up to kMaxVarianceLinks RAID items driving the spread; label is
+  // resolved lazily for display.
+  final List<({String type, String id, String? label})> _varianceLinks =
+      [];
   String?  _ownerId;
   List<Person> _persons = [];
   List<_Contributor> _contributors = [];
@@ -3274,6 +3493,54 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
   bool get _isEdit => widget.activity != null;
   bool get _isSinglePoint =>
       _type == 'milestone' || _type == 'hard_deadline' || _type == 'gate';
+  // Scenario dates apply to milestones and gates. Deliberately NOT
+  // hard_deadline: a hard date is precisely one with no variants.
+  bool get _canHaveScenarios => _type == 'milestone' || _type == 'gate';
+
+  Future<void> _resolveVarianceLabels() async {
+    final dao = widget.db.raidDao;
+    final labelById = <String, String>{};
+    for (final r in await dao.getRisksForProject(widget.projectId)) {
+      labelById[r.id] = '${r.ref ?? 'Risk'} — ${r.description}';
+    }
+    for (final a in await dao.getAssumptionsForProject(widget.projectId)) {
+      labelById[a.id] = '${a.ref ?? 'Assumption'} — ${a.description}';
+    }
+    for (final i in await dao.getIssuesForProject(widget.projectId)) {
+      labelById[i.id] = '${i.ref ?? 'Issue'} — ${i.title ?? i.description}';
+    }
+    for (final d in await dao.getDependenciesForProject(widget.projectId)) {
+      labelById[d.id] = '${d.ref ?? 'Dependency'} — ${d.description}';
+    }
+    if (!mounted) return;
+    setState(() {
+      for (var i = 0; i < _varianceLinks.length; i++) {
+        final l = _varianceLinks[i];
+        _varianceLinks[i] = (
+          type: l.type,
+          id: l.id,
+          label: labelById[l.id] ?? 'Linked RAID item (deleted?)',
+        );
+      }
+    });
+  }
+
+  Future<void> _pickVarianceRaid() async {
+    final picked = await showDialog<({String type, String id})>(
+      context: context,
+      builder: (_) => _RaidPickerDialog(
+        db: widget.db,
+        projectId: widget.projectId,
+        excludeIds: {for (final l in _varianceLinks) l.id},
+      ),
+    );
+    if (picked == null) return;
+    if (_varianceLinks.length >= kMaxVarianceLinks) return;
+    setState(() {
+      _varianceLinks.add((type: picked.type, id: picked.id, label: null));
+    });
+    await _resolveVarianceLabels();
+  }
 
   @override
   void initState() {
@@ -3292,6 +3559,16 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
     _parentActivityId =
         a?.parentActivityId ?? widget.initialParentActivityId;
     _isCritical = a?.isCritical ?? false;
+    _likelyMonth = a?.likelyMonth;
+    _safeMonth = a?.safeMonth;
+    for (final l in effectiveVarianceLinks(
+      linksJson: a?.varianceRaidLinksJson,
+      legacyType: a?.varianceRaidType,
+      legacyId: a?.varianceRaidId,
+    )) {
+      _varianceLinks.add((type: l.type, id: l.id, label: null));
+    }
+    if (_varianceLinks.isNotEmpty) _resolveVarianceLabels();
     _ownerId    = a?.ownerId;
     if (a?.contributors != null) {
       final names = jsonDecode(a!.contributors!) as List;
@@ -3342,8 +3619,15 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
       _tasks = ownTasks;
       _predecessors = [
         for (final d in inbound)
-          if (d.externalLabel != null)
-            DependencySpec.external(d.externalLabel!)
+          // Type 'external' routes to the external branch even when the
+          // label is null (pre-repair rows stripped by the old sync
+          // exporter) — an internal spec with type 'external' would
+          // crash the FS/SS/FF dropdown. Saving writes the placeholder
+          // back, healing the row.
+          if (d.externalLabel != null ||
+              d.dependencyType == 'external')
+            DependencySpec.external(
+                d.externalLabel ?? '(external — label lost in sync)')
           else
             DependencySpec.internal(
               fromActivityId: d.fromActivityId,
@@ -3416,17 +3700,18 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
     final now = DateTime.now();
     final id  = widget.activity?.id ?? const Uuid().v4();
 
-    // Real dates (when set) are the source of truth: derive the month
-    // span from them so every month-based consumer stays consistent.
-    final derived = monthSpanForDates(
+    // Real dates (when set) are the source of truth — but only for the
+    // ends they cover; see resolveMonthSpan for the start-only-date rule.
+    final span = resolveMonthSpan(
+      isSinglePoint: _isSinglePoint,
+      pickedStartMonth: _startMonth,
+      pickedEndMonth: _endMonth,
       startDate: _startDate,
-      endDate: _isSinglePoint ? _startDate : _endDate,
+      endDate: _endDate,
       month0Date: widget.month0Date,
     );
-    final startVal = derived?.startMonth ?? _startMonth;
-    final endVal = derived != null
-        ? derived.endMonth
-        : (_isSinglePoint ? _startMonth : _endMonth);
+    final startVal = span.startMonth;
+    final endVal = span.endMonth;
 
     await widget.db.programmeGanttDao.upsertActivity(
       TimelineActivitiesCompanion(
@@ -3445,6 +3730,24 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
         startMonth:   Value(startVal),
         endMonth:     Value(endVal),
         isCritical:   Value(_isCritical),
+        likelyMonth:  Value(_canHaveScenarios ? _likelyMonth : null),
+        safeMonth:    Value(_canHaveScenarios ? _safeMonth : null),
+        // Legacy columns mirror the FIRST link for older readers.
+        varianceRaidType: Value(
+            _canHaveScenarios && _varianceLinks.isNotEmpty
+                ? _varianceLinks.first.type
+                : null),
+        varianceRaidId: Value(
+            _canHaveScenarios && _varianceLinks.isNotEmpty
+                ? _varianceLinks.first.id
+                : null),
+        varianceRaidLinksJson: Value(
+            _canHaveScenarios && _varianceLinks.isNotEmpty
+                ? encodeVarianceLinks([
+                    for (final l in _varianceLinks)
+                      (type: l.type, id: l.id)
+                  ])
+                : null),
         cellLabel:    Value(_labelCtrl.text.trim().isEmpty
             ? null : _labelCtrl.text.trim()),
         notes:        Value(_notesCtrl.text.trim().isEmpty
@@ -3661,6 +3964,128 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                     ),
                   ],
                 ]),
+                // ── Schedule scenarios (A / B / C) ──────────────────────
+                if (_canHaveScenarios) ...[
+                  const SizedBox(height: 14),
+                  const Text('SCHEDULE SCENARIOS',
+                      style: TextStyle(
+                          color: KColors.textDim,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.1)),
+                  const SizedBox(height: 6),
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 4),
+                    child: Text(
+                      'The month above is A — Anchor. Optionally add the '
+                      'B — Likely and C — Safe months, and link the RAID '
+                      'items that drive the spread.',
+                      style: TextStyle(
+                          color: KColors.textMuted,
+                          fontSize: 11,
+                          height: 1.5),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(children: [
+                    Expanded(
+                      child: DropdownButtonFormField<int?>(
+                        value: _likelyMonth,
+                        decoration: const InputDecoration(
+                          labelText: 'B — Likely (optional)',
+                          contentPadding: EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 10),
+                        ),
+                        style: const TextStyle(
+                            color: KColors.text, fontSize: 14),
+                        dropdownColor: KColors.surface2,
+                        items: _monthItems,
+                        onChanged: (v) =>
+                            setState(() => _likelyMonth = v),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: DropdownButtonFormField<int?>(
+                        value: _safeMonth,
+                        decoration: const InputDecoration(
+                          labelText: 'C — Safe (optional)',
+                          contentPadding: EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 10),
+                        ),
+                        style: const TextStyle(
+                            color: KColors.text, fontSize: 14),
+                        dropdownColor: KColors.surface2,
+                        items: _monthItems,
+                        onChanged: (v) => setState(() => _safeMonth = v),
+                      ),
+                    ),
+                  ]),
+                  const SizedBox(height: 10),
+                  for (final link in _varianceLinks)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Row(children: [
+                        const Icon(Icons.shield_outlined,
+                            size: 13, color: KColors.textDim),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            link.label ?? '…',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                color: KColors.text, fontSize: 12),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close,
+                              size: 14, color: KColors.textMuted),
+                          tooltip: 'Unlink',
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                              minWidth: 24, minHeight: 24),
+                          onPressed: () => setState(
+                              () => _varianceLinks.remove(link)),
+                        ),
+                      ]),
+                    ),
+                  Row(children: [
+                    if (_varianceLinks.isEmpty)
+                      const Expanded(
+                        child: Text('No RAID items linked',
+                            style: TextStyle(
+                                color: KColors.textMuted, fontSize: 12)),
+                      )
+                    else
+                      const Spacer(),
+                    if (_varianceLinks.length < kMaxVarianceLinks)
+                      TextButton.icon(
+                        onPressed: _pickVarianceRaid,
+                        icon: const Icon(Icons.link, size: 13),
+                        label: Text(
+                            _varianceLinks.isEmpty
+                                ? 'Link RAID item'
+                                : 'Link another',
+                            style: const TextStyle(fontSize: 12)),
+                      )
+                    else
+                      const Text('Max 5 linked',
+                          style: TextStyle(
+                              color: KColors.textMuted, fontSize: 11)),
+                  ]),
+                  if ((_likelyMonth != null || _safeMonth != null) &&
+                      _varianceLinks.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 4),
+                      child: Text(
+                        'Dates vary — link the RAID items that drive the '
+                        'spread so the why travels with the plan.',
+                        style:
+                            TextStyle(color: KColors.amber, fontSize: 11),
+                      ),
+                    ),
+                ],
                 const SizedBox(height: 14),
                 // Optional real dates — months stay the planning grain;
                 // dates add day-accurate bars and override the month
@@ -4417,6 +4842,120 @@ class _MultiPersonPickerFieldState extends State<_MultiPersonPickerField> {
 }
 
 // ─── Dependency arrow painter ─────────────────────────────────────────────────
+/// The STATUS column's inline control: the status chip doubles as a
+/// dropdown, so changing an activity's status is one click instead of
+/// a trip through the edit dialog.
+class _StatusDropdown extends StatelessWidget {
+  final String status;
+  final ValueChanged<String> onChanged;
+
+  const _StatusDropdown({required this.status, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<String>(
+      tooltip: 'Change status',
+      color: KColors.surface2,
+      padding: EdgeInsets.zero,
+      onSelected: onChanged,
+      itemBuilder: (context) => [
+        for (final s in milestoneTrackerStatuses)
+          PopupMenuItem<String>(
+            value: s,
+            height: 34,
+            child: statusChip(s),
+          ),
+      ],
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(child: statusChip(status)),
+            const Icon(Icons.arrow_drop_down,
+                size: 14, color: KColors.textMuted),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Row-level icon button with a REAL hit target — 24×24 with hover
+/// feedback, replacing the old 10px bare icons that were nearly
+/// impossible to hit (and sat under the scrollbar).
+class _RowIconButton extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+  final Color? color;
+
+  const _RowIconButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      waitDuration: const Duration(milliseconds: 400),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(4),
+        hoverColor: KColors.surface2,
+        child: SizedBox(
+          width: 24,
+          height: 24,
+          child: Icon(icon, size: 14, color: color ?? KColors.textDim),
+        ),
+      ),
+    );
+  }
+}
+
+/// The dotted thread between a milestone's scenario months (A ◆ … B ◇ …
+/// C ○) — a short horizontal run of dots across the cell's vertical
+/// centre.
+class _ScenarioThreadPainter extends CustomPainter {
+  final Color color;
+  // Where the run starts/ends within this cell, as width fractions —
+  // boundary cells use half-runs so the thread meets the glyph centres.
+  final double startFraction;
+  final double endFraction;
+
+  _ScenarioThreadPainter({
+    required this.color,
+    this.startFraction = 0.0,
+    this.endFraction = 1.0,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.4
+      ..strokeCap = StrokeCap.round;
+    final y = size.height / 2;
+    const dash = 1.5;
+    const gap = 4.5;
+    final xEnd = size.width * endFraction;
+    var x = size.width * startFraction + gap / 2;
+    while (x < xEnd) {
+      canvas.drawLine(Offset(x, y), Offset(x + dash, y), paint);
+      x += dash + gap;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _ScenarioThreadPainter old) =>
+      old.color != color ||
+      old.startFraction != startFraction ||
+      old.endFraction != endFraction;
+}
+
 class _DependencyPainter extends CustomPainter {
   final List<_GRow>             rows;
   final List<TimelineDependency> deps;
@@ -4975,6 +5514,190 @@ class _ViewToggle extends StatelessWidget {
                   fontWeight: active ? FontWeight.w600 : FontWeight.w400)),
         ]),
       ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// RAID picker — link a plan item's schedule variance to the RAID item
+// that drives it. Lists all four registers; risks and assumptions (the
+// usual variance drivers) can be created inline without losing the form.
+// ---------------------------------------------------------------------------
+
+class _RaidPickerDialog extends StatefulWidget {
+  final AppDatabase db;
+  final String projectId;
+  // Already-linked items — hidden so the same item can't link twice.
+  final Set<String> excludeIds;
+
+  const _RaidPickerDialog({
+    required this.db,
+    required this.projectId,
+    this.excludeIds = const {},
+  });
+
+  @override
+  State<_RaidPickerDialog> createState() => _RaidPickerDialogState();
+}
+
+class _RaidPickerDialogState extends State<_RaidPickerDialog> {
+  List<({String type, String id, String ref, String description})> _items =
+      [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final dao = widget.db.raidDao;
+    final risks = await dao.getRisksForProject(widget.projectId);
+    final assumptions =
+        await dao.getAssumptionsForProject(widget.projectId);
+    final issues = await dao.getIssuesForProject(widget.projectId);
+    final deps = await dao.getDependenciesForProject(widget.projectId);
+    if (!mounted) return;
+    setState(() {
+      _items = [
+        for (final r in risks.where((r) => r.status != 'closed'))
+          (type: 'risk', id: r.id, ref: r.ref ?? 'Risk',
+              description: r.description),
+        for (final a in assumptions.where((a) => a.status != 'closed'))
+          (type: 'assumption', id: a.id, ref: a.ref ?? 'Assumption',
+              description: a.description),
+        for (final i in issues.where((i) => i.status != 'closed'))
+          (type: 'issue', id: i.id, ref: i.ref ?? 'Issue',
+              description: i.title ?? i.description),
+        for (final d in deps.where((d) => d.status != 'closed'))
+          (type: 'dependency', id: d.id, ref: d.ref ?? 'Dep',
+              description: d.description),
+      ].where((i) => !widget.excludeIds.contains(i.id)).toList();
+      _loading = false;
+    });
+  }
+
+  Future<void> _newRisk() async {
+    await showDialog(
+      context: context,
+      builder: (_) => RiskFormDialog(
+        projectId: widget.projectId,
+        db: widget.db,
+      ),
+    );
+    await _load(); // the new risk appears in the list — tap to link it
+  }
+
+  Future<void> _newAssumption() async {
+    await showDialog(
+      context: context,
+      builder: (_) => AssumptionFormDialog(
+        projectId: widget.projectId,
+        db: widget.db,
+      ),
+    );
+    await _load();
+  }
+
+  Color _typeColor(String type) => switch (type) {
+        'risk' => KColors.amber,
+        'assumption' => KColors.blue,
+        'issue' => KColors.red,
+        _ => const Color(0xFF8B5CF6),
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: KColors.surface,
+      title: const Text('Link a RAID item',
+          style: TextStyle(color: KColors.text, fontSize: 14)),
+      content: SizedBox(
+        width: 480,
+        height: 420,
+        child: _loading
+            ? const Center(
+                child: CircularProgressIndicator(strokeWidth: 1.5))
+            : _items.isEmpty
+                ? const Center(
+                    child: Text(
+                      'No open RAID items yet — create one below.',
+                      style:
+                          TextStyle(color: KColors.textDim, fontSize: 12),
+                    ),
+                  )
+                : ListView(
+                    children: [
+                      for (final item in _items)
+                        InkWell(
+                          onTap: () => Navigator.of(context)
+                              .pop((type: item.type, id: item.id)),
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              border: Border(
+                                  bottom: BorderSide(
+                                      color: KColors.border, width: 1)),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 8),
+                            child: Row(
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: _typeColor(item.type)
+                                        .withValues(alpha: 0.15),
+                                    borderRadius:
+                                        BorderRadius.circular(3),
+                                  ),
+                                  child: Text(
+                                    item.ref,
+                                    style: TextStyle(
+                                      color: _typeColor(item.type),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    item.description,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                        color: KColors.text,
+                                        fontSize: 12),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+      ),
+      actions: [
+        TextButton.icon(
+          onPressed: _newRisk,
+          icon: const Icon(Icons.add, size: 13),
+          label: const Text('New risk', style: TextStyle(fontSize: 12)),
+        ),
+        TextButton.icon(
+          onPressed: _newAssumption,
+          icon: const Icon(Icons.add, size: 13),
+          label: const Text('New assumption',
+              style: TextStyle(fontSize: 12)),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+      ],
     );
   }
 }

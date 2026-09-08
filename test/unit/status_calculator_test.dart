@@ -9,21 +9,44 @@ import 'package:keel/core/status/status_calculator.dart';
 TimelineActivity _activity({
   required String id,
   required int startMonth,
+  int? endMonth,
+  String workPackageId = 'wp-1',
   String activityType = 'milestone',
   String status = 'not_started',
 }) {
   final now = DateTime(2026, 1, 1);
   return TimelineActivity(
     id: id,
-    workPackageId: 'wp-1',
+    workPackageId: workPackageId,
     projectId: 'p-test',
     name: id,
     activityType: activityType,
     startMonth: startMonth,
+    endMonth: endMonth,
     status: status,
     isCritical: false,
     isBaseline: false,
     sortOrder: 0,
+    createdAt: now,
+    updatedAt: now,
+  );
+}
+
+TimelineWorkPackage _wp({
+  String id = 'wp-1',
+  int? cascadeStartMonth,
+  int? cascadeEndMonth,
+}) {
+  final now = DateTime(2026, 1, 1);
+  return TimelineWorkPackage(
+    id: id,
+    projectId: 'p-test',
+    name: id,
+    colourTheme: 'wp1',
+    sortOrder: 0,
+    ragStatus: 'not_started',
+    cascadeStartMonth: cascadeStartMonth,
+    cascadeEndMonth: cascadeEndMonth,
     createdAt: now,
     updatedAt: now,
   );
@@ -146,6 +169,31 @@ void main() {
       final result =
           StatusCalculator.upcomingMilestones(acts, labels, now: now);
       expect(result, isEmpty);
+    });
+  });
+
+  group('wpMonthSpan', () {
+    test('spans min activity start to max activity end, own WP only', () {
+      final acts = [
+        _activity(id: 'a', startMonth: 2, endMonth: 4),
+        _activity(id: 'b', startMonth: 1),
+        _activity(id: 'c', startMonth: 6, endMonth: 8),
+        _activity(id: 'other', startMonth: 0, endMonth: 11,
+            workPackageId: 'wp-other'),
+      ];
+      final span = StatusCalculator.wpMonthSpan(_wp(), acts);
+      expect(span, (start: 1, end: 8));
+    });
+
+    test('cascaded WP with private activities falls back to the '
+        'cascade span', () {
+      final span = StatusCalculator.wpMonthSpan(
+          _wp(cascadeStartMonth: 3, cascadeEndMonth: 7), const []);
+      expect(span, (start: 3, end: 7));
+    });
+
+    test('no months anywhere → null', () {
+      expect(StatusCalculator.wpMonthSpan(_wp(), const []), isNull);
     });
   });
 }

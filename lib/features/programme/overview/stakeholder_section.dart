@@ -134,11 +134,15 @@ class _TierGroup extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              Text(
-                '$_filledCount of $_applicableCount filled',
-                style: const TextStyle(
-                  color: KColors.textMuted,
-                  fontSize: 10,
+              Flexible(
+                child: Text(
+                  '$_filledCount of $_applicableCount filled',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: KColors.textMuted,
+                    fontSize: 10,
+                  ),
                 ),
               ),
             ],
@@ -267,95 +271,97 @@ class _StakeholderRoleRow extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  role.roleName,
-                  style: TextStyle(
-                    color: _filled ? KColors.text : KColors.textDim,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                if (_filled && _person != null) ...[
-                  const SizedBox(height: 2),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    [_person!.name, _person!.role, _person!.organisation]
-                        .where((s) => s != null && s.isNotEmpty)
-                        .join(' · '),
-                    style: const TextStyle(
-                        color: KColors.textDim, fontSize: 11),
+                    role.roleName,
+                    style: TextStyle(
+                      color: _filled ? KColors.text : KColors.textDim,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                ] else if (hint.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    hint,
-                    style: const TextStyle(
-                        color: KColors.textMuted, fontSize: 11),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-                if (isCritical && !_filled) ...[
-                  const SizedBox(height: 4),
-                  const Row(
-                    children: [
-                      Icon(Icons.warning_amber_rounded,
-                          size: 11, color: KColors.amber),
-                      SizedBox(width: 4),
-                      Text(
-                        'Required — every programme needs one',
-                        style:
-                            TextStyle(color: KColors.amber, fontSize: 10),
-                      ),
-                    ],
-                  ),
-                ],
-                // Engagement + gap indicators
-                if (role.engagementStatus != null ||
-                    role.priority != null ||
-                    role.gapFlag) ...[
-                  const SizedBox(height: 6),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 4,
-                    children: [
-                      if (role.priority != null)
-                        _PriorityBadge(role.priority!),
-                      _engagementChip(role.engagementStatus),
-                      if (role.gapFlag)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: KColors.redDim,
-                            borderRadius: BorderRadius.circular(3),
-                          ),
-                          child: const Text('⚠ GAP',
-                              style: TextStyle(
-                                  color: KColors.red,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700)),
+                  if (_filled && _person != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      [_person!.name, _person!.role, _person!.organisation]
+                          .where((s) => s != null && s.isNotEmpty)
+                          .join(' · '),
+                      style: const TextStyle(
+                          color: KColors.textDim, fontSize: 11),
+                    ),
+                  ] else if (hint.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      hint,
+                      style: const TextStyle(
+                          color: KColors.textMuted, fontSize: 11),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                  if (isCritical && !_filled) ...[
+                    const SizedBox(height: 4),
+                    const Row(
+                      children: [
+                        Icon(Icons.warning_amber_rounded,
+                            size: 11, color: KColors.amber),
+                        SizedBox(width: 4),
+                        Text(
+                          'Required — every programme needs one',
+                          style:
+                              TextStyle(color: KColors.amber, fontSize: 10),
                         ),
-                    ],
-                  ),
+                      ],
+                    ),
+                  ],
+                  // Engagement + gap indicators
+                  if (role.engagementStatus != null ||
+                      role.priority != null ||
+                      role.gapFlag) ...[
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: [
+                        if (role.priority != null)
+                          _PriorityBadge(role.priority!),
+                        _engagementChip(role.engagementStatus),
+                        if (role.gapFlag)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: KColors.redDim,
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                            child: const Text('⚠ GAP',
+                                style: TextStyle(
+                                    color: KColors.red,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700)),
+                          ),
+                      ],
+                    ),
+                  ],
+                  if (role.gapFlag && role.gapDescription != null) ...[
+                    const SizedBox(height: 4),
+                    Text(role.gapDescription!,
+                        style: const TextStyle(
+                            color: KColors.red, fontSize: 10)),
+                  ],
+                  if (role.functionalArea != null) ...[
+                    const SizedBox(height: 3),
+                    Text(role.functionalArea!,
+                        style: const TextStyle(
+                            color: KColors.textMuted,
+                            fontSize: 10,
+                            fontStyle: FontStyle.italic)),
+                  ],
                 ],
-                if (role.gapFlag && role.gapDescription != null) ...[
-                  const SizedBox(height: 4),
-                  Text(role.gapDescription!,
-                      style: const TextStyle(
-                          color: KColors.red, fontSize: 10)),
-                ],
-                if (role.functionalArea != null) ...[
-                  const SizedBox(height: 3),
-                  Text(role.functionalArea!,
-                      style: const TextStyle(
-                          color: KColors.textMuted,
-                          fontSize: 10,
-                          fontStyle: FontStyle.italic)),
-                ],
-              ],
+              ),
             ),
           ),
           const SizedBox(width: 8),

@@ -20,6 +20,37 @@ double monthFractionOf(DateTime date, DateTime month0) {
 
 /// Derives the month span for a dated activity — what keeps the month
 /// pickers and every month-based consumer in sync with the dates.
+/// Resolves the month span to persist from the PM's month dropdowns and
+/// the optional real dates. Dates are the source of truth ONLY for the
+/// ends they actually cover: a start date pins the start month, but the
+/// end month follows dates only when an end date exists — a start-only
+/// date must never pin the end (that silently snapped every span edit
+/// back to one month).
+({int? startMonth, int? endMonth}) resolveMonthSpan({
+  required bool isSinglePoint,
+  required int? pickedStartMonth,
+  required int? pickedEndMonth,
+  required String? startDate,
+  required String? endDate,
+  required String? month0Date,
+}) {
+  final derived = monthSpanForDates(
+    startDate: startDate,
+    endDate: isSinglePoint ? startDate : endDate,
+    month0Date: month0Date,
+  );
+  final start = derived?.startMonth ?? pickedStartMonth;
+  if (isSinglePoint) return (startMonth: start, endMonth: start);
+  if (derived != null && endDate != null) {
+    return (startMonth: start, endMonth: derived.endMonth);
+  }
+  // Keep the span valid if a dated start moved past the picked end.
+  if (pickedEndMonth != null && start != null && pickedEndMonth < start) {
+    return (startMonth: start, endMonth: start);
+  }
+  return (startMonth: start, endMonth: pickedEndMonth);
+}
+
 ({int startMonth, int endMonth})? monthSpanForDates({
   required String? startDate,
   required String? endDate,

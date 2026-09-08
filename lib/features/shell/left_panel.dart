@@ -168,6 +168,8 @@ class _MyDaySectionState extends State<_MyDaySection> {
   String? _planStreamDate;
   Stream<List<DayPlanBlock>>? _blocksStream;
   String? _blocksStreamPlanId;
+  Stream<WeekPlan?>? _weekStream;
+  String? _weekStreamMonday;
 
   @override
   void initState() {
@@ -205,6 +207,19 @@ class _MyDaySectionState extends State<_MyDaySection> {
       _blocksStream = widget.db.dayPlanDao.watchBlocksForPlan(planId);
     }
     return _blocksStream!;
+  }
+
+  Stream<WeekPlan?> _weekStreamForToday() {
+    final now = DateTime.now();
+    final monday = mondayOf(now);
+    final mondayIso = '${monday.year.toString().padLeft(4, '0')}-'
+        '${monday.month.toString().padLeft(2, '0')}-'
+        '${monday.day.toString().padLeft(2, '0')}';
+    if (_weekStreamMonday != mondayIso) {
+      _weekStreamMonday = mondayIso;
+      _weekStream = widget.db.weekPlanDao.watchPlanForWeek(mondayIso);
+    }
+    return _weekStream!;
   }
 
   @override
@@ -245,6 +260,43 @@ class _MyDaySectionState extends State<_MyDaySection> {
                 ],
               ),
             ),
+          ),
+          // Today's mission from the weekly plan, when one is set.
+          StreamBuilder<WeekPlan?>(
+            stream: _weekStreamForToday(),
+            builder: (context, weekSnap) {
+              final plan = weekSnap.data;
+              if (plan == null) return const SizedBox.shrink();
+              final mission = parseDayMissions(
+                  plan.dayMissionsJson)[DateTime.now().weekday - 1];
+              if (mission == null) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.only(top: 1),
+                      child: Icon(Icons.flag,
+                          size: 11, color: KColors.amber),
+                    ),
+                    const SizedBox(width: 5),
+                    Expanded(
+                      child: Text(
+                        mission,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: KColors.textDim,
+                          fontSize: 11,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
           Flexible(
             child: StreamBuilder<DayPlan?>(

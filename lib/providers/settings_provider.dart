@@ -58,6 +58,13 @@ class AppSettings {
   final bool journalVimMode;
   final String vimEscapeSequence; // e.g. 'jk', empty = disabled
 
+  // Helm planning — first month of Q1 (1 = January → calendar quarters,
+  // 7 = July → Australian FY quarters). Display/navigation only: quarter
+  // plans are keyed by their start DATE, so this never rewrites data —
+  // though changing it mid-year means old quarters stop lining up with
+  // the new boundaries.
+  final int quarterAnchorMonth;
+
   // Onboarding
   final bool hasSeenThreeViewTour;
   final bool hasSeenCharterMigrationNotice;
@@ -93,6 +100,7 @@ class AppSettings {
     this.uiScale = 1.0,
     this.journalVimMode = false,
     this.vimEscapeSequence = '',
+    this.quarterAnchorMonth = 1,
     this.hasSeenThreeViewTour = false,
     this.hasSeenCharterMigrationNotice = false,
     this.analyticsEnabled = false,
@@ -140,6 +148,7 @@ class AppSettings {
     double? uiScale,
     bool? journalVimMode,
     String? vimEscapeSequence,
+    int? quarterAnchorMonth,
     bool? hasSeenThreeViewTour,
     bool? hasSeenCharterMigrationNotice,
     bool? analyticsEnabled,
@@ -170,6 +179,7 @@ class AppSettings {
       uiScale: uiScale ?? this.uiScale,
       journalVimMode: journalVimMode ?? this.journalVimMode,
       vimEscapeSequence: vimEscapeSequence ?? this.vimEscapeSequence,
+      quarterAnchorMonth: quarterAnchorMonth ?? this.quarterAnchorMonth,
       hasSeenThreeViewTour: hasSeenThreeViewTour ?? this.hasSeenThreeViewTour,
       hasSeenCharterMigrationNotice: hasSeenCharterMigrationNotice ?? this.hasSeenCharterMigrationNotice,
       analyticsEnabled: analyticsEnabled ?? this.analyticsEnabled,
@@ -203,6 +213,7 @@ class AppSettings {
         'uiScale': uiScale,
         'journalVimMode': journalVimMode,
         'vimEscapeSequence': vimEscapeSequence,
+        'quarterAnchorMonth': quarterAnchorMonth,
         'hasSeenThreeViewTour': hasSeenThreeViewTour,
         'hasSeenCharterMigrationNotice': hasSeenCharterMigrationNotice,
         'analyticsEnabled': analyticsEnabled,
@@ -242,6 +253,7 @@ class AppSettings {
       uiScale: (json['uiScale'] as num?)?.toDouble() ?? 1.0,
       journalVimMode: json['journalVimMode'] as bool? ?? false,
       vimEscapeSequence: json['vimEscapeSequence'] as String? ?? '',
+      quarterAnchorMonth: json['quarterAnchorMonth'] as int? ?? 1,
       hasSeenThreeViewTour: json['hasSeenThreeViewTour'] as bool? ?? false,
       hasSeenCharterMigrationNotice: json['hasSeenCharterMigrationNotice'] as bool? ?? false,
       analyticsEnabled: json['analyticsEnabled'] as bool? ?? false,
@@ -344,6 +356,10 @@ class SettingsProvider extends ChangeNotifier {
       syncEnabled: enabled,
       syncEmail: email,
     ));
+  }
+
+  Future<void> setQuarterAnchorMonth(int month) async {
+    await save(_settings.copyWith(quarterAnchorMonth: month.clamp(1, 12)));
   }
 
   Future<void> markThreeViewTourSeen() async {

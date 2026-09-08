@@ -107,6 +107,17 @@ class ActionsDao extends DatabaseAccessor<AppDatabase> with _$ActionsDaoMixin {
     );
   }
 
+  /// Sets just the status — used by the sub-task quick toggle in the
+  /// parent action dialog.
+  Future<void> setStatus(String id, String status) {
+    return (update(projectActions)..where((t) => t.id.equals(id))).write(
+      ProjectActionsCompanion(
+        status: Value(status),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
   /// Closes every action in [ids] that isn't already closed — used by
   /// "Close group" to retire a parent and all its descendants at once.
   Future<void> closeActions(List<String> ids) {

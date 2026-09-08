@@ -39,13 +39,17 @@ class _PlaybookSetupViewState extends State<PlaybookSetupView> {
           children: [
             Icon(Icons.account_tree_outlined, color: KColors.amber, size: 18),
             SizedBox(width: 8),
-            Text(
-              'PLAYBOOK SETUP',
-              style: TextStyle(
-                color: KColors.amber,
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.15,
+            Flexible(
+              child: Text(
+                'PLAYBOOK SETUP',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: KColors.amber,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.15,
+                ),
               ),
             ),
           ],
@@ -329,9 +333,13 @@ class _StageEditor extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-                  Text(
-                    '${stages.length} stages',
-                    style: const TextStyle(color: KColors.textMuted, fontSize: 10),
+                  Flexible(
+                    child: Text(
+                      '${stages.length} stages',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: KColors.textMuted, fontSize: 10),
+                    ),
                   ),
                   const SizedBox(width: 12),
                   ElevatedButton.icon(

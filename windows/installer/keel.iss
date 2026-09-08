@@ -2,7 +2,7 @@
 ; CI passes the real version from the release tag via /DMyAppVersion=…
 ; (see .github/workflows/release.yml); this is only the local-build fallback.
 #ifndef MyAppVersion
-#define MyAppVersion "1.2.2"
+#define MyAppVersion "1.2.4"
 #endif
 #define MyAppPublisher "Paul Murray"
 #define MyAppURL "https://keel-app.dev"

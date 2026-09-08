@@ -190,29 +190,31 @@ class _MoneyGridState extends State<MoneyGrid> {
           final gridW = labelW + fixedW;
 
           return SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Container(
-              decoration: BoxDecoration(
-                color: KColors.surface,
-                border: Border.all(color: KColors.border),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: SizedBox(
-                width: gridW,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _headerRow(cols, labelW),
-                    for (final cat in widget.categories)
-                      if ((rowKeysByCat[cat.id]?.isNotEmpty ?? false) ||
-                          !widget.readOnly) ...[
-                        _categoryHeaderRow(cat, cols, byCat, labelW),
-                        for (final rk in rowKeysByCat[cat.id] ?? const [])
-                          _dataRow(rk, cat, cols, cellsByKey, flatRows,
-                              labelW),
-                      ],
-                    _totalsRow(cols, byCol, grandTotal, labelW),
-                  ],
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: KColors.surface,
+                  border: Border.all(color: KColors.border),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: SizedBox(
+                  width: gridW,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _headerRow(cols, labelW),
+                      for (final cat in widget.categories)
+                        if ((rowKeysByCat[cat.id]?.isNotEmpty ?? false) ||
+                            !widget.readOnly) ...[
+                          _categoryHeaderRow(cat, cols, byCat, labelW),
+                          for (final rk in rowKeysByCat[cat.id] ?? const [])
+                            _dataRow(rk, cat, cols, cellsByKey, flatRows,
+                                labelW),
+                        ],
+                      _totalsRow(cols, byCol, grandTotal, labelW),
+                    ],
+                  ),
                 ),
               ),
             ),

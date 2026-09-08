@@ -431,9 +431,13 @@ class _InboxQueueState extends State<_InboxQueue> {
       children: [
         Row(
           children: [
-            Text(
-              'Inbox Queue',
-              style: Theme.of(context).textTheme.titleMedium,
+            Flexible(
+              child: Text(
+                'Inbox Queue',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
             ),
             const SizedBox(width: 8),
             StreamBuilder<List<InboxItem>>(
@@ -473,7 +477,12 @@ class _InboxQueueState extends State<_InboxQueue> {
               const SizedBox(width: 12),
               _KeyHint('N', 'reject'),
               const Spacer(),
-              const Text('Click list to enable shortcuts', style: TextStyle(color: KColors.textMuted, fontSize: 10)),
+              const Flexible(
+                child: Text('Click list to enable shortcuts',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: KColors.textMuted, fontSize: 10)),
+              ),
             ],
           ),
         ),

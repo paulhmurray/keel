@@ -330,6 +330,7 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
                 if (a.sourceNote != null && a.sourceNote!.isNotEmpty)
                   Expanded(child: _viewField('Source Note', a.sourceNote)),
               ]),
+              ..._subTasksSection(a),
               const SizedBox(height: 4),
               const Divider(color: KColors.border, height: 1),
               const SizedBox(height: 12),
@@ -350,6 +351,132 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
         ),
       ],
     );
+  }
+
+  // ── Sub-tasks (children of a group parent) ─────────────────────────────────
+
+  /// Rendered in the read view when this action has children — the same
+  /// nesting the kanban shows as swimlanes. Each row has a quick
+  /// done-toggle and opens the child's own dialog on tap.
+  List<Widget> _subTasksSection(ProjectAction parent) {
+    final children = _allActions
+        .where((c) => c.parentActionId == parent.id)
+        .toList()
+      ..sort((x, y) {
+        final xClosed = x.status == 'closed' ? 1 : 0;
+        final yClosed = y.status == 'closed' ? 1 : 0;
+        if (xClosed != yClosed) return xClosed - yClosed;
+        if (x.dueDate != null && y.dueDate != null) {
+          return x.dueDate!.compareTo(y.dueDate!);
+        }
+        if (x.dueDate != null) return -1;
+        if (y.dueDate != null) return 1;
+        return x.createdAt.compareTo(y.createdAt);
+      });
+    if (children.isEmpty) return const [];
+    final doneCount =
+        children.where((c) => c.status == 'closed').length;
+    final today = DateTime.now().toIso8601String().substring(0, 10);
+
+    return [
+      const SizedBox(height: 4),
+      const Divider(color: KColors.border, height: 1),
+      const SizedBox(height: 10),
+      Text(
+        'SUB-TASKS · $doneCount OF ${children.length} DONE',
+        style: const TextStyle(
+          color: KColors.textDim,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.2,
+        ),
+      ),
+      const SizedBox(height: 6),
+      for (final c in children) _subTaskRow(c, today),
+      const SizedBox(height: 6),
+    ];
+  }
+
+  Widget _subTaskRow(ProjectAction c, String today) {
+    final closed = c.status == 'closed';
+    final overdue =
+        !closed && c.dueDate != null && c.dueDate!.compareTo(today) < 0;
+    return InkWell(
+      borderRadius: BorderRadius.circular(4),
+      onTap: () => _openSubTask(c),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 2),
+        child: Row(children: [
+          Tooltip(
+            message: closed ? 'Reopen' : 'Mark done',
+            child: InkWell(
+              onTap: () async {
+                await widget.db.actionsDao
+                    .setStatus(c.id, closed ? 'open' : 'closed');
+                await _loadData();
+              },
+              child: Icon(
+                closed
+                    ? Icons.check_circle
+                    : Icons.radio_button_unchecked,
+                size: 16,
+                color: closed ? KColors.phosphor : KColors.textMuted,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          if (c.ref != null) ...[
+            Text(c.ref!,
+                style: const TextStyle(
+                    color: KColors.amber,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700)),
+            const SizedBox(width: 8),
+          ],
+          Expanded(
+            child: Text(
+              c.description,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: closed ? KColors.textMuted : KColors.text,
+                fontSize: 12,
+                decoration: closed ? TextDecoration.lineThrough : null,
+                decorationColor: KColors.textMuted,
+              ),
+            ),
+          ),
+          if (c.dueDate != null) ...[
+            const SizedBox(width: 8),
+            Text(
+              du.formatDate(c.dueDate),
+              style: TextStyle(
+                color: overdue ? KColors.red : KColors.textMuted,
+                fontSize: 10,
+              ),
+            ),
+          ],
+          const SizedBox(width: 4),
+          const Icon(Icons.chevron_right,
+              size: 14, color: KColors.textMuted),
+        ]),
+      ),
+    );
+  }
+
+  Future<void> _openSubTask(ProjectAction c) async {
+    await showDialog(
+      context: context,
+      builder: (_) => ActionFormDialog(
+        projectId: widget.projectId,
+        db: widget.db,
+        action: c,
+        startInViewMode: true,
+      ),
+    );
+    // The child may have been edited or deleted — refresh so this list
+    // (and the done counter) reflects it.
+    await _loadData();
   }
 
   // ── Edit/create mode ───────────────────────────────────────────────────────

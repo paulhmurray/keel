@@ -122,7 +122,7 @@ class _StatusNarrativePanelState extends State<StatusNarrativePanel> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Action buttons
-        Row(children: [
+        Wrap(spacing: 8, runSpacing: 8, children: [
           ElevatedButton.icon(
             onPressed: _drafting ? null : _draft,
             icon: _drafting
@@ -133,7 +133,6 @@ class _StatusNarrativePanelState extends State<StatusNarrativePanel> {
             label: Text(_drafting ? 'Drafting…' : 'Draft narrative'),
           ),
           if (_ctrl.text.isNotEmpty) ...[
-            const SizedBox(width: 8),
             if (!_accepted)
               ElevatedButton(
                 onPressed: () {

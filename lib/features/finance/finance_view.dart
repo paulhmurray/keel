@@ -105,21 +105,35 @@ class _FinanceViewState extends State<FinanceView> {
               const Icon(Icons.account_balance_outlined,
                   color: KColors.amber, size: 18),
               const SizedBox(width: 8),
-              Text('FINANCE',
-                  style: Theme.of(context).textTheme.headlineSmall),
+              Flexible(
+                child: Text('FINANCE',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.headlineSmall),
+              ),
               const SizedBox(width: 24),
-              _TabChip(
-                  label: 'BUDGET',
-                  selected: _tab == 0,
-                  onTap: () => setState(() => _tab = 0)),
-              _TabChip(
-                  label: 'FORECAST',
-                  selected: _tab == 1,
-                  onTap: () => setState(() => _tab = 1)),
-              _TabChip(
-                  label: 'ACTUALS',
-                  selected: _tab == 2,
-                  onTap: () => setState(() => _tab = 2)),
+              Flexible(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _TabChip(
+                          label: 'BUDGET',
+                          selected: _tab == 0,
+                          onTap: () => setState(() => _tab = 0)),
+                      _TabChip(
+                          label: 'FORECAST',
+                          selected: _tab == 1,
+                          onTap: () => setState(() => _tab = 1)),
+                      _TabChip(
+                          label: 'ACTUALS',
+                          selected: _tab == 2,
+                          onTap: () => setState(() => _tab = 2)),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -211,61 +225,75 @@ class _FinanceViewState extends State<FinanceView> {
               ),
             ),
           ),
-        const Spacer(),
-        if (selected != null && selected.status == 'draft') ...[
-          OutlinedButton.icon(
-            onPressed: () => showDialog(
-              context: context,
-              builder: (_) => ApproveBudgetDialog(
-                  projectId: projectId, db: db, budget: selected),
+        const SizedBox(width: 12),
+        Expanded(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            reverse: true,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (selected != null && selected.status == 'draft') ...[
+                  OutlinedButton.icon(
+                    onPressed: () => showDialog(
+                      context: context,
+                      builder: (_) => ApproveBudgetDialog(
+                          projectId: projectId, db: db, budget: selected),
+                    ),
+                    icon: const Icon(Icons.check, size: 14),
+                    label: const Text('Approve…'),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                if (selected != null && selected.status != 'draft') ...[
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final newId = await db.financeDao.createDraftFrom(
+                          selected.id,
+                          changedBy: financeActor(context));
+                      setState(() => _selectedBudgetId = newId);
+                    },
+                    icon: const Icon(Icons.copy_outlined, size: 14),
+                    label: const Text('New Draft From This'),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                ElevatedButton.icon(
+                  onPressed: () => showDialog(
+                    context: context,
+                    builder: (_) =>
+                        BudgetFormDialog(projectId: projectId, db: db),
+                  ),
+                  icon: const Icon(Icons.add, size: 14),
+                  label: const Text('New Budget'),
+                ),
+                if (selected != null && selected.status == 'draft')
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert,
+                        size: 18, color: KColors.textMuted),
+                    onSelected: (val) async {
+                      if (val == 'edit') {
+                        await showDialog(
+                          context: context,
+                          builder: (_) => BudgetFormDialog(
+                              projectId: projectId, db: db, budget: selected),
+                        );
+                      } else if (val == 'delete') {
+                        await db.financeDao.deleteDraftBudget(selected.id,
+                            changedBy: financeActor(context));
+                        setState(() => _selectedBudgetId = null);
+                      }
+                    },
+                    itemBuilder: (_) => const [
+                      PopupMenuItem(value: 'edit', child: Text('Edit details')),
+                      PopupMenuItem(
+                          value: 'delete', child: Text('Delete draft')),
+                    ],
+                  ),
+              ],
             ),
-            icon: const Icon(Icons.check, size: 14),
-            label: const Text('Approve…'),
           ),
-          const SizedBox(width: 8),
-        ],
-        if (selected != null && selected.status != 'draft') ...[
-          OutlinedButton.icon(
-            onPressed: () async {
-              final newId = await db.financeDao.createDraftFrom(selected.id,
-                  changedBy: financeActor(context));
-              setState(() => _selectedBudgetId = newId);
-            },
-            icon: const Icon(Icons.copy_outlined, size: 14),
-            label: const Text('New Draft From This'),
-          ),
-          const SizedBox(width: 8),
-        ],
-        ElevatedButton.icon(
-          onPressed: () => showDialog(
-            context: context,
-            builder: (_) => BudgetFormDialog(projectId: projectId, db: db),
-          ),
-          icon: const Icon(Icons.add, size: 14),
-          label: const Text('New Budget'),
         ),
-        if (selected != null && selected.status == 'draft')
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert,
-                size: 18, color: KColors.textMuted),
-            onSelected: (val) async {
-              if (val == 'edit') {
-                await showDialog(
-                  context: context,
-                  builder: (_) => BudgetFormDialog(
-                      projectId: projectId, db: db, budget: selected),
-                );
-              } else if (val == 'delete') {
-                await db.financeDao.deleteDraftBudget(selected.id,
-                    changedBy: financeActor(context));
-                setState(() => _selectedBudgetId = null);
-              }
-            },
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'edit', child: Text('Edit details')),
-              PopupMenuItem(value: 'delete', child: Text('Delete draft')),
-            ],
-          ),
       ],
     );
   }

@@ -127,13 +127,17 @@ class _BandHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Text(
-            title.toUpperCase(),
-            style: const TextStyle(
-              color: KColors.textDim,
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.4,
+          Flexible(
+            child: Text(
+              title.toUpperCase(),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: KColors.textDim,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.4,
+              ),
             ),
           ),
           const SizedBox(width: 10),
