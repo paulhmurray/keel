@@ -238,10 +238,8 @@ class SyncProvider extends ChangeNotifier {
       // channel from the project blob above, best-effort, never blocks.
       await _reconcileCascade(projectId, token, db);
       _setStatus(SyncStatus.success);
-    } on SyncApiException catch (e) {
-      _setError(e.message);
     } catch (e) {
-      _setError(e.toString());
+      _handleSyncError(e);
     }
   }
 
@@ -323,11 +321,8 @@ class SyncProvider extends ChangeNotifier {
       return safety == PullSafety.conflict
           ? PullOutcome.conflictImported
           : PullOutcome.imported;
-    } on SyncApiException catch (e) {
-      _setError(e.message);
-      return PullOutcome.failed;
     } catch (e) {
-      _setError(e.toString());
+      _handleSyncError(e);
       return PullOutcome.failed;
     }
   }
@@ -610,15 +605,54 @@ class SyncProvider extends ChangeNotifier {
 
   /// Ensures we have a valid access token; refreshes if needed.
   Future<String> _ensureValidToken() async {
-    if (_accessToken == null) throw Exception('Not authenticated');
-    // Try a quick token validity check by inspecting exp claim
-    if (_isTokenExpired(_accessToken!)) {
-      if (_refreshToken == null) throw Exception('Session expired, please log in again');
-      final newAccess = await _getClient().refresh(_refreshToken!);
-      _accessToken = newAccess;
-      notifyListeners();
+    if (_accessToken == null && _refreshToken == null) {
+      throw Exception('Not authenticated');
+    }
+    // Refresh when the access token is missing (forced stale after a
+    // server 401 — see _handleSyncError) or its exp claim has passed.
+    if (_accessToken == null || _isTokenExpired(_accessToken!)) {
+      if (_refreshToken == null) {
+        throw Exception(
+            'Your sync sign-in has expired (it lasts 30 days) — just '
+            'sign back in via Settings → Sync and you\'re away.');
+      }
+      try {
+        final newAccess = await _getClient().refresh(_refreshToken!);
+        _accessToken = newAccess;
+        notifyListeners();
+      } on SyncApiException catch (e) {
+        if (e.statusCode == 401) {
+          // Refresh token dead too — the 30-day session lapsed (or the
+          // server rotated its JWT secret). Drop to signed-out cleanly
+          // instead of failing forever with a raw server error.
+          await logout();
+          throw Exception(
+              'Your sync sign-in has expired (it lasts 30 days) — just '
+              'sign back in via Settings → Sync and you\'re away.');
+        }
+        rethrow;
+      }
     }
     return _accessToken!;
+  }
+
+  /// Central error mapping for sync gestures. A 401 means the server
+  /// rejected a token the client believed valid (rotated JWT secret,
+  /// revoked session): force it stale so the NEXT attempt goes through
+  /// the refresh path, and say so in words a user can act on instead of
+  /// surfacing the server's raw "invalid or expired token".
+  void _handleSyncError(Object e) {
+    if (e is SyncApiException && e.statusCode == 401) {
+      _accessToken = null;
+      _setError(
+          'Sync session needs renewing — retry once. If it persists, '
+          'your 30-day sign-in has lapsed: sign back in via '
+          'Settings → Sync.');
+    } else if (e is SyncApiException) {
+      _setError(e.message);
+    } else {
+      _setError(e.toString());
+    }
   }
 
   bool _isTokenExpired(String token) {
