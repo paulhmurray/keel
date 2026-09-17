@@ -123,9 +123,39 @@ void main() {
       };
       final done = objectiveDoneBlocks(
           oid, rows.map((r) => r.block).toList(), startsByPlan);
-      // b1 (rev 0, morning) + the rev-1 copy of b2 — NOT the superseded
-      // rev-0 b2, which would double-count.
-      expect(done, 2);
+      // b1 (rev 0, morning, 60min = 2 slots) + the rev-1 copy of b2
+      // (60min = 2 slots) — NOT the superseded rev-0 b2, which would
+      // double-count.
+      expect(done, 4);
+    });
+
+    test('progress is duration-based: one 90-minute done block counts '
+        'as three 30-minute slots', () async {
+      final week =
+          await db.weekPlanDao.getOrCreatePlanForWeek('2026-08-24');
+      final oid = await db.weekPlanDao.insertObjective(
+          planId: week.id, label: 'Rock', targetBlocks: 4);
+      final day = await db.dayPlanDao.getOrCreatePlanForDate('2026-08-26');
+      final b = await db.dayPlanDao.insertBlock(
+          planId: day.id,
+          revision: 0,
+          startMinute: 540,
+          endMinute: 630, // 90 minutes
+          label: 'Long block',
+          objectiveId: oid);
+      await db.dayPlanDao.setBlockDone(day.id, b, true);
+
+      final rows = await db.weekPlanDao
+          .watchBlocksForWeek('2026-08-24', '2026-08-30')
+          .first;
+      final startsByPlan = <String, List<int>>{
+        for (final r in rows)
+          r.plan.id: parseRevisionStarts(r.plan.revisionStartsJson),
+      };
+      expect(
+          objectiveDoneBlocks(
+              oid, rows.map((r) => r.block).toList(), startsByPlan),
+          3);
     });
 
     test('watchBlocksForWeek only returns the requested week', () async {

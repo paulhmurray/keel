@@ -117,21 +117,31 @@ Map<int, String> parseDayMissions(String json) {
   }
 }
 
-/// Done blocks carrying [objectiveId], counted over a week of blocks —
-/// only blocks in each day's EFFECTIVE schedule count (a superseded copy
-/// of a done block must not double-count).
+/// The planning slot size — objective targets are denominated in these.
+const kPlanSlotMinutes = 30;
+
+/// Done work carrying [objectiveId], measured in 30-minute SLOTS over a
+/// week of blocks — duration counts, not row count: one 90-minute done
+/// block is worth three slots, the same as three 30-minute blocks.
+/// Only blocks in each day's EFFECTIVE schedule count (a superseded
+/// copy of a done block must not double-count).
 int objectiveDoneBlocks(
   String objectiveId,
   List<DayPlanBlock> weekBlocks,
   Map<String, List<int>> revisionStartsByPlanId,
 ) {
-  var count = 0;
+  var slots = 0;
   for (final b in weekBlocks) {
     if (b.objectiveId != objectiveId || !b.done) continue;
     final starts = revisionStartsByPlanId[b.dayPlanId] ?? const [];
-    if (!isBlockSuperseded(b, starts)) count++;
+    if (isBlockSuperseded(b, starts)) continue;
+    final duration = b.endMinute - b.startMinute;
+    // Never zero for a real done block, however short.
+    slots += duration <= kPlanSlotMinutes
+        ? 1
+        : duration ~/ kPlanSlotMinutes;
   }
-  return count;
+  return slots;
 }
 
 // ── Quarter helpers (anchor-month aware) ───────────────────────────────

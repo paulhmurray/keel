@@ -2526,10 +2526,16 @@ class _RagDot extends StatelessWidget {
 /// and offers two add affordances: an internal-activity picker and a
 /// free-text external dialog.
 class _DependsOnEditor extends StatelessWidget {
+  // (db value, abbreviation, full name, plain-English meaning) — the
+  // control shows the abbreviation; the menu and tooltip teach the rest,
+  // because nobody (the author included) reliably remembers FS/SS/FF.
   static const _typeOptions = [
-    ('finish_to_start', 'FS'),
-    ('start_to_start', 'SS'),
-    ('finish_to_finish', 'FF'),
+    ('finish_to_start', 'FS', 'Finish → Start',
+        'Starts after the predecessor finishes (the usual case)'),
+    ('start_to_start', 'SS', 'Start → Start',
+        'Can\'t start until the predecessor has started'),
+    ('finish_to_finish', 'FF', 'Finish → Finish',
+        'Can\'t finish until the predecessor has finished'),
   ];
 
   final List<({TimelineActivity act, TimelineWorkPackage wp})>
@@ -2691,39 +2697,24 @@ class _DependsOnEditor extends StatelessWidget {
                         overflow: TextOverflow.ellipsis),
                   ),
                   const SizedBox(width: 6),
-                  // Type dropdown — FS / SS / FF. External isn't here:
-                  // those go through the dedicated "Add external" flow.
-                  SizedBox(
-                    width: 64,
-                    child: DropdownButton<String>(
-                      // Guard: coerce unknown types into the option set
-                      // so a stray value can never assert the dropdown.
-                      value: _typeOptions
-                              .any((t) => t.$1 == p.dependencyType)
-                          ? p.dependencyType
-                          : _typeOptions.first.$1,
-                      isDense: true,
-                      isExpanded: true,
-                      dropdownColor: KColors.surface2,
-                      style: const TextStyle(
-                          color: KColors.text, fontSize: 11),
-                      items: _typeOptions
-                          .map((t) => DropdownMenuItem(
-                                value: t.$1,
-                                child: Text(t.$2,
-                                    style: const TextStyle(fontSize: 11)),
-                              ))
-                          .toList(),
-                      onChanged: (v) {
-                        if (v == null) return;
-                        final next = [...predecessors];
-                        next[i] = DependencySpec.internal(
-                          fromActivityId: p.fromActivityId!,
-                          dependencyType: v,
-                        );
-                        onChanged(next);
-                      },
-                    ),
+                  // Type control — compact 'FS' chip; the menu and
+                  // tooltip carry the full names and meanings. External
+                  // isn't here: that's the "Add external" flow.
+                  _DepTypeDropdown(
+                    // Guard: coerce unknown types into the option set
+                    // so a stray value can never break the control.
+                    value: _typeOptions
+                            .any((t) => t.$1 == p.dependencyType)
+                        ? p.dependencyType
+                        : _typeOptions.first.$1,
+                    onChanged: (v) {
+                      final next = [...predecessors];
+                      next[i] = DependencySpec.internal(
+                        fromActivityId: p.fromActivityId!,
+                        dependencyType: v,
+                      );
+                      onChanged(next);
+                    },
                   ),
                   removeBtn,
                 ],
@@ -2731,6 +2722,64 @@ class _DependsOnEditor extends StatelessWidget {
             );
           }),
       ],
+    );
+  }
+}
+
+/// The dependency-type control: shows the compact abbreviation ('FS'),
+/// teaches the meaning — tooltip explains the current type, and the
+/// menu spells out every option with its plain-English rule.
+class _DepTypeDropdown extends StatelessWidget {
+  final String value;
+  final ValueChanged<String> onChanged;
+
+  const _DepTypeDropdown({required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final current = _DependsOnEditor._typeOptions
+        .firstWhere((t) => t.$1 == value);
+    return PopupMenuButton<String>(
+      tooltip: '${current.$3} — ${current.$4}',
+      color: KColors.surface2,
+      padding: EdgeInsets.zero,
+      onSelected: onChanged,
+      itemBuilder: (context) => [
+        for (final t in _DependsOnEditor._typeOptions)
+          PopupMenuItem<String>(
+            value: t.$1,
+            height: 44,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('${t.$2} — ${t.$3}',
+                    style: TextStyle(
+                        color: t.$1 == value
+                            ? KColors.amber
+                            : KColors.text,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600)),
+                Text(t.$4,
+                    style: const TextStyle(
+                        color: KColors.textMuted, fontSize: 10)),
+              ],
+            ),
+          ),
+      ],
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(current.$2,
+                style:
+                    const TextStyle(color: KColors.text, fontSize: 11)),
+            const Icon(Icons.arrow_drop_down,
+                size: 14, color: KColors.textMuted),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -3827,6 +3876,48 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
     return items;
   }
 
+  // Two columns when the screen affords it — the form outgrew one
+  // column (scenarios, RAID links, tasks, dependencies), and a single
+  // column now forces scrolling even at the height cap.
+  bool _twoCol(BuildContext context) =>
+      MediaQuery.of(context).size.width >= 1280;
+
+  Widget _formBody(BuildContext context, List<Widget> schedule,
+      List<Widget> details, Widget buttons) {
+    if (!_twoCol(context)) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ...schedule,
+          ...details,
+          const SizedBox(height: 16),
+          buttons,
+        ],
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: schedule)),
+            const SizedBox(width: 28),
+            Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: details)),
+          ],
+        ),
+        const SizedBox(height: 16),
+        buttons,
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = _wpColor(widget.wp.colourTheme);
@@ -3844,18 +3935,17 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
             style: TextStyle(color: c, fontSize: 12,
                 fontWeight: FontWeight.w600)),
       ]),
-      // Sized so the full form (incl. dates + WBS parent) fits without
-      // scrolling on a typical desktop; the scroll view below is the
-      // fallback for short screens.
+      // Wide: two columns, everything visible, no scrolling. Narrow:
+      // the old single column with the scroll view as fallback.
       content: SizedBox(
-        width: min(760, MediaQuery.of(context).size.width * 0.9),
+        width: _twoCol(context)
+            ? min(1180, MediaQuery.of(context).size.width * 0.92)
+            : min(760, MediaQuery.of(context).size.width * 0.9),
         height: min(940, MediaQuery.of(context).size.height * 0.88),
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+            child: _formBody(context, <Widget>[
                 TextFormField(
                   controller: _nameCtrl,
                   autofocus: !_isEdit,
@@ -4122,6 +4212,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                     ),
                   ),
                 const SizedBox(height: 14),
+            ], <Widget>[
                 // WBS parent: nest this row as a task under an activity.
                 _ParentActivityDropdown(
                   wpId: widget.wp.id,
@@ -4285,9 +4376,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                   onChanged: (next) =>
                       setState(() => _predecessors = next),
                 ),
-                const SizedBox(height: 16),
-                // Action buttons inline — avoids OverflowBar issues
-                Row(children: [
+            ], Row(children: [
                   if (_isEdit)
                     TextButton(
                       onPressed: _delete,
@@ -4310,7 +4399,6 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                         style: const TextStyle(fontSize: 12)),
                   ),
                 ]),
-              ],
             ),
           ),
         ),

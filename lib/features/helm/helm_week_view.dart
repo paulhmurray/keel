@@ -860,6 +860,13 @@ class _ObjectiveDialogState extends State<_ObjectiveDialog> {
     super.dispose();
   }
 
+  static String _slotHours(int slots) {
+    final h = slots ~/ 2;
+    final half = slots.isOdd;
+    if (h == 0) return '30m';
+    return half ? '${h}h 30m' : '${h}h';
+  }
+
   void _save() {
     final label = _labelCtrl.text.trim();
     if (label.isEmpty) return;
@@ -891,14 +898,20 @@ class _ObjectiveDialogState extends State<_ObjectiveDialog> {
             DropdownButtonFormField<int?>(
               value: _target,
               decoration: const InputDecoration(
-                labelText: 'Target (focus blocks this week)',
+                labelText: 'Target (30-min blocks this week)',
+                helperText:
+                    'Duration counts — one 90-min block = 3 blocks.',
+                helperStyle:
+                    TextStyle(color: KColors.textMuted, fontSize: 10),
               ),
               items: [
                 const DropdownMenuItem(
                     value: null, child: Text('No target')),
                 for (var n = 1; n <= 10; n++)
                   DropdownMenuItem(
-                      value: n, child: Text('$n block${n == 1 ? '' : 's'}')),
+                      value: n,
+                      child: Text(
+                          '$n block${n == 1 ? '' : 's'} (${_slotHours(n)})')),
               ],
               onChanged: (v) => setState(() => _target = v),
             ),
