@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/database/database.dart';
+import '../../core/raid/risk_rating.dart';
 import '../../core/inbox/inbox_item_draft.dart';
 import '../../core/inbox/parsers/md_parser.dart';
 import '../../core/inbox/parsers/org_parser.dart';
@@ -848,8 +849,8 @@ class _ReviewDialogState extends State<_ReviewDialog> {
     _descCtrl = TextEditingController(text: d['description'] as String? ?? widget.item.content);
 
     // Risk
-    _likelihood = d['likelihood'] as String? ?? 'medium';
-    _impact = d['impact'] as String? ?? 'medium';
+    _likelihood = normaliseLikelihood(d['likelihood'] as String?);
+    _impact = normaliseConsequence(d['impact'] as String?);
     _mitigationCtrl = TextEditingController(text: d['mitigation'] as String? ?? '');
     _riskStatus = d['status'] as String? ?? 'open';
 
@@ -1073,14 +1074,16 @@ class _ReviewDialogState extends State<_ReviewDialog> {
         DropdownField(
           label: 'Likelihood',
           value: _likelihood,
-          items: const ['low', 'medium', 'high'],
+          items: kLikelihoodScale,
+          labelOverrides: kLikelihoodLabels,
           onChanged: (v) => setState(() => _likelihood = v!),
         ),
         const SizedBox(height: 12),
         DropdownField(
-          label: 'Impact',
+          label: 'Consequence',
           value: _impact,
-          items: const ['low', 'medium', 'high'],
+          items: kConsequenceScale,
+          labelOverrides: kConsequenceLabels,
           onChanged: (v) => setState(() => _impact = v!),
         ),
         const SizedBox(height: 12),

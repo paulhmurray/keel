@@ -29,3 +29,6 @@ feedback/
 
 # macOS
 .DS_Store
+
+# Claude Code local settings
+.claude/

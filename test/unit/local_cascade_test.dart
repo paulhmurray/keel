@@ -197,7 +197,8 @@ void main() {
       final cascaded = progRisks.single;
       expect(cascaded.description, 'Vendor may slip the integration date');
       expect(cascaded.ref, 'R1');
-      expect(cascaded.impact, 'high');
+      // Stored as legacy 'high'; the pull normalises it onto the scale.
+      expect(cascaded.impact, 'major');
       // Read-only marker: row came from a linked project.
       expect(cascaded.sourceProjectId, 'proj');
       expect(cascaded.source, 'cascade');

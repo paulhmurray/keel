@@ -2,6 +2,10 @@ import 'dart:convert';
 import 'package:excel/excel.dart';
 
 import '../database/database.dart';
+import '../raid/raid_conversion_service.dart' show RaidKind;
+import '../raid/raid_lifecycle.dart';
+import '../raid/risk_rating.dart';
+import '../raid/planview_risk_sheet.dart';
 import '../plan/variance_links.dart';
 import '../platform/web_download.dart';
 import 'excel_palette.dart';
@@ -95,6 +99,8 @@ class ProgrammeWorkbookExporter {
     required String projectId,
     required String projectName,
     bool isProgramme = true,
+    // Closed RAID items ride in a trailing CLOSED band when true.
+    bool includeClosed = false,
   }) async {
     final excel = Excel.createExcel();
     // Remove default sheet
@@ -106,7 +112,8 @@ class ProgrammeWorkbookExporter {
     await _buildDependenciesSheet(excel, db, projectId);
     await _buildStakeholderSheet(excel, db, projectId);
     await _buildScopeSheet(excel, db, projectId);
-    await _buildRaidSheet(excel, db, projectId);
+    await _buildRaidSheet(excel, db, projectId, includeClosed);
+    await _buildPlanviewRisksSheet(excel, db, projectId);
 
     return excel.save()!;
   }
@@ -116,12 +123,14 @@ class ProgrammeWorkbookExporter {
     required String projectId,
     required String projectName,
     bool isProgramme = true,
+    bool includeClosed = false,
   }) async {
     final bytes = await buildBytes(
       db: db,
       projectId: projectId,
       projectName: projectName,
       isProgramme: isProgramme,
+      includeClosed: includeClosed,
     );
     final slug = projectName.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '_');
     final date = DateTime.now().toIso8601String().substring(0, 10);
@@ -963,12 +972,22 @@ class ProgrammeWorkbookExporter {
 
   // ─── Sheet 5: RAID ────────────────────────────────────────────────────────
 
-  static Future<void> _buildRaidSheet(
-      Excel excel, AppDatabase db, String projectId) async {
-    final risks       = await db.raidDao.getRisksForProject(projectId);
-    final assumptions = await db.raidDao.getAssumptionsForProject(projectId);
-    final issues      = await db.raidDao.getIssuesForProject(projectId);
-    final deps        = await db.raidDao.getDependenciesForProject(projectId);
+  static Future<void> _buildRaidSheet(Excel excel, AppDatabase db,
+      String projectId, bool includeClosed) async {
+    final allRisks  = await db.raidDao.getRisksForProject(projectId);
+    final allAssum  = await db.raidDao.getAssumptionsForProject(projectId);
+    final allIssues = await db.raidDao.getIssuesForProject(projectId);
+    final allDeps   = await db.raidDao.getDependenciesForProject(projectId);
+    // Open items in the register bands; closed ones (if asked for) in a
+    // trailing CLOSED band so the live log stays scannable.
+    final risks = splitClosed<Risk>(allRisks,
+        kind: RaidKind.risk, status: (r) => r.status).open;
+    final assumptions = splitClosed<Assumption>(allAssum,
+        kind: RaidKind.assumption, status: (a) => a.status).open;
+    final issues = splitClosed<Issue>(allIssues,
+        kind: RaidKind.issue, status: (i) => i.status).open;
+    final deps = splitClosed<ProgramDependency>(allDeps,
+        kind: RaidKind.dependency, status: (d) => d.status).open;
 
     final sheet = excel['RAID Log'];
     sheet.setColumnWidth(0, 8);   // Ref
@@ -1007,12 +1026,11 @@ class ProgrammeWorkbookExporter {
       row++;
     }
 
-    (String, String?) ragStyle(String l, String i) {
-      if (l == 'high' && i == 'high') return (kXlRedText, kXlRedTint);
-      if (l == 'high' || i == 'high') return (kXlAmberText, kXlAmberTint);
-      if (l == 'low' && i == 'low') return (kXlGreenText, kXlGreenTint);
-      return (kXlInk, null);
-    }
+    (String, String?) ragStyle(String l, String i) => switch (riskBand(l, i)) {
+          'high' => (kXlRedText, kXlRedTint),
+          'medium' => (kXlAmberText, kXlAmberTint),
+          _ => (kXlGreenText, kXlGreenTint),
+        };
 
     // ── Risks ──────────────────────────────────────────────────────────────
     sectionBand('RISKS');
@@ -1023,10 +1041,10 @@ class ProgrammeWorkbookExporter {
       _setCell(sheet, row, 1, 'Risk',              style: rs);
       _setCell(sheet, row, 2, r.description,
           style: _style(fontSize: 10, allBorders: true, wrap: true));
-      _setCell(sheet, row, 3, r.likelihood,
+      _setCell(sheet, row, 3, likelihoodLabel(r.likelihood),
           style: _style(bgHex: ragBg, fgHex: ragFg,
               fontSize: 10, allBorders: true));
-      _setCell(sheet, row, 4, r.impact,
+      _setCell(sheet, row, 4, consequenceLabel(r.impact),
           style: _style(bgHex: ragBg, fgHex: ragFg,
               fontSize: 10, allBorders: true));
       _setCell(sheet, row, 5, r.mitigation ?? '',  style: rs);
@@ -1100,6 +1118,110 @@ class ProgrammeWorkbookExporter {
       _setCell(sheet, row, 8,
           d.createdAt.toIso8601String().substring(0, 10), style: rs);
       sheet.setRowHeight(row, 18);
+      row++;
+    }
+
+    // ── Closed (audit trail) ───────────────────────────────────────────────
+    if (includeClosed) {
+      sectionBand('CLOSED');
+      final closed = closedRaidRows(
+          risks: allRisks,
+          assumptions: allAssum,
+          issues: allIssues,
+          dependencies: allDeps);
+      for (final c in closed) {
+        final rs = _style(fgHex: kXlInkDim, fontSize: 10, allBorders: true);
+        _setCell(sheet, row, 0, c.ref,         style: rs);
+        _setCell(sheet, row, 1, c.kind,        style: rs);
+        _setCell(sheet, row, 2, c.description,
+            style: _style(fgHex: kXlInkDim, fontSize: 10,
+                allBorders: true, wrap: true));
+        _setCell(sheet, row, 3, '',            style: rs);
+        _setCell(sheet, row, 4, '',            style: rs);
+        _setCell(sheet, row, 5, c.note,        style: rs);
+        _setCell(sheet, row, 6, '',            style: rs);
+        _setCell(sheet, row, 7, c.status,      style: rs);
+        _setCell(sheet, row, 8, c.closedOn,    style: rs);
+        sheet.setRowHeight(row, 18);
+        row++;
+      }
+    }
+  }
+
+  // ─── Sheet 6: Planview Risks ──────────────────────────────────────────────
+
+  /// The risk register in the exact column shape TAC's Planview expects,
+  /// so the PM can paste it across without re-typing. Open risks only,
+  /// SteerCo-flagged first, then by score; legend under the table.
+  static Future<void> _buildPlanviewRisksSheet(
+      Excel excel, AppDatabase db, String projectId) async {
+    final all = await db.raidDao.getRisksForProject(projectId);
+    final open = splitClosed<Risk>(all,
+        kind: RaidKind.risk, status: (r) => r.status).open
+      ..sort((a, b) {
+        if (a.steerco != b.steerco) return a.steerco ? -1 : 1;
+        final s = riskScore(b.likelihood, b.impact) -
+            riskScore(a.likelihood, a.impact);
+        if (s != 0) return s;
+        return (a.ref ?? '').compareTo(b.ref ?? '');
+      });
+
+    final sheet = excel['Planview Risks'];
+    const widths = [6, 12, 34, 60, 18, 18, 14, 14, 11, 60, 14, 14, 11, 11, 11, 11, 50, 26];
+    for (final (i, w) in widths.indexed) {
+      sheet.setColumnWidth(i, w.toDouble());
+    }
+
+    var row = 0;
+    _setCell(sheet, row, 0,
+        'Planview risk register — open risks mapped to TAC Planview fields. '
+        'Likelihood: Rare / Unlikely / Possible / Likely / Almost certain. '
+        'Consequence: Minimal / Minor / Moderate / Major / Severe.',
+        style: _style(fgHex: kXlInkDim, fontSize: 9));
+    row++;
+    final hdr = _style(bgHex: kXlHeaderBg, fgHex: kXlInkDim,
+        bold: true, fontSize: 9, allBorders: true);
+    for (final (i, label) in kPlanviewRiskHeaders.indexed) {
+      _setCell(sheet, row, i, label, style: hdr);
+    }
+    row++;
+    _setCell(sheet, row, 0,
+        '$kPlanviewEscalateMark = flagged to Steering Committee in Planview '
+        '(${open.where((r) => r.steerco).length} of ${open.length}). All '
+        'others are managed at programme level and reported fortnightly.',
+        style: _style(fgHex: kXlInkDim, fontSize: 9));
+    row++;
+
+    for (final r in open) {
+      final cells = planviewCellsFor(r);
+      final band = riskBand(r.likelihood, r.impact);
+      final (ragFg, ragBg) = switch (band) {
+        'high' => (kXlRedText, kXlRedTint),
+        'medium' => (kXlAmberText, kXlAmberTint),
+        _ => (kXlGreenText, kXlGreenTint),
+      };
+      for (final (i, v) in cells.indexed) {
+        final rating = i == 6 || i == 7;
+        final wrap = i == 3 || i == 9 || i == 16;
+        _setCell(sheet, row, i, v,
+            style: rating
+                ? _style(bgHex: ragBg, fgHex: ragFg, fontSize: 10,
+                    allBorders: true)
+                : _style(
+                    fgHex: i == 1 && r.steerco ? kXlRedText : kXlInk,
+                    bold: i == 1 && r.steerco,
+                    fontSize: 10,
+                    allBorders: true,
+                    wrap: wrap));
+      }
+      sheet.setRowHeight(row, 18);
+      row++;
+    }
+
+    row++;
+    for (final line in kPlanviewLegend) {
+      _setCell(sheet, row, 0, '•', style: _style(fgHex: kXlInkDim, fontSize: 9));
+      _setCell(sheet, row, 1, line, style: _style(fgHex: kXlInkDim, fontSize: 9));
       row++;
     }
   }

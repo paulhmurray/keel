@@ -3,6 +3,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../charter/charter_migration.dart';
 import '../database/database.dart';
+import '../raid/risk_rating.dart';
 import '_json_importer_io.dart' if (dart.library.html) '_json_importer_web.dart';
 
 class ImportResult {
@@ -174,8 +175,8 @@ class JsonImporter {
           projectId: Value(projectId),
           ref: Value(rm['ref'] as String?),
           description: Value(rm['description'] as String),
-          likelihood: Value(rm['likelihood'] as String? ?? 'medium'),
-          impact: Value(rm['impact'] as String? ?? 'medium'),
+          likelihood: Value(normaliseLikelihood(rm['likelihood'] as String?)),
+          impact: Value(normaliseConsequence(rm['impact'] as String?)),
           likelihoodRationale: Value(rm['likelihood_rationale'] as String?),
           impactRationale: Value(rm['impact_rationale'] as String?),
           mitigation: Value(rm['mitigation'] as String?),
@@ -183,6 +184,23 @@ class JsonImporter {
           status: Value(rm['status'] as String? ?? 'open'),
           source: Value(rm['source'] as String? ?? 'manual'),
           sourceNote: Value(rm['source_note'] as String?),
+          closedAt: Value(rm['closed_at'] as String?),
+          closureNote: Value(rm['closure_note'] as String?),
+          title: Value(rm['title'] as String?),
+          likelihoodTarget: Value(rm['likelihood_target'] == null
+              ? null
+              : normaliseLikelihood(rm['likelihood_target'] as String?)),
+          impactTarget: Value(rm['impact_target'] == null
+              ? null
+              : normaliseConsequence(rm['impact_target'] as String?)),
+          strategy: Value(rm['strategy'] as String? ?? 'treat'),
+          assignee: Value(rm['assignee'] as String?),
+          steerco: Value(rm['steerco'] as bool? ?? false),
+          enterpriseRiskLink: Value(rm['enterprise_risk_link'] as String?),
+          dueDate: Value(rm['due_date'] as String?),
+          lastReviewedAt: Value(rm['last_reviewed_at'] as String?),
+          nextReviewAt: Value(rm['next_review_at'] as String?),
+          statusNote: Value(rm['status_note'] as String?),
           escalatedAt: Value(_parseDt(rm['escalated_at'])),
           sourceProjectId: Value(rm['source_project_id'] as String?),
         ));
@@ -203,6 +221,7 @@ class JsonImporter {
               : null),
           source: Value(am['source'] as String? ?? 'manual'),
           sourceNote: Value(am['source_note'] as String?),
+          closedAt: Value(am['closed_at'] as String?),
           escalatedAt: Value(_parseDt(am['escalated_at'])),
           sourceProjectId: Value(am['source_project_id'] as String?),
         ));
@@ -226,6 +245,7 @@ class JsonImporter {
           resolution: Value(im['resolution'] as String?),
           source: Value(im['source'] as String? ?? 'manual'),
           sourceNote: Value(im['source_note'] as String?),
+          closedAt: Value(im['closed_at'] as String?),
           escalatedAt: Value(_parseDt(im['escalated_at'])),
           sourceProjectId: Value(im['source_project_id'] as String?),
         ));
@@ -239,11 +259,16 @@ class JsonImporter {
           ref: Value(dm['ref'] as String?),
           description: Value(dm['description'] as String),
           dependencyType: Value(dm['dependency_type'] as String? ?? 'inbound'),
+          counterparty: Value(dm['counterparty'] as String?),
+          rationale: Value(dm['rationale'] as String?),
+          impactStatement: Value(dm['impact_statement'] as String?),
+          planActivityId: Value(dm['plan_activity_id'] as String?),
           owner: Value(dm['owner'] as String?),
           status: Value(dm['status'] as String? ?? 'open'),
           dueDate: Value(dm['due_date'] as String?),
           source: Value(dm['source'] as String? ?? 'manual'),
           sourceNote: Value(dm['source_note'] as String?),
+          closedAt: Value(dm['closed_at'] as String?),
           escalatedAt: Value(_parseDt(dm['escalated_at'])),
           sourceProjectId: Value(dm['source_project_id'] as String?),
         ));
@@ -276,6 +301,10 @@ class JsonImporter {
         dueDate: Value(dm['due_date'] as String?),
         rationale: Value(dm['rationale'] as String?),
         outcome: Value(dm['outcome'] as String?),
+        optionsConsidered: Value(dm['options_considered'] as String?),
+        impactStatement: Value(dm['impact_statement'] as String?),
+        planActivityId: Value(dm['plan_activity_id'] as String?),
+        decidedAt: Value(dm['decided_at'] as String?),
         source: Value(dm['source'] as String? ?? 'manual'),
         sourceNote: Value(dm['source_note'] as String?),
         escalatedAt: Value(_parseDt(dm['escalated_at'])),

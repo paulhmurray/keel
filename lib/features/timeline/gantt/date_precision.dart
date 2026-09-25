@@ -104,3 +104,30 @@ double monthFractionOf(DateTime date, DateTime month0) {
   }
   return (left: left, right: right);
 }
+
+/// Moves a dated activity's date into month [month] (index from
+/// [month0Date]), keeping the day of month and clamping it to the
+/// target month's length. Used when the PM changes the month dropdown
+/// on an activity that also carries a real date — otherwise the date
+/// would silently pin the old month on save.
+///
+/// Returns [isoDate] unchanged when it isn't parseable, or null when
+/// there is no date or no month-0 anchor to work from.
+String? moveDateToMonth({
+  required String? isoDate,
+  required int month,
+  required String? month0Date,
+}) {
+  if (isoDate == null || month0Date == null) return isoDate;
+  final d = DateTime.tryParse(isoDate);
+  final m0 = DateTime.tryParse(month0Date);
+  if (d == null || m0 == null) return isoDate;
+  final firstOfTarget = DateTime(m0.year, m0.month + month, 1);
+  final daysInTarget =
+      DateTime(firstOfTarget.year, firstOfTarget.month + 1, 0).day;
+  final day = d.day > daysInTarget ? daysInTarget : d.day;
+  final moved = DateTime(firstOfTarget.year, firstOfTarget.month, day);
+  return '${moved.year.toString().padLeft(4, '0')}-'
+      '${moved.month.toString().padLeft(2, '0')}-'
+      '${moved.day.toString().padLeft(2, '0')}';
+}

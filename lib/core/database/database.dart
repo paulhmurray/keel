@@ -207,14 +207,49 @@ class Risks extends Table {
   TextColumn get id => text().named('id')();
   TextColumn get projectId => text().references(Projects, #id)();
   TextColumn get ref => text().nullable()();
+  // Short scannable headline (Planview "Risk"); [description] holds the
+  // full statement. Pre-existing rows have title null.
+  TextColumn get title => text().nullable()();
   TextColumn get description => text()();
-  TextColumn get likelihood => text().withDefault(const Constant('medium'))();
-  TextColumn get impact => text().withDefault(const Constant('medium'))();
+  // Current rating on the 5-level Planview scale — see
+  // core/raid/risk_rating.dart for the vocab, ranks, bands and the
+  // legacy low/medium/high mapping (v62 migration rewrote old rows).
+  TextColumn get likelihood => text().withDefault(const Constant('possible'))();
+  TextColumn get impact => text().withDefault(const Constant('moderate'))();
+  // Residual rating expected once the treatment plan has landed. Equal
+  // to current => strategy should be tolerate, not treat.
+  TextColumn get likelihoodTarget => text().nullable()();
+  TextColumn get impactTarget => text().nullable()();
   TextColumn get likelihoodRationale => text().nullable()();
   TextColumn get impactRationale => text().nullable()();
+  // Treatment plan (Planview wording); kept as [mitigation] for history.
   TextColumn get mitigation => text().nullable()();
+  // treat | tolerate | transfer | terminate
+  TextColumn get strategy => text().withDefault(const Constant('treat'))();
+  // Owner = accountable, reports on it. Assignee = does the treatment.
   TextColumn get owner => text().nullable()();
+  TextColumn get assignee => text().nullable()();
+  // Flagged to the Steering Committee (distinct from [escalatedAt],
+  // which is the programme cascade).
+  BoolColumn get steerco => boolean().withDefault(const Constant(false))();
+  // Which enterprise risk category this rolls up to (free text; the
+  // form offers the organisation's list).
+  TextColumn get enterpriseRiskLink => text().nullable()();
+  // When the treatment plan should have taken effect (ISO date).
+  TextColumn get dueDate => text().nullable()();
+  // Fortnightly review cadence (ISO dates).
+  TextColumn get lastReviewedAt => text().nullable()();
+  TextColumn get nextReviewAt => text().nullable()();
+  // Latest status update, the register's one-liner for reporting.
+  TextColumn get statusNote => text().nullable()();
   TextColumn get status => text().withDefault(const Constant('open'))();
+  // ISO date the risk entered a terminal state (closed/accepted); null
+  // while open. Rows closed before v61 have null and fall back to
+  // updatedAt for age-out.
+  TextColumn get closedAt => text().nullable()();
+  // Why it was closed or accepted — the audit answer to "what happened
+  // to R12?".
+  TextColumn get closureNote => text().nullable()();
   TextColumn get source => text().withDefault(const Constant('manual'))();
   TextColumn get sourceNote => text().nullable()();
   // Programme-cascade markers (Phase C.2). escalatedAt non-null
@@ -239,6 +274,8 @@ class Assumptions extends Table {
   TextColumn get status => text().withDefault(const Constant('open'))();
   TextColumn get validatedBy => text().nullable()();
   DateTimeColumn get validatedAt => dateTime().nullable()();
+  // ISO date it reached validated/invalidated/closed; see Risks.closedAt.
+  TextColumn get closedAt => text().nullable()();
   TextColumn get source => text().withDefault(const Constant('manual'))();
   TextColumn get sourceNote => text().nullable()();
   // See Risks for the same markers + semantics.
@@ -272,6 +309,9 @@ class Issues extends Table {
   TextColumn get priority => text().withDefault(const Constant('medium'))();
   TextColumn get status => text().withDefault(const Constant('open'))();
   TextColumn get resolution => text().nullable()();
+  // ISO date it was closed; see Risks.closedAt. 'resolved' is NOT
+  // terminal here — it's the nudge to confirm and close.
+  TextColumn get closedAt => text().nullable()();
   TextColumn get source => text().withDefault(const Constant('manual'))();
   TextColumn get sourceNote => text().nullable()();
   DateTimeColumn get escalatedAt => dateTime().nullable()();
@@ -306,9 +346,24 @@ class ProgramDependencies extends Table {
   TextColumn get ref => text().nullable()();
   TextColumn get description => text()();
   TextColumn get dependencyType => text().withDefault(const Constant('inbound'))();
+  // Who or what we depend on (or who depends on us for outbound): a
+  // team, vendor, programme or system. Separate from [owner], who is
+  // the person on OUR side chasing it.
+  TextColumn get counterparty => text().nullable()();
+  // Why this is a dependency — what we need from them and why the
+  // project can't proceed without it.
+  TextColumn get rationale => text().nullable()();
+  // What happens to the project if it's late or never lands.
+  TextColumn get impactStatement => text().nullable()();
+  // The plan activity this dependency gates (inbound: the activity
+  // can't start until it lands; outbound: the activity produces what
+  // the other party needs). Project-local id — never cascaded.
+  TextColumn get planActivityId => text().nullable()();
   TextColumn get owner => text().nullable()();
   TextColumn get status => text().withDefault(const Constant('open'))();
   TextColumn get dueDate => text().nullable()();
+  // ISO date it was closed; see Risks.closedAt.
+  TextColumn get closedAt => text().nullable()();
   TextColumn get source => text().withDefault(const Constant('manual'))();
   TextColumn get sourceNote => text().nullable()();
   DateTimeColumn get escalatedAt => dateTime().nullable()();
@@ -330,6 +385,16 @@ class Decisions extends Table {
   TextColumn get dueDate => text().nullable()();
   TextColumn get rationale => text().nullable()();
   TextColumn get outcome => text().nullable()();
+  // The alternatives that were weighed — what "no" and "later" looked
+  // like. Without it a decision record only shows the winner.
+  TextColumn get optionsConsidered => text().nullable()();
+  // What is blocked, or what it costs, while the decision stays open.
+  TextColumn get impactStatement => text().nullable()();
+  // The plan activity waiting on this decision (it can't start until
+  // the call is made). Project-local id — never cascaded.
+  TextColumn get planActivityId => text().nullable()();
+  // ISO date the decision was actually made, distinct from [dueDate].
+  TextColumn get decidedAt => text().nullable()();
   TextColumn get source => text().withDefault(const Constant('manual'))();
   TextColumn get sourceNote => text().nullable()();
   // Cascade markers (Phase C.6). escalatedAt non-null = PM has
@@ -1606,7 +1671,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(QueryExecutor executor) : super(executor);
 
   @override
-  int get schemaVersion => 58;
+  int get schemaVersion => 62;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -2046,6 +2111,64 @@ class AppDatabase extends _$AppDatabase {
                   "SET external_label = '(external — label lost in sync)' "
                   "WHERE dependency_type = 'external' "
                   "AND external_label IS NULL");
+            } catch (_) {}
+          }
+          if (from < 59) {
+            // Richer dependency register: why it's a dependency, its
+            // impact, the counterparty, and the plan activity it gates.
+            await ensureColumn(
+                programDependencies, programDependencies.counterparty);
+            await ensureColumn(
+                programDependencies, programDependencies.rationale);
+            await ensureColumn(
+                programDependencies, programDependencies.impactStatement);
+            await ensureColumn(
+                programDependencies, programDependencies.planActivityId);
+          }
+          if (from < 60) {
+            // Richer decision register: options weighed, impact of
+            // leaving it open, the plan activity waiting on it, and
+            // the date it was actually decided.
+            await ensureColumn(decisions, decisions.optionsConsidered);
+            await ensureColumn(decisions, decisions.impactStatement);
+            await ensureColumn(decisions, decisions.planActivityId);
+            await ensureColumn(decisions, decisions.decidedAt);
+          }
+          if (from < 61) {
+            // Closure audit: when a RAID item reached its terminal state
+            // (drives the 14-day age-out) and why a risk was closed.
+            await ensureColumn(risks, risks.closedAt);
+            await ensureColumn(risks, risks.closureNote);
+            await ensureColumn(assumptions, assumptions.closedAt);
+            await ensureColumn(issues, issues.closedAt);
+            await ensureColumn(
+                programDependencies, programDependencies.closedAt);
+          }
+          if (from < 62) {
+            // Planview-shaped risk register: title, target rating,
+            // strategy, assignee, SteerCo flag, enterprise link, due and
+            // review dates, status note — and the 5-level rating scale.
+            await ensureColumn(risks, risks.title);
+            await ensureColumn(risks, risks.likelihoodTarget);
+            await ensureColumn(risks, risks.impactTarget);
+            await ensureColumn(risks, risks.strategy);
+            await ensureColumn(risks, risks.assignee);
+            await ensureColumn(risks, risks.steerco);
+            await ensureColumn(risks, risks.enterpriseRiskLink);
+            await ensureColumn(risks, risks.dueDate);
+            await ensureColumn(risks, risks.lastReviewedAt);
+            await ensureColumn(risks, risks.nextReviewAt);
+            await ensureColumn(risks, risks.statusNote);
+            // Map the old 3-level words onto the 5-level scale. Only
+            // legacy values are touched, so re-running is harmless.
+            try {
+              await customStatement(
+                  "UPDATE risks SET likelihood = CASE likelihood "
+                  "WHEN 'low' THEN 'unlikely' WHEN 'medium' THEN 'possible' "
+                  "WHEN 'high' THEN 'likely' ELSE likelihood END, "
+                  "impact = CASE impact "
+                  "WHEN 'low' THEN 'minor' WHEN 'medium' THEN 'moderate' "
+                  "WHEN 'high' THEN 'major' ELSE impact END");
             } catch (_) {}
           }
         },

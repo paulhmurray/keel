@@ -133,6 +133,64 @@ class ActionsDao extends DatabaseAccessor<AppDatabase> with _$ActionsDaoMixin {
     return into(projectActions).insertOnConflictUpdate(entry);
   }
 
+  /// Next `AC<n>` ref given the project's existing actions.
+  static String nextRef(Iterable<ProjectAction> existing) {
+    final nums = existing
+        .where((a) => a.ref != null && a.ref!.startsWith('AC'))
+        .map((a) => int.tryParse(a.ref!.substring(2)) ?? 0)
+        .toList()
+      ..sort();
+    return 'AC${(nums.isEmpty ? 0 : nums.last) + 1}';
+  }
+
+  /// Quick-add from the parent's dialog: creates an open action named
+  /// [description] (row id [id], caller supplies a uuid) nested under
+  /// [parentId], inheriting the parent's category and plan link, and
+  /// flags the parent as a group. Refuses (returns null) when the parent
+  /// doesn't exist or is already a sub-task — the hierarchy is capped at
+  /// parent → task → sub-task, so a sub-task can't grow children.
+  Future<String?> addSubTask({
+    required String id,
+    required String parentId,
+    required String description,
+  }) async {
+    final parent = await getActionById(parentId);
+    if (parent == null) return null;
+    if (parent.parentActionId != null) {
+      final grandparent = await getActionById(parent.parentActionId!);
+      if (grandparent != null && grandparent.parentActionId != null) {
+        return null;
+      }
+    }
+    final existing = await getActionsForProject(parent.projectId);
+    final now = DateTime.now();
+    await transaction(() async {
+      await into(projectActions).insert(ProjectActionsCompanion(
+        id: Value(id),
+        projectId: Value(parent.projectId),
+        ref: Value(nextRef(existing)),
+        description: Value(description),
+        status: const Value('open'),
+        priority: const Value('medium'),
+        source: const Value('manual'),
+        categoryId: Value(parent.categoryId),
+        planActivityId: Value(parent.planActivityId),
+        parentActionId: Value(parentId),
+        isParent: const Value(false),
+        createdAt: Value(now),
+        updatedAt: Value(now),
+      ));
+      if (!parent.isParent) {
+        await (update(projectActions)..where((t) => t.id.equals(parentId)))
+            .write(ProjectActionsCompanion(
+          isParent: const Value(true),
+          updatedAt: Value(now),
+        ));
+      }
+    });
+    return id;
+  }
+
   Future<void> deleteByRecurrenceGroup(String groupId) {
     return (delete(projectActions)
           ..where((t) => t.recurrenceGroupId.equals(groupId)))

@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart' show Value;
 
 import '../database/database.dart';
+import '../raid/risk_rating.dart';
 
 /// Inserts a fully-populated demo project on first launch.
 /// Safe to call repeatedly — checks for existing projects first.
@@ -256,8 +257,8 @@ class SeedService {
           projectId: Value(projectId),
           ref: Value(ref),
           description: Value(desc),
-          likelihood: Value(likelihood),
-          impact: Value(impact),
+          likelihood: Value(normaliseLikelihood(likelihood)),
+          impact: Value(normaliseConsequence(impact)),
           status: Value(status),
           mitigation: Value(mitigation),
           owner: Value(owner),

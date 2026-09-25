@@ -25,12 +25,15 @@ class HandoverExporter {
     final raidHtml = HtmlExporter.buildRaidHtml(
         projectName, risks, assumptions, issues, dependencies);
     _addText(archive, 'raid_log.html', raidHtml);
+    // The handover pack is the audit dump: closed items ride along in
+    // their own section.
     final raidPdf = await PdfExporter.buildRaidBytes(
       projectName: projectName,
-      risks: risks,
-      assumptions: assumptions,
-      issues: issues,
-      dependencies: dependencies,
+      allRisks: risks,
+      allAssumptions: assumptions,
+      allIssues: issues,
+      allDependencies: dependencies,
+      includeClosed: true,
     );
     _addBytes(archive, 'raid_log.pdf', raidPdf);
 

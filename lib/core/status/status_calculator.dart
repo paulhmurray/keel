@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../database/database.dart';
+import '../raid/risk_rating.dart';
 
 // ─── RAG enum ─────────────────────────────────────────────────────────────────
 
@@ -165,11 +166,8 @@ class StatusCalculator {
     return open.take(limit).toList();
   }
 
-  static int _riskScore(String likelihood, String impact) {
-    int l = switch (likelihood) { 'high' => 3, 'medium' => 2, _ => 1 };
-    int i = switch (impact) { 'high' => 3, 'medium' => 2, _ => 1 };
-    return l * i;
-  }
+  static int _riskScore(String likelihood, String impact) =>
+      riskScore(likelihood, impact);
 
   /// Filter activities to milestone-type entries whose month falls within
   /// the next [days] days. Completed milestones are excluded.

@@ -1,4 +1,6 @@
 import '../database/database.dart';
+import '../raid/raid_conversion_service.dart' show RaidKind;
+import '../raid/raid_lifecycle.dart';
 import '../platform/web_download.dart';
 
 class HtmlExporter {
@@ -19,9 +21,10 @@ class HtmlExporter {
     required List<Assumption> assumptions,
     required List<Issue> issues,
     required List<ProgramDependency> dependencies,
+    bool includeClosed = false,
   }) async {
-    final html =
-        _buildRaidHtml(projectName, risks, assumptions, issues, dependencies);
+    final html = _buildRaidHtml(projectName, risks, assumptions, issues,
+        dependencies, includeClosed: includeClosed);
     return _writeAndOpen(html, 'raid_${_slug(projectName)}.html');
   }
 
@@ -56,9 +59,11 @@ class HtmlExporter {
     List<Risk> risks,
     List<Assumption> assumptions,
     List<Issue> issues,
-    List<ProgramDependency> dependencies,
-  ) =>
-      _buildRaidHtml(projectName, risks, assumptions, issues, dependencies);
+    List<ProgramDependency> dependencies, {
+    bool includeClosed = false,
+  }) =>
+      _buildRaidHtml(projectName, risks, assumptions, issues, dependencies,
+          includeClosed: includeClosed);
 
   static String buildNarrativeHtml(
       String projectName, List<JournalEntry> entries) {
@@ -313,14 +318,39 @@ class HtmlExporter {
   </div>''';
   }
 
+  /// Open items in the body. Closed ones are left out by default (a
+  /// steering pack wants the live register) and, with [includeClosed],
+  /// gathered into one trailing audit section with closed-on and why.
   static String _buildRaidHtml(
     String projectName,
     List<Risk> risks,
     List<Assumption> assumptions,
     List<Issue> issues,
-    List<ProgramDependency> dependencies,
-  ) {
+    List<ProgramDependency> dependencies, {
+    bool includeClosed = false,
+  }) {
     final generatedDate = DateTime.now().toIso8601String().substring(0, 10);
+    final openRisks = splitClosed<Risk>(risks,
+        kind: RaidKind.risk, status: (r) => r.status).open;
+    final openAssumptions = splitClosed<Assumption>(assumptions,
+        kind: RaidKind.assumption, status: (a) => a.status).open;
+    final openIssues = splitClosed<Issue>(issues,
+        kind: RaidKind.issue, status: (i) => i.status).open;
+    final openDeps = splitClosed<ProgramDependency>(dependencies,
+        kind: RaidKind.dependency, status: (d) => d.status).open;
+    final closed = closedRaidRows(
+        risks: risks,
+        assumptions: assumptions,
+        issues: issues,
+        dependencies: dependencies);
+    final closedSection = includeClosed
+        ? '''
+  <div class="section">
+    <h2>Closed items (${closed.length})</h2>
+    ${_closedTable(closed)}
+  </div>
+'''
+        : '';
 
     return '''<!DOCTYPE html>
 <html lang="en">
@@ -360,6 +390,12 @@ class HtmlExporter {
     .badge-high { background: #fee2e2; color: #b91c1c; }
     .badge-medium { background: #fef3c7; color: #92400e; }
     .badge-low { background: #d1fae5; color: #065f46; }
+    .badge-almost_certain, .badge-severe { background: #fee2e2; color: #b91c1c; }
+    .badge-likely, .badge-major { background: #fee2e2; color: #b91c1c; }
+    .badge-possible, .badge-moderate { background: #fef3c7; color: #92400e; }
+    .badge-unlikely, .badge-minor { background: #d1fae5; color: #065f46; }
+    .badge-rare, .badge-minimal { background: #d1fae5; color: #065f46; }
+    .badge-accepted { background: #f3e8ff; color: #7e22ce; }
     .empty { color: #9ca3af; font-style: italic; font-size: 13px; }
     .footer { text-align: center; color: #9ca3af; font-size: 12px;
               margin-top: 32px; padding-bottom: 40px; }
@@ -370,26 +406,26 @@ class HtmlExporter {
   <div class="subtitle">Generated $generatedDate</div>
 
   <div class="section">
-    <h2>Risks (${risks.length})</h2>
-    ${_risksTable(risks)}
+    <h2>Risks (${openRisks.length})</h2>
+    ${_risksTable(openRisks)}
   </div>
 
   <div class="section">
-    <h2>Assumptions (${assumptions.length})</h2>
-    ${_assumptionsTable(assumptions)}
+    <h2>Assumptions (${openAssumptions.length})</h2>
+    ${_assumptionsTable(openAssumptions)}
   </div>
 
   <div class="section">
-    <h2>Issues (${issues.length})</h2>
-    ${_issuesTable(issues)}
+    <h2>Issues (${openIssues.length})</h2>
+    ${_issuesTable(openIssues)}
   </div>
 
   <div class="section">
-    <h2>Dependencies (${dependencies.length})</h2>
-    ${_dependenciesTable(dependencies)}
+    <h2>Dependencies (${openDeps.length})</h2>
+    ${_dependenciesTable(openDeps)}
   </div>
-
-  <div class="footer">Keel \u2013 RAID Export</div>
+$closedSection
+  <div class="footer">Keel \u2013 RAID Export${includeClosed ? '' : ' \u2013 open items only'}</div>
 </body>
 </html>''';
   }
@@ -451,6 +487,28 @@ class HtmlExporter {
       <thead><tr>
         <th>Ref</th><th>Description</th><th>Priority</th>
         <th>Owner</th><th>Status</th>
+      </tr></thead>
+      <tbody>$rows</tbody>
+    </table>''';
+  }
+
+  static String _closedTable(List<ClosedItemRow> items) {
+    if (items.isEmpty) {
+      return '<p class="empty">No closed items.</p>';
+    }
+    final rows = items.map((c) => '''
+      <tr>
+        <td>${_esc(c.ref)}</td>
+        <td>${_esc(c.kind)}</td>
+        <td>${_esc(c.description)}</td>
+        <td>${_badge(c.status)}</td>
+        <td>${_esc(c.closedOn)}</td>
+        <td>${_esc(c.note)}</td>
+      </tr>''').join('\n');
+    return '''<table>
+      <thead><tr>
+        <th>Ref</th><th>Type</th><th>Description</th>
+        <th>Status</th><th>Closed on</th><th>Why / outcome</th>
       </tr></thead>
       <tbody>$rows</tbody>
     </table>''';

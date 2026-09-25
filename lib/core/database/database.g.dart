@@ -4094,6 +4094,15 @@ class $RisksTable extends Risks with TableInfo<$RisksTable, Risk> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _descriptionMeta = const VerificationMeta(
     'description',
   );
@@ -4115,7 +4124,7 @@ class $RisksTable extends Risks with TableInfo<$RisksTable, Risk> {
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
-    defaultValue: const Constant('medium'),
+    defaultValue: const Constant('possible'),
   );
   static const VerificationMeta _impactMeta = const VerificationMeta('impact');
   @override
@@ -4125,7 +4134,29 @@ class $RisksTable extends Risks with TableInfo<$RisksTable, Risk> {
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
-    defaultValue: const Constant('medium'),
+    defaultValue: const Constant('moderate'),
+  );
+  static const VerificationMeta _likelihoodTargetMeta = const VerificationMeta(
+    'likelihoodTarget',
+  );
+  @override
+  late final GeneratedColumn<String> likelihoodTarget = GeneratedColumn<String>(
+    'likelihood_target',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _impactTargetMeta = const VerificationMeta(
+    'impactTarget',
+  );
+  @override
+  late final GeneratedColumn<String> impactTarget = GeneratedColumn<String>(
+    'impact_target',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _likelihoodRationaleMeta =
       const VerificationMeta('likelihoodRationale');
@@ -4160,10 +4191,103 @@ class $RisksTable extends Risks with TableInfo<$RisksTable, Risk> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _strategyMeta = const VerificationMeta(
+    'strategy',
+  );
+  @override
+  late final GeneratedColumn<String> strategy = GeneratedColumn<String>(
+    'strategy',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('treat'),
+  );
   static const VerificationMeta _ownerMeta = const VerificationMeta('owner');
   @override
   late final GeneratedColumn<String> owner = GeneratedColumn<String>(
     'owner',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _assigneeMeta = const VerificationMeta(
+    'assignee',
+  );
+  @override
+  late final GeneratedColumn<String> assignee = GeneratedColumn<String>(
+    'assignee',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _steercoMeta = const VerificationMeta(
+    'steerco',
+  );
+  @override
+  late final GeneratedColumn<bool> steerco = GeneratedColumn<bool>(
+    'steerco',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("steerco" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _enterpriseRiskLinkMeta =
+      const VerificationMeta('enterpriseRiskLink');
+  @override
+  late final GeneratedColumn<String> enterpriseRiskLink =
+      GeneratedColumn<String>(
+        'enterprise_risk_link',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _dueDateMeta = const VerificationMeta(
+    'dueDate',
+  );
+  @override
+  late final GeneratedColumn<String> dueDate = GeneratedColumn<String>(
+    'due_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastReviewedAtMeta = const VerificationMeta(
+    'lastReviewedAt',
+  );
+  @override
+  late final GeneratedColumn<String> lastReviewedAt = GeneratedColumn<String>(
+    'last_reviewed_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _nextReviewAtMeta = const VerificationMeta(
+    'nextReviewAt',
+  );
+  @override
+  late final GeneratedColumn<String> nextReviewAt = GeneratedColumn<String>(
+    'next_review_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _statusNoteMeta = const VerificationMeta(
+    'statusNote',
+  );
+  @override
+  late final GeneratedColumn<String> statusNote = GeneratedColumn<String>(
+    'status_note',
     aliasedName,
     true,
     type: DriftSqlType.string,
@@ -4178,6 +4302,28 @@ class $RisksTable extends Risks with TableInfo<$RisksTable, Risk> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
     defaultValue: const Constant('open'),
+  );
+  static const VerificationMeta _closedAtMeta = const VerificationMeta(
+    'closedAt',
+  );
+  @override
+  late final GeneratedColumn<String> closedAt = GeneratedColumn<String>(
+    'closed_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _closureNoteMeta = const VerificationMeta(
+    'closureNote',
+  );
+  @override
+  late final GeneratedColumn<String> closureNote = GeneratedColumn<String>(
+    'closure_note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _sourceMeta = const VerificationMeta('source');
   @override
@@ -4251,14 +4397,27 @@ class $RisksTable extends Risks with TableInfo<$RisksTable, Risk> {
     id,
     projectId,
     ref,
+    title,
     description,
     likelihood,
     impact,
+    likelihoodTarget,
+    impactTarget,
     likelihoodRationale,
     impactRationale,
     mitigation,
+    strategy,
     owner,
+    assignee,
+    steerco,
+    enterpriseRiskLink,
+    dueDate,
+    lastReviewedAt,
+    nextReviewAt,
+    statusNote,
     status,
+    closedAt,
+    closureNote,
     source,
     sourceNote,
     escalatedAt,
@@ -4297,6 +4456,12 @@ class $RisksTable extends Risks with TableInfo<$RisksTable, Risk> {
         ref.isAcceptableOrUnknown(data['ref']!, _refMeta),
       );
     }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    }
     if (data.containsKey('description')) {
       context.handle(
         _descriptionMeta,
@@ -4318,6 +4483,24 @@ class $RisksTable extends Risks with TableInfo<$RisksTable, Risk> {
       context.handle(
         _impactMeta,
         impact.isAcceptableOrUnknown(data['impact']!, _impactMeta),
+      );
+    }
+    if (data.containsKey('likelihood_target')) {
+      context.handle(
+        _likelihoodTargetMeta,
+        likelihoodTarget.isAcceptableOrUnknown(
+          data['likelihood_target']!,
+          _likelihoodTargetMeta,
+        ),
+      );
+    }
+    if (data.containsKey('impact_target')) {
+      context.handle(
+        _impactTargetMeta,
+        impactTarget.isAcceptableOrUnknown(
+          data['impact_target']!,
+          _impactTargetMeta,
+        ),
       );
     }
     if (data.containsKey('likelihood_rationale')) {
@@ -4344,16 +4527,88 @@ class $RisksTable extends Risks with TableInfo<$RisksTable, Risk> {
         mitigation.isAcceptableOrUnknown(data['mitigation']!, _mitigationMeta),
       );
     }
+    if (data.containsKey('strategy')) {
+      context.handle(
+        _strategyMeta,
+        strategy.isAcceptableOrUnknown(data['strategy']!, _strategyMeta),
+      );
+    }
     if (data.containsKey('owner')) {
       context.handle(
         _ownerMeta,
         owner.isAcceptableOrUnknown(data['owner']!, _ownerMeta),
       );
     }
+    if (data.containsKey('assignee')) {
+      context.handle(
+        _assigneeMeta,
+        assignee.isAcceptableOrUnknown(data['assignee']!, _assigneeMeta),
+      );
+    }
+    if (data.containsKey('steerco')) {
+      context.handle(
+        _steercoMeta,
+        steerco.isAcceptableOrUnknown(data['steerco']!, _steercoMeta),
+      );
+    }
+    if (data.containsKey('enterprise_risk_link')) {
+      context.handle(
+        _enterpriseRiskLinkMeta,
+        enterpriseRiskLink.isAcceptableOrUnknown(
+          data['enterprise_risk_link']!,
+          _enterpriseRiskLinkMeta,
+        ),
+      );
+    }
+    if (data.containsKey('due_date')) {
+      context.handle(
+        _dueDateMeta,
+        dueDate.isAcceptableOrUnknown(data['due_date']!, _dueDateMeta),
+      );
+    }
+    if (data.containsKey('last_reviewed_at')) {
+      context.handle(
+        _lastReviewedAtMeta,
+        lastReviewedAt.isAcceptableOrUnknown(
+          data['last_reviewed_at']!,
+          _lastReviewedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('next_review_at')) {
+      context.handle(
+        _nextReviewAtMeta,
+        nextReviewAt.isAcceptableOrUnknown(
+          data['next_review_at']!,
+          _nextReviewAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('status_note')) {
+      context.handle(
+        _statusNoteMeta,
+        statusNote.isAcceptableOrUnknown(data['status_note']!, _statusNoteMeta),
+      );
+    }
     if (data.containsKey('status')) {
       context.handle(
         _statusMeta,
         status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('closed_at')) {
+      context.handle(
+        _closedAtMeta,
+        closedAt.isAcceptableOrUnknown(data['closed_at']!, _closedAtMeta),
+      );
+    }
+    if (data.containsKey('closure_note')) {
+      context.handle(
+        _closureNoteMeta,
+        closureNote.isAcceptableOrUnknown(
+          data['closure_note']!,
+          _closureNoteMeta,
+        ),
       );
     }
     if (data.containsKey('source')) {
@@ -4419,6 +4674,10 @@ class $RisksTable extends Risks with TableInfo<$RisksTable, Risk> {
         DriftSqlType.string,
         data['${effectivePrefix}ref'],
       ),
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      ),
       description: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}description'],
@@ -4431,6 +4690,14 @@ class $RisksTable extends Risks with TableInfo<$RisksTable, Risk> {
         DriftSqlType.string,
         data['${effectivePrefix}impact'],
       )!,
+      likelihoodTarget: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}likelihood_target'],
+      ),
+      impactTarget: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}impact_target'],
+      ),
       likelihoodRationale: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}likelihood_rationale'],
@@ -4443,14 +4710,54 @@ class $RisksTable extends Risks with TableInfo<$RisksTable, Risk> {
         DriftSqlType.string,
         data['${effectivePrefix}mitigation'],
       ),
+      strategy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}strategy'],
+      )!,
       owner: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}owner'],
+      ),
+      assignee: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}assignee'],
+      ),
+      steerco: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}steerco'],
+      )!,
+      enterpriseRiskLink: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}enterprise_risk_link'],
+      ),
+      dueDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}due_date'],
+      ),
+      lastReviewedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_reviewed_at'],
+      ),
+      nextReviewAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}next_review_at'],
+      ),
+      statusNote: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status_note'],
       ),
       status: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}status'],
       )!,
+      closedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}closed_at'],
+      ),
+      closureNote: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}closure_note'],
+      ),
       source: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}source'],
@@ -4488,14 +4795,27 @@ class Risk extends DataClass implements Insertable<Risk> {
   final String id;
   final String projectId;
   final String? ref;
+  final String? title;
   final String description;
   final String likelihood;
   final String impact;
+  final String? likelihoodTarget;
+  final String? impactTarget;
   final String? likelihoodRationale;
   final String? impactRationale;
   final String? mitigation;
+  final String strategy;
   final String? owner;
+  final String? assignee;
+  final bool steerco;
+  final String? enterpriseRiskLink;
+  final String? dueDate;
+  final String? lastReviewedAt;
+  final String? nextReviewAt;
+  final String? statusNote;
   final String status;
+  final String? closedAt;
+  final String? closureNote;
   final String source;
   final String? sourceNote;
   final DateTime? escalatedAt;
@@ -4506,14 +4826,27 @@ class Risk extends DataClass implements Insertable<Risk> {
     required this.id,
     required this.projectId,
     this.ref,
+    this.title,
     required this.description,
     required this.likelihood,
     required this.impact,
+    this.likelihoodTarget,
+    this.impactTarget,
     this.likelihoodRationale,
     this.impactRationale,
     this.mitigation,
+    required this.strategy,
     this.owner,
+    this.assignee,
+    required this.steerco,
+    this.enterpriseRiskLink,
+    this.dueDate,
+    this.lastReviewedAt,
+    this.nextReviewAt,
+    this.statusNote,
     required this.status,
+    this.closedAt,
+    this.closureNote,
     required this.source,
     this.sourceNote,
     this.escalatedAt,
@@ -4529,9 +4862,18 @@ class Risk extends DataClass implements Insertable<Risk> {
     if (!nullToAbsent || ref != null) {
       map['ref'] = Variable<String>(ref);
     }
+    if (!nullToAbsent || title != null) {
+      map['title'] = Variable<String>(title);
+    }
     map['description'] = Variable<String>(description);
     map['likelihood'] = Variable<String>(likelihood);
     map['impact'] = Variable<String>(impact);
+    if (!nullToAbsent || likelihoodTarget != null) {
+      map['likelihood_target'] = Variable<String>(likelihoodTarget);
+    }
+    if (!nullToAbsent || impactTarget != null) {
+      map['impact_target'] = Variable<String>(impactTarget);
+    }
     if (!nullToAbsent || likelihoodRationale != null) {
       map['likelihood_rationale'] = Variable<String>(likelihoodRationale);
     }
@@ -4541,10 +4883,36 @@ class Risk extends DataClass implements Insertable<Risk> {
     if (!nullToAbsent || mitigation != null) {
       map['mitigation'] = Variable<String>(mitigation);
     }
+    map['strategy'] = Variable<String>(strategy);
     if (!nullToAbsent || owner != null) {
       map['owner'] = Variable<String>(owner);
     }
+    if (!nullToAbsent || assignee != null) {
+      map['assignee'] = Variable<String>(assignee);
+    }
+    map['steerco'] = Variable<bool>(steerco);
+    if (!nullToAbsent || enterpriseRiskLink != null) {
+      map['enterprise_risk_link'] = Variable<String>(enterpriseRiskLink);
+    }
+    if (!nullToAbsent || dueDate != null) {
+      map['due_date'] = Variable<String>(dueDate);
+    }
+    if (!nullToAbsent || lastReviewedAt != null) {
+      map['last_reviewed_at'] = Variable<String>(lastReviewedAt);
+    }
+    if (!nullToAbsent || nextReviewAt != null) {
+      map['next_review_at'] = Variable<String>(nextReviewAt);
+    }
+    if (!nullToAbsent || statusNote != null) {
+      map['status_note'] = Variable<String>(statusNote);
+    }
     map['status'] = Variable<String>(status);
+    if (!nullToAbsent || closedAt != null) {
+      map['closed_at'] = Variable<String>(closedAt);
+    }
+    if (!nullToAbsent || closureNote != null) {
+      map['closure_note'] = Variable<String>(closureNote);
+    }
     map['source'] = Variable<String>(source);
     if (!nullToAbsent || sourceNote != null) {
       map['source_note'] = Variable<String>(sourceNote);
@@ -4565,9 +4933,18 @@ class Risk extends DataClass implements Insertable<Risk> {
       id: Value(id),
       projectId: Value(projectId),
       ref: ref == null && nullToAbsent ? const Value.absent() : Value(ref),
+      title: title == null && nullToAbsent
+          ? const Value.absent()
+          : Value(title),
       description: Value(description),
       likelihood: Value(likelihood),
       impact: Value(impact),
+      likelihoodTarget: likelihoodTarget == null && nullToAbsent
+          ? const Value.absent()
+          : Value(likelihoodTarget),
+      impactTarget: impactTarget == null && nullToAbsent
+          ? const Value.absent()
+          : Value(impactTarget),
       likelihoodRationale: likelihoodRationale == null && nullToAbsent
           ? const Value.absent()
           : Value(likelihoodRationale),
@@ -4577,10 +4954,36 @@ class Risk extends DataClass implements Insertable<Risk> {
       mitigation: mitigation == null && nullToAbsent
           ? const Value.absent()
           : Value(mitigation),
+      strategy: Value(strategy),
       owner: owner == null && nullToAbsent
           ? const Value.absent()
           : Value(owner),
+      assignee: assignee == null && nullToAbsent
+          ? const Value.absent()
+          : Value(assignee),
+      steerco: Value(steerco),
+      enterpriseRiskLink: enterpriseRiskLink == null && nullToAbsent
+          ? const Value.absent()
+          : Value(enterpriseRiskLink),
+      dueDate: dueDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dueDate),
+      lastReviewedAt: lastReviewedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastReviewedAt),
+      nextReviewAt: nextReviewAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(nextReviewAt),
+      statusNote: statusNote == null && nullToAbsent
+          ? const Value.absent()
+          : Value(statusNote),
       status: Value(status),
+      closedAt: closedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(closedAt),
+      closureNote: closureNote == null && nullToAbsent
+          ? const Value.absent()
+          : Value(closureNote),
       source: Value(source),
       sourceNote: sourceNote == null && nullToAbsent
           ? const Value.absent()
@@ -4605,16 +5008,31 @@ class Risk extends DataClass implements Insertable<Risk> {
       id: serializer.fromJson<String>(json['id']),
       projectId: serializer.fromJson<String>(json['projectId']),
       ref: serializer.fromJson<String?>(json['ref']),
+      title: serializer.fromJson<String?>(json['title']),
       description: serializer.fromJson<String>(json['description']),
       likelihood: serializer.fromJson<String>(json['likelihood']),
       impact: serializer.fromJson<String>(json['impact']),
+      likelihoodTarget: serializer.fromJson<String?>(json['likelihoodTarget']),
+      impactTarget: serializer.fromJson<String?>(json['impactTarget']),
       likelihoodRationale: serializer.fromJson<String?>(
         json['likelihoodRationale'],
       ),
       impactRationale: serializer.fromJson<String?>(json['impactRationale']),
       mitigation: serializer.fromJson<String?>(json['mitigation']),
+      strategy: serializer.fromJson<String>(json['strategy']),
       owner: serializer.fromJson<String?>(json['owner']),
+      assignee: serializer.fromJson<String?>(json['assignee']),
+      steerco: serializer.fromJson<bool>(json['steerco']),
+      enterpriseRiskLink: serializer.fromJson<String?>(
+        json['enterpriseRiskLink'],
+      ),
+      dueDate: serializer.fromJson<String?>(json['dueDate']),
+      lastReviewedAt: serializer.fromJson<String?>(json['lastReviewedAt']),
+      nextReviewAt: serializer.fromJson<String?>(json['nextReviewAt']),
+      statusNote: serializer.fromJson<String?>(json['statusNote']),
       status: serializer.fromJson<String>(json['status']),
+      closedAt: serializer.fromJson<String?>(json['closedAt']),
+      closureNote: serializer.fromJson<String?>(json['closureNote']),
       source: serializer.fromJson<String>(json['source']),
       sourceNote: serializer.fromJson<String?>(json['sourceNote']),
       escalatedAt: serializer.fromJson<DateTime?>(json['escalatedAt']),
@@ -4630,14 +5048,27 @@ class Risk extends DataClass implements Insertable<Risk> {
       'id': serializer.toJson<String>(id),
       'projectId': serializer.toJson<String>(projectId),
       'ref': serializer.toJson<String?>(ref),
+      'title': serializer.toJson<String?>(title),
       'description': serializer.toJson<String>(description),
       'likelihood': serializer.toJson<String>(likelihood),
       'impact': serializer.toJson<String>(impact),
+      'likelihoodTarget': serializer.toJson<String?>(likelihoodTarget),
+      'impactTarget': serializer.toJson<String?>(impactTarget),
       'likelihoodRationale': serializer.toJson<String?>(likelihoodRationale),
       'impactRationale': serializer.toJson<String?>(impactRationale),
       'mitigation': serializer.toJson<String?>(mitigation),
+      'strategy': serializer.toJson<String>(strategy),
       'owner': serializer.toJson<String?>(owner),
+      'assignee': serializer.toJson<String?>(assignee),
+      'steerco': serializer.toJson<bool>(steerco),
+      'enterpriseRiskLink': serializer.toJson<String?>(enterpriseRiskLink),
+      'dueDate': serializer.toJson<String?>(dueDate),
+      'lastReviewedAt': serializer.toJson<String?>(lastReviewedAt),
+      'nextReviewAt': serializer.toJson<String?>(nextReviewAt),
+      'statusNote': serializer.toJson<String?>(statusNote),
       'status': serializer.toJson<String>(status),
+      'closedAt': serializer.toJson<String?>(closedAt),
+      'closureNote': serializer.toJson<String?>(closureNote),
       'source': serializer.toJson<String>(source),
       'sourceNote': serializer.toJson<String?>(sourceNote),
       'escalatedAt': serializer.toJson<DateTime?>(escalatedAt),
@@ -4651,14 +5082,27 @@ class Risk extends DataClass implements Insertable<Risk> {
     String? id,
     String? projectId,
     Value<String?> ref = const Value.absent(),
+    Value<String?> title = const Value.absent(),
     String? description,
     String? likelihood,
     String? impact,
+    Value<String?> likelihoodTarget = const Value.absent(),
+    Value<String?> impactTarget = const Value.absent(),
     Value<String?> likelihoodRationale = const Value.absent(),
     Value<String?> impactRationale = const Value.absent(),
     Value<String?> mitigation = const Value.absent(),
+    String? strategy,
     Value<String?> owner = const Value.absent(),
+    Value<String?> assignee = const Value.absent(),
+    bool? steerco,
+    Value<String?> enterpriseRiskLink = const Value.absent(),
+    Value<String?> dueDate = const Value.absent(),
+    Value<String?> lastReviewedAt = const Value.absent(),
+    Value<String?> nextReviewAt = const Value.absent(),
+    Value<String?> statusNote = const Value.absent(),
     String? status,
+    Value<String?> closedAt = const Value.absent(),
+    Value<String?> closureNote = const Value.absent(),
     String? source,
     Value<String?> sourceNote = const Value.absent(),
     Value<DateTime?> escalatedAt = const Value.absent(),
@@ -4669,9 +5113,14 @@ class Risk extends DataClass implements Insertable<Risk> {
     id: id ?? this.id,
     projectId: projectId ?? this.projectId,
     ref: ref.present ? ref.value : this.ref,
+    title: title.present ? title.value : this.title,
     description: description ?? this.description,
     likelihood: likelihood ?? this.likelihood,
     impact: impact ?? this.impact,
+    likelihoodTarget: likelihoodTarget.present
+        ? likelihoodTarget.value
+        : this.likelihoodTarget,
+    impactTarget: impactTarget.present ? impactTarget.value : this.impactTarget,
     likelihoodRationale: likelihoodRationale.present
         ? likelihoodRationale.value
         : this.likelihoodRationale,
@@ -4679,8 +5128,22 @@ class Risk extends DataClass implements Insertable<Risk> {
         ? impactRationale.value
         : this.impactRationale,
     mitigation: mitigation.present ? mitigation.value : this.mitigation,
+    strategy: strategy ?? this.strategy,
     owner: owner.present ? owner.value : this.owner,
+    assignee: assignee.present ? assignee.value : this.assignee,
+    steerco: steerco ?? this.steerco,
+    enterpriseRiskLink: enterpriseRiskLink.present
+        ? enterpriseRiskLink.value
+        : this.enterpriseRiskLink,
+    dueDate: dueDate.present ? dueDate.value : this.dueDate,
+    lastReviewedAt: lastReviewedAt.present
+        ? lastReviewedAt.value
+        : this.lastReviewedAt,
+    nextReviewAt: nextReviewAt.present ? nextReviewAt.value : this.nextReviewAt,
+    statusNote: statusNote.present ? statusNote.value : this.statusNote,
     status: status ?? this.status,
+    closedAt: closedAt.present ? closedAt.value : this.closedAt,
+    closureNote: closureNote.present ? closureNote.value : this.closureNote,
     source: source ?? this.source,
     sourceNote: sourceNote.present ? sourceNote.value : this.sourceNote,
     escalatedAt: escalatedAt.present ? escalatedAt.value : this.escalatedAt,
@@ -4695,6 +5158,7 @@ class Risk extends DataClass implements Insertable<Risk> {
       id: data.id.present ? data.id.value : this.id,
       projectId: data.projectId.present ? data.projectId.value : this.projectId,
       ref: data.ref.present ? data.ref.value : this.ref,
+      title: data.title.present ? data.title.value : this.title,
       description: data.description.present
           ? data.description.value
           : this.description,
@@ -4702,6 +5166,12 @@ class Risk extends DataClass implements Insertable<Risk> {
           ? data.likelihood.value
           : this.likelihood,
       impact: data.impact.present ? data.impact.value : this.impact,
+      likelihoodTarget: data.likelihoodTarget.present
+          ? data.likelihoodTarget.value
+          : this.likelihoodTarget,
+      impactTarget: data.impactTarget.present
+          ? data.impactTarget.value
+          : this.impactTarget,
       likelihoodRationale: data.likelihoodRationale.present
           ? data.likelihoodRationale.value
           : this.likelihoodRationale,
@@ -4711,8 +5181,28 @@ class Risk extends DataClass implements Insertable<Risk> {
       mitigation: data.mitigation.present
           ? data.mitigation.value
           : this.mitigation,
+      strategy: data.strategy.present ? data.strategy.value : this.strategy,
       owner: data.owner.present ? data.owner.value : this.owner,
+      assignee: data.assignee.present ? data.assignee.value : this.assignee,
+      steerco: data.steerco.present ? data.steerco.value : this.steerco,
+      enterpriseRiskLink: data.enterpriseRiskLink.present
+          ? data.enterpriseRiskLink.value
+          : this.enterpriseRiskLink,
+      dueDate: data.dueDate.present ? data.dueDate.value : this.dueDate,
+      lastReviewedAt: data.lastReviewedAt.present
+          ? data.lastReviewedAt.value
+          : this.lastReviewedAt,
+      nextReviewAt: data.nextReviewAt.present
+          ? data.nextReviewAt.value
+          : this.nextReviewAt,
+      statusNote: data.statusNote.present
+          ? data.statusNote.value
+          : this.statusNote,
       status: data.status.present ? data.status.value : this.status,
+      closedAt: data.closedAt.present ? data.closedAt.value : this.closedAt,
+      closureNote: data.closureNote.present
+          ? data.closureNote.value
+          : this.closureNote,
       source: data.source.present ? data.source.value : this.source,
       sourceNote: data.sourceNote.present
           ? data.sourceNote.value
@@ -4734,14 +5224,27 @@ class Risk extends DataClass implements Insertable<Risk> {
           ..write('id: $id, ')
           ..write('projectId: $projectId, ')
           ..write('ref: $ref, ')
+          ..write('title: $title, ')
           ..write('description: $description, ')
           ..write('likelihood: $likelihood, ')
           ..write('impact: $impact, ')
+          ..write('likelihoodTarget: $likelihoodTarget, ')
+          ..write('impactTarget: $impactTarget, ')
           ..write('likelihoodRationale: $likelihoodRationale, ')
           ..write('impactRationale: $impactRationale, ')
           ..write('mitigation: $mitigation, ')
+          ..write('strategy: $strategy, ')
           ..write('owner: $owner, ')
+          ..write('assignee: $assignee, ')
+          ..write('steerco: $steerco, ')
+          ..write('enterpriseRiskLink: $enterpriseRiskLink, ')
+          ..write('dueDate: $dueDate, ')
+          ..write('lastReviewedAt: $lastReviewedAt, ')
+          ..write('nextReviewAt: $nextReviewAt, ')
+          ..write('statusNote: $statusNote, ')
           ..write('status: $status, ')
+          ..write('closedAt: $closedAt, ')
+          ..write('closureNote: $closureNote, ')
           ..write('source: $source, ')
           ..write('sourceNote: $sourceNote, ')
           ..write('escalatedAt: $escalatedAt, ')
@@ -4753,25 +5256,38 @@ class Risk extends DataClass implements Insertable<Risk> {
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     projectId,
     ref,
+    title,
     description,
     likelihood,
     impact,
+    likelihoodTarget,
+    impactTarget,
     likelihoodRationale,
     impactRationale,
     mitigation,
+    strategy,
     owner,
+    assignee,
+    steerco,
+    enterpriseRiskLink,
+    dueDate,
+    lastReviewedAt,
+    nextReviewAt,
+    statusNote,
     status,
+    closedAt,
+    closureNote,
     source,
     sourceNote,
     escalatedAt,
     sourceProjectId,
     createdAt,
     updatedAt,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -4779,14 +5295,27 @@ class Risk extends DataClass implements Insertable<Risk> {
           other.id == this.id &&
           other.projectId == this.projectId &&
           other.ref == this.ref &&
+          other.title == this.title &&
           other.description == this.description &&
           other.likelihood == this.likelihood &&
           other.impact == this.impact &&
+          other.likelihoodTarget == this.likelihoodTarget &&
+          other.impactTarget == this.impactTarget &&
           other.likelihoodRationale == this.likelihoodRationale &&
           other.impactRationale == this.impactRationale &&
           other.mitigation == this.mitigation &&
+          other.strategy == this.strategy &&
           other.owner == this.owner &&
+          other.assignee == this.assignee &&
+          other.steerco == this.steerco &&
+          other.enterpriseRiskLink == this.enterpriseRiskLink &&
+          other.dueDate == this.dueDate &&
+          other.lastReviewedAt == this.lastReviewedAt &&
+          other.nextReviewAt == this.nextReviewAt &&
+          other.statusNote == this.statusNote &&
           other.status == this.status &&
+          other.closedAt == this.closedAt &&
+          other.closureNote == this.closureNote &&
           other.source == this.source &&
           other.sourceNote == this.sourceNote &&
           other.escalatedAt == this.escalatedAt &&
@@ -4799,14 +5328,27 @@ class RisksCompanion extends UpdateCompanion<Risk> {
   final Value<String> id;
   final Value<String> projectId;
   final Value<String?> ref;
+  final Value<String?> title;
   final Value<String> description;
   final Value<String> likelihood;
   final Value<String> impact;
+  final Value<String?> likelihoodTarget;
+  final Value<String?> impactTarget;
   final Value<String?> likelihoodRationale;
   final Value<String?> impactRationale;
   final Value<String?> mitigation;
+  final Value<String> strategy;
   final Value<String?> owner;
+  final Value<String?> assignee;
+  final Value<bool> steerco;
+  final Value<String?> enterpriseRiskLink;
+  final Value<String?> dueDate;
+  final Value<String?> lastReviewedAt;
+  final Value<String?> nextReviewAt;
+  final Value<String?> statusNote;
   final Value<String> status;
+  final Value<String?> closedAt;
+  final Value<String?> closureNote;
   final Value<String> source;
   final Value<String?> sourceNote;
   final Value<DateTime?> escalatedAt;
@@ -4818,14 +5360,27 @@ class RisksCompanion extends UpdateCompanion<Risk> {
     this.id = const Value.absent(),
     this.projectId = const Value.absent(),
     this.ref = const Value.absent(),
+    this.title = const Value.absent(),
     this.description = const Value.absent(),
     this.likelihood = const Value.absent(),
     this.impact = const Value.absent(),
+    this.likelihoodTarget = const Value.absent(),
+    this.impactTarget = const Value.absent(),
     this.likelihoodRationale = const Value.absent(),
     this.impactRationale = const Value.absent(),
     this.mitigation = const Value.absent(),
+    this.strategy = const Value.absent(),
     this.owner = const Value.absent(),
+    this.assignee = const Value.absent(),
+    this.steerco = const Value.absent(),
+    this.enterpriseRiskLink = const Value.absent(),
+    this.dueDate = const Value.absent(),
+    this.lastReviewedAt = const Value.absent(),
+    this.nextReviewAt = const Value.absent(),
+    this.statusNote = const Value.absent(),
     this.status = const Value.absent(),
+    this.closedAt = const Value.absent(),
+    this.closureNote = const Value.absent(),
     this.source = const Value.absent(),
     this.sourceNote = const Value.absent(),
     this.escalatedAt = const Value.absent(),
@@ -4838,14 +5393,27 @@ class RisksCompanion extends UpdateCompanion<Risk> {
     required String id,
     required String projectId,
     this.ref = const Value.absent(),
+    this.title = const Value.absent(),
     required String description,
     this.likelihood = const Value.absent(),
     this.impact = const Value.absent(),
+    this.likelihoodTarget = const Value.absent(),
+    this.impactTarget = const Value.absent(),
     this.likelihoodRationale = const Value.absent(),
     this.impactRationale = const Value.absent(),
     this.mitigation = const Value.absent(),
+    this.strategy = const Value.absent(),
     this.owner = const Value.absent(),
+    this.assignee = const Value.absent(),
+    this.steerco = const Value.absent(),
+    this.enterpriseRiskLink = const Value.absent(),
+    this.dueDate = const Value.absent(),
+    this.lastReviewedAt = const Value.absent(),
+    this.nextReviewAt = const Value.absent(),
+    this.statusNote = const Value.absent(),
     this.status = const Value.absent(),
+    this.closedAt = const Value.absent(),
+    this.closureNote = const Value.absent(),
     this.source = const Value.absent(),
     this.sourceNote = const Value.absent(),
     this.escalatedAt = const Value.absent(),
@@ -4860,14 +5428,27 @@ class RisksCompanion extends UpdateCompanion<Risk> {
     Expression<String>? id,
     Expression<String>? projectId,
     Expression<String>? ref,
+    Expression<String>? title,
     Expression<String>? description,
     Expression<String>? likelihood,
     Expression<String>? impact,
+    Expression<String>? likelihoodTarget,
+    Expression<String>? impactTarget,
     Expression<String>? likelihoodRationale,
     Expression<String>? impactRationale,
     Expression<String>? mitigation,
+    Expression<String>? strategy,
     Expression<String>? owner,
+    Expression<String>? assignee,
+    Expression<bool>? steerco,
+    Expression<String>? enterpriseRiskLink,
+    Expression<String>? dueDate,
+    Expression<String>? lastReviewedAt,
+    Expression<String>? nextReviewAt,
+    Expression<String>? statusNote,
     Expression<String>? status,
+    Expression<String>? closedAt,
+    Expression<String>? closureNote,
     Expression<String>? source,
     Expression<String>? sourceNote,
     Expression<DateTime>? escalatedAt,
@@ -4880,15 +5461,29 @@ class RisksCompanion extends UpdateCompanion<Risk> {
       if (id != null) 'id': id,
       if (projectId != null) 'project_id': projectId,
       if (ref != null) 'ref': ref,
+      if (title != null) 'title': title,
       if (description != null) 'description': description,
       if (likelihood != null) 'likelihood': likelihood,
       if (impact != null) 'impact': impact,
+      if (likelihoodTarget != null) 'likelihood_target': likelihoodTarget,
+      if (impactTarget != null) 'impact_target': impactTarget,
       if (likelihoodRationale != null)
         'likelihood_rationale': likelihoodRationale,
       if (impactRationale != null) 'impact_rationale': impactRationale,
       if (mitigation != null) 'mitigation': mitigation,
+      if (strategy != null) 'strategy': strategy,
       if (owner != null) 'owner': owner,
+      if (assignee != null) 'assignee': assignee,
+      if (steerco != null) 'steerco': steerco,
+      if (enterpriseRiskLink != null)
+        'enterprise_risk_link': enterpriseRiskLink,
+      if (dueDate != null) 'due_date': dueDate,
+      if (lastReviewedAt != null) 'last_reviewed_at': lastReviewedAt,
+      if (nextReviewAt != null) 'next_review_at': nextReviewAt,
+      if (statusNote != null) 'status_note': statusNote,
       if (status != null) 'status': status,
+      if (closedAt != null) 'closed_at': closedAt,
+      if (closureNote != null) 'closure_note': closureNote,
       if (source != null) 'source': source,
       if (sourceNote != null) 'source_note': sourceNote,
       if (escalatedAt != null) 'escalated_at': escalatedAt,
@@ -4903,14 +5498,27 @@ class RisksCompanion extends UpdateCompanion<Risk> {
     Value<String>? id,
     Value<String>? projectId,
     Value<String?>? ref,
+    Value<String?>? title,
     Value<String>? description,
     Value<String>? likelihood,
     Value<String>? impact,
+    Value<String?>? likelihoodTarget,
+    Value<String?>? impactTarget,
     Value<String?>? likelihoodRationale,
     Value<String?>? impactRationale,
     Value<String?>? mitigation,
+    Value<String>? strategy,
     Value<String?>? owner,
+    Value<String?>? assignee,
+    Value<bool>? steerco,
+    Value<String?>? enterpriseRiskLink,
+    Value<String?>? dueDate,
+    Value<String?>? lastReviewedAt,
+    Value<String?>? nextReviewAt,
+    Value<String?>? statusNote,
     Value<String>? status,
+    Value<String?>? closedAt,
+    Value<String?>? closureNote,
     Value<String>? source,
     Value<String?>? sourceNote,
     Value<DateTime?>? escalatedAt,
@@ -4923,14 +5531,27 @@ class RisksCompanion extends UpdateCompanion<Risk> {
       id: id ?? this.id,
       projectId: projectId ?? this.projectId,
       ref: ref ?? this.ref,
+      title: title ?? this.title,
       description: description ?? this.description,
       likelihood: likelihood ?? this.likelihood,
       impact: impact ?? this.impact,
+      likelihoodTarget: likelihoodTarget ?? this.likelihoodTarget,
+      impactTarget: impactTarget ?? this.impactTarget,
       likelihoodRationale: likelihoodRationale ?? this.likelihoodRationale,
       impactRationale: impactRationale ?? this.impactRationale,
       mitigation: mitigation ?? this.mitigation,
+      strategy: strategy ?? this.strategy,
       owner: owner ?? this.owner,
+      assignee: assignee ?? this.assignee,
+      steerco: steerco ?? this.steerco,
+      enterpriseRiskLink: enterpriseRiskLink ?? this.enterpriseRiskLink,
+      dueDate: dueDate ?? this.dueDate,
+      lastReviewedAt: lastReviewedAt ?? this.lastReviewedAt,
+      nextReviewAt: nextReviewAt ?? this.nextReviewAt,
+      statusNote: statusNote ?? this.statusNote,
       status: status ?? this.status,
+      closedAt: closedAt ?? this.closedAt,
+      closureNote: closureNote ?? this.closureNote,
       source: source ?? this.source,
       sourceNote: sourceNote ?? this.sourceNote,
       escalatedAt: escalatedAt ?? this.escalatedAt,
@@ -4953,6 +5574,9 @@ class RisksCompanion extends UpdateCompanion<Risk> {
     if (ref.present) {
       map['ref'] = Variable<String>(ref.value);
     }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
     if (description.present) {
       map['description'] = Variable<String>(description.value);
     }
@@ -4961,6 +5585,12 @@ class RisksCompanion extends UpdateCompanion<Risk> {
     }
     if (impact.present) {
       map['impact'] = Variable<String>(impact.value);
+    }
+    if (likelihoodTarget.present) {
+      map['likelihood_target'] = Variable<String>(likelihoodTarget.value);
+    }
+    if (impactTarget.present) {
+      map['impact_target'] = Variable<String>(impactTarget.value);
     }
     if (likelihoodRationale.present) {
       map['likelihood_rationale'] = Variable<String>(likelihoodRationale.value);
@@ -4971,11 +5601,41 @@ class RisksCompanion extends UpdateCompanion<Risk> {
     if (mitigation.present) {
       map['mitigation'] = Variable<String>(mitigation.value);
     }
+    if (strategy.present) {
+      map['strategy'] = Variable<String>(strategy.value);
+    }
     if (owner.present) {
       map['owner'] = Variable<String>(owner.value);
     }
+    if (assignee.present) {
+      map['assignee'] = Variable<String>(assignee.value);
+    }
+    if (steerco.present) {
+      map['steerco'] = Variable<bool>(steerco.value);
+    }
+    if (enterpriseRiskLink.present) {
+      map['enterprise_risk_link'] = Variable<String>(enterpriseRiskLink.value);
+    }
+    if (dueDate.present) {
+      map['due_date'] = Variable<String>(dueDate.value);
+    }
+    if (lastReviewedAt.present) {
+      map['last_reviewed_at'] = Variable<String>(lastReviewedAt.value);
+    }
+    if (nextReviewAt.present) {
+      map['next_review_at'] = Variable<String>(nextReviewAt.value);
+    }
+    if (statusNote.present) {
+      map['status_note'] = Variable<String>(statusNote.value);
+    }
     if (status.present) {
       map['status'] = Variable<String>(status.value);
+    }
+    if (closedAt.present) {
+      map['closed_at'] = Variable<String>(closedAt.value);
+    }
+    if (closureNote.present) {
+      map['closure_note'] = Variable<String>(closureNote.value);
     }
     if (source.present) {
       map['source'] = Variable<String>(source.value);
@@ -5007,14 +5667,27 @@ class RisksCompanion extends UpdateCompanion<Risk> {
           ..write('id: $id, ')
           ..write('projectId: $projectId, ')
           ..write('ref: $ref, ')
+          ..write('title: $title, ')
           ..write('description: $description, ')
           ..write('likelihood: $likelihood, ')
           ..write('impact: $impact, ')
+          ..write('likelihoodTarget: $likelihoodTarget, ')
+          ..write('impactTarget: $impactTarget, ')
           ..write('likelihoodRationale: $likelihoodRationale, ')
           ..write('impactRationale: $impactRationale, ')
           ..write('mitigation: $mitigation, ')
+          ..write('strategy: $strategy, ')
           ..write('owner: $owner, ')
+          ..write('assignee: $assignee, ')
+          ..write('steerco: $steerco, ')
+          ..write('enterpriseRiskLink: $enterpriseRiskLink, ')
+          ..write('dueDate: $dueDate, ')
+          ..write('lastReviewedAt: $lastReviewedAt, ')
+          ..write('nextReviewAt: $nextReviewAt, ')
+          ..write('statusNote: $statusNote, ')
           ..write('status: $status, ')
+          ..write('closedAt: $closedAt, ')
+          ..write('closureNote: $closureNote, ')
           ..write('source: $source, ')
           ..write('sourceNote: $sourceNote, ')
           ..write('escalatedAt: $escalatedAt, ')
@@ -5117,6 +5790,17 @@ class $AssumptionsTable extends Assumptions
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _closedAtMeta = const VerificationMeta(
+    'closedAt',
+  );
+  @override
+  late final GeneratedColumn<String> closedAt = GeneratedColumn<String>(
+    'closed_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _sourceMeta = const VerificationMeta('source');
   @override
   late final GeneratedColumn<String> source = GeneratedColumn<String>(
@@ -5194,6 +5878,7 @@ class $AssumptionsTable extends Assumptions
     status,
     validatedBy,
     validatedAt,
+    closedAt,
     source,
     sourceNote,
     escalatedAt,
@@ -5271,6 +5956,12 @@ class $AssumptionsTable extends Assumptions
           data['validated_at']!,
           _validatedAtMeta,
         ),
+      );
+    }
+    if (data.containsKey('closed_at')) {
+      context.handle(
+        _closedAtMeta,
+        closedAt.isAcceptableOrUnknown(data['closed_at']!, _closedAtMeta),
       );
     }
     if (data.containsKey('source')) {
@@ -5356,6 +6047,10 @@ class $AssumptionsTable extends Assumptions
         DriftSqlType.dateTime,
         data['${effectivePrefix}validated_at'],
       ),
+      closedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}closed_at'],
+      ),
       source: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}source'],
@@ -5398,6 +6093,7 @@ class Assumption extends DataClass implements Insertable<Assumption> {
   final String status;
   final String? validatedBy;
   final DateTime? validatedAt;
+  final String? closedAt;
   final String source;
   final String? sourceNote;
   final DateTime? escalatedAt;
@@ -5413,6 +6109,7 @@ class Assumption extends DataClass implements Insertable<Assumption> {
     required this.status,
     this.validatedBy,
     this.validatedAt,
+    this.closedAt,
     required this.source,
     this.sourceNote,
     this.escalatedAt,
@@ -5438,6 +6135,9 @@ class Assumption extends DataClass implements Insertable<Assumption> {
     }
     if (!nullToAbsent || validatedAt != null) {
       map['validated_at'] = Variable<DateTime>(validatedAt);
+    }
+    if (!nullToAbsent || closedAt != null) {
+      map['closed_at'] = Variable<String>(closedAt);
     }
     map['source'] = Variable<String>(source);
     if (!nullToAbsent || sourceNote != null) {
@@ -5470,6 +6170,9 @@ class Assumption extends DataClass implements Insertable<Assumption> {
       validatedAt: validatedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(validatedAt),
+      closedAt: closedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(closedAt),
       source: Value(source),
       sourceNote: sourceNote == null && nullToAbsent
           ? const Value.absent()
@@ -5499,6 +6202,7 @@ class Assumption extends DataClass implements Insertable<Assumption> {
       status: serializer.fromJson<String>(json['status']),
       validatedBy: serializer.fromJson<String?>(json['validatedBy']),
       validatedAt: serializer.fromJson<DateTime?>(json['validatedAt']),
+      closedAt: serializer.fromJson<String?>(json['closedAt']),
       source: serializer.fromJson<String>(json['source']),
       sourceNote: serializer.fromJson<String?>(json['sourceNote']),
       escalatedAt: serializer.fromJson<DateTime?>(json['escalatedAt']),
@@ -5519,6 +6223,7 @@ class Assumption extends DataClass implements Insertable<Assumption> {
       'status': serializer.toJson<String>(status),
       'validatedBy': serializer.toJson<String?>(validatedBy),
       'validatedAt': serializer.toJson<DateTime?>(validatedAt),
+      'closedAt': serializer.toJson<String?>(closedAt),
       'source': serializer.toJson<String>(source),
       'sourceNote': serializer.toJson<String?>(sourceNote),
       'escalatedAt': serializer.toJson<DateTime?>(escalatedAt),
@@ -5537,6 +6242,7 @@ class Assumption extends DataClass implements Insertable<Assumption> {
     String? status,
     Value<String?> validatedBy = const Value.absent(),
     Value<DateTime?> validatedAt = const Value.absent(),
+    Value<String?> closedAt = const Value.absent(),
     String? source,
     Value<String?> sourceNote = const Value.absent(),
     Value<DateTime?> escalatedAt = const Value.absent(),
@@ -5552,6 +6258,7 @@ class Assumption extends DataClass implements Insertable<Assumption> {
     status: status ?? this.status,
     validatedBy: validatedBy.present ? validatedBy.value : this.validatedBy,
     validatedAt: validatedAt.present ? validatedAt.value : this.validatedAt,
+    closedAt: closedAt.present ? closedAt.value : this.closedAt,
     source: source ?? this.source,
     sourceNote: sourceNote.present ? sourceNote.value : this.sourceNote,
     escalatedAt: escalatedAt.present ? escalatedAt.value : this.escalatedAt,
@@ -5577,6 +6284,7 @@ class Assumption extends DataClass implements Insertable<Assumption> {
       validatedAt: data.validatedAt.present
           ? data.validatedAt.value
           : this.validatedAt,
+      closedAt: data.closedAt.present ? data.closedAt.value : this.closedAt,
       source: data.source.present ? data.source.value : this.source,
       sourceNote: data.sourceNote.present
           ? data.sourceNote.value
@@ -5603,6 +6311,7 @@ class Assumption extends DataClass implements Insertable<Assumption> {
           ..write('status: $status, ')
           ..write('validatedBy: $validatedBy, ')
           ..write('validatedAt: $validatedAt, ')
+          ..write('closedAt: $closedAt, ')
           ..write('source: $source, ')
           ..write('sourceNote: $sourceNote, ')
           ..write('escalatedAt: $escalatedAt, ')
@@ -5623,6 +6332,7 @@ class Assumption extends DataClass implements Insertable<Assumption> {
     status,
     validatedBy,
     validatedAt,
+    closedAt,
     source,
     sourceNote,
     escalatedAt,
@@ -5642,6 +6352,7 @@ class Assumption extends DataClass implements Insertable<Assumption> {
           other.status == this.status &&
           other.validatedBy == this.validatedBy &&
           other.validatedAt == this.validatedAt &&
+          other.closedAt == this.closedAt &&
           other.source == this.source &&
           other.sourceNote == this.sourceNote &&
           other.escalatedAt == this.escalatedAt &&
@@ -5659,6 +6370,7 @@ class AssumptionsCompanion extends UpdateCompanion<Assumption> {
   final Value<String> status;
   final Value<String?> validatedBy;
   final Value<DateTime?> validatedAt;
+  final Value<String?> closedAt;
   final Value<String> source;
   final Value<String?> sourceNote;
   final Value<DateTime?> escalatedAt;
@@ -5675,6 +6387,7 @@ class AssumptionsCompanion extends UpdateCompanion<Assumption> {
     this.status = const Value.absent(),
     this.validatedBy = const Value.absent(),
     this.validatedAt = const Value.absent(),
+    this.closedAt = const Value.absent(),
     this.source = const Value.absent(),
     this.sourceNote = const Value.absent(),
     this.escalatedAt = const Value.absent(),
@@ -5692,6 +6405,7 @@ class AssumptionsCompanion extends UpdateCompanion<Assumption> {
     this.status = const Value.absent(),
     this.validatedBy = const Value.absent(),
     this.validatedAt = const Value.absent(),
+    this.closedAt = const Value.absent(),
     this.source = const Value.absent(),
     this.sourceNote = const Value.absent(),
     this.escalatedAt = const Value.absent(),
@@ -5711,6 +6425,7 @@ class AssumptionsCompanion extends UpdateCompanion<Assumption> {
     Expression<String>? status,
     Expression<String>? validatedBy,
     Expression<DateTime>? validatedAt,
+    Expression<String>? closedAt,
     Expression<String>? source,
     Expression<String>? sourceNote,
     Expression<DateTime>? escalatedAt,
@@ -5728,6 +6443,7 @@ class AssumptionsCompanion extends UpdateCompanion<Assumption> {
       if (status != null) 'status': status,
       if (validatedBy != null) 'validated_by': validatedBy,
       if (validatedAt != null) 'validated_at': validatedAt,
+      if (closedAt != null) 'closed_at': closedAt,
       if (source != null) 'source': source,
       if (sourceNote != null) 'source_note': sourceNote,
       if (escalatedAt != null) 'escalated_at': escalatedAt,
@@ -5747,6 +6463,7 @@ class AssumptionsCompanion extends UpdateCompanion<Assumption> {
     Value<String>? status,
     Value<String?>? validatedBy,
     Value<DateTime?>? validatedAt,
+    Value<String?>? closedAt,
     Value<String>? source,
     Value<String?>? sourceNote,
     Value<DateTime?>? escalatedAt,
@@ -5764,6 +6481,7 @@ class AssumptionsCompanion extends UpdateCompanion<Assumption> {
       status: status ?? this.status,
       validatedBy: validatedBy ?? this.validatedBy,
       validatedAt: validatedAt ?? this.validatedAt,
+      closedAt: closedAt ?? this.closedAt,
       source: source ?? this.source,
       sourceNote: sourceNote ?? this.sourceNote,
       escalatedAt: escalatedAt ?? this.escalatedAt,
@@ -5801,6 +6519,9 @@ class AssumptionsCompanion extends UpdateCompanion<Assumption> {
     if (validatedAt.present) {
       map['validated_at'] = Variable<DateTime>(validatedAt.value);
     }
+    if (closedAt.present) {
+      map['closed_at'] = Variable<String>(closedAt.value);
+    }
     if (source.present) {
       map['source'] = Variable<String>(source.value);
     }
@@ -5836,6 +6557,7 @@ class AssumptionsCompanion extends UpdateCompanion<Assumption> {
           ..write('status: $status, ')
           ..write('validatedBy: $validatedBy, ')
           ..write('validatedAt: $validatedAt, ')
+          ..write('closedAt: $closedAt, ')
           ..write('source: $source, ')
           ..write('sourceNote: $sourceNote, ')
           ..write('escalatedAt: $escalatedAt, ')
@@ -5983,6 +6705,17 @@ class $IssuesTable extends Issues with TableInfo<$IssuesTable, Issue> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _closedAtMeta = const VerificationMeta(
+    'closedAt',
+  );
+  @override
+  late final GeneratedColumn<String> closedAt = GeneratedColumn<String>(
+    'closed_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _sourceMeta = const VerificationMeta('source');
   @override
   late final GeneratedColumn<String> source = GeneratedColumn<String>(
@@ -6064,6 +6797,7 @@ class $IssuesTable extends Issues with TableInfo<$IssuesTable, Issue> {
     priority,
     status,
     resolution,
+    closedAt,
     source,
     sourceNote,
     escalatedAt,
@@ -6167,6 +6901,12 @@ class $IssuesTable extends Issues with TableInfo<$IssuesTable, Issue> {
         resolution.isAcceptableOrUnknown(data['resolution']!, _resolutionMeta),
       );
     }
+    if (data.containsKey('closed_at')) {
+      context.handle(
+        _closedAtMeta,
+        closedAt.isAcceptableOrUnknown(data['closed_at']!, _closedAtMeta),
+      );
+    }
     if (data.containsKey('source')) {
       context.handle(
         _sourceMeta,
@@ -6266,6 +7006,10 @@ class $IssuesTable extends Issues with TableInfo<$IssuesTable, Issue> {
         DriftSqlType.string,
         data['${effectivePrefix}resolution'],
       ),
+      closedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}closed_at'],
+      ),
       source: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}source'],
@@ -6312,6 +7056,7 @@ class Issue extends DataClass implements Insertable<Issue> {
   final String priority;
   final String status;
   final String? resolution;
+  final String? closedAt;
   final String source;
   final String? sourceNote;
   final DateTime? escalatedAt;
@@ -6331,6 +7076,7 @@ class Issue extends DataClass implements Insertable<Issue> {
     required this.priority,
     required this.status,
     this.resolution,
+    this.closedAt,
     required this.source,
     this.sourceNote,
     this.escalatedAt,
@@ -6364,6 +7110,9 @@ class Issue extends DataClass implements Insertable<Issue> {
     map['status'] = Variable<String>(status);
     if (!nullToAbsent || resolution != null) {
       map['resolution'] = Variable<String>(resolution);
+    }
+    if (!nullToAbsent || closedAt != null) {
+      map['closed_at'] = Variable<String>(closedAt);
     }
     map['source'] = Variable<String>(source);
     if (!nullToAbsent || sourceNote != null) {
@@ -6404,6 +7153,9 @@ class Issue extends DataClass implements Insertable<Issue> {
       resolution: resolution == null && nullToAbsent
           ? const Value.absent()
           : Value(resolution),
+      closedAt: closedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(closedAt),
       source: Value(source),
       sourceNote: sourceNote == null && nullToAbsent
           ? const Value.absent()
@@ -6437,6 +7189,7 @@ class Issue extends DataClass implements Insertable<Issue> {
       priority: serializer.fromJson<String>(json['priority']),
       status: serializer.fromJson<String>(json['status']),
       resolution: serializer.fromJson<String?>(json['resolution']),
+      closedAt: serializer.fromJson<String?>(json['closedAt']),
       source: serializer.fromJson<String>(json['source']),
       sourceNote: serializer.fromJson<String?>(json['sourceNote']),
       escalatedAt: serializer.fromJson<DateTime?>(json['escalatedAt']),
@@ -6461,6 +7214,7 @@ class Issue extends DataClass implements Insertable<Issue> {
       'priority': serializer.toJson<String>(priority),
       'status': serializer.toJson<String>(status),
       'resolution': serializer.toJson<String?>(resolution),
+      'closedAt': serializer.toJson<String?>(closedAt),
       'source': serializer.toJson<String>(source),
       'sourceNote': serializer.toJson<String?>(sourceNote),
       'escalatedAt': serializer.toJson<DateTime?>(escalatedAt),
@@ -6483,6 +7237,7 @@ class Issue extends DataClass implements Insertable<Issue> {
     String? priority,
     String? status,
     Value<String?> resolution = const Value.absent(),
+    Value<String?> closedAt = const Value.absent(),
     String? source,
     Value<String?> sourceNote = const Value.absent(),
     Value<DateTime?> escalatedAt = const Value.absent(),
@@ -6504,6 +7259,7 @@ class Issue extends DataClass implements Insertable<Issue> {
     priority: priority ?? this.priority,
     status: status ?? this.status,
     resolution: resolution.present ? resolution.value : this.resolution,
+    closedAt: closedAt.present ? closedAt.value : this.closedAt,
     source: source ?? this.source,
     sourceNote: sourceNote.present ? sourceNote.value : this.sourceNote,
     escalatedAt: escalatedAt.present ? escalatedAt.value : this.escalatedAt,
@@ -6535,6 +7291,7 @@ class Issue extends DataClass implements Insertable<Issue> {
       resolution: data.resolution.present
           ? data.resolution.value
           : this.resolution,
+      closedAt: data.closedAt.present ? data.closedAt.value : this.closedAt,
       source: data.source.present ? data.source.value : this.source,
       sourceNote: data.sourceNote.present
           ? data.sourceNote.value
@@ -6565,6 +7322,7 @@ class Issue extends DataClass implements Insertable<Issue> {
           ..write('priority: $priority, ')
           ..write('status: $status, ')
           ..write('resolution: $resolution, ')
+          ..write('closedAt: $closedAt, ')
           ..write('source: $source, ')
           ..write('sourceNote: $sourceNote, ')
           ..write('escalatedAt: $escalatedAt, ')
@@ -6589,6 +7347,7 @@ class Issue extends DataClass implements Insertable<Issue> {
     priority,
     status,
     resolution,
+    closedAt,
     source,
     sourceNote,
     escalatedAt,
@@ -6612,6 +7371,7 @@ class Issue extends DataClass implements Insertable<Issue> {
           other.priority == this.priority &&
           other.status == this.status &&
           other.resolution == this.resolution &&
+          other.closedAt == this.closedAt &&
           other.source == this.source &&
           other.sourceNote == this.sourceNote &&
           other.escalatedAt == this.escalatedAt &&
@@ -6633,6 +7393,7 @@ class IssuesCompanion extends UpdateCompanion<Issue> {
   final Value<String> priority;
   final Value<String> status;
   final Value<String?> resolution;
+  final Value<String?> closedAt;
   final Value<String> source;
   final Value<String?> sourceNote;
   final Value<DateTime?> escalatedAt;
@@ -6653,6 +7414,7 @@ class IssuesCompanion extends UpdateCompanion<Issue> {
     this.priority = const Value.absent(),
     this.status = const Value.absent(),
     this.resolution = const Value.absent(),
+    this.closedAt = const Value.absent(),
     this.source = const Value.absent(),
     this.sourceNote = const Value.absent(),
     this.escalatedAt = const Value.absent(),
@@ -6674,6 +7436,7 @@ class IssuesCompanion extends UpdateCompanion<Issue> {
     this.priority = const Value.absent(),
     this.status = const Value.absent(),
     this.resolution = const Value.absent(),
+    this.closedAt = const Value.absent(),
     this.source = const Value.absent(),
     this.sourceNote = const Value.absent(),
     this.escalatedAt = const Value.absent(),
@@ -6697,6 +7460,7 @@ class IssuesCompanion extends UpdateCompanion<Issue> {
     Expression<String>? priority,
     Expression<String>? status,
     Expression<String>? resolution,
+    Expression<String>? closedAt,
     Expression<String>? source,
     Expression<String>? sourceNote,
     Expression<DateTime>? escalatedAt,
@@ -6718,6 +7482,7 @@ class IssuesCompanion extends UpdateCompanion<Issue> {
       if (priority != null) 'priority': priority,
       if (status != null) 'status': status,
       if (resolution != null) 'resolution': resolution,
+      if (closedAt != null) 'closed_at': closedAt,
       if (source != null) 'source': source,
       if (sourceNote != null) 'source_note': sourceNote,
       if (escalatedAt != null) 'escalated_at': escalatedAt,
@@ -6741,6 +7506,7 @@ class IssuesCompanion extends UpdateCompanion<Issue> {
     Value<String>? priority,
     Value<String>? status,
     Value<String?>? resolution,
+    Value<String?>? closedAt,
     Value<String>? source,
     Value<String?>? sourceNote,
     Value<DateTime?>? escalatedAt,
@@ -6762,6 +7528,7 @@ class IssuesCompanion extends UpdateCompanion<Issue> {
       priority: priority ?? this.priority,
       status: status ?? this.status,
       resolution: resolution ?? this.resolution,
+      closedAt: closedAt ?? this.closedAt,
       source: source ?? this.source,
       sourceNote: sourceNote ?? this.sourceNote,
       escalatedAt: escalatedAt ?? this.escalatedAt,
@@ -6811,6 +7578,9 @@ class IssuesCompanion extends UpdateCompanion<Issue> {
     if (resolution.present) {
       map['resolution'] = Variable<String>(resolution.value);
     }
+    if (closedAt.present) {
+      map['closed_at'] = Variable<String>(closedAt.value);
+    }
     if (source.present) {
       map['source'] = Variable<String>(source.value);
     }
@@ -6850,6 +7620,7 @@ class IssuesCompanion extends UpdateCompanion<Issue> {
           ..write('priority: $priority, ')
           ..write('status: $status, ')
           ..write('resolution: $resolution, ')
+          ..write('closedAt: $closedAt, ')
           ..write('source: $source, ')
           ..write('sourceNote: $sourceNote, ')
           ..write('escalatedAt: $escalatedAt, ')
@@ -7375,6 +8146,50 @@ class $ProgramDependenciesTable extends ProgramDependencies
     requiredDuringInsert: false,
     defaultValue: const Constant('inbound'),
   );
+  static const VerificationMeta _counterpartyMeta = const VerificationMeta(
+    'counterparty',
+  );
+  @override
+  late final GeneratedColumn<String> counterparty = GeneratedColumn<String>(
+    'counterparty',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _rationaleMeta = const VerificationMeta(
+    'rationale',
+  );
+  @override
+  late final GeneratedColumn<String> rationale = GeneratedColumn<String>(
+    'rationale',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _impactStatementMeta = const VerificationMeta(
+    'impactStatement',
+  );
+  @override
+  late final GeneratedColumn<String> impactStatement = GeneratedColumn<String>(
+    'impact_statement',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _planActivityIdMeta = const VerificationMeta(
+    'planActivityId',
+  );
+  @override
+  late final GeneratedColumn<String> planActivityId = GeneratedColumn<String>(
+    'plan_activity_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _ownerMeta = const VerificationMeta('owner');
   @override
   late final GeneratedColumn<String> owner = GeneratedColumn<String>(
@@ -7400,6 +8215,17 @@ class $ProgramDependenciesTable extends ProgramDependencies
   @override
   late final GeneratedColumn<String> dueDate = GeneratedColumn<String>(
     'due_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _closedAtMeta = const VerificationMeta(
+    'closedAt',
+  );
+  @override
+  late final GeneratedColumn<String> closedAt = GeneratedColumn<String>(
+    'closed_at',
     aliasedName,
     true,
     type: DriftSqlType.string,
@@ -7479,9 +8305,14 @@ class $ProgramDependenciesTable extends ProgramDependencies
     ref,
     description,
     dependencyType,
+    counterparty,
+    rationale,
+    impactStatement,
+    planActivityId,
     owner,
     status,
     dueDate,
+    closedAt,
     source,
     sourceNote,
     escalatedAt,
@@ -7540,6 +8371,39 @@ class $ProgramDependenciesTable extends ProgramDependencies
         ),
       );
     }
+    if (data.containsKey('counterparty')) {
+      context.handle(
+        _counterpartyMeta,
+        counterparty.isAcceptableOrUnknown(
+          data['counterparty']!,
+          _counterpartyMeta,
+        ),
+      );
+    }
+    if (data.containsKey('rationale')) {
+      context.handle(
+        _rationaleMeta,
+        rationale.isAcceptableOrUnknown(data['rationale']!, _rationaleMeta),
+      );
+    }
+    if (data.containsKey('impact_statement')) {
+      context.handle(
+        _impactStatementMeta,
+        impactStatement.isAcceptableOrUnknown(
+          data['impact_statement']!,
+          _impactStatementMeta,
+        ),
+      );
+    }
+    if (data.containsKey('plan_activity_id')) {
+      context.handle(
+        _planActivityIdMeta,
+        planActivityId.isAcceptableOrUnknown(
+          data['plan_activity_id']!,
+          _planActivityIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('owner')) {
       context.handle(
         _ownerMeta,
@@ -7556,6 +8420,12 @@ class $ProgramDependenciesTable extends ProgramDependencies
       context.handle(
         _dueDateMeta,
         dueDate.isAcceptableOrUnknown(data['due_date']!, _dueDateMeta),
+      );
+    }
+    if (data.containsKey('closed_at')) {
+      context.handle(
+        _closedAtMeta,
+        closedAt.isAcceptableOrUnknown(data['closed_at']!, _closedAtMeta),
       );
     }
     if (data.containsKey('source')) {
@@ -7629,6 +8499,22 @@ class $ProgramDependenciesTable extends ProgramDependencies
         DriftSqlType.string,
         data['${effectivePrefix}dependency_type'],
       )!,
+      counterparty: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}counterparty'],
+      ),
+      rationale: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}rationale'],
+      ),
+      impactStatement: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}impact_statement'],
+      ),
+      planActivityId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}plan_activity_id'],
+      ),
       owner: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}owner'],
@@ -7640,6 +8526,10 @@ class $ProgramDependenciesTable extends ProgramDependencies
       dueDate: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}due_date'],
+      ),
+      closedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}closed_at'],
       ),
       source: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -7681,9 +8571,14 @@ class ProgramDependency extends DataClass
   final String? ref;
   final String description;
   final String dependencyType;
+  final String? counterparty;
+  final String? rationale;
+  final String? impactStatement;
+  final String? planActivityId;
   final String? owner;
   final String status;
   final String? dueDate;
+  final String? closedAt;
   final String source;
   final String? sourceNote;
   final DateTime? escalatedAt;
@@ -7696,9 +8591,14 @@ class ProgramDependency extends DataClass
     this.ref,
     required this.description,
     required this.dependencyType,
+    this.counterparty,
+    this.rationale,
+    this.impactStatement,
+    this.planActivityId,
     this.owner,
     required this.status,
     this.dueDate,
+    this.closedAt,
     required this.source,
     this.sourceNote,
     this.escalatedAt,
@@ -7716,12 +8616,27 @@ class ProgramDependency extends DataClass
     }
     map['description'] = Variable<String>(description);
     map['dependency_type'] = Variable<String>(dependencyType);
+    if (!nullToAbsent || counterparty != null) {
+      map['counterparty'] = Variable<String>(counterparty);
+    }
+    if (!nullToAbsent || rationale != null) {
+      map['rationale'] = Variable<String>(rationale);
+    }
+    if (!nullToAbsent || impactStatement != null) {
+      map['impact_statement'] = Variable<String>(impactStatement);
+    }
+    if (!nullToAbsent || planActivityId != null) {
+      map['plan_activity_id'] = Variable<String>(planActivityId);
+    }
     if (!nullToAbsent || owner != null) {
       map['owner'] = Variable<String>(owner);
     }
     map['status'] = Variable<String>(status);
     if (!nullToAbsent || dueDate != null) {
       map['due_date'] = Variable<String>(dueDate);
+    }
+    if (!nullToAbsent || closedAt != null) {
+      map['closed_at'] = Variable<String>(closedAt);
     }
     map['source'] = Variable<String>(source);
     if (!nullToAbsent || sourceNote != null) {
@@ -7745,6 +8660,18 @@ class ProgramDependency extends DataClass
       ref: ref == null && nullToAbsent ? const Value.absent() : Value(ref),
       description: Value(description),
       dependencyType: Value(dependencyType),
+      counterparty: counterparty == null && nullToAbsent
+          ? const Value.absent()
+          : Value(counterparty),
+      rationale: rationale == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rationale),
+      impactStatement: impactStatement == null && nullToAbsent
+          ? const Value.absent()
+          : Value(impactStatement),
+      planActivityId: planActivityId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(planActivityId),
       owner: owner == null && nullToAbsent
           ? const Value.absent()
           : Value(owner),
@@ -7752,6 +8679,9 @@ class ProgramDependency extends DataClass
       dueDate: dueDate == null && nullToAbsent
           ? const Value.absent()
           : Value(dueDate),
+      closedAt: closedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(closedAt),
       source: Value(source),
       sourceNote: sourceNote == null && nullToAbsent
           ? const Value.absent()
@@ -7778,9 +8708,14 @@ class ProgramDependency extends DataClass
       ref: serializer.fromJson<String?>(json['ref']),
       description: serializer.fromJson<String>(json['description']),
       dependencyType: serializer.fromJson<String>(json['dependencyType']),
+      counterparty: serializer.fromJson<String?>(json['counterparty']),
+      rationale: serializer.fromJson<String?>(json['rationale']),
+      impactStatement: serializer.fromJson<String?>(json['impactStatement']),
+      planActivityId: serializer.fromJson<String?>(json['planActivityId']),
       owner: serializer.fromJson<String?>(json['owner']),
       status: serializer.fromJson<String>(json['status']),
       dueDate: serializer.fromJson<String?>(json['dueDate']),
+      closedAt: serializer.fromJson<String?>(json['closedAt']),
       source: serializer.fromJson<String>(json['source']),
       sourceNote: serializer.fromJson<String?>(json['sourceNote']),
       escalatedAt: serializer.fromJson<DateTime?>(json['escalatedAt']),
@@ -7798,9 +8733,14 @@ class ProgramDependency extends DataClass
       'ref': serializer.toJson<String?>(ref),
       'description': serializer.toJson<String>(description),
       'dependencyType': serializer.toJson<String>(dependencyType),
+      'counterparty': serializer.toJson<String?>(counterparty),
+      'rationale': serializer.toJson<String?>(rationale),
+      'impactStatement': serializer.toJson<String?>(impactStatement),
+      'planActivityId': serializer.toJson<String?>(planActivityId),
       'owner': serializer.toJson<String?>(owner),
       'status': serializer.toJson<String>(status),
       'dueDate': serializer.toJson<String?>(dueDate),
+      'closedAt': serializer.toJson<String?>(closedAt),
       'source': serializer.toJson<String>(source),
       'sourceNote': serializer.toJson<String?>(sourceNote),
       'escalatedAt': serializer.toJson<DateTime?>(escalatedAt),
@@ -7816,9 +8756,14 @@ class ProgramDependency extends DataClass
     Value<String?> ref = const Value.absent(),
     String? description,
     String? dependencyType,
+    Value<String?> counterparty = const Value.absent(),
+    Value<String?> rationale = const Value.absent(),
+    Value<String?> impactStatement = const Value.absent(),
+    Value<String?> planActivityId = const Value.absent(),
     Value<String?> owner = const Value.absent(),
     String? status,
     Value<String?> dueDate = const Value.absent(),
+    Value<String?> closedAt = const Value.absent(),
     String? source,
     Value<String?> sourceNote = const Value.absent(),
     Value<DateTime?> escalatedAt = const Value.absent(),
@@ -7831,9 +8776,18 @@ class ProgramDependency extends DataClass
     ref: ref.present ? ref.value : this.ref,
     description: description ?? this.description,
     dependencyType: dependencyType ?? this.dependencyType,
+    counterparty: counterparty.present ? counterparty.value : this.counterparty,
+    rationale: rationale.present ? rationale.value : this.rationale,
+    impactStatement: impactStatement.present
+        ? impactStatement.value
+        : this.impactStatement,
+    planActivityId: planActivityId.present
+        ? planActivityId.value
+        : this.planActivityId,
     owner: owner.present ? owner.value : this.owner,
     status: status ?? this.status,
     dueDate: dueDate.present ? dueDate.value : this.dueDate,
+    closedAt: closedAt.present ? closedAt.value : this.closedAt,
     source: source ?? this.source,
     sourceNote: sourceNote.present ? sourceNote.value : this.sourceNote,
     escalatedAt: escalatedAt.present ? escalatedAt.value : this.escalatedAt,
@@ -7854,9 +8808,20 @@ class ProgramDependency extends DataClass
       dependencyType: data.dependencyType.present
           ? data.dependencyType.value
           : this.dependencyType,
+      counterparty: data.counterparty.present
+          ? data.counterparty.value
+          : this.counterparty,
+      rationale: data.rationale.present ? data.rationale.value : this.rationale,
+      impactStatement: data.impactStatement.present
+          ? data.impactStatement.value
+          : this.impactStatement,
+      planActivityId: data.planActivityId.present
+          ? data.planActivityId.value
+          : this.planActivityId,
       owner: data.owner.present ? data.owner.value : this.owner,
       status: data.status.present ? data.status.value : this.status,
       dueDate: data.dueDate.present ? data.dueDate.value : this.dueDate,
+      closedAt: data.closedAt.present ? data.closedAt.value : this.closedAt,
       source: data.source.present ? data.source.value : this.source,
       sourceNote: data.sourceNote.present
           ? data.sourceNote.value
@@ -7880,9 +8845,14 @@ class ProgramDependency extends DataClass
           ..write('ref: $ref, ')
           ..write('description: $description, ')
           ..write('dependencyType: $dependencyType, ')
+          ..write('counterparty: $counterparty, ')
+          ..write('rationale: $rationale, ')
+          ..write('impactStatement: $impactStatement, ')
+          ..write('planActivityId: $planActivityId, ')
           ..write('owner: $owner, ')
           ..write('status: $status, ')
           ..write('dueDate: $dueDate, ')
+          ..write('closedAt: $closedAt, ')
           ..write('source: $source, ')
           ..write('sourceNote: $sourceNote, ')
           ..write('escalatedAt: $escalatedAt, ')
@@ -7900,9 +8870,14 @@ class ProgramDependency extends DataClass
     ref,
     description,
     dependencyType,
+    counterparty,
+    rationale,
+    impactStatement,
+    planActivityId,
     owner,
     status,
     dueDate,
+    closedAt,
     source,
     sourceNote,
     escalatedAt,
@@ -7919,9 +8894,14 @@ class ProgramDependency extends DataClass
           other.ref == this.ref &&
           other.description == this.description &&
           other.dependencyType == this.dependencyType &&
+          other.counterparty == this.counterparty &&
+          other.rationale == this.rationale &&
+          other.impactStatement == this.impactStatement &&
+          other.planActivityId == this.planActivityId &&
           other.owner == this.owner &&
           other.status == this.status &&
           other.dueDate == this.dueDate &&
+          other.closedAt == this.closedAt &&
           other.source == this.source &&
           other.sourceNote == this.sourceNote &&
           other.escalatedAt == this.escalatedAt &&
@@ -7936,9 +8916,14 @@ class ProgramDependenciesCompanion extends UpdateCompanion<ProgramDependency> {
   final Value<String?> ref;
   final Value<String> description;
   final Value<String> dependencyType;
+  final Value<String?> counterparty;
+  final Value<String?> rationale;
+  final Value<String?> impactStatement;
+  final Value<String?> planActivityId;
   final Value<String?> owner;
   final Value<String> status;
   final Value<String?> dueDate;
+  final Value<String?> closedAt;
   final Value<String> source;
   final Value<String?> sourceNote;
   final Value<DateTime?> escalatedAt;
@@ -7952,9 +8937,14 @@ class ProgramDependenciesCompanion extends UpdateCompanion<ProgramDependency> {
     this.ref = const Value.absent(),
     this.description = const Value.absent(),
     this.dependencyType = const Value.absent(),
+    this.counterparty = const Value.absent(),
+    this.rationale = const Value.absent(),
+    this.impactStatement = const Value.absent(),
+    this.planActivityId = const Value.absent(),
     this.owner = const Value.absent(),
     this.status = const Value.absent(),
     this.dueDate = const Value.absent(),
+    this.closedAt = const Value.absent(),
     this.source = const Value.absent(),
     this.sourceNote = const Value.absent(),
     this.escalatedAt = const Value.absent(),
@@ -7969,9 +8959,14 @@ class ProgramDependenciesCompanion extends UpdateCompanion<ProgramDependency> {
     this.ref = const Value.absent(),
     required String description,
     this.dependencyType = const Value.absent(),
+    this.counterparty = const Value.absent(),
+    this.rationale = const Value.absent(),
+    this.impactStatement = const Value.absent(),
+    this.planActivityId = const Value.absent(),
     this.owner = const Value.absent(),
     this.status = const Value.absent(),
     this.dueDate = const Value.absent(),
+    this.closedAt = const Value.absent(),
     this.source = const Value.absent(),
     this.sourceNote = const Value.absent(),
     this.escalatedAt = const Value.absent(),
@@ -7988,9 +8983,14 @@ class ProgramDependenciesCompanion extends UpdateCompanion<ProgramDependency> {
     Expression<String>? ref,
     Expression<String>? description,
     Expression<String>? dependencyType,
+    Expression<String>? counterparty,
+    Expression<String>? rationale,
+    Expression<String>? impactStatement,
+    Expression<String>? planActivityId,
     Expression<String>? owner,
     Expression<String>? status,
     Expression<String>? dueDate,
+    Expression<String>? closedAt,
     Expression<String>? source,
     Expression<String>? sourceNote,
     Expression<DateTime>? escalatedAt,
@@ -8005,9 +9005,14 @@ class ProgramDependenciesCompanion extends UpdateCompanion<ProgramDependency> {
       if (ref != null) 'ref': ref,
       if (description != null) 'description': description,
       if (dependencyType != null) 'dependency_type': dependencyType,
+      if (counterparty != null) 'counterparty': counterparty,
+      if (rationale != null) 'rationale': rationale,
+      if (impactStatement != null) 'impact_statement': impactStatement,
+      if (planActivityId != null) 'plan_activity_id': planActivityId,
       if (owner != null) 'owner': owner,
       if (status != null) 'status': status,
       if (dueDate != null) 'due_date': dueDate,
+      if (closedAt != null) 'closed_at': closedAt,
       if (source != null) 'source': source,
       if (sourceNote != null) 'source_note': sourceNote,
       if (escalatedAt != null) 'escalated_at': escalatedAt,
@@ -8024,9 +9029,14 @@ class ProgramDependenciesCompanion extends UpdateCompanion<ProgramDependency> {
     Value<String?>? ref,
     Value<String>? description,
     Value<String>? dependencyType,
+    Value<String?>? counterparty,
+    Value<String?>? rationale,
+    Value<String?>? impactStatement,
+    Value<String?>? planActivityId,
     Value<String?>? owner,
     Value<String>? status,
     Value<String?>? dueDate,
+    Value<String?>? closedAt,
     Value<String>? source,
     Value<String?>? sourceNote,
     Value<DateTime?>? escalatedAt,
@@ -8041,9 +9051,14 @@ class ProgramDependenciesCompanion extends UpdateCompanion<ProgramDependency> {
       ref: ref ?? this.ref,
       description: description ?? this.description,
       dependencyType: dependencyType ?? this.dependencyType,
+      counterparty: counterparty ?? this.counterparty,
+      rationale: rationale ?? this.rationale,
+      impactStatement: impactStatement ?? this.impactStatement,
+      planActivityId: planActivityId ?? this.planActivityId,
       owner: owner ?? this.owner,
       status: status ?? this.status,
       dueDate: dueDate ?? this.dueDate,
+      closedAt: closedAt ?? this.closedAt,
       source: source ?? this.source,
       sourceNote: sourceNote ?? this.sourceNote,
       escalatedAt: escalatedAt ?? this.escalatedAt,
@@ -8072,6 +9087,18 @@ class ProgramDependenciesCompanion extends UpdateCompanion<ProgramDependency> {
     if (dependencyType.present) {
       map['dependency_type'] = Variable<String>(dependencyType.value);
     }
+    if (counterparty.present) {
+      map['counterparty'] = Variable<String>(counterparty.value);
+    }
+    if (rationale.present) {
+      map['rationale'] = Variable<String>(rationale.value);
+    }
+    if (impactStatement.present) {
+      map['impact_statement'] = Variable<String>(impactStatement.value);
+    }
+    if (planActivityId.present) {
+      map['plan_activity_id'] = Variable<String>(planActivityId.value);
+    }
     if (owner.present) {
       map['owner'] = Variable<String>(owner.value);
     }
@@ -8080,6 +9107,9 @@ class ProgramDependenciesCompanion extends UpdateCompanion<ProgramDependency> {
     }
     if (dueDate.present) {
       map['due_date'] = Variable<String>(dueDate.value);
+    }
+    if (closedAt.present) {
+      map['closed_at'] = Variable<String>(closedAt.value);
     }
     if (source.present) {
       map['source'] = Variable<String>(source.value);
@@ -8113,9 +9143,14 @@ class ProgramDependenciesCompanion extends UpdateCompanion<ProgramDependency> {
           ..write('ref: $ref, ')
           ..write('description: $description, ')
           ..write('dependencyType: $dependencyType, ')
+          ..write('counterparty: $counterparty, ')
+          ..write('rationale: $rationale, ')
+          ..write('impactStatement: $impactStatement, ')
+          ..write('planActivityId: $planActivityId, ')
           ..write('owner: $owner, ')
           ..write('status: $status, ')
           ..write('dueDate: $dueDate, ')
+          ..write('closedAt: $closedAt, ')
           ..write('source: $source, ')
           ..write('sourceNote: $sourceNote, ')
           ..write('escalatedAt: $escalatedAt, ')
@@ -8231,6 +9266,51 @@ class $DecisionsTable extends Decisions
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _optionsConsideredMeta = const VerificationMeta(
+    'optionsConsidered',
+  );
+  @override
+  late final GeneratedColumn<String> optionsConsidered =
+      GeneratedColumn<String>(
+        'options_considered',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _impactStatementMeta = const VerificationMeta(
+    'impactStatement',
+  );
+  @override
+  late final GeneratedColumn<String> impactStatement = GeneratedColumn<String>(
+    'impact_statement',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _planActivityIdMeta = const VerificationMeta(
+    'planActivityId',
+  );
+  @override
+  late final GeneratedColumn<String> planActivityId = GeneratedColumn<String>(
+    'plan_activity_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _decidedAtMeta = const VerificationMeta(
+    'decidedAt',
+  );
+  @override
+  late final GeneratedColumn<String> decidedAt = GeneratedColumn<String>(
+    'decided_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _sourceMeta = const VerificationMeta('source');
   @override
   late final GeneratedColumn<String> source = GeneratedColumn<String>(
@@ -8309,6 +9389,10 @@ class $DecisionsTable extends Decisions
     dueDate,
     rationale,
     outcome,
+    optionsConsidered,
+    impactStatement,
+    planActivityId,
+    decidedAt,
     source,
     sourceNote,
     escalatedAt,
@@ -8389,6 +9473,39 @@ class $DecisionsTable extends Decisions
       context.handle(
         _outcomeMeta,
         outcome.isAcceptableOrUnknown(data['outcome']!, _outcomeMeta),
+      );
+    }
+    if (data.containsKey('options_considered')) {
+      context.handle(
+        _optionsConsideredMeta,
+        optionsConsidered.isAcceptableOrUnknown(
+          data['options_considered']!,
+          _optionsConsideredMeta,
+        ),
+      );
+    }
+    if (data.containsKey('impact_statement')) {
+      context.handle(
+        _impactStatementMeta,
+        impactStatement.isAcceptableOrUnknown(
+          data['impact_statement']!,
+          _impactStatementMeta,
+        ),
+      );
+    }
+    if (data.containsKey('plan_activity_id')) {
+      context.handle(
+        _planActivityIdMeta,
+        planActivityId.isAcceptableOrUnknown(
+          data['plan_activity_id']!,
+          _planActivityIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('decided_at')) {
+      context.handle(
+        _decidedAtMeta,
+        decidedAt.isAcceptableOrUnknown(data['decided_at']!, _decidedAtMeta),
       );
     }
     if (data.containsKey('source')) {
@@ -8478,6 +9595,22 @@ class $DecisionsTable extends Decisions
         DriftSqlType.string,
         data['${effectivePrefix}outcome'],
       ),
+      optionsConsidered: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}options_considered'],
+      ),
+      impactStatement: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}impact_statement'],
+      ),
+      planActivityId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}plan_activity_id'],
+      ),
+      decidedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}decided_at'],
+      ),
       source: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}source'],
@@ -8521,6 +9654,10 @@ class Decision extends DataClass implements Insertable<Decision> {
   final String? dueDate;
   final String? rationale;
   final String? outcome;
+  final String? optionsConsidered;
+  final String? impactStatement;
+  final String? planActivityId;
+  final String? decidedAt;
   final String source;
   final String? sourceNote;
   final DateTime? escalatedAt;
@@ -8537,6 +9674,10 @@ class Decision extends DataClass implements Insertable<Decision> {
     this.dueDate,
     this.rationale,
     this.outcome,
+    this.optionsConsidered,
+    this.impactStatement,
+    this.planActivityId,
+    this.decidedAt,
     required this.source,
     this.sourceNote,
     this.escalatedAt,
@@ -8565,6 +9706,18 @@ class Decision extends DataClass implements Insertable<Decision> {
     }
     if (!nullToAbsent || outcome != null) {
       map['outcome'] = Variable<String>(outcome);
+    }
+    if (!nullToAbsent || optionsConsidered != null) {
+      map['options_considered'] = Variable<String>(optionsConsidered);
+    }
+    if (!nullToAbsent || impactStatement != null) {
+      map['impact_statement'] = Variable<String>(impactStatement);
+    }
+    if (!nullToAbsent || planActivityId != null) {
+      map['plan_activity_id'] = Variable<String>(planActivityId);
+    }
+    if (!nullToAbsent || decidedAt != null) {
+      map['decided_at'] = Variable<String>(decidedAt);
     }
     map['source'] = Variable<String>(source);
     if (!nullToAbsent || sourceNote != null) {
@@ -8600,6 +9753,18 @@ class Decision extends DataClass implements Insertable<Decision> {
       outcome: outcome == null && nullToAbsent
           ? const Value.absent()
           : Value(outcome),
+      optionsConsidered: optionsConsidered == null && nullToAbsent
+          ? const Value.absent()
+          : Value(optionsConsidered),
+      impactStatement: impactStatement == null && nullToAbsent
+          ? const Value.absent()
+          : Value(impactStatement),
+      planActivityId: planActivityId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(planActivityId),
+      decidedAt: decidedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(decidedAt),
       source: Value(source),
       sourceNote: sourceNote == null && nullToAbsent
           ? const Value.absent()
@@ -8630,6 +9795,12 @@ class Decision extends DataClass implements Insertable<Decision> {
       dueDate: serializer.fromJson<String?>(json['dueDate']),
       rationale: serializer.fromJson<String?>(json['rationale']),
       outcome: serializer.fromJson<String?>(json['outcome']),
+      optionsConsidered: serializer.fromJson<String?>(
+        json['optionsConsidered'],
+      ),
+      impactStatement: serializer.fromJson<String?>(json['impactStatement']),
+      planActivityId: serializer.fromJson<String?>(json['planActivityId']),
+      decidedAt: serializer.fromJson<String?>(json['decidedAt']),
       source: serializer.fromJson<String>(json['source']),
       sourceNote: serializer.fromJson<String?>(json['sourceNote']),
       escalatedAt: serializer.fromJson<DateTime?>(json['escalatedAt']),
@@ -8651,6 +9822,10 @@ class Decision extends DataClass implements Insertable<Decision> {
       'dueDate': serializer.toJson<String?>(dueDate),
       'rationale': serializer.toJson<String?>(rationale),
       'outcome': serializer.toJson<String?>(outcome),
+      'optionsConsidered': serializer.toJson<String?>(optionsConsidered),
+      'impactStatement': serializer.toJson<String?>(impactStatement),
+      'planActivityId': serializer.toJson<String?>(planActivityId),
+      'decidedAt': serializer.toJson<String?>(decidedAt),
       'source': serializer.toJson<String>(source),
       'sourceNote': serializer.toJson<String?>(sourceNote),
       'escalatedAt': serializer.toJson<DateTime?>(escalatedAt),
@@ -8670,6 +9845,10 @@ class Decision extends DataClass implements Insertable<Decision> {
     Value<String?> dueDate = const Value.absent(),
     Value<String?> rationale = const Value.absent(),
     Value<String?> outcome = const Value.absent(),
+    Value<String?> optionsConsidered = const Value.absent(),
+    Value<String?> impactStatement = const Value.absent(),
+    Value<String?> planActivityId = const Value.absent(),
+    Value<String?> decidedAt = const Value.absent(),
     String? source,
     Value<String?> sourceNote = const Value.absent(),
     Value<DateTime?> escalatedAt = const Value.absent(),
@@ -8688,6 +9867,16 @@ class Decision extends DataClass implements Insertable<Decision> {
     dueDate: dueDate.present ? dueDate.value : this.dueDate,
     rationale: rationale.present ? rationale.value : this.rationale,
     outcome: outcome.present ? outcome.value : this.outcome,
+    optionsConsidered: optionsConsidered.present
+        ? optionsConsidered.value
+        : this.optionsConsidered,
+    impactStatement: impactStatement.present
+        ? impactStatement.value
+        : this.impactStatement,
+    planActivityId: planActivityId.present
+        ? planActivityId.value
+        : this.planActivityId,
+    decidedAt: decidedAt.present ? decidedAt.value : this.decidedAt,
     source: source ?? this.source,
     sourceNote: sourceNote.present ? sourceNote.value : this.sourceNote,
     escalatedAt: escalatedAt.present ? escalatedAt.value : this.escalatedAt,
@@ -8712,6 +9901,16 @@ class Decision extends DataClass implements Insertable<Decision> {
       dueDate: data.dueDate.present ? data.dueDate.value : this.dueDate,
       rationale: data.rationale.present ? data.rationale.value : this.rationale,
       outcome: data.outcome.present ? data.outcome.value : this.outcome,
+      optionsConsidered: data.optionsConsidered.present
+          ? data.optionsConsidered.value
+          : this.optionsConsidered,
+      impactStatement: data.impactStatement.present
+          ? data.impactStatement.value
+          : this.impactStatement,
+      planActivityId: data.planActivityId.present
+          ? data.planActivityId.value
+          : this.planActivityId,
+      decidedAt: data.decidedAt.present ? data.decidedAt.value : this.decidedAt,
       source: data.source.present ? data.source.value : this.source,
       sourceNote: data.sourceNote.present
           ? data.sourceNote.value
@@ -8739,6 +9938,10 @@ class Decision extends DataClass implements Insertable<Decision> {
           ..write('dueDate: $dueDate, ')
           ..write('rationale: $rationale, ')
           ..write('outcome: $outcome, ')
+          ..write('optionsConsidered: $optionsConsidered, ')
+          ..write('impactStatement: $impactStatement, ')
+          ..write('planActivityId: $planActivityId, ')
+          ..write('decidedAt: $decidedAt, ')
           ..write('source: $source, ')
           ..write('sourceNote: $sourceNote, ')
           ..write('escalatedAt: $escalatedAt, ')
@@ -8760,6 +9963,10 @@ class Decision extends DataClass implements Insertable<Decision> {
     dueDate,
     rationale,
     outcome,
+    optionsConsidered,
+    impactStatement,
+    planActivityId,
+    decidedAt,
     source,
     sourceNote,
     escalatedAt,
@@ -8780,6 +9987,10 @@ class Decision extends DataClass implements Insertable<Decision> {
           other.dueDate == this.dueDate &&
           other.rationale == this.rationale &&
           other.outcome == this.outcome &&
+          other.optionsConsidered == this.optionsConsidered &&
+          other.impactStatement == this.impactStatement &&
+          other.planActivityId == this.planActivityId &&
+          other.decidedAt == this.decidedAt &&
           other.source == this.source &&
           other.sourceNote == this.sourceNote &&
           other.escalatedAt == this.escalatedAt &&
@@ -8798,6 +10009,10 @@ class DecisionsCompanion extends UpdateCompanion<Decision> {
   final Value<String?> dueDate;
   final Value<String?> rationale;
   final Value<String?> outcome;
+  final Value<String?> optionsConsidered;
+  final Value<String?> impactStatement;
+  final Value<String?> planActivityId;
+  final Value<String?> decidedAt;
   final Value<String> source;
   final Value<String?> sourceNote;
   final Value<DateTime?> escalatedAt;
@@ -8815,6 +10030,10 @@ class DecisionsCompanion extends UpdateCompanion<Decision> {
     this.dueDate = const Value.absent(),
     this.rationale = const Value.absent(),
     this.outcome = const Value.absent(),
+    this.optionsConsidered = const Value.absent(),
+    this.impactStatement = const Value.absent(),
+    this.planActivityId = const Value.absent(),
+    this.decidedAt = const Value.absent(),
     this.source = const Value.absent(),
     this.sourceNote = const Value.absent(),
     this.escalatedAt = const Value.absent(),
@@ -8833,6 +10052,10 @@ class DecisionsCompanion extends UpdateCompanion<Decision> {
     this.dueDate = const Value.absent(),
     this.rationale = const Value.absent(),
     this.outcome = const Value.absent(),
+    this.optionsConsidered = const Value.absent(),
+    this.impactStatement = const Value.absent(),
+    this.planActivityId = const Value.absent(),
+    this.decidedAt = const Value.absent(),
     this.source = const Value.absent(),
     this.sourceNote = const Value.absent(),
     this.escalatedAt = const Value.absent(),
@@ -8853,6 +10076,10 @@ class DecisionsCompanion extends UpdateCompanion<Decision> {
     Expression<String>? dueDate,
     Expression<String>? rationale,
     Expression<String>? outcome,
+    Expression<String>? optionsConsidered,
+    Expression<String>? impactStatement,
+    Expression<String>? planActivityId,
+    Expression<String>? decidedAt,
     Expression<String>? source,
     Expression<String>? sourceNote,
     Expression<DateTime>? escalatedAt,
@@ -8871,6 +10098,10 @@ class DecisionsCompanion extends UpdateCompanion<Decision> {
       if (dueDate != null) 'due_date': dueDate,
       if (rationale != null) 'rationale': rationale,
       if (outcome != null) 'outcome': outcome,
+      if (optionsConsidered != null) 'options_considered': optionsConsidered,
+      if (impactStatement != null) 'impact_statement': impactStatement,
+      if (planActivityId != null) 'plan_activity_id': planActivityId,
+      if (decidedAt != null) 'decided_at': decidedAt,
       if (source != null) 'source': source,
       if (sourceNote != null) 'source_note': sourceNote,
       if (escalatedAt != null) 'escalated_at': escalatedAt,
@@ -8891,6 +10122,10 @@ class DecisionsCompanion extends UpdateCompanion<Decision> {
     Value<String?>? dueDate,
     Value<String?>? rationale,
     Value<String?>? outcome,
+    Value<String?>? optionsConsidered,
+    Value<String?>? impactStatement,
+    Value<String?>? planActivityId,
+    Value<String?>? decidedAt,
     Value<String>? source,
     Value<String?>? sourceNote,
     Value<DateTime?>? escalatedAt,
@@ -8909,6 +10144,10 @@ class DecisionsCompanion extends UpdateCompanion<Decision> {
       dueDate: dueDate ?? this.dueDate,
       rationale: rationale ?? this.rationale,
       outcome: outcome ?? this.outcome,
+      optionsConsidered: optionsConsidered ?? this.optionsConsidered,
+      impactStatement: impactStatement ?? this.impactStatement,
+      planActivityId: planActivityId ?? this.planActivityId,
+      decidedAt: decidedAt ?? this.decidedAt,
       source: source ?? this.source,
       sourceNote: sourceNote ?? this.sourceNote,
       escalatedAt: escalatedAt ?? this.escalatedAt,
@@ -8949,6 +10188,18 @@ class DecisionsCompanion extends UpdateCompanion<Decision> {
     if (outcome.present) {
       map['outcome'] = Variable<String>(outcome.value);
     }
+    if (optionsConsidered.present) {
+      map['options_considered'] = Variable<String>(optionsConsidered.value);
+    }
+    if (impactStatement.present) {
+      map['impact_statement'] = Variable<String>(impactStatement.value);
+    }
+    if (planActivityId.present) {
+      map['plan_activity_id'] = Variable<String>(planActivityId.value);
+    }
+    if (decidedAt.present) {
+      map['decided_at'] = Variable<String>(decidedAt.value);
+    }
     if (source.present) {
       map['source'] = Variable<String>(source.value);
     }
@@ -8985,6 +10236,10 @@ class DecisionsCompanion extends UpdateCompanion<Decision> {
           ..write('dueDate: $dueDate, ')
           ..write('rationale: $rationale, ')
           ..write('outcome: $outcome, ')
+          ..write('optionsConsidered: $optionsConsidered, ')
+          ..write('impactStatement: $impactStatement, ')
+          ..write('planActivityId: $planActivityId, ')
+          ..write('decidedAt: $decidedAt, ')
           ..write('source: $source, ')
           ..write('sourceNote: $sourceNote, ')
           ..write('escalatedAt: $escalatedAt, ')
@@ -49623,14 +50878,27 @@ typedef $$RisksTableCreateCompanionBuilder =
       required String id,
       required String projectId,
       Value<String?> ref,
+      Value<String?> title,
       required String description,
       Value<String> likelihood,
       Value<String> impact,
+      Value<String?> likelihoodTarget,
+      Value<String?> impactTarget,
       Value<String?> likelihoodRationale,
       Value<String?> impactRationale,
       Value<String?> mitigation,
+      Value<String> strategy,
       Value<String?> owner,
+      Value<String?> assignee,
+      Value<bool> steerco,
+      Value<String?> enterpriseRiskLink,
+      Value<String?> dueDate,
+      Value<String?> lastReviewedAt,
+      Value<String?> nextReviewAt,
+      Value<String?> statusNote,
       Value<String> status,
+      Value<String?> closedAt,
+      Value<String?> closureNote,
       Value<String> source,
       Value<String?> sourceNote,
       Value<DateTime?> escalatedAt,
@@ -49644,14 +50912,27 @@ typedef $$RisksTableUpdateCompanionBuilder =
       Value<String> id,
       Value<String> projectId,
       Value<String?> ref,
+      Value<String?> title,
       Value<String> description,
       Value<String> likelihood,
       Value<String> impact,
+      Value<String?> likelihoodTarget,
+      Value<String?> impactTarget,
       Value<String?> likelihoodRationale,
       Value<String?> impactRationale,
       Value<String?> mitigation,
+      Value<String> strategy,
       Value<String?> owner,
+      Value<String?> assignee,
+      Value<bool> steerco,
+      Value<String?> enterpriseRiskLink,
+      Value<String?> dueDate,
+      Value<String?> lastReviewedAt,
+      Value<String?> nextReviewAt,
+      Value<String?> statusNote,
       Value<String> status,
+      Value<String?> closedAt,
+      Value<String?> closureNote,
       Value<String> source,
       Value<String?> sourceNote,
       Value<DateTime?> escalatedAt,
@@ -49701,6 +50982,11 @@ class $$RisksTableFilterComposer extends Composer<_$AppDatabase, $RisksTable> {
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get description => $composableBuilder(
     column: $table.description,
     builder: (column) => ColumnFilters(column),
@@ -49713,6 +50999,16 @@ class $$RisksTableFilterComposer extends Composer<_$AppDatabase, $RisksTable> {
 
   ColumnFilters<String> get impact => $composableBuilder(
     column: $table.impact,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get likelihoodTarget => $composableBuilder(
+    column: $table.likelihoodTarget,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get impactTarget => $composableBuilder(
+    column: $table.impactTarget,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -49731,13 +51027,63 @@ class $$RisksTableFilterComposer extends Composer<_$AppDatabase, $RisksTable> {
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get strategy => $composableBuilder(
+    column: $table.strategy,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get owner => $composableBuilder(
     column: $table.owner,
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get assignee => $composableBuilder(
+    column: $table.assignee,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get steerco => $composableBuilder(
+    column: $table.steerco,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get enterpriseRiskLink => $composableBuilder(
+    column: $table.enterpriseRiskLink,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get dueDate => $composableBuilder(
+    column: $table.dueDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastReviewedAt => $composableBuilder(
+    column: $table.lastReviewedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nextReviewAt => $composableBuilder(
+    column: $table.nextReviewAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get statusNote => $composableBuilder(
+    column: $table.statusNote,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get status => $composableBuilder(
     column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get closedAt => $composableBuilder(
+    column: $table.closedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get closureNote => $composableBuilder(
+    column: $table.closureNote,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -49814,6 +51160,11 @@ class $$RisksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get description => $composableBuilder(
     column: $table.description,
     builder: (column) => ColumnOrderings(column),
@@ -49826,6 +51177,16 @@ class $$RisksTableOrderingComposer
 
   ColumnOrderings<String> get impact => $composableBuilder(
     column: $table.impact,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get likelihoodTarget => $composableBuilder(
+    column: $table.likelihoodTarget,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get impactTarget => $composableBuilder(
+    column: $table.impactTarget,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -49844,13 +51205,63 @@ class $$RisksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get strategy => $composableBuilder(
+    column: $table.strategy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get owner => $composableBuilder(
     column: $table.owner,
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get assignee => $composableBuilder(
+    column: $table.assignee,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get steerco => $composableBuilder(
+    column: $table.steerco,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get enterpriseRiskLink => $composableBuilder(
+    column: $table.enterpriseRiskLink,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get dueDate => $composableBuilder(
+    column: $table.dueDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastReviewedAt => $composableBuilder(
+    column: $table.lastReviewedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nextReviewAt => $composableBuilder(
+    column: $table.nextReviewAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get statusNote => $composableBuilder(
+    column: $table.statusNote,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get status => $composableBuilder(
     column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get closedAt => $composableBuilder(
+    column: $table.closedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get closureNote => $composableBuilder(
+    column: $table.closureNote,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -49923,6 +51334,9 @@ class $$RisksTableAnnotationComposer
   GeneratedColumn<String> get ref =>
       $composableBuilder(column: $table.ref, builder: (column) => column);
 
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
   GeneratedColumn<String> get description => $composableBuilder(
     column: $table.description,
     builder: (column) => column,
@@ -49935,6 +51349,16 @@ class $$RisksTableAnnotationComposer
 
   GeneratedColumn<String> get impact =>
       $composableBuilder(column: $table.impact, builder: (column) => column);
+
+  GeneratedColumn<String> get likelihoodTarget => $composableBuilder(
+    column: $table.likelihoodTarget,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get impactTarget => $composableBuilder(
+    column: $table.impactTarget,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get likelihoodRationale => $composableBuilder(
     column: $table.likelihoodRationale,
@@ -49951,11 +51375,51 @@ class $$RisksTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get strategy =>
+      $composableBuilder(column: $table.strategy, builder: (column) => column);
+
   GeneratedColumn<String> get owner =>
       $composableBuilder(column: $table.owner, builder: (column) => column);
 
+  GeneratedColumn<String> get assignee =>
+      $composableBuilder(column: $table.assignee, builder: (column) => column);
+
+  GeneratedColumn<bool> get steerco =>
+      $composableBuilder(column: $table.steerco, builder: (column) => column);
+
+  GeneratedColumn<String> get enterpriseRiskLink => $composableBuilder(
+    column: $table.enterpriseRiskLink,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get dueDate =>
+      $composableBuilder(column: $table.dueDate, builder: (column) => column);
+
+  GeneratedColumn<String> get lastReviewedAt => $composableBuilder(
+    column: $table.lastReviewedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get nextReviewAt => $composableBuilder(
+    column: $table.nextReviewAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get statusNote => $composableBuilder(
+    column: $table.statusNote,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get closedAt =>
+      $composableBuilder(column: $table.closedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get closureNote => $composableBuilder(
+    column: $table.closureNote,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get source =>
       $composableBuilder(column: $table.source, builder: (column) => column);
@@ -50036,14 +51500,27 @@ class $$RisksTableTableManager
                 Value<String> id = const Value.absent(),
                 Value<String> projectId = const Value.absent(),
                 Value<String?> ref = const Value.absent(),
+                Value<String?> title = const Value.absent(),
                 Value<String> description = const Value.absent(),
                 Value<String> likelihood = const Value.absent(),
                 Value<String> impact = const Value.absent(),
+                Value<String?> likelihoodTarget = const Value.absent(),
+                Value<String?> impactTarget = const Value.absent(),
                 Value<String?> likelihoodRationale = const Value.absent(),
                 Value<String?> impactRationale = const Value.absent(),
                 Value<String?> mitigation = const Value.absent(),
+                Value<String> strategy = const Value.absent(),
                 Value<String?> owner = const Value.absent(),
+                Value<String?> assignee = const Value.absent(),
+                Value<bool> steerco = const Value.absent(),
+                Value<String?> enterpriseRiskLink = const Value.absent(),
+                Value<String?> dueDate = const Value.absent(),
+                Value<String?> lastReviewedAt = const Value.absent(),
+                Value<String?> nextReviewAt = const Value.absent(),
+                Value<String?> statusNote = const Value.absent(),
                 Value<String> status = const Value.absent(),
+                Value<String?> closedAt = const Value.absent(),
+                Value<String?> closureNote = const Value.absent(),
                 Value<String> source = const Value.absent(),
                 Value<String?> sourceNote = const Value.absent(),
                 Value<DateTime?> escalatedAt = const Value.absent(),
@@ -50055,14 +51532,27 @@ class $$RisksTableTableManager
                 id: id,
                 projectId: projectId,
                 ref: ref,
+                title: title,
                 description: description,
                 likelihood: likelihood,
                 impact: impact,
+                likelihoodTarget: likelihoodTarget,
+                impactTarget: impactTarget,
                 likelihoodRationale: likelihoodRationale,
                 impactRationale: impactRationale,
                 mitigation: mitigation,
+                strategy: strategy,
                 owner: owner,
+                assignee: assignee,
+                steerco: steerco,
+                enterpriseRiskLink: enterpriseRiskLink,
+                dueDate: dueDate,
+                lastReviewedAt: lastReviewedAt,
+                nextReviewAt: nextReviewAt,
+                statusNote: statusNote,
                 status: status,
+                closedAt: closedAt,
+                closureNote: closureNote,
                 source: source,
                 sourceNote: sourceNote,
                 escalatedAt: escalatedAt,
@@ -50076,14 +51566,27 @@ class $$RisksTableTableManager
                 required String id,
                 required String projectId,
                 Value<String?> ref = const Value.absent(),
+                Value<String?> title = const Value.absent(),
                 required String description,
                 Value<String> likelihood = const Value.absent(),
                 Value<String> impact = const Value.absent(),
+                Value<String?> likelihoodTarget = const Value.absent(),
+                Value<String?> impactTarget = const Value.absent(),
                 Value<String?> likelihoodRationale = const Value.absent(),
                 Value<String?> impactRationale = const Value.absent(),
                 Value<String?> mitigation = const Value.absent(),
+                Value<String> strategy = const Value.absent(),
                 Value<String?> owner = const Value.absent(),
+                Value<String?> assignee = const Value.absent(),
+                Value<bool> steerco = const Value.absent(),
+                Value<String?> enterpriseRiskLink = const Value.absent(),
+                Value<String?> dueDate = const Value.absent(),
+                Value<String?> lastReviewedAt = const Value.absent(),
+                Value<String?> nextReviewAt = const Value.absent(),
+                Value<String?> statusNote = const Value.absent(),
                 Value<String> status = const Value.absent(),
+                Value<String?> closedAt = const Value.absent(),
+                Value<String?> closureNote = const Value.absent(),
                 Value<String> source = const Value.absent(),
                 Value<String?> sourceNote = const Value.absent(),
                 Value<DateTime?> escalatedAt = const Value.absent(),
@@ -50095,14 +51598,27 @@ class $$RisksTableTableManager
                 id: id,
                 projectId: projectId,
                 ref: ref,
+                title: title,
                 description: description,
                 likelihood: likelihood,
                 impact: impact,
+                likelihoodTarget: likelihoodTarget,
+                impactTarget: impactTarget,
                 likelihoodRationale: likelihoodRationale,
                 impactRationale: impactRationale,
                 mitigation: mitigation,
+                strategy: strategy,
                 owner: owner,
+                assignee: assignee,
+                steerco: steerco,
+                enterpriseRiskLink: enterpriseRiskLink,
+                dueDate: dueDate,
+                lastReviewedAt: lastReviewedAt,
+                nextReviewAt: nextReviewAt,
+                statusNote: statusNote,
                 status: status,
+                closedAt: closedAt,
+                closureNote: closureNote,
                 source: source,
                 sourceNote: sourceNote,
                 escalatedAt: escalatedAt,
@@ -50186,6 +51702,7 @@ typedef $$AssumptionsTableCreateCompanionBuilder =
       Value<String> status,
       Value<String?> validatedBy,
       Value<DateTime?> validatedAt,
+      Value<String?> closedAt,
       Value<String> source,
       Value<String?> sourceNote,
       Value<DateTime?> escalatedAt,
@@ -50204,6 +51721,7 @@ typedef $$AssumptionsTableUpdateCompanionBuilder =
       Value<String> status,
       Value<String?> validatedBy,
       Value<DateTime?> validatedAt,
+      Value<String?> closedAt,
       Value<String> source,
       Value<String?> sourceNote,
       Value<DateTime?> escalatedAt,
@@ -50278,6 +51796,11 @@ class $$AssumptionsTableFilterComposer
 
   ColumnFilters<DateTime> get validatedAt => $composableBuilder(
     column: $table.validatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get closedAt => $composableBuilder(
+    column: $table.closedAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -50379,6 +51902,11 @@ class $$AssumptionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get closedAt => $composableBuilder(
+    column: $table.closedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get source => $composableBuilder(
     column: $table.source,
     builder: (column) => ColumnOrderings(column),
@@ -50469,6 +51997,9 @@ class $$AssumptionsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get closedAt =>
+      $composableBuilder(column: $table.closedAt, builder: (column) => column);
+
   GeneratedColumn<String> get source =>
       $composableBuilder(column: $table.source, builder: (column) => column);
 
@@ -50553,6 +52084,7 @@ class $$AssumptionsTableTableManager
                 Value<String> status = const Value.absent(),
                 Value<String?> validatedBy = const Value.absent(),
                 Value<DateTime?> validatedAt = const Value.absent(),
+                Value<String?> closedAt = const Value.absent(),
                 Value<String> source = const Value.absent(),
                 Value<String?> sourceNote = const Value.absent(),
                 Value<DateTime?> escalatedAt = const Value.absent(),
@@ -50569,6 +52101,7 @@ class $$AssumptionsTableTableManager
                 status: status,
                 validatedBy: validatedBy,
                 validatedAt: validatedAt,
+                closedAt: closedAt,
                 source: source,
                 sourceNote: sourceNote,
                 escalatedAt: escalatedAt,
@@ -50587,6 +52120,7 @@ class $$AssumptionsTableTableManager
                 Value<String> status = const Value.absent(),
                 Value<String?> validatedBy = const Value.absent(),
                 Value<DateTime?> validatedAt = const Value.absent(),
+                Value<String?> closedAt = const Value.absent(),
                 Value<String> source = const Value.absent(),
                 Value<String?> sourceNote = const Value.absent(),
                 Value<DateTime?> escalatedAt = const Value.absent(),
@@ -50603,6 +52137,7 @@ class $$AssumptionsTableTableManager
                 status: status,
                 validatedBy: validatedBy,
                 validatedAt: validatedAt,
+                closedAt: closedAt,
                 source: source,
                 sourceNote: sourceNote,
                 escalatedAt: escalatedAt,
@@ -50692,6 +52227,7 @@ typedef $$IssuesTableCreateCompanionBuilder =
       Value<String> priority,
       Value<String> status,
       Value<String?> resolution,
+      Value<String?> closedAt,
       Value<String> source,
       Value<String?> sourceNote,
       Value<DateTime?> escalatedAt,
@@ -50714,6 +52250,7 @@ typedef $$IssuesTableUpdateCompanionBuilder =
       Value<String> priority,
       Value<String> status,
       Value<String?> resolution,
+      Value<String?> closedAt,
       Value<String> source,
       Value<String?> sourceNote,
       Value<DateTime?> escalatedAt,
@@ -50806,6 +52343,11 @@ class $$IssuesTableFilterComposer
 
   ColumnFilters<String> get resolution => $composableBuilder(
     column: $table.resolution,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get closedAt => $composableBuilder(
+    column: $table.closedAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -50927,6 +52469,11 @@ class $$IssuesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get closedAt => $composableBuilder(
+    column: $table.closedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get source => $composableBuilder(
     column: $table.source,
     builder: (column) => ColumnOrderings(column),
@@ -51031,6 +52578,9 @@ class $$IssuesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get closedAt =>
+      $composableBuilder(column: $table.closedAt, builder: (column) => column);
+
   GeneratedColumn<String> get source =>
       $composableBuilder(column: $table.source, builder: (column) => column);
 
@@ -51119,6 +52669,7 @@ class $$IssuesTableTableManager
                 Value<String> priority = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<String?> resolution = const Value.absent(),
+                Value<String?> closedAt = const Value.absent(),
                 Value<String> source = const Value.absent(),
                 Value<String?> sourceNote = const Value.absent(),
                 Value<DateTime?> escalatedAt = const Value.absent(),
@@ -51139,6 +52690,7 @@ class $$IssuesTableTableManager
                 priority: priority,
                 status: status,
                 resolution: resolution,
+                closedAt: closedAt,
                 source: source,
                 sourceNote: sourceNote,
                 escalatedAt: escalatedAt,
@@ -51161,6 +52713,7 @@ class $$IssuesTableTableManager
                 Value<String> priority = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<String?> resolution = const Value.absent(),
+                Value<String?> closedAt = const Value.absent(),
                 Value<String> source = const Value.absent(),
                 Value<String?> sourceNote = const Value.absent(),
                 Value<DateTime?> escalatedAt = const Value.absent(),
@@ -51181,6 +52734,7 @@ class $$IssuesTableTableManager
                 priority: priority,
                 status: status,
                 resolution: resolution,
+                closedAt: closedAt,
                 source: source,
                 sourceNote: sourceNote,
                 escalatedAt: escalatedAt,
@@ -51622,9 +53176,14 @@ typedef $$ProgramDependenciesTableCreateCompanionBuilder =
       Value<String?> ref,
       required String description,
       Value<String> dependencyType,
+      Value<String?> counterparty,
+      Value<String?> rationale,
+      Value<String?> impactStatement,
+      Value<String?> planActivityId,
       Value<String?> owner,
       Value<String> status,
       Value<String?> dueDate,
+      Value<String?> closedAt,
       Value<String> source,
       Value<String?> sourceNote,
       Value<DateTime?> escalatedAt,
@@ -51640,9 +53199,14 @@ typedef $$ProgramDependenciesTableUpdateCompanionBuilder =
       Value<String?> ref,
       Value<String> description,
       Value<String> dependencyType,
+      Value<String?> counterparty,
+      Value<String?> rationale,
+      Value<String?> impactStatement,
+      Value<String?> planActivityId,
       Value<String?> owner,
       Value<String> status,
       Value<String?> dueDate,
+      Value<String?> closedAt,
       Value<String> source,
       Value<String?> sourceNote,
       Value<DateTime?> escalatedAt,
@@ -51714,6 +53278,26 @@ class $$ProgramDependenciesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get counterparty => $composableBuilder(
+    column: $table.counterparty,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rationale => $composableBuilder(
+    column: $table.rationale,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get impactStatement => $composableBuilder(
+    column: $table.impactStatement,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get planActivityId => $composableBuilder(
+    column: $table.planActivityId,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get owner => $composableBuilder(
     column: $table.owner,
     builder: (column) => ColumnFilters(column),
@@ -51726,6 +53310,11 @@ class $$ProgramDependenciesTableFilterComposer
 
   ColumnFilters<String> get dueDate => $composableBuilder(
     column: $table.dueDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get closedAt => $composableBuilder(
+    column: $table.closedAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -51812,6 +53401,26 @@ class $$ProgramDependenciesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get counterparty => $composableBuilder(
+    column: $table.counterparty,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get rationale => $composableBuilder(
+    column: $table.rationale,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get impactStatement => $composableBuilder(
+    column: $table.impactStatement,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get planActivityId => $composableBuilder(
+    column: $table.planActivityId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get owner => $composableBuilder(
     column: $table.owner,
     builder: (column) => ColumnOrderings(column),
@@ -51824,6 +53433,11 @@ class $$ProgramDependenciesTableOrderingComposer
 
   ColumnOrderings<String> get dueDate => $composableBuilder(
     column: $table.dueDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get closedAt => $composableBuilder(
+    column: $table.closedAt,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -51906,6 +53520,24 @@ class $$ProgramDependenciesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get counterparty => $composableBuilder(
+    column: $table.counterparty,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get rationale =>
+      $composableBuilder(column: $table.rationale, builder: (column) => column);
+
+  GeneratedColumn<String> get impactStatement => $composableBuilder(
+    column: $table.impactStatement,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get planActivityId => $composableBuilder(
+    column: $table.planActivityId,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get owner =>
       $composableBuilder(column: $table.owner, builder: (column) => column);
 
@@ -51914,6 +53546,9 @@ class $$ProgramDependenciesTableAnnotationComposer
 
   GeneratedColumn<String> get dueDate =>
       $composableBuilder(column: $table.dueDate, builder: (column) => column);
+
+  GeneratedColumn<String> get closedAt =>
+      $composableBuilder(column: $table.closedAt, builder: (column) => column);
 
   GeneratedColumn<String> get source =>
       $composableBuilder(column: $table.source, builder: (column) => column);
@@ -52004,9 +53639,14 @@ class $$ProgramDependenciesTableTableManager
                 Value<String?> ref = const Value.absent(),
                 Value<String> description = const Value.absent(),
                 Value<String> dependencyType = const Value.absent(),
+                Value<String?> counterparty = const Value.absent(),
+                Value<String?> rationale = const Value.absent(),
+                Value<String?> impactStatement = const Value.absent(),
+                Value<String?> planActivityId = const Value.absent(),
                 Value<String?> owner = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<String?> dueDate = const Value.absent(),
+                Value<String?> closedAt = const Value.absent(),
                 Value<String> source = const Value.absent(),
                 Value<String?> sourceNote = const Value.absent(),
                 Value<DateTime?> escalatedAt = const Value.absent(),
@@ -52020,9 +53660,14 @@ class $$ProgramDependenciesTableTableManager
                 ref: ref,
                 description: description,
                 dependencyType: dependencyType,
+                counterparty: counterparty,
+                rationale: rationale,
+                impactStatement: impactStatement,
+                planActivityId: planActivityId,
                 owner: owner,
                 status: status,
                 dueDate: dueDate,
+                closedAt: closedAt,
                 source: source,
                 sourceNote: sourceNote,
                 escalatedAt: escalatedAt,
@@ -52038,9 +53683,14 @@ class $$ProgramDependenciesTableTableManager
                 Value<String?> ref = const Value.absent(),
                 required String description,
                 Value<String> dependencyType = const Value.absent(),
+                Value<String?> counterparty = const Value.absent(),
+                Value<String?> rationale = const Value.absent(),
+                Value<String?> impactStatement = const Value.absent(),
+                Value<String?> planActivityId = const Value.absent(),
                 Value<String?> owner = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<String?> dueDate = const Value.absent(),
+                Value<String?> closedAt = const Value.absent(),
                 Value<String> source = const Value.absent(),
                 Value<String?> sourceNote = const Value.absent(),
                 Value<DateTime?> escalatedAt = const Value.absent(),
@@ -52054,9 +53704,14 @@ class $$ProgramDependenciesTableTableManager
                 ref: ref,
                 description: description,
                 dependencyType: dependencyType,
+                counterparty: counterparty,
+                rationale: rationale,
+                impactStatement: impactStatement,
+                planActivityId: planActivityId,
                 owner: owner,
                 status: status,
                 dueDate: dueDate,
+                closedAt: closedAt,
                 source: source,
                 sourceNote: sourceNote,
                 escalatedAt: escalatedAt,
@@ -52145,6 +53800,10 @@ typedef $$DecisionsTableCreateCompanionBuilder =
       Value<String?> dueDate,
       Value<String?> rationale,
       Value<String?> outcome,
+      Value<String?> optionsConsidered,
+      Value<String?> impactStatement,
+      Value<String?> planActivityId,
+      Value<String?> decidedAt,
       Value<String> source,
       Value<String?> sourceNote,
       Value<DateTime?> escalatedAt,
@@ -52164,6 +53823,10 @@ typedef $$DecisionsTableUpdateCompanionBuilder =
       Value<String?> dueDate,
       Value<String?> rationale,
       Value<String?> outcome,
+      Value<String?> optionsConsidered,
+      Value<String?> impactStatement,
+      Value<String?> planActivityId,
+      Value<String?> decidedAt,
       Value<String> source,
       Value<String?> sourceNote,
       Value<DateTime?> escalatedAt,
@@ -52243,6 +53906,26 @@ class $$DecisionsTableFilterComposer
 
   ColumnFilters<String> get outcome => $composableBuilder(
     column: $table.outcome,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get optionsConsidered => $composableBuilder(
+    column: $table.optionsConsidered,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get impactStatement => $composableBuilder(
+    column: $table.impactStatement,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get planActivityId => $composableBuilder(
+    column: $table.planActivityId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get decidedAt => $composableBuilder(
+    column: $table.decidedAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -52349,6 +54032,26 @@ class $$DecisionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get optionsConsidered => $composableBuilder(
+    column: $table.optionsConsidered,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get impactStatement => $composableBuilder(
+    column: $table.impactStatement,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get planActivityId => $composableBuilder(
+    column: $table.planActivityId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get decidedAt => $composableBuilder(
+    column: $table.decidedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get source => $composableBuilder(
     column: $table.source,
     builder: (column) => ColumnOrderings(column),
@@ -52440,6 +54143,24 @@ class $$DecisionsTableAnnotationComposer
   GeneratedColumn<String> get outcome =>
       $composableBuilder(column: $table.outcome, builder: (column) => column);
 
+  GeneratedColumn<String> get optionsConsidered => $composableBuilder(
+    column: $table.optionsConsidered,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get impactStatement => $composableBuilder(
+    column: $table.impactStatement,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get planActivityId => $composableBuilder(
+    column: $table.planActivityId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get decidedAt =>
+      $composableBuilder(column: $table.decidedAt, builder: (column) => column);
+
   GeneratedColumn<String> get source =>
       $composableBuilder(column: $table.source, builder: (column) => column);
 
@@ -52525,6 +54246,10 @@ class $$DecisionsTableTableManager
                 Value<String?> dueDate = const Value.absent(),
                 Value<String?> rationale = const Value.absent(),
                 Value<String?> outcome = const Value.absent(),
+                Value<String?> optionsConsidered = const Value.absent(),
+                Value<String?> impactStatement = const Value.absent(),
+                Value<String?> planActivityId = const Value.absent(),
+                Value<String?> decidedAt = const Value.absent(),
                 Value<String> source = const Value.absent(),
                 Value<String?> sourceNote = const Value.absent(),
                 Value<DateTime?> escalatedAt = const Value.absent(),
@@ -52542,6 +54267,10 @@ class $$DecisionsTableTableManager
                 dueDate: dueDate,
                 rationale: rationale,
                 outcome: outcome,
+                optionsConsidered: optionsConsidered,
+                impactStatement: impactStatement,
+                planActivityId: planActivityId,
+                decidedAt: decidedAt,
                 source: source,
                 sourceNote: sourceNote,
                 escalatedAt: escalatedAt,
@@ -52561,6 +54290,10 @@ class $$DecisionsTableTableManager
                 Value<String?> dueDate = const Value.absent(),
                 Value<String?> rationale = const Value.absent(),
                 Value<String?> outcome = const Value.absent(),
+                Value<String?> optionsConsidered = const Value.absent(),
+                Value<String?> impactStatement = const Value.absent(),
+                Value<String?> planActivityId = const Value.absent(),
+                Value<String?> decidedAt = const Value.absent(),
                 Value<String> source = const Value.absent(),
                 Value<String?> sourceNote = const Value.absent(),
                 Value<DateTime?> escalatedAt = const Value.absent(),
@@ -52578,6 +54311,10 @@ class $$DecisionsTableTableManager
                 dueDate: dueDate,
                 rationale: rationale,
                 outcome: outcome,
+                optionsConsidered: optionsConsidered,
+                impactStatement: impactStatement,
+                planActivityId: planActivityId,
+                decidedAt: decidedAt,
                 source: source,
                 sourceNote: sourceNote,
                 escalatedAt: escalatedAt,

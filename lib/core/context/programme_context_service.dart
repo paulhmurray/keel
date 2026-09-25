@@ -1,4 +1,5 @@
 import '../../shared/utils/money.dart';
+import '../raid/risk_rating.dart';
 import '../database/database.dart';
 import '../finance/variance.dart';
 import '../status/status_calculator.dart' show StatusCalculator, Rag;
@@ -193,14 +194,7 @@ class ProgrammeContextService {
   }
 
   int _score(dynamic r) {
-    int s(String v) {
-      switch (v.toLowerCase()) {
-        case 'high': return 3;
-        case 'medium': return 2;
-        default: return 1;
-      }
-    }
-    return s(r.likelihood) * s(r.impact);
+    return riskScore(r.likelihood, r.impact);
   }
 
   /// Formats context as a structured prompt string.

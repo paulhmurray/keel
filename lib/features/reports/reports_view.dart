@@ -6,6 +6,7 @@ import 'package:drift/drift.dart' show Value;
 import '../../core/cascade/cascade_service.dart';
 import '../../core/cascade/cascade_factory.dart';
 import '../../core/database/database.dart';
+import '../../core/raid/risk_rating.dart';
 import '../../core/export/html_exporter.dart';
 import '../../core/export/pdf_exporter.dart';
 import '../../core/export/handover_exporter.dart';
@@ -542,7 +543,7 @@ class _ReportFormDialogState extends State<_ReportFormDialog> {
 
       final openRisks = risks.where((r) => r.status == 'open').toList();
       final highRisks = openRisks
-          .where((r) => r.impact == 'high' || r.likelihood == 'high')
+          .where((r) => riskBand(r.likelihood, r.impact) != 'low')
           .take(5)
           .toList();
       final recentDecisions = decisions.take(5).toList();
@@ -562,7 +563,7 @@ class _ReportFormDialogState extends State<_ReportFormDialog> {
         buffer.writeln('TOP RISKS (open, high impact/likelihood):');
         for (final r in highRisks) {
           buffer.writeln(
-              '- ${r.ref ?? ''} ${r.description} [likelihood: ${r.likelihood}, impact: ${r.impact}]');
+              '- ${r.ref ?? ''} ${r.description} [${ratingSummary(r.likelihood, r.impact)}]');
           if (r.mitigation != null) {
             buffer.writeln('  Mitigation: ${r.mitigation}');
           }
@@ -851,6 +852,9 @@ class _RaidExportTab extends StatefulWidget {
 class _RaidExportTabState extends State<_RaidExportTab> {
   bool _exportingHtml = false;
   bool _exportingPdf = false;
+  // Off by default: a steering pack wants the live register. On, the
+  // closed items land in a trailing audit section.
+  bool _includeClosed = false;
 
   Future<void> _doExport({required bool asPdf}) async {
     if (asPdf) {
@@ -879,6 +883,7 @@ class _RaidExportTabState extends State<_RaidExportTab> {
           assumptions: assumptions,
           issues: issues,
           dependencies: deps,
+          includeClosed: _includeClosed,
         );
       } else {
         path = await HtmlExporter.exportRaid(
@@ -887,6 +892,7 @@ class _RaidExportTabState extends State<_RaidExportTab> {
           assumptions: assumptions,
           issues: issues,
           dependencies: deps,
+          includeClosed: _includeClosed,
         );
       }
 
@@ -930,12 +936,17 @@ class _RaidExportTabState extends State<_RaidExportTab> {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Exports all risks, assumptions, issues, and dependencies for '
-            'this project. Choose HTML for a browser-viewable file, or PDF '
-            'for a print-ready document.',
+            'Exports the open risks, assumptions, issues, and dependencies '
+            'for this project. Choose HTML for a browser-viewable file, or '
+            'PDF for a print-ready document.',
             style: TextStyle(color: KColors.textDim, fontSize: 13),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 12),
+          _IncludeClosedCheckbox(
+            value: _includeClosed,
+            onChanged: (v) => setState(() => _includeClosed = v),
+          ),
+          const SizedBox(height: 16),
           Wrap(
             spacing: 12,
             runSpacing: 12,
@@ -1328,6 +1339,7 @@ class _ProgrammeWorkbookTab extends StatefulWidget {
 
 class _ProgrammeWorkbookTabState extends State<_ProgrammeWorkbookTab> {
   bool _exporting = false;
+  bool _includeClosed = false;
   String? _error;
 
   Future<void> _export() async {
@@ -1339,6 +1351,7 @@ class _ProgrammeWorkbookTabState extends State<_ProgrammeWorkbookTab> {
         projectId: widget.projectId,
         projectName: widget.projectName,
         isProgramme: isProgramme,
+        includeClosed: _includeClosed,
       );
     } catch (e) {
       setState(() { _error = e.toString(); });
@@ -1366,10 +1379,15 @@ class _ProgrammeWorkbookTabState extends State<_ProgrammeWorkbookTab> {
             '  • Plan Dependencies (the arrows, as a FROM → TO list)\n'
             '  • Stakeholder Map\n'
             '  • Scope & Prioritisation\n'
-            '  • RAID Log',
+            '  • RAID Log (open items; closed in a trailing band if ticked)',
             style: const TextStyle(color: KColors.textDim, fontSize: 13),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 12),
+          _IncludeClosedCheckbox(
+            value: _includeClosed,
+            onChanged: (v) => setState(() => _includeClosed = v),
+          ),
+          const SizedBox(height: 16),
           ElevatedButton.icon(
             onPressed: _exporting ? null : _export,
             icon: _exporting
@@ -1397,6 +1415,36 @@ class _ProgrammeWorkbookTabState extends State<_ProgrammeWorkbookTab> {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// "Include closed items" switch shared by the RAID and workbook exports.
+class _IncludeClosedCheckbox extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _IncludeClosedCheckbox({required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () => onChanged(!value),
+      borderRadius: BorderRadius.circular(3),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          SizedBox(
+            width: 18,
+            height: 18,
+            child: Checkbox(
+                value: value, onChanged: (v) => onChanged(v ?? false)),
+          ),
+          const SizedBox(width: 8),
+          const Text('Include closed items (audit trail section at the end)',
+              style: TextStyle(color: KColors.text, fontSize: 12)),
+        ]),
       ),
     );
   }

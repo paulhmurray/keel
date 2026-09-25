@@ -84,7 +84,7 @@ Respond ONLY with valid JSON in this exact format, no markdown, no explanation:
 Field schemas per type:
 - action: {"description": "...", "owner": "person name or null", "dueDate": "YYYY-MM-DD or null"}
 - decision: {"description": "...", "decisionMaker": "person name or null"}
-- risk: {"description": "...", "likelihood": "low|medium|high", "impact": "low|medium|high"}
+- risk: {"description": "...", "likelihood": "rare|unlikely|possible|likely|almost certain", "impact": "minimal|minor|moderate|major|severe"}
 - issue: {"description": "...", "owner": "person name or null", "priority": "low|medium|high"}
 - dependency: {"description": "...", "owner": "person name or null"}
 - timeline_change: {"description": "...", "item": "milestone/workstream name", "previousDate": "date or null", "newDate": "date or null"}

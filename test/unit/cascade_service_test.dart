@@ -427,7 +427,8 @@ void main() {
       expect(r.id, 'cascade:risk:proj:r-9');
       expect(r.sourceProjectId, 'proj');
       expect(r.description, 'Programme-visible risk');
-      expect(r.likelihood, 'high');
+      // Legacy 'high' in the payload normalises onto the 5-level scale.
+      expect(r.likelihood, 'likely');
       expect(r.owner, 'Anna');
       // Cascaded items always land with source='cascade' so PMs in
       // the RAID view can tell where they came from quickly.

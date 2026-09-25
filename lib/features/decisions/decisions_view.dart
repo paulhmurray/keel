@@ -4,6 +4,10 @@ import 'package:provider/provider.dart';
 import '../../core/cascade/cascade_service.dart';
 import '../../core/cascade/cascade_factory.dart';
 import '../../core/database/database.dart';
+import '../../core/raid/dependency_plan_link.dart';
+import '../../core/raid/dependency_timeline.dart';
+import '../../core/raid/raid_lifecycle.dart';
+import '../../core/raid/raid_conversion_service.dart' show RaidKind;
 import '../../providers/project_provider.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/widgets/cascaded_source_badge.dart';
@@ -14,6 +18,9 @@ import '../canvas/canvas_drag_source.dart';
 import '../canvas/in_canvas_indicator.dart';
 import '../programme/overdue_cascade_panel.dart';
 import 'decision_form.dart';
+import '../raid/dependency_slack_chip.dart';
+import '../../shared/widgets/closed_toggle.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class DecisionsView extends StatefulWidget {
   final bool triggerNew;
@@ -25,6 +32,56 @@ class DecisionsView extends StatefulWidget {
 }
 
 class _DecisionsViewState extends State<DecisionsView> {
+  // Plan context for the per-card slack chip — loaded once; plan dates
+  // change rarely compared with the decision stream.
+  Map<String, TimelineActivity> _activitiesById = const {};
+  String? _month0Date;
+  String? _loadedForProject;
+  // Made decisions age out of the list two weeks after they were
+  // decided; the toggle (per project) brings them back.
+  bool _showClosed = false;
+
+  Future<void> _loadPrefs(String projectId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final v = prefs.getBool('keel_decisions_show_closed_$projectId') ?? false;
+    if (mounted) setState(() => _showClosed = v);
+  }
+
+  Future<void> _toggleShowClosed() async {
+    setState(() => _showClosed = !_showClosed);
+    final pid = _loadedForProject;
+    if (pid == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('keel_decisions_show_closed_$pid', _showClosed);
+  }
+
+  Future<void> _loadPlan(String projectId) async {
+    final db = context.read<AppDatabase>();
+    final acts = await db.programmeGanttDao.getActivitiesForProject(projectId);
+    final header = await db.programmeGanttDao.getHeader(projectId);
+    if (!mounted) return;
+    setState(() {
+      _activitiesById = {for (final a in acts) a.id: a};
+      _month0Date = header?.month0Date;
+      _loadedForProject = projectId;
+    });
+  }
+
+  DependencySlack? _slackFor(Decision d) {
+    if (kDecisionMadeStatuses.contains(d.status)) return null;
+    final a = d.planActivityId != null ? _activitiesById[d.planActivityId] : null;
+    if (a == null) return null;
+    return dependencySlack(
+      dueDate: d.dueDate,
+      dependencyType: 'inbound',
+      activityStartDate: a.startDate,
+      activityEndDate: a.endDate,
+      activityStartMonth: a.startMonth,
+      activityEndMonth: a.endMonth,
+      month0Date: _month0Date,
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -51,6 +108,12 @@ class _DecisionsViewState extends State<DecisionsView> {
     }
 
     final db = context.read<AppDatabase>();
+    if (_loadedForProject != projectId) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadPlan(projectId);
+        _loadPrefs(projectId);
+      });
+    }
 
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -77,6 +140,22 @@ class _DecisionsViewState extends State<DecisionsView> {
                 icon: const Icon(Icons.add, size: 14),
                 label: const Text('Add Decision'),
               ),
+              const Spacer(),
+              StreamBuilder<List<Decision>>(
+                stream: db.decisionsDao.watchDecisionsForProject(projectId),
+                builder: (_, snap) => ClosedToggle(
+                  showClosed: _showClosed,
+                  hiddenCount: partitionAgedOut<Decision>(
+                    snap.data ?? const [],
+                    kind: RaidKind.decision,
+                    status: (d) => d.status,
+                    closedAt: (d) => d.decidedAt,
+                    updatedAt: (d) => d.updatedAt,
+                    showClosed: false,
+                  ).hidden.length,
+                  onTap: _toggleShowClosed,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -92,7 +171,20 @@ class _DecisionsViewState extends State<DecisionsView> {
                 if (!snap.hasData) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                final items = snap.data!;
+                final part = partitionAgedOut<Decision>(
+                  snap.data!,
+                  kind: RaidKind.decision,
+                  status: (d) => d.status,
+                  closedAt: (d) => d.decidedAt,
+                  updatedAt: (d) => d.updatedAt,
+                  showClosed: _showClosed,
+                );
+                final items = part.visible;
+                if (items.isEmpty && part.hidden.isNotEmpty) {
+                  return HiddenClosedNotice(
+                      hiddenCount: part.hidden.length,
+                      onShow: _toggleShowClosed);
+                }
                 if (items.isEmpty) {
                   return Center(
                     child: Column(
@@ -121,7 +213,14 @@ class _DecisionsViewState extends State<DecisionsView> {
                   itemCount: items.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 6),
                   itemBuilder: (ctx, i) => _DecisionCard(
-                      decision: items[i], db: db, projectId: projectId),
+                    decision: items[i],
+                    db: db,
+                    projectId: projectId,
+                    slack: _slackFor(items[i]),
+                    activityName: items[i].planActivityId != null
+                        ? _activitiesById[items[i].planActivityId]?.name
+                        : null,
+                  ),
                 );
               },
             ),
@@ -148,9 +247,16 @@ class _DecisionCard extends StatelessWidget {
   final Decision decision;
   final AppDatabase db;
   final String projectId;
+  final DependencySlack? slack;
+  final String? activityName;
 
-  const _DecisionCard(
-      {required this.decision, required this.db, required this.projectId});
+  const _DecisionCard({
+    required this.decision,
+    required this.db,
+    required this.projectId,
+    this.slack,
+    this.activityName,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -299,6 +405,9 @@ class _DecisionCard extends StatelessWidget {
                                     itemId: decision.id,
                                   );
                                 }
+                                await DependencyPlanLink.remove(
+                                    db, projectId, decision.id,
+                                    kind: PlanLinkKind.decision);
                                 await db.decisionsDao
                                     .deleteDecision(decision.id);
                               }
@@ -363,6 +472,32 @@ class _DecisionCard extends StatelessWidget {
                         ),
                       ],
                     ),
+                    if (activityName != null || slack != null) ...[
+                      const SizedBox(height: 5),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          if (activityName != null)
+                            Row(mainAxisSize: MainAxisSize.min, children: [
+                              const Icon(Icons.timeline,
+                                  size: 11, color: KColors.textMuted),
+                              const SizedBox(width: 3),
+                              ConstrainedBox(
+                                constraints:
+                                    const BoxConstraints(maxWidth: 260),
+                                child: Text('Waiting: $activityName',
+                                    style: const TextStyle(
+                                        color: KColors.textDim, fontSize: 11),
+                                    overflow: TextOverflow.ellipsis),
+                              ),
+                            ]),
+                          if (slack != null)
+                            DependencySlackChip(slack: slack!, compact: true),
+                        ],
+                      ),
+                    ],
                     if (decision.rationale != null &&
                         decision.rationale!.isNotEmpty) ...[
                       const SizedBox(height: 4),

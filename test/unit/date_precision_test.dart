@@ -195,4 +195,41 @@ void main() {
       expect(span.endMonth, 5);
     });
   });
+
+  group('moveDateToMonth', () {
+    test('keeps the day and moves the month (the M-Power case: Oct → Aug)',
+        () {
+      expect(
+          moveDateToMonth(
+              isoDate: '2026-10-21', month: 4, month0Date: '2026-04-01'),
+          '2026-08-21');
+    });
+
+    test('clamps the day to the target month length', () {
+      expect(
+          moveDateToMonth(
+              isoDate: '2026-10-31', month: 7, month0Date: '2026-04-01'),
+          '2026-11-30');
+      expect(
+          moveDateToMonth(
+              isoDate: '2026-08-30', month: 10, month0Date: '2026-04-01'),
+          '2027-02-28');
+    });
+
+    test('crosses the year boundary from month 0', () {
+      expect(
+          moveDateToMonth(
+              isoDate: '2026-05-05', month: 9, month0Date: '2026-04-01'),
+          '2027-01-05');
+    });
+
+    test('no date or no anchor → unchanged', () {
+      expect(moveDateToMonth(isoDate: null, month: 3, month0Date: '2026-04-01'),
+          isNull);
+      expect(moveDateToMonth(isoDate: '2026-10-21', month: 3, month0Date: null),
+          '2026-10-21');
+      expect(moveDateToMonth(isoDate: 'soon', month: 3, month0Date: '2026-04-01'),
+          'soon');
+    });
+  });
 }

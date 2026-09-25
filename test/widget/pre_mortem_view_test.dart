@@ -151,8 +151,9 @@ void main() {
       final risks = await db.raidDao.getRisksForProject('p1');
       expect(risks, hasLength(1));
       expect(risks.first.description, 'M-POWER slip');
-      expect(risks.first.likelihood, 'high');
-      expect(risks.first.impact, 'high');
+      // Pre-mortem levels are legacy words; promotion maps them.
+      expect(risks.first.likelihood, 'likely');
+      expect(risks.first.impact, 'major');
       expect(risks.first.source, 'pre_mortem');
       expect(risks.first.sourceNote,
           contains('Pre-mortem: Test pre-mortem'));

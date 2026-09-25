@@ -18,6 +18,7 @@ import 'dependency_chains.dart';
 import '../../../providers/project_provider.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../shared/theme/keel_colors.dart';
+import '../../../shared/utils/date_utils.dart' as du;
 import '../../../shared/widgets/date_picker_field.dart';
 import '../../../shared/widgets/person_picker_field.dart';
 import '../../actions/action_form.dart';
@@ -4026,11 +4027,27 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                       items: _monthItems,
                       onChanged: (v) => setState(() {
                         _startMonth = v;
+                        // A real date pins the month on save, so the
+                        // date travels with the dropdown instead of
+                        // quietly overriding it.
+                        if (v != null && _startDate != null) {
+                          _startDate = moveDateToMonth(
+                              isoDate: _startDate,
+                              month: v,
+                              month0Date: widget.month0Date);
+                          if (_isSinglePoint) _endDate = _startDate;
+                        }
                         if (!_isSinglePoint &&
                             _endMonth != null &&
                             v != null &&
                             _endMonth! < v) {
                           _endMonth = v;
+                          if (_endDate != null) {
+                            _endDate = moveDateToMonth(
+                                isoDate: _endDate,
+                                month: v,
+                                month0Date: widget.month0Date);
+                          }
                         }
                       }),
                     ),
@@ -4049,11 +4066,33 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                             color: KColors.text, fontSize: 14),
                         dropdownColor: KColors.surface2,
                         items: _monthItems,
-                        onChanged: (v) => setState(() => _endMonth = v),
+                        onChanged: (v) => setState(() {
+                          _endMonth = v;
+                          if (v != null && _endDate != null) {
+                            _endDate = moveDateToMonth(
+                                isoDate: _endDate,
+                                month: v,
+                                month0Date: widget.month0Date);
+                          }
+                        }),
                       ),
                     ),
                   ],
                 ]),
+                if (_startDate != null || _endDate != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      _isSinglePoint
+                          ? 'Dated ${du.formatDate(_startDate)} — the date '
+                              'sets the month; changing the month moves the '
+                              'date with it.'
+                          : 'Dated — the dates set the months; changing a '
+                              'month moves its date with it.',
+                      style: const TextStyle(
+                          color: KColors.textMuted, fontSize: 10),
+                    ),
+                  ),
                 // ── Schedule scenarios (A / B / C) ──────────────────────
                 if (_canHaveScenarios) ...[
                   const SizedBox(height: 14),

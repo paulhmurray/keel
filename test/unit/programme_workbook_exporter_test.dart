@@ -299,4 +299,115 @@ void main() {
     expect(parentIdx, greaterThanOrEqualTo(0));
     expect(names[parentIdx + 1], contains('↳ Sub task'));
   });
+
+  test('RAID sheet shows open items; closed ride in a CLOSED band only '
+      'when asked, and stay readable', () async {
+    await db.raidDao.upsertRisk(const RisksCompanion(
+      id: Value('r-open'),
+      projectId: Value(projectId),
+      ref: Value('R1'),
+      description: Value('Open risk body'),
+      status: Value('open'),
+    ));
+    await db.raidDao.upsertRisk(const RisksCompanion(
+      id: Value('r-closed'),
+      projectId: Value(projectId),
+      ref: Value('R2'),
+      description: Value('Closed risk body'),
+      status: Value('accepted'),
+      closedAt: Value('2026-09-01'),
+      closureNote: Value('Accepted after review'),
+    ));
+
+    String raidText(List<int> bytes) => Excel.decodeBytes(bytes)
+        .tables['RAID Log']!
+        .rows
+        .expand((r) => r)
+        .map((c) => c?.value?.toString() ?? '')
+        .join('\n');
+
+    final plain = raidText(await ProgrammeWorkbookExporter.buildBytes(
+        db: db, projectId: projectId, projectName: 'Workbook Test'));
+    expect(plain, contains('Open risk body'));
+    expect(plain, isNot(contains('Closed risk body')));
+    expect(plain, isNot(contains('CLOSED')));
+
+    final withClosed = raidText(await ProgrammeWorkbookExporter.buildBytes(
+        db: db,
+        projectId: projectId,
+        projectName: 'Workbook Test',
+        includeClosed: true));
+    expect(withClosed, contains('Open risk body'));
+    expect(withClosed, contains('CLOSED'));
+    expect(withClosed, contains('Closed risk body'));
+    expect(withClosed, contains('Accepted after review'));
+    expect(withClosed, contains('2026-09-01'));
+    // Closed rows come after the register bands.
+    expect(withClosed.indexOf('Closed risk body'),
+        greaterThan(withClosed.indexOf('DEPENDENCIES')));
+  });
+
+  test('Planview Risks sheet has the register headers verbatim, open risks '
+      'only, SteerCo first', () async {
+    await db.raidDao.upsertRisk(const RisksCompanion(
+      id: Value('r-a'),
+      projectId: Value(projectId),
+      ref: Value('R5'),
+      title: Value('Programme-level risk'),
+      description: Value('body a'),
+      likelihood: Value('likely'),
+      impact: Value('major'),
+      status: Value('open'),
+    ));
+    await db.raidDao.upsertRisk(const RisksCompanion(
+      id: Value('r-b'),
+      projectId: Value(projectId),
+      ref: Value('R2'),
+      title: Value('Steerco risk'),
+      description: Value('body b'),
+      likelihood: Value('possible'),
+      impact: Value('moderate'),
+      steerco: Value(true),
+      strategy: Value('transfer'),
+      owner: Value('Bart Fine'),
+      assignee: Value('Paul Murray'),
+      nextReviewAt: Value('2026-09-23'),
+      enterpriseRiskLink: Value('Strategic Delivery'),
+      status: Value('open'),
+    ));
+    await db.raidDao.upsertRisk(const RisksCompanion(
+      id: Value('r-c'),
+      projectId: Value(projectId),
+      ref: Value('R9'),
+      description: Value('closed body'),
+      status: Value('closed'),
+    ));
+
+    final bytes = await ProgrammeWorkbookExporter.buildBytes(
+        db: db, projectId: projectId, projectName: 'Workbook Test');
+    final sheet = Excel.decodeBytes(bytes).tables['Planview Risks'];
+    expect(sheet, isNotNull);
+    final rows = sheet!.rows
+        .map((r) => r.map((c) => c?.value?.toString() ?? '').toList())
+        .toList();
+    // Header row is the second row (title line above it).
+    final hdr = rows[1].take(18).toList();
+    expect(hdr, [
+      'REF', 'SteerCo', 'RISK (title)', 'DESCRIPTION', 'RISK OWNER',
+      'RISK ASSIGNEE', 'LIKELIHOOD (current)', 'CONSEQUENCE (current)',
+      'STRATEGY', 'TREATMENT PLAN', 'LIKELIHOOD (target)',
+      'CONSEQUENCE (target)', 'RAISED ON', 'DUE DATE', 'LAST REVIEW',
+      'NEXT REVIEW', 'NOTES (status update)', 'ENTERPRISE RISK LINK',
+    ]);
+    final text = rows.expand((r) => r).join('\n');
+    expect(text, contains('Steerco risk'));
+    expect(text, contains('Programme-level risk'));
+    expect(text, isNot(contains('closed body')));
+    // SteerCo row sorts first even though its score is lower.
+    expect(text.indexOf('Steerco risk'), lessThan(text.indexOf('Programme-level risk')));
+    expect(text, contains('▲ ESCALATE'));
+    expect(text, contains('Transfer'));
+    expect(text, contains('23 Sep 26'));
+    expect(text, contains('Strategic Delivery'));
+  });
 }

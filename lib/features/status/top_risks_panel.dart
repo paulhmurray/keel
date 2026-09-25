@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/database/database.dart';
+import '../../core/raid/risk_rating.dart';
 import '../../shared/theme/keel_colors.dart';
 
 class TopRisksPanel extends StatelessWidget {
@@ -48,7 +49,7 @@ class _RiskRow extends StatelessWidget {
     required this.isLast,
   });
 
-  Color _levelColor(String l) => switch (l) {
+  Color _levelColor(int rank) => switch (levelBand(rank)) {
         'high'   => KColors.red,
         'medium' => KColors.amber,
         _        => KColors.textMuted,
@@ -56,8 +57,8 @@ class _RiskRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final lColor = _levelColor(risk.likelihood);
-    final iColor = _levelColor(risk.impact);
+    final lColor = _levelColor(likelihoodRank(risk.likelihood));
+    final iColor = _levelColor(consequenceRank(risk.impact));
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -92,14 +93,14 @@ class _RiskRow extends StatelessWidget {
               style: const TextStyle(fontSize: 11),
               children: [
                 TextSpan(
-                    text: _cap(risk.likelihood),
+                    text: likelihoodLabel(risk.likelihood),
                     style: TextStyle(
                         color: lColor, fontWeight: FontWeight.w600)),
                 const TextSpan(
                     text: ' / ',
                     style: TextStyle(color: KColors.textMuted)),
                 TextSpan(
-                    text: _cap(risk.impact),
+                    text: consequenceLabel(risk.impact),
                     style: TextStyle(
                         color: iColor, fontWeight: FontWeight.w600)),
               ],
@@ -116,7 +117,4 @@ class _RiskRow extends StatelessWidget {
       ]),
     );
   }
-
-  String _cap(String s) =>
-      s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 }

@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/database/database.dart';
+import '../../core/raid/risk_rating.dart';
 import '../../core/helm/day_plan_logic.dart';
 import '../../providers/project_provider.dart';
 import '../../shared/theme/keel_colors.dart';
@@ -578,8 +579,8 @@ class _TopRisksSection extends StatelessWidget {
         if (!snap.hasData) return const _PulseLoading();
         final sorted = snap.data!.toList()
           ..sort((a, b) =>
-            (_score(b.likelihood) * _score(b.impact)) -
-            (_score(a.likelihood) * _score(a.impact)));
+            riskScore(b.likelihood, b.impact) -
+            riskScore(a.likelihood, a.impact));
         final risks = sorted.take(3).toList();
         if (risks.isEmpty) {
           return const _PulseEmpty(message: 'No open risks');
@@ -608,30 +609,20 @@ class _TopRisksSection extends StatelessWidget {
     );
   }
 
-  Color _riskBarColor(String likelihood, String impact) {
-    final score = _score(likelihood) * _score(impact);
-    if (score >= 9) return KColors.red;
-    if (score >= 4) return KColors.amber;
-    return KColors.phosphor;
-  }
+  Color _riskBarColor(String likelihood, String impact) =>
+      switch (riskBand(likelihood, impact)) {
+        'high' => KColors.red,
+        'medium' => KColors.amber,
+        _ => KColors.phosphor,
+      };
 
-  String _riskRag(String likelihood, String impact) {
-    final score = _score(likelihood) * _score(impact);
-    if (score >= 9) return 'red';
-    if (score >= 4) return 'amber';
-    return 'green';
-  }
+  String _riskRag(String likelihood, String impact) =>
+      switch (riskBand(likelihood, impact)) {
+        'high' => 'red',
+        'medium' => 'amber',
+        _ => 'green',
+      };
 
-  int _score(String val) {
-    switch (val.toLowerCase()) {
-      case 'high':
-        return 3;
-      case 'medium':
-        return 2;
-      default:
-        return 1;
-    }
-  }
 }
 
 // ---- Top Decisions ----

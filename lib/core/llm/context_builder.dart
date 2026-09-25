@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../database/database.dart';
+import '../raid/risk_rating.dart';
 import '../helm/day_plan_logic.dart';
 import '../status/status_calculator.dart';
 
@@ -270,7 +271,9 @@ class ContextBuilder {
             ? ' (Owner: ${risk.owner})'
             : '';
         buffer.writeln('- $ref${risk.description} '
-            '[Likelihood: ${risk.likelihood}, Impact: ${risk.impact}]$owner');
+            '[Likelihood: ${likelihoodLabel(risk.likelihood)}, '
+            'Consequence: ${consequenceLabel(risk.impact)}, '
+            'score ${riskScore(risk.likelihood, risk.impact)}/25]$owner');
         if (risk.mitigation != null && risk.mitigation!.isNotEmpty) {
           buffer.writeln('  Mitigation: ${risk.mitigation}');
         }
@@ -700,20 +703,8 @@ class ContextBuilder {
         _ => 1,
       };
 
-  int _riskScore(String likelihood, String impact) {
-    int s(String v) {
-      switch (v.toLowerCase()) {
-        case 'high':
-          return 3;
-        case 'medium':
-          return 2;
-        default:
-          return 1;
-      }
-    }
-
-    return s(likelihood) * s(impact);
-  }
+  int _riskScore(String likelihood, String impact) =>
+      riskScore(likelihood, impact);
 
   String _capitalise(String s) {
     if (s.isEmpty) return s;

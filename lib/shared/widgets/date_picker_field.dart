@@ -39,7 +39,12 @@ class _DatePickerFieldState extends State<DatePickerField> {
     if (old.isoValue != widget.isoValue) {
       final display = du.formatDate(widget.isoValue);
       if (_ctrl.text != display) {
-        _ctrl.text = display;
+        // didUpdateWidget runs mid-build. Writing the controller here
+        // notifies the enclosing Form, which calls setState during the
+        // build phase and asserts. Defer to the end of the frame.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _ctrl.text != display) _ctrl.text = display;
+        });
       }
     }
   }

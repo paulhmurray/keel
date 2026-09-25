@@ -7,12 +7,15 @@ import '../../core/analytics/keel_events.dart';
 import '../../core/database/database.dart';
 import '../../providers/settings_provider.dart';
 import '../../shared/theme/keel_colors.dart';
+import '../../shared/widgets/detail_dialog.dart';
 import '../../shared/widgets/dropdown_field.dart';
 import '../../shared/widgets/date_picker_field.dart';
 import '../../shared/widgets/person_picker_field.dart';
+import '../../shared/widgets/plan_activity_picker.dart';
 import '../../shared/utils/date_utils.dart' as du;
 import '../timeline/timeline_chart.dart' show parseHexColor;
 import 'action_grouping.dart';
+import '../journal/journal_source_link.dart';
 
 // ---------------------------------------------------------------------------
 // Color helper
@@ -28,6 +31,11 @@ const _kCustomColors = [
 // Action form dialog
 // ---------------------------------------------------------------------------
 
+/// Action view/edit dialog, in the same wide two-column frame as the
+/// plan's activity dialog. Left column: the action itself. Right column:
+/// how it sits in the hierarchy, its sub-tasks (with quick-add) and the
+/// comment thread — visible in edit mode too, so the PM can read the
+/// conversation while changing the action.
 class ActionFormDialog extends StatefulWidget {
   final String projectId;
   final AppDatabase db;
@@ -71,6 +79,13 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
 
   late bool _isViewing;
 
+  // Sub-task quick-add. Edit mode writes straight to the DB (the row
+  // exists); create mode queues names and creates them after the action
+  // itself saves — the same shape as tasks in the plan activity dialog.
+  final _subTaskCtrl = TextEditingController();
+  final _subTaskFocus = FocusNode();
+  final List<String> _pendingSubTaskNames = [];
+
   List<Person> _persons = [];
   List<ActionCategory> _categories = [];
   List<ProjectAction> _allActions = [];
@@ -79,8 +94,12 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
 
   final _statuses = ['open', 'in progress', 'closed', 'blocked'];
   final _priorities = ['low', 'medium', 'high', 'critical'];
-  final _sources = ['manual', 'inbox', 'document', 'observation', 'meeting'];
+  final _sources = [
+    'manual', 'inbox', 'document', 'observation', 'meeting', 'journal'
+  ];
   final _recurrences = ['none', 'weekly', 'fortnightly', 'monthly', 'quarterly'];
+
+  bool get _isEdit => widget.action != null;
 
   @override
   void initState() {
@@ -124,6 +143,8 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
     _descCtrl.dispose();
     _ownerCtrl.dispose();
     _sourceNoteCtrl.dispose();
+    _subTaskCtrl.dispose();
+    _subTaskFocus.dispose();
     super.dispose();
   }
 
@@ -149,20 +170,17 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
     if (!_formKey.currentState!.validate()) return;
 
     // An action with children is a parent whatever the checkbox says —
-    // keeps the flag honest for rows that predate it.
-    if (widget.action != null &&
-        _allActions.any((a) => a.parentActionId == widget.action!.id)) {
+    // keeps the flag honest for rows that predate it. Queued sub-tasks
+    // make it one too.
+    if ((widget.action != null &&
+            _allActions.any((a) => a.parentActionId == widget.action!.id)) ||
+        _pendingSubTaskNames.isNotEmpty) {
       _isParent = true;
     }
 
     final existing = await widget.db.actionsDao.getActionsForProject(widget.projectId);
-    final nums = existing
-        .where((a) => a.ref != null && a.ref!.startsWith('AC'))
-        .map((a) => int.tryParse(a.ref!.substring(2)) ?? 0)
-        .toList()
-      ..sort();
-    final String baseRef = widget.action?.ref ??
-        'AC${(nums.isEmpty ? 0 : nums.last) + 1}';
+    final String baseRef =
+        widget.action?.ref ?? ActionsDao.nextRef(existing);
 
     final isEdit = widget.action != null;
 
@@ -217,6 +235,14 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
         isParent: Value(_isParent),
         updatedAt: Value(DateTime.now()),
       ));
+      // Sub-tasks queued while creating — the parent row exists now.
+      for (final name in _pendingSubTaskNames) {
+        await widget.db.actionsDao.addSubTask(
+          id: const Uuid().v4(),
+          parentId: id,
+          description: name,
+        );
+      }
     }
 
     if (!isEdit && mounted) {
@@ -228,138 +254,40 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
     if (mounted) Navigator.of(context).pop();
   }
 
-  String _planActivityLabel(String activityId) {
-    final act = _planActivities.cast<TimelineActivity?>()
-        .firstWhere((a) => a?.id == activityId, orElse: () => null);
-    if (act == null) return activityId;
-    final wp = _workPackages.cast<TimelineWorkPackage?>()
-        .firstWhere((w) => w?.id == act.workPackageId, orElse: () => null);
-    final prefix = wp != null ? '[${wp.shortCode ?? wp.name}] ' : '';
-    return '$prefix${act.name}';
-  }
+  String _planActivityLabel(String activityId) => PlanActivityPicker.labelFor(
+        activityId,
+        workPackages: _workPackages,
+        activities: _planActivities,
+      );
 
-  // ── Read/view mode ─────────────────────────────────────────────────────────
-
-  Widget _readView() {
-    final a = widget.action!;
-    final isOverdue = a.dueDate != null &&
-        a.status != 'closed' &&
-        a.dueDate!.compareTo(DateTime.now().toIso8601String().substring(0, 10)) < 0;
-    final cat = a.categoryId != null
-        ? _categories.where((c) => c.id == a.categoryId).firstOrNull
+  Color get _accent {
+    final cat = _categoryId != null
+        ? _categories.where((c) => c.id == _categoryId).firstOrNull
         : null;
-
-    return AlertDialog(
-      title: Row(
-        children: [
-          if (cat != null) ...[
-            Container(
-              width: 10,
-              height: 10,
-              decoration: BoxDecoration(
-                color: parseHexColor(cat.color),
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(width: 8),
-          ],
-          if (a.ref != null) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: KColors.amberDim,
-                borderRadius: BorderRadius.circular(3),
-              ),
-              child: Text(a.ref!,
-                  style: const TextStyle(
-                      color: KColors.amber,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700)),
-            ),
-            const SizedBox(width: 10),
-          ],
-          const Text('Action'),
-          if (a.recurrenceGroupId != null) ...[
-            const SizedBox(width: 8),
-            const Tooltip(
-              message: 'Recurring action',
-              child: Icon(Icons.repeat, size: 14, color: KColors.textDim),
-            ),
-          ],
-        ],
-      ),
-      content: SizedBox(
-        width: 480,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (cat != null) _viewField('Category', cat.name),
-              if (a.planActivityId != null) _viewField(
-                'Plan Activity',
-                _planActivityLabel(a.planActivityId!),
-              ),
-              if (a.parentActionId != null &&
-                  _allActions.any((p) => p.id == a.parentActionId))
-                _viewField(
-                  'Part of',
-                  _allActions
-                      .firstWhere((p) => p.id == a.parentActionId)
-                      .description,
-                ),
-              _viewField('Description', a.description, large: true),
-              Row(children: [
-                Expanded(child: _viewField('Status', a.status)),
-                Expanded(child: _viewField('Priority', a.priority)),
-              ]),
-              Row(children: [
-                if (a.owner != null && a.owner!.isNotEmpty)
-                  Expanded(child: _viewField('Owner', a.owner)),
-                if (a.dueDate != null)
-                  Expanded(
-                    child: _viewField(
-                      'Due Date',
-                      du.formatDate(a.dueDate),
-                      valueColor: isOverdue ? KColors.red : null,
-                    ),
-                  ),
-              ]),
-              Row(children: [
-                Expanded(child: _viewField('Source', a.source)),
-                if (a.sourceNote != null && a.sourceNote!.isNotEmpty)
-                  Expanded(child: _viewField('Source Note', a.sourceNote)),
-              ]),
-              ..._subTasksSection(a),
-              const SizedBox(height: 4),
-              const Divider(color: KColors.border, height: 1),
-              const SizedBox(height: 12),
-              _CommentsThread(action: a, db: widget.db),
-            ],
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Close'),
-        ),
-        ElevatedButton.icon(
-          onPressed: () => setState(() => _isViewing = false),
-          icon: const Icon(Icons.edit_outlined, size: 14),
-          label: const Text('Edit'),
-        ),
-      ],
-    );
+    return cat != null ? parseHexColor(cat.color) : KColors.amber;
   }
 
-  // ── Sub-tasks (children of a group parent) ─────────────────────────────────
+  // ── Sub-tasks ──────────────────────────────────────────────────────────────
 
-  /// Rendered in the read view when this action has children — the same
-  /// nesting the kanban shows as swimlanes. Each row has a quick
-  /// done-toggle and opens the child's own dialog on tap.
-  List<Widget> _subTasksSection(ProjectAction parent) {
-    final children = _allActions
+  /// Whether this action may hold sub-tasks: the hierarchy is capped at
+  /// parent → task → sub-task, so anything already at depth 2 can't.
+  bool get _canHaveSubTasks {
+    final byId = {for (final a in _allActions) a.id: a};
+    // Judge by the chosen parent (the form may be re-nesting it), not
+    // only the persisted row: nesting under a task makes this a
+    // sub-task, and sub-tasks can't hold children.
+    final chosen = _parentActionId != null ? byId[_parentActionId!] : null;
+    if (chosen != null && chosen.parentActionId != null) return false;
+    // A recurring series is many rows; sub-tasks would attach to just
+    // one of them, so they aren't offered at creation time.
+    if (!_isEdit && _recurrence != 'none') return false;
+    return true;
+  }
+
+  List<ProjectAction> get _children {
+    final parent = widget.action;
+    if (parent == null) return const [];
+    return _allActions
         .where((c) => c.parentActionId == parent.id)
         .toList()
       ..sort((x, y) {
@@ -373,31 +301,119 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
         if (y.dueDate != null) return 1;
         return x.createdAt.compareTo(y.createdAt);
       });
-    if (children.isEmpty) return const [];
-    final doneCount =
-        children.where((c) => c.status == 'closed').length;
+  }
+
+  Future<void> _quickAddSubTask() async {
+    final name = _subTaskCtrl.text.trim();
+    if (name.isEmpty) return;
+    _subTaskCtrl.clear();
+    if (_isEdit) {
+      await widget.db.actionsDao.addSubTask(
+        id: const Uuid().v4(),
+        parentId: widget.action!.id,
+        description: name,
+      );
+      if (!mounted) return;
+      setState(() => _isParent = true);
+      await _loadData();
+    } else {
+      setState(() {
+        _pendingSubTaskNames.add(name);
+        _isParent = true;
+      });
+    }
+    _subTaskFocus.requestFocus();
+  }
+
+  Future<void> _openSubTask(ProjectAction c) async {
+    await showDialog(
+      context: context,
+      builder: (_) => ActionFormDialog(
+        projectId: widget.projectId,
+        db: widget.db,
+        action: c,
+        startInViewMode: true,
+      ),
+    );
+    // The child may have been edited or deleted — refresh so this list
+    // (and the done counter) reflects it.
+    await _loadData();
+  }
+
+  /// Sub-task list + (edit/create) quick-add. In read mode with no
+  /// children this collapses to nothing.
+  List<Widget> _subTasksSection({required bool editable}) {
+    final children = _children;
     final today = DateTime.now().toIso8601String().substring(0, 10);
+    final doneCount = children.where((c) => c.status == 'closed').length;
+
+    if (!editable && children.isEmpty) return const [];
+    if (editable && !_canHaveSubTasks) {
+      return const [
+        Padding(
+          padding: EdgeInsets.symmetric(vertical: 4),
+          child: Text(
+            'Sub-tasks can’t contain actions of their own.',
+            style: TextStyle(color: KColors.textMuted, fontSize: 10),
+          ),
+        ),
+        SizedBox(height: 8),
+      ];
+    }
 
     return [
-      const SizedBox(height: 4),
-      const Divider(color: KColors.border, height: 1),
-      const SizedBox(height: 10),
-      Text(
-        'SUB-TASKS · $doneCount OF ${children.length} DONE',
-        style: const TextStyle(
-          color: KColors.textDim,
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.2,
+      DetailSectionLabel(children.isEmpty
+          ? 'Sub-tasks'
+          : 'Sub-tasks · $doneCount of ${children.length} done'),
+      const SizedBox(height: 6),
+      for (final c in children) _subTaskRow(c, today, editable: editable),
+      if (!_isEdit)
+        for (var i = 0; i < _pendingSubTaskNames.length; i++)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Row(children: [
+              const Icon(Icons.radio_button_unchecked,
+                  size: 16, color: KColors.textMuted),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(_pendingSubTaskNames[i],
+                    style: const TextStyle(color: KColors.text, fontSize: 12),
+                    overflow: TextOverflow.ellipsis),
+              ),
+              InkWell(
+                onTap: () =>
+                    setState(() => _pendingSubTaskNames.removeAt(i)),
+                child: const Padding(
+                  padding: EdgeInsets.all(2),
+                  child: Icon(Icons.close, size: 12, color: KColors.textMuted),
+                ),
+              ),
+            ]),
+          ),
+      if (editable) ...[
+        const SizedBox(height: 4),
+        TextField(
+          controller: _subTaskCtrl,
+          focusNode: _subTaskFocus,
+          style: const TextStyle(color: KColors.text, fontSize: 12),
+          decoration: InputDecoration(
+            hintText: _isEdit
+                ? 'Add sub-task — Enter to save, keep typing for more'
+                : 'Add sub-task — created with the action',
+            hintStyle: const TextStyle(color: KColors.textMuted, fontSize: 12),
+            isDense: true,
+            prefixIcon: const Icon(Icons.add, size: 14, color: KColors.textDim),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          ),
+          onSubmitted: (_) => _quickAddSubTask(),
         ),
-      ),
-      const SizedBox(height: 6),
-      for (final c in children) _subTaskRow(c, today),
-      const SizedBox(height: 6),
+      ],
+      const SizedBox(height: 12),
     ];
   }
 
-  Widget _subTaskRow(ProjectAction c, String today) {
+  Widget _subTaskRow(ProjectAction c, String today, {required bool editable}) {
     final closed = c.status == 'closed';
     final overdue =
         !closed && c.dueDate != null && c.dueDate!.compareTo(today) < 0;
@@ -416,9 +432,7 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
                 await _loadData();
               },
               child: Icon(
-                closed
-                    ? Icons.check_circle
-                    : Icons.radio_button_unchecked,
+                closed ? Icons.check_circle : Icons.radio_button_unchecked,
                 size: 16,
                 color: closed ? KColors.phosphor : KColors.textMuted,
               ),
@@ -446,6 +460,12 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
               ),
             ),
           ),
+          if (c.owner != null && c.owner!.isNotEmpty) ...[
+            const SizedBox(width: 8),
+            Text(c.owner!,
+                style:
+                    const TextStyle(color: KColors.textMuted, fontSize: 10)),
+          ],
           if (c.dueDate != null) ...[
             const SizedBox(width: 8),
             Text(
@@ -457,26 +477,119 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
             ),
           ],
           const SizedBox(width: 4),
-          const Icon(Icons.chevron_right,
-              size: 14, color: KColors.textMuted),
+          if (editable)
+            Tooltip(
+              message: 'Move to top level (keeps the action)',
+              child: InkWell(
+                onTap: () async {
+                  await widget.db.actionsDao.setParent(c.id, null);
+                  await _loadData();
+                },
+                child: const Padding(
+                  padding: EdgeInsets.all(2),
+                  child: Icon(Icons.close, size: 12, color: KColors.textMuted),
+                ),
+              ),
+            )
+          else
+            const Icon(Icons.chevron_right, size: 14, color: KColors.textMuted),
         ]),
       ),
     );
   }
 
-  Future<void> _openSubTask(ProjectAction c) async {
-    await showDialog(
-      context: context,
-      builder: (_) => ActionFormDialog(
-        projectId: widget.projectId,
-        db: widget.db,
-        action: c,
-        startInViewMode: true,
-      ),
+  // ── Read/view mode ─────────────────────────────────────────────────────────
+
+  Widget _readView() {
+    final a = widget.action!;
+    final isOverdue = a.dueDate != null &&
+        a.status != 'closed' &&
+        a.dueDate!.compareTo(DateTime.now().toIso8601String().substring(0, 10)) < 0;
+    final cat = a.categoryId != null
+        ? _categories.where((c) => c.id == a.categoryId).firstOrNull
+        : null;
+    final parent = a.parentActionId != null
+        ? _allActions.where((p) => p.id == a.parentActionId).firstOrNull
+        : null;
+
+    return DetailDialog(
+      accent: _accent,
+      title: [
+        if (a.ref != null) ...[DetailRefChip(a.ref!), const SizedBox(width: 10)],
+        const Expanded(child: DetailTitle('Action')),
+        if (a.recurrenceGroupId != null)
+          const Tooltip(
+            message: 'Recurring action',
+            child: Icon(Icons.repeat, size: 14, color: KColors.textDim),
+          ),
+        if (cat != null) ...[
+          const SizedBox(width: 10),
+          Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(
+                color: parseHexColor(cat.color), shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 6),
+          Text(cat.name,
+              style: TextStyle(
+                  color: parseHexColor(cat.color),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600)),
+        ],
+      ],
+      left: [
+        DetailField('Description', a.description, large: true),
+        Row(children: [
+          Expanded(child: DetailField('Status', a.status)),
+          Expanded(child: DetailField('Priority', a.priority)),
+        ]),
+        Row(children: [
+          if (a.owner != null && a.owner!.isNotEmpty)
+            Expanded(child: DetailField('Owner', a.owner)),
+          if (a.dueDate != null)
+            Expanded(
+              child: DetailField('Due Date', du.formatDate(a.dueDate),
+                  valueColor: isOverdue ? KColors.red : null),
+            ),
+        ]),
+        Row(children: [
+          Expanded(child: DetailField('Source', a.source)),
+          if (a.sourceNote != null && a.sourceNote!.isNotEmpty)
+            Expanded(child: DetailField('Source Note', a.sourceNote)),
+        ]),
+        if (a.planActivityId != null)
+          DetailField('Plan Activity', _planActivityLabel(a.planActivityId!)),
+        if (parent != null)
+          DetailField('Part of',
+              '${parent.ref != null ? '${parent.ref} · ' : ''}${parent.description}'),
+        JournalSourceLink(
+          db: widget.db,
+          projectId: widget.projectId,
+          itemId: a.id,
+          itemText: a.description,
+        ),
+      ],
+      right: [
+        ..._subTasksSection(editable: false),
+        if (_children.isNotEmpty) const DetailDivider(),
+        _CommentsThread(action: a, db: widget.db),
+      ],
+      footer: [
+        const Spacer(),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Close',
+              style: TextStyle(color: KColors.textDim, fontSize: 12)),
+        ),
+        const SizedBox(width: 8),
+        ElevatedButton.icon(
+          onPressed: () => setState(() => _isViewing = false),
+          icon: const Icon(Icons.edit_outlined, size: 14),
+          label: const Text('Edit', style: TextStyle(fontSize: 12)),
+        ),
+      ],
     );
-    // The child may have been edited or deleted — refresh so this list
-    // (and the done counter) reflects it.
-    await _loadData();
   }
 
   // ── Edit/create mode ───────────────────────────────────────────────────────
@@ -485,207 +598,215 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
   Widget build(BuildContext context) {
     if (_isViewing) return _readView();
 
-    final isEdit = widget.action != null;
-    return AlertDialog(
-      title: Text(isEdit ? 'Edit Action' : 'New Action'),
-      content: SizedBox(
-        width: 480,
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ── Category chips ─────────────────────────────────────
-                if (_categories.isNotEmpty) ...[
-                  const Text('CATEGORY',
-                      style: TextStyle(
-                          color: KColors.textMuted,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.1)),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: [
-                      ..._categories.map((cat) => _CategoryChip(
-                            category: cat,
-                            selected: _categoryId == cat.id,
-                            onTap: () => setState(() =>
-                                _categoryId =
-                                    _categoryId == cat.id ? null : cat.id),
-                          )),
-                      _AddCategoryChip(
-                          onTap: () => _showAddCategoryDialog()),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                ],
+    final isEdit = _isEdit;
+    return DetailDialog(
+      accent: _accent,
+      formKey: _formKey,
+      title: [
+        if (widget.action?.ref != null) ...[
+          DetailRefChip(widget.action!.ref!),
+          const SizedBox(width: 10),
+        ],
+        Expanded(child: DetailTitle(isEdit ? 'Edit Action' : 'New Action')),
+      ],
+      left: [
+        // ── Category chips ─────────────────────────────────────
+        if (_categories.isNotEmpty) ...[
+          const DetailSectionLabel('Category'),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              ..._categories.map((cat) => _CategoryChip(
+                    category: cat,
+                    selected: _categoryId == cat.id,
+                    onTap: () => setState(() =>
+                        _categoryId = _categoryId == cat.id ? null : cat.id),
+                  )),
+              _AddCategoryChip(onTap: () => _showAddCategoryDialog()),
+            ],
+          ),
+          const SizedBox(height: 16),
+        ],
 
-                // ── Description ────────────────────────────────────────
-                TextFormField(
-                  controller: _descCtrl,
-                  autofocus: true,
-                  decoration:
-                      const InputDecoration(labelText: 'Description *'),
-                  validator: (v) =>
-                      v == null || v.trim().isEmpty ? 'Required' : null,
-                ),
-                const SizedBox(height: 12),
+        // ── Description ────────────────────────────────────────
+        TextFormField(
+          controller: _descCtrl,
+          autofocus: !isEdit,
+          minLines: 2,
+          maxLines: 5,
+          style: const TextStyle(color: KColors.text, fontSize: 14),
+          decoration: const InputDecoration(
+            labelText: 'Description *',
+            alignLabelWithHint: true,
+          ),
+          validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+        ),
+        const SizedBox(height: 12),
 
-                // ── Status + Priority ──────────────────────────────────
-                Row(children: [
-                  Expanded(
-                    child: DropdownField(
-                      label: 'Status',
-                      value: _status,
-                      items: _statuses,
-                      onChanged: (v) => setState(() => _status = v!),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: DropdownField(
-                      label: 'Priority',
-                      value: _priority,
-                      items: _priorities,
-                      onChanged: (v) => setState(() => _priority = v!),
-                    ),
-                  ),
-                ]),
-                const SizedBox(height: 12),
-
-                // ── Owner + Due Date ───────────────────────────────────
-                Row(children: [
-                  Expanded(
-                    child: PersonPickerField(
-                      controller: _ownerCtrl,
-                      label: 'Owner',
-                      persons: _persons,
-                      db: widget.db,
-                      projectId: widget.projectId,
-                      onPersonCreated: _loadData,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: DatePickerField(
-                      label: 'Due Date',
-                      isoValue: _dueDate,
-                      onChanged: (v) => setState(() => _dueDate = v),
-                    ),
-                  ),
-                ]),
-                const SizedBox(height: 12),
-
-                // ── Recurrence (create only) ───────────────────────────
-                if (!isEdit) ...[
-                  const Divider(color: KColors.border, height: 1),
-                  const SizedBox(height: 12),
-                  const Text('RECURRENCE',
-                      style: TextStyle(
-                          color: KColors.textMuted,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.1)),
-                  const SizedBox(height: 8),
-                  Row(children: [
-                    Expanded(
-                      child: DropdownField(
-                        label: 'Repeats',
-                        value: _recurrence,
-                        items: _recurrences,
-                        onChanged: (v) =>
-                            setState(() => _recurrence = v!),
-                      ),
-                    ),
-                    if (_recurrence != 'none') ...[
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: DatePickerField(
-                          label: 'Repeat until',
-                          isoValue: _recurrenceEndDate,
-                          onChanged: (v) =>
-                              setState(() => _recurrenceEndDate = v),
-                        ),
-                      ),
-                    ],
-                  ]),
-                  const SizedBox(height: 12),
-                  const Divider(color: KColors.border, height: 1),
-                  const SizedBox(height: 12),
-                ],
-
-                // ── Group parent flag ──────────────────────────────────
-                _IsParentCheckbox(
-                  editing: widget.action,
-                  allActions: _allActions,
-                  value: _isParent,
-                  parentActionId: _parentActionId,
-                  onChanged: (v) => setState(() => _isParent = v),
-                ),
-                const SizedBox(height: 12),
-
-                // ── Parent action (group) ──────────────────────────────
-                _ParentActionPicker(
-                  editing: widget.action,
-                  allActions: _allActions,
-                  value: _parentActionId,
-                  onChanged: (v) => setState(() => _parentActionId = v),
-                ),
-                const SizedBox(height: 12),
-
-                // ── Link to plan activity ──────────────────────────────
-                if (_workPackages.isNotEmpty) ...[
-                  _PlanActivityPicker(
-                    value: _planActivityId,
-                    workPackages: _workPackages,
-                    activities: _planActivities,
-                    onChanged: (v) => setState(() => _planActivityId = v),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-
-                // ── Source ─────────────────────────────────────────────
-                Row(children: [
-                  Expanded(
-                    child: DropdownField(
-                      label: 'Source',
-                      value: _source,
-                      items: _sources,
-                      onChanged: (v) => setState(() => _source = v!),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _sourceNoteCtrl,
-                      decoration:
-                          const InputDecoration(labelText: 'Source Note'),
-                    ),
-                  ),
-                ]),
-              ],
+        // ── Status + Priority ──────────────────────────────────
+        Row(children: [
+          Expanded(
+            child: DropdownField(
+              label: 'Status',
+              value: _status,
+              items: _statuses,
+              onChanged: (v) => setState(() => _status = v!),
             ),
           ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: DropdownField(
+              label: 'Priority',
+              value: _priority,
+              items: _priorities,
+              onChanged: (v) => setState(() => _priority = v!),
+            ),
+          ),
+        ]),
+        const SizedBox(height: 12),
+
+        // ── Owner + Due Date ───────────────────────────────────
+        Row(children: [
+          Expanded(
+            child: PersonPickerField(
+              controller: _ownerCtrl,
+              label: 'Owner',
+              persons: _persons,
+              db: widget.db,
+              projectId: widget.projectId,
+              onPersonCreated: _loadData,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: DatePickerField(
+              label: 'Due Date',
+              isoValue: _dueDate,
+              onChanged: (v) => setState(() => _dueDate = v),
+            ),
+          ),
+        ]),
+        const SizedBox(height: 12),
+
+        // ── Recurrence (create only) ───────────────────────────
+        if (!isEdit) ...[
+          const Divider(color: KColors.border, height: 1),
+          const SizedBox(height: 12),
+          const DetailSectionLabel('Recurrence'),
+          const SizedBox(height: 8),
+          Row(children: [
+            Expanded(
+              child: DropdownField(
+                label: 'Repeats',
+                value: _recurrence,
+                items: _recurrences,
+                onChanged: (v) => setState(() => _recurrence = v!),
+              ),
+            ),
+            if (_recurrence != 'none') ...[
+              const SizedBox(width: 12),
+              Expanded(
+                child: DatePickerField(
+                  label: 'Repeat until',
+                  isoValue: _recurrenceEndDate,
+                  onChanged: (v) => setState(() => _recurrenceEndDate = v),
+                ),
+              ),
+            ],
+          ]),
+          const SizedBox(height: 12),
+          const Divider(color: KColors.border, height: 1),
+          const SizedBox(height: 12),
+        ],
+
+        // ── Source ─────────────────────────────────────────────
+        Row(children: [
+          Expanded(
+            child: DropdownField(
+              label: 'Source',
+              value: _source,
+              items: _sources,
+              onChanged: (v) => setState(() => _source = v!),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: TextFormField(
+              controller: _sourceNoteCtrl,
+              decoration: const InputDecoration(labelText: 'Source Note'),
+            ),
+          ),
+        ]),
+        const SizedBox(height: 12),
+      ],
+      right: [
+        // ── Structure: parent flag, nesting, plan link ─────────
+        const DetailSectionLabel('Structure'),
+        const SizedBox(height: 8),
+        _IsParentCheckbox(
+          editing: widget.action,
+          allActions: _allActions,
+          value: _isParent,
+          parentActionId: _parentActionId,
+          onChanged: (v) => setState(() => _isParent = v),
         ),
-      ),
-      actions: [
+        const SizedBox(height: 12),
+        _ParentActionPicker(
+          editing: widget.action,
+          allActions: _allActions,
+          value: _parentActionId,
+          onChanged: (v) => setState(() => _parentActionId = v),
+        ),
+        const SizedBox(height: 12),
+        if (_workPackages.isNotEmpty) ...[
+          PlanActivityPicker(
+            value: _planActivityId,
+            workPackages: _workPackages,
+            activities: _planActivities,
+            onChanged: (v) => setState(() => _planActivityId = v),
+          ),
+          const SizedBox(height: 12),
+        ],
+        const DetailDivider(),
+
+        // ── Sub-tasks ──────────────────────────────────────────
+        if (isEdit || _recurrence == 'none')
+          ..._subTasksSection(editable: true),
+
+        // ── Comments (existing rows only — they persist live) ──
+        if (isEdit) ...[
+          const DetailDivider(),
+          JournalSourceLink(
+            db: widget.db,
+            projectId: widget.projectId,
+            itemId: widget.action!.id,
+            itemText: widget.action!.description,
+          ),
+
+          _CommentsThread(action: widget.action!, db: widget.db),
+        ],
+      ],
+      footer: [
+        const Spacer(),
         if (widget.startInViewMode)
           TextButton(
             onPressed: () => setState(() => _isViewing = true),
-            child: const Text('Cancel'),
+            child: const Text('Cancel',
+                style: TextStyle(color: KColors.textDim, fontSize: 12)),
           )
         else
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: const Text('Cancel',
+                style: TextStyle(color: KColors.textDim, fontSize: 12)),
           ),
+        const SizedBox(width: 8),
         ElevatedButton(
           onPressed: _save,
-          child: Text(isEdit ? 'Save' : 'Create'),
+          child: Text(isEdit ? 'Save' : 'Create',
+              style: const TextStyle(fontSize: 12)),
         ),
       ],
     );
@@ -891,80 +1012,6 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
 }
 
 // ---------------------------------------------------------------------------
-// Plan activity picker
-// ---------------------------------------------------------------------------
-
-class _PlanActivityPicker extends StatelessWidget {
-  final String? value;
-  final List<TimelineWorkPackage> workPackages;
-  final List<TimelineActivity> activities;
-  final ValueChanged<String?> onChanged;
-
-  const _PlanActivityPicker({
-    required this.value,
-    required this.workPackages,
-    required this.activities,
-    required this.onChanged,
-  });
-
-  static const _kTypeIcons = {
-    'milestone': '◆ ',
-    'hard_deadline': '⚠ ',
-    'gate': '◈ ',
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    // Build grouped items: null option + one item per activity under its WP header
-    final items = <DropdownMenuItem<String?>>[];
-    items.add(const DropdownMenuItem<String?>(
-        value: null,
-        child: Text('— none —',
-            style: TextStyle(color: KColors.textDim))));
-
-    for (final wp in workPackages) {
-      final wpActs = activities.where((a) => a.workPackageId == wp.id).toList();
-      if (wpActs.isEmpty) continue;
-      // Header (disabled item used as visual group label)
-      items.add(DropdownMenuItem<String?>(
-        enabled: false,
-        value: '__header__${wp.id}',
-        child: Text(
-          '${wp.shortCode ?? wp.name}',
-          style: const TextStyle(
-              color: KColors.textMuted,
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.5),
-        ),
-      ));
-      for (final act in wpActs) {
-        final prefix = _kTypeIcons[act.activityType] ?? '';
-        items.add(DropdownMenuItem<String?>(
-          value: act.id,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 8),
-            child: Text(
-              '$prefix${act.name}',
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 12),
-            ),
-          ),
-        ));
-      }
-    }
-
-    return DropdownButtonFormField<String?>(
-      value: value,
-      isExpanded: true,
-      decoration: const InputDecoration(labelText: 'Plan Activity (optional)'),
-      items: items,
-      onChanged: onChanged,
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
 // Parent action picker (Epic-style grouping)
 // ---------------------------------------------------------------------------
 
@@ -1021,15 +1068,23 @@ class _IsParentCheckbox extends StatelessWidget {
         const Icon(Icons.account_tree_outlined,
             size: 13, color: KColors.phosphor),
         const SizedBox(width: 5),
-        const Text(
-          'Parent — can group other actions',
-          style: TextStyle(color: KColors.text, fontSize: 12),
+        const Flexible(
+          child: Text(
+            'Parent — can group other actions',
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: KColors.text, fontSize: 12),
+          ),
         ),
-        const Spacer(),
-        if (hint != null)
-          Text(hint,
-              style:
-                  const TextStyle(color: KColors.textMuted, fontSize: 10)),
+        if (hint != null) ...[
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(hint,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.end,
+                style:
+                    const TextStyle(color: KColors.textMuted, fontSize: 10)),
+          ),
+        ],
       ],
     );
   }
@@ -1082,8 +1137,13 @@ class _ParentActionPicker extends StatelessWidget {
       return parent == null ? base : '$base  ·  under ${parent.ref ?? parent.description}';
     }
 
+    // Before the action list loads (or if the parent was deleted) the
+    // value has no matching item — show "none" rather than trip the
+    // dropdown's single-match assertion.
+    final safeValue = candidates.any((c) => c.id == value) ? value : null;
+
     return DropdownButtonFormField<String?>(
-      value: value,
+      value: safeValue,
       isExpanded: true,
       decoration: const InputDecoration(
         labelText: 'Nest under parent (optional)',
@@ -1357,39 +1417,4 @@ class _CommentTile extends StatelessWidget {
       ),
     );
   }
-}
-
-// ---------------------------------------------------------------------------
-// View field helper
-// ---------------------------------------------------------------------------
-
-Widget _viewField(String label, String? value,
-    {bool large = false, Color? valueColor}) {
-  if (value == null || value.isEmpty) return const SizedBox.shrink();
-  return Padding(
-    padding: const EdgeInsets.only(bottom: 14),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label.toUpperCase(),
-          style: const TextStyle(
-            color: KColors.textMuted,
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.1,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyle(
-            color: valueColor ?? KColors.text,
-            fontSize: large ? 14 : 12,
-            height: 1.55,
-          ),
-        ),
-      ],
-    ),
-  );
 }

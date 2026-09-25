@@ -10,6 +10,11 @@ class DropdownField extends StatelessWidget {
   final ValueChanged<String?> onChanged;
   /// Optional display-name overrides keyed by item value.
   final Map<String, String>? labelOverrides;
+  /// Clip the selected label to the field's width instead of letting a
+  /// long item force the field wider than its column. Only safe where
+  /// the parent bounds the width (an Expanded, a SizedBox) — an
+  /// unbounded parent would throw — so it's opt-in.
+  final bool isExpanded;
 
   const DropdownField({
     super.key,
@@ -18,6 +23,7 @@ class DropdownField extends StatelessWidget {
     required this.items,
     required this.onChanged,
     this.labelOverrides,
+    this.isExpanded = false,
   });
 
   String _labelFor(String s) {
@@ -36,6 +42,7 @@ class DropdownField extends StatelessWidget {
         : [value, ...items];
     return DropdownButtonFormField<String>(
       value: value,
+      isExpanded: isExpanded,
       decoration: InputDecoration(labelText: label),
       dropdownColor: KColors.surface2,
       items: effectiveItems
@@ -43,6 +50,7 @@ class DropdownField extends StatelessWidget {
                 value: s,
                 child: Text(
                   _labelFor(s),
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontSize: 13),
                 ),
               ))

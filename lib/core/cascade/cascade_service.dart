@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart' show Value;
 
 import '../database/database.dart';
+import '../raid/risk_rating.dart';
 
 /// Item kinds for cascade payloads. Server is agnostic — these are
 /// just stable strings the sender and receiver agree on.
@@ -717,6 +718,17 @@ class CascadeService {
         'status': r.status,
         if (r.owner != null) 'owner': r.owner,
         if (r.mitigation != null) 'mitigation': r.mitigation,
+        if (r.closedAt != null) 'closed_at': r.closedAt,
+        if (r.closureNote != null) 'closure_note': r.closureNote,
+        if (r.title != null) 'title': r.title,
+        if (r.likelihoodTarget != null) 'likelihood_target': r.likelihoodTarget,
+        if (r.impactTarget != null) 'impact_target': r.impactTarget,
+        'strategy': r.strategy,
+        if (r.assignee != null) 'assignee': r.assignee,
+        if (r.enterpriseRiskLink != null)
+          'enterprise_risk_link': r.enterpriseRiskLink,
+        if (r.dueDate != null) 'due_date': r.dueDate,
+        if (r.statusNote != null) 'status_note': r.statusNote,
       };
 
   Map<String, dynamic> _assumptionPayload(Assumption a) => {
@@ -724,6 +736,7 @@ class CascadeService {
         'description': a.description,
         'status': a.status,
         if (a.owner != null) 'owner': a.owner,
+        if (a.closedAt != null) 'closed_at': a.closedAt,
       };
 
   Map<String, dynamic> _issuePayload(Issue i) => {
@@ -734,6 +747,7 @@ class CascadeService {
         if (i.owner != null) 'owner': i.owner,
         if (i.dueDate != null) 'due_date': i.dueDate,
         if (i.resolution != null) 'resolution': i.resolution,
+        if (i.closedAt != null) 'closed_at': i.closedAt,
       };
 
   Map<String, dynamic> _dependencyPayload(ProgramDependency d) => {
@@ -743,6 +757,11 @@ class CascadeService {
         'status': d.status,
         if (d.owner != null) 'owner': d.owner,
         if (d.dueDate != null) 'due_date': d.dueDate,
+        if (d.closedAt != null) 'closed_at': d.closedAt,
+        if (d.counterparty != null) 'counterparty': d.counterparty,
+        if (d.rationale != null) 'rationale': d.rationale,
+        if (d.impactStatement != null) 'impact_statement': d.impactStatement,
+        // plan_activity_id deliberately omitted — project-local id.
       };
 
   Map<String, dynamic> _actionPayload(ProjectAction a) => {
@@ -763,6 +782,11 @@ class CascadeService {
         if (d.dueDate != null) 'due_date': d.dueDate,
         if (d.rationale != null) 'rationale': d.rationale,
         if (d.outcome != null) 'outcome': d.outcome,
+        if (d.optionsConsidered != null)
+          'options_considered': d.optionsConsidered,
+        if (d.impactStatement != null) 'impact_statement': d.impactStatement,
+        if (d.decidedAt != null) 'decided_at': d.decidedAt,
+        // plan_activity_id deliberately omitted — project-local id.
       };
 
   Map<String, dynamic> _personPayload(
@@ -911,11 +935,21 @@ class CascadeService {
       projectId: programmeId,
       ref: Value(p['ref'] as String?),
       description: p['description'] as String? ?? '',
-      likelihood: Value(p['likelihood'] as String? ?? 'medium'),
-      impact: Value(p['impact'] as String? ?? 'medium'),
+      likelihood: Value(normaliseLikelihood(p['likelihood'] as String?)),
+      impact: Value(normaliseConsequence(p['impact'] as String?)),
       status: Value(p['status'] as String? ?? 'open'),
       owner: Value(p['owner'] as String?),
       mitigation: Value(p['mitigation'] as String?),
+      closedAt: Value(p['closed_at'] as String?),
+      closureNote: Value(p['closure_note'] as String?),
+      title: Value(p['title'] as String?),
+      likelihoodTarget: Value(p['likelihood_target'] as String?),
+      impactTarget: Value(p['impact_target'] as String?),
+      strategy: Value(p['strategy'] as String? ?? 'treat'),
+      assignee: Value(p['assignee'] as String?),
+      enterpriseRiskLink: Value(p['enterprise_risk_link'] as String?),
+      dueDate: Value(p['due_date'] as String?),
+      statusNote: Value(p['status_note'] as String?),
       source: const Value('cascade'),
       escalatedAt: Value(DateTime.now()),
       sourceProjectId: Value(rec.sourceEntityId),
@@ -938,6 +972,7 @@ class CascadeService {
       description: p['description'] as String? ?? '',
       status: Value(p['status'] as String? ?? 'open'),
       owner: Value(p['owner'] as String?),
+      closedAt: Value(p['closed_at'] as String?),
       source: const Value('cascade'),
       escalatedAt: Value(DateTime.now()),
       sourceProjectId: Value(rec.sourceEntityId),
@@ -962,6 +997,7 @@ class CascadeService {
       owner: Value(p['owner'] as String?),
       dueDate: Value(p['due_date'] as String?),
       resolution: Value(p['resolution'] as String?),
+      closedAt: Value(p['closed_at'] as String?),
       source: const Value('cascade'),
       escalatedAt: Value(DateTime.now()),
       sourceProjectId: Value(rec.sourceEntityId),
@@ -989,6 +1025,10 @@ class CascadeService {
       status: Value(p['status'] as String? ?? 'open'),
       owner: Value(p['owner'] as String?),
       dueDate: Value(p['due_date'] as String?),
+      closedAt: Value(p['closed_at'] as String?),
+      counterparty: Value(p['counterparty'] as String?),
+      rationale: Value(p['rationale'] as String?),
+      impactStatement: Value(p['impact_statement'] as String?),
       source: const Value('cascade'),
       escalatedAt: Value(DateTime.now()),
       sourceProjectId: Value(rec.sourceEntityId),
@@ -1044,6 +1084,9 @@ class CascadeService {
       dueDate: Value(p['due_date'] as String?),
       rationale: Value(p['rationale'] as String?),
       outcome: Value(p['outcome'] as String?),
+      optionsConsidered: Value(p['options_considered'] as String?),
+      impactStatement: Value(p['impact_statement'] as String?),
+      decidedAt: Value(p['decided_at'] as String?),
       source: const Value('cascade'),
       escalatedAt: Value(DateTime.now()),
       sourceProjectId: Value(rec.sourceEntityId),

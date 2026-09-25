@@ -2,6 +2,8 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 import '../database/database.dart';
+import '../raid/raid_conversion_service.dart' show RaidKind;
+import '../raid/raid_lifecycle.dart';
 import '../platform/web_download.dart';
 
 // ─── Status PDF data models ───────────────────────────────────────────────────
@@ -93,13 +95,15 @@ class PdfExporter {
     required List<Assumption> assumptions,
     required List<Issue> issues,
     required List<ProgramDependency> dependencies,
+    bool includeClosed = false,
   }) async {
     final bytes = await buildRaidBytes(
       projectName: projectName,
-      risks: risks,
-      assumptions: assumptions,
-      issues: issues,
-      dependencies: dependencies,
+      allRisks: risks,
+      allAssumptions: assumptions,
+      allIssues: issues,
+      allDependencies: dependencies,
+      includeClosed: includeClosed,
     );
     final filename = 'raid_${_slug(projectName)}.pdf';
     return saveAndOpen(filename, bytes, mimeType: 'application/pdf');
@@ -172,13 +176,30 @@ class PdfExporter {
 
   static Future<List<int>> buildRaidBytes({
     required String projectName,
-    required List<Risk> risks,
-    required List<Assumption> assumptions,
-    required List<Issue> issues,
-    required List<ProgramDependency> dependencies,
+    required List<Risk> allRisks,
+    required List<Assumption> allAssumptions,
+    required List<Issue> allIssues,
+    required List<ProgramDependency> allDependencies,
+    bool includeClosed = false,
   }) async {
     final doc = pw.Document();
     final date = DateTime.now().toIso8601String().substring(0, 10);
+    // Body shows open items; closed ones go in a trailing audit section.
+    final risks = splitClosed<Risk>(allRisks,
+        kind: RaidKind.risk, status: (r) => r.status).open;
+    final assumptions = splitClosed<Assumption>(allAssumptions,
+        kind: RaidKind.assumption, status: (a) => a.status).open;
+    final issues = splitClosed<Issue>(allIssues,
+        kind: RaidKind.issue, status: (i) => i.status).open;
+    final dependencies = splitClosed<ProgramDependency>(allDependencies,
+        kind: RaidKind.dependency, status: (d) => d.status).open;
+    final closed = includeClosed
+        ? closedRaidRows(
+            risks: allRisks,
+            assumptions: allAssumptions,
+            issues: allIssues,
+            dependencies: allDependencies)
+        : const <ClosedItemRow>[];
 
     doc.addPage(
       pw.MultiPage(
@@ -349,6 +370,43 @@ class PdfExporter {
                 5: const pw.FixedColumnWidth(60),
               },
             ),
+          if (includeClosed) ...[
+            pw.SizedBox(height: 16),
+            _raidSectionHeader('Closed items (${closed.length})'),
+            pw.SizedBox(height: 6),
+            if (closed.isEmpty)
+              _emptyNote('No closed items.')
+            else
+              pw.TableHelper.fromTextArray(
+                headers: [
+                  'Ref', 'Type', 'Description', 'Status', 'Closed on',
+                  'Why / outcome',
+                ],
+                data: closed
+                    .map((c) => [
+                          c.ref,
+                          c.kind,
+                          _sanitize(c.description),
+                          c.status,
+                          c.closedOn,
+                          _sanitize(c.note),
+                        ])
+                    .toList(),
+                headerStyle: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold, fontSize: 9),
+                cellStyle: const pw.TextStyle(fontSize: 8),
+                headerDecoration:
+                    const pw.BoxDecoration(color: PdfColors.grey200),
+                columnWidths: {
+                  0: const pw.FixedColumnWidth(36),
+                  1: const pw.FixedColumnWidth(58),
+                  2: const pw.FlexColumnWidth(3),
+                  3: const pw.FixedColumnWidth(52),
+                  4: const pw.FixedColumnWidth(56),
+                  5: const pw.FlexColumnWidth(2),
+                },
+              ),
+          ],
         ],
       ),
     );
@@ -395,7 +453,8 @@ class PdfExporter {
   /// Marks high/critical severity values in bold.
   static String _severityText(String value) {
     final lower = value.toLowerCase();
-    if (lower == 'high' || lower == 'critical') {
+    if (lower == 'high' || lower == 'critical' || lower == 'likely' ||
+        lower == 'almost certain' || lower == 'major' || lower == 'severe') {
       return value.toUpperCase();
     }
     return value;

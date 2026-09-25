@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../../core/database/database.dart';
+import '../../../../../core/raid/risk_rating.dart';
 import '../../../../../shared/theme/keel_colors.dart';
 import '../../../../../shared/widgets/person_picker_field.dart';
 import 'pre_mortem_model.dart';
@@ -234,8 +235,8 @@ class _PreMortemViewState extends State<PreMortemView> {
       id: id,
       projectId: widget.template.projectId,
       description: cause.description,
-      likelihood: Value(cause.likelihood),
-      impact: Value(cause.impact),
+      likelihood: Value(normaliseLikelihood(cause.likelihood)),
+      impact: Value(normaliseConsequence(cause.impact)),
       source: const Value('pre_mortem'),
       sourceNote: Value('Pre-mortem: ${widget.template.name}'),
     ));

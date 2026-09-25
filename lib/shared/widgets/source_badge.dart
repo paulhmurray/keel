@@ -21,6 +21,8 @@ class SourceBadge extends StatelessWidget {
         return KColors.blue;
       case 'email':
         return KColors.textDim;
+      case 'journal':
+        return KColors.violet;
       default:
         return KColors.textDim;
     }
@@ -40,6 +42,8 @@ class SourceBadge extends StatelessWidget {
         return KColors.blueDim;
       case 'email':
         return KColors.surface2;
+      case 'journal':
+        return KColors.violetDim;
       default:
         return KColors.surface2;
     }
@@ -59,6 +63,8 @@ class SourceBadge extends StatelessWidget {
         return Icons.people_outline;
       case 'email':
         return Icons.email_outlined;
+      case 'journal':
+        return Icons.menu_book_outlined;
       default:
         return Icons.label_outline;
     }

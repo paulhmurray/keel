@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import '../database/database.dart';
+import 'dependency_plan_link.dart';
 
 /// The five convertible item kinds. Enum names double as the type strings
 /// stored in canvas/journal/inbox links ('risk', 'assumption', …).
@@ -296,6 +297,10 @@ class RaidConversionService {
       case RaidKind.issue:
         await db.raidDao.deleteIssue(id);
       case RaidKind.dependency:
+        final dep = await db.raidDao.getDependencyById(id);
+        if (dep != null) {
+          await DependencyPlanLink.remove(db, dep.projectId, id);
+        }
         await db.raidDao.deleteDependency(id);
       case RaidKind.decision:
         throw StateError('decisions are not converted from');

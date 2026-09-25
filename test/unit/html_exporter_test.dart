@@ -145,6 +145,8 @@ void main() {
       impact: 'high',
       status: 'open',
       source: 'manual',
+      steerco: false,
+      strategy: 'treat',
       createdAt: _now,
       updatedAt: _now,
     );
@@ -203,6 +205,8 @@ void main() {
         impact: 'low',
         status: 'open',
         source: 'manual',
+        steerco: false,
+        strategy: 'treat',
         createdAt: _now,
         updatedAt: _now,
       );
@@ -375,6 +379,56 @@ void main() {
     test('empty persons list still builds', () {
       final html = HtmlExporter.buildStakeholderMapHtml('P', [], []);
       expect(html, contains('Stakeholder Map'));
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // buildRaidHtml — closed items
+  // ---------------------------------------------------------------------------
+
+  group('HtmlExporter.buildRaidHtml closed handling', () {
+    Risk risk(String id, String status, {String? closedAt, String? note}) =>
+        Risk(
+          id: id,
+          projectId: 'p1',
+          ref: id.toUpperCase(),
+          description: 'Risk $id body',
+          likelihood: 'low',
+          impact: 'low',
+          status: status,
+          closedAt: closedAt,
+          closureNote: note,
+          source: 'manual',
+          steerco: false,
+          strategy: 'treat',
+          createdAt: _now,
+          updatedAt: _now,
+        );
+    final risks = [
+      risk('r1', 'open'),
+      risk('r2', 'closed', closedAt: '2026-09-01', note: 'Mitigated away'),
+    ];
+
+    test('by default only open items appear and the footer says so', () {
+      final html = HtmlExporter.buildRaidHtml('P', risks, [], [], []);
+      expect(html, contains('Risks (1)'));
+      expect(html, contains('Risk r1 body'));
+      expect(html, isNot(contains('Risk r2 body')));
+      expect(html, isNot(contains('Closed items')));
+      expect(html, contains('open items only'));
+    });
+
+    test('includeClosed adds a trailing audit section with closed-on and why',
+        () {
+      final html = HtmlExporter.buildRaidHtml('P', risks, [], [], [],
+          includeClosed: true);
+      expect(html, contains('Risks (1)'));
+      expect(html, contains('Closed items (1)'));
+      expect(html, contains('Risk r2 body'));
+      expect(html, contains('2026-09-01'));
+      expect(html, contains('Mitigated away'));
+      expect(html.indexOf('Closed items'), greaterThan(html.indexOf('Dependencies (')));
+      expect(html, isNot(contains('open items only')));
     });
   });
 }

@@ -2,6 +2,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:uuid/uuid.dart';
 import '../database/database.dart';
 import 'journal_parser.dart';
+import '../raid/risk_rating.dart';
 
 class JournalLinker {
   final AppDatabase db;
@@ -111,8 +112,8 @@ class JournalLinker {
           projectId: Value(projectId),
           ref: Value(ref),
           description: Value(f['description'] ?? delta.title),
-          likelihood: Value(f['likelihood'] ?? 'medium'),
-          impact: Value(f['impact'] ?? 'medium'),
+          likelihood: Value(normaliseLikelihood(f['likelihood'])),
+          impact: Value(normaliseConsequence(f['impact'])),
           status: const Value('open'),
           source: const Value('journal'),
           sourceNote: Value('From journal entry'),

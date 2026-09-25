@@ -4,6 +4,13 @@ import 'package:provider/provider.dart';
 import '../../core/cascade/cascade_service.dart';
 import '../../core/cascade/cascade_factory.dart';
 import '../../core/database/database.dart';
+import '../../core/raid/dependency_plan_link.dart';
+import '../../core/raid/dependency_timeline.dart';
+import '../../core/raid/raid_conversion_service.dart' show RaidKind;
+import '../../core/raid/raid_lifecycle.dart';
+import '../../core/raid/risk_rating.dart';
+import '../../shared/widgets/closed_toggle.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../providers/project_provider.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/utils/date_utils.dart' as du;
@@ -17,6 +24,7 @@ import '../../shared/widgets/min_width_hscroll.dart';
 import 'assumption_form.dart';
 import 'issue_form.dart';
 import 'dependency_form.dart';
+import 'dependency_slack_chip.dart';
 
 // ── Escalation helpers (Phase C.2) ─────────────────────────────────────────
 //
@@ -39,6 +47,30 @@ bool _isCascaded(String? sourceProjectId) => sourceProjectId != null;
 
 /// Small badge rendered next to the source badge when a row is
 /// escalated. Distinct visual so escalated rows pop without crowding.
+/// "▲ STEERCO" — flagged to the Steering Committee in the register.
+class _SteercoBadge extends StatelessWidget {
+  const _SteercoBadge();
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+        decoration: BoxDecoration(
+          color: KColors.redDim,
+          border: Border.all(color: KColors.red, width: 0.5),
+          borderRadius: BorderRadius.circular(2),
+        ),
+        child: const Tooltip(
+          message: 'Flagged to the Steering Committee',
+          child: Text('▲ STEERCO',
+              style: TextStyle(
+                  color: KColors.red,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.4)),
+        ),
+      );
+}
+
 class _EscalatedBadge extends StatelessWidget {
   const _EscalatedBadge();
 
@@ -180,24 +212,33 @@ const _kHeaderCellStyle = TextStyle(
 // Matrix Dot
 // ---------------------------------------------------------------------------
 
+/// One rating cell: the 1–5 rank, coloured by its band, with the scale
+/// word in the tooltip.
 class _MatrixDot extends StatelessWidget {
-  final String level;
+  final int rank;
+  final String label;
 
-  const _MatrixDot({required this.level});
+  const _MatrixDot({required this.rank, required this.label});
 
   @override
   Widget build(BuildContext context) {
-    final (bg, fg, label) = switch (level.toLowerCase()) {
-      'high' => (KColors.redDim, KColors.red, 'H'),
-      'medium' => (KColors.amberDim, KColors.amber, 'M'),
-      _ => (KColors.phosDim, KColors.phosphor, 'L'),
+    final (bg, fg) = switch (levelBand(rank)) {
+      'high' => (KColors.redDim, KColors.red),
+      'medium' => (KColors.amberDim, KColors.amber),
+      _ => (KColors.phosDim, KColors.phosphor),
     };
-    return Container(
-      width: 28,
-      height: 28,
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(4)),
-      alignment: Alignment.center,
-      child: Text(label, style: TextStyle(color: fg, fontSize: 10, fontWeight: FontWeight.w600)),
+    return Tooltip(
+      message: label,
+      child: Container(
+        width: 28,
+        height: 28,
+        decoration:
+            BoxDecoration(color: bg, borderRadius: BorderRadius.circular(4)),
+        alignment: Alignment.center,
+        child: Text('$rank',
+            style: TextStyle(
+                color: fg, fontSize: 11, fontWeight: FontWeight.w700)),
+      ),
     );
   }
 }
@@ -280,6 +321,26 @@ class RaidView extends StatefulWidget {
 class _RaidViewState extends State<RaidView> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
+  // "Show closed" is one setting for the whole log (all four tabs), kept
+  // per project. Closed items age out of the default view two weeks
+  // after closing; this brings them back.
+  bool _showClosed = false;
+  String? _prefsProjectId;
+
+  Future<void> _loadPrefs(String projectId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final v = prefs.getBool('keel_raid_show_closed_$projectId') ?? false;
+    if (mounted) setState(() => _showClosed = v);
+  }
+
+  Future<void> _toggleShowClosed() async {
+    setState(() => _showClosed = !_showClosed);
+    final pid = _prefsProjectId;
+    if (pid == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('keel_raid_show_closed_$pid', _showClosed);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -307,6 +368,10 @@ class _RaidViewState extends State<RaidView> with SingleTickerProviderStateMixin
     }
 
     final db = context.read<AppDatabase>();
+    if (_prefsProjectId != projectId) {
+      _prefsProjectId = projectId;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _loadPrefs(projectId));
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -322,6 +387,13 @@ class _RaidViewState extends State<RaidView> with SingleTickerProviderStateMixin
                 child: Text('RAID LOG',
                     style: Theme.of(context).textTheme.headlineSmall,
                     overflow: TextOverflow.ellipsis),
+              ),
+              const Spacer(),
+              _RaidClosedToggle(
+                db: db,
+                projectId: projectId,
+                showClosed: _showClosed,
+                onTap: _toggleShowClosed,
               ),
             ],
           ),
@@ -356,17 +428,90 @@ class _RaidViewState extends State<RaidView> with SingleTickerProviderStateMixin
             controller: _tabController,
             children: [
               _RisksTab(projectId: projectId, db: db,
+                  showClosed: _showClosed, onShowClosed: _toggleShowClosed,
                   triggerNew: widget.initialTab == 0 && widget.triggerNew),
               _AssumptionsTab(projectId: projectId, db: db,
+                  showClosed: _showClosed, onShowClosed: _toggleShowClosed,
                   triggerNew: widget.initialTab == 1 && widget.triggerNew),
               _IssuesTab(projectId: projectId, db: db,
+                  showClosed: _showClosed, onShowClosed: _toggleShowClosed,
                   triggerNew: widget.initialTab == 2 && widget.triggerNew),
               _DependenciesTab(projectId: projectId, db: db,
+                  showClosed: _showClosed, onShowClosed: _toggleShowClosed,
                   triggerNew: widget.initialTab == 3 && widget.triggerNew),
             ],
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Header pill: watches all four registers so its hidden-count badge
+/// reflects the whole log, not just the visible tab.
+class _RaidClosedToggle extends StatelessWidget {
+  final AppDatabase db;
+  final String projectId;
+  final bool showClosed;
+  final VoidCallback onTap;
+
+  const _RaidClosedToggle({
+    required this.db,
+    required this.projectId,
+    required this.showClosed,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final dao = db.raidDao;
+    return StreamBuilder<List<Risk>>(
+      stream: dao.watchRisksForProject(projectId),
+      builder: (_, rs) => StreamBuilder<List<Assumption>>(
+        stream: dao.watchAssumptionsForProject(projectId),
+        builder: (_, as) => StreamBuilder<List<Issue>>(
+          stream: dao.watchIssuesForProject(projectId),
+          builder: (_, iss) => StreamBuilder<List<ProgramDependency>>(
+            stream: dao.watchDependenciesForProject(projectId),
+            builder: (_, ds) {
+              final hidden = partitionAgedOut<Risk>(rs.data ?? const [],
+                          kind: RaidKind.risk,
+                          status: (r) => r.status,
+                          closedAt: (r) => r.closedAt,
+                          updatedAt: (r) => r.updatedAt,
+                          showClosed: false)
+                      .hidden
+                      .length +
+                  partitionAgedOut<Assumption>(as.data ?? const [],
+                          kind: RaidKind.assumption,
+                          status: (a) => a.status,
+                          closedAt: (a) => a.closedAt,
+                          updatedAt: (a) => a.updatedAt,
+                          showClosed: false)
+                      .hidden
+                      .length +
+                  partitionAgedOut<Issue>(iss.data ?? const [],
+                          kind: RaidKind.issue,
+                          status: (i) => i.status,
+                          closedAt: (i) => i.closedAt,
+                          updatedAt: (i) => i.updatedAt,
+                          showClosed: false)
+                      .hidden
+                      .length +
+                  partitionAgedOut<ProgramDependency>(ds.data ?? const [],
+                          kind: RaidKind.dependency,
+                          status: (d) => d.status,
+                          closedAt: (d) => d.closedAt,
+                          updatedAt: (d) => d.updatedAt,
+                          showClosed: false)
+                      .hidden
+                      .length;
+              return ClosedToggle(
+                  showClosed: showClosed, hiddenCount: hidden, onTap: onTap);
+            },
+          ),
+        ),
+      ),
     );
   }
 }
@@ -419,8 +564,16 @@ class _RisksTab extends StatefulWidget {
   final String projectId;
   final AppDatabase db;
   final bool triggerNew;
+  final bool showClosed;
+  final VoidCallback onShowClosed;
 
-  const _RisksTab({required this.projectId, required this.db, this.triggerNew = false});
+  const _RisksTab({
+    required this.projectId,
+    required this.db,
+    required this.showClosed,
+    required this.onShowClosed,
+    this.triggerNew = false,
+  });
 
   @override
   State<_RisksTab> createState() => _RisksTabState();
@@ -440,14 +593,12 @@ class _RisksTabState extends State<_RisksTab> {
     }
   }
 
-  Color _riskBarColor(Risk risk) {
-    int s(String v) =>
-        v.toLowerCase() == 'high' ? 3 : v.toLowerCase() == 'medium' ? 2 : 1;
-    final score = s(risk.likelihood) * s(risk.impact);
-    if (score >= 9) return KColors.red;
-    if (score >= 4) return KColors.amber;
-    return KColors.phosphor;
-  }
+  Color _riskBarColor(Risk risk) =>
+      switch (riskBand(risk.likelihood, risk.impact)) {
+        'high' => KColors.red,
+        'medium' => KColors.amber,
+        _ => KColors.phosphor,
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -480,8 +631,8 @@ class _RisksTabState extends State<_RisksTab> {
                 (width: _kRefW, label: 'REF'),
                 (width: null, label: 'RISK'),
                 (width: _kLikeW, label: 'LIKE'),
-                (width: _kImpW, label: 'IMP'),
-                (width: _kMitigationW, label: 'MITIGATION'),
+                (width: _kImpW, label: 'CONS'),
+                (width: _kMitigationW, label: 'TREATMENT'),
                 (width: _kOwnerW, label: 'OWNER'),
                 (width: _kStatusW, label: 'STATUS'),
                 (width: _kSourceW, label: 'SOURCE'),
@@ -494,7 +645,20 @@ class _RisksTabState extends State<_RisksTab> {
                         if (!snap.hasData) {
                           return const Center(child: CircularProgressIndicator());
                         }
-                        final items = snap.data!;
+                        final part = partitionAgedOut<Risk>(
+                          snap.data!,
+                          kind: RaidKind.risk,
+                          status: (x) => x.status,
+                          closedAt: (x) => x.closedAt,
+                          updatedAt: (x) => x.updatedAt,
+                          showClosed: widget.showClosed,
+                        );
+                        final items = part.visible;
+                        if (items.isEmpty && part.hidden.isNotEmpty) {
+                          return HiddenClosedNotice(
+                              hiddenCount: part.hidden.length,
+                              onShow: widget.onShowClosed);
+                        }
                         if (items.isEmpty) {
                           return const CompassEmptyState(
                             message: 'No threats on the horizon',
@@ -574,20 +738,42 @@ class _RiskRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(risk.description, style: _kTitleStyle, maxLines: 3,
-                      overflow: TextOverflow.ellipsis),
-                  if (risk.sourceNote != null && risk.sourceNote!.isNotEmpty) ...[
+                  if (risk.title != null && risk.title!.isNotEmpty) ...[
+                    Text(risk.title!,
+                        style: _kTitleStyle.copyWith(fontWeight: FontWeight.w600),
+                        maxLines: 1, overflow: TextOverflow.ellipsis),
                     const SizedBox(height: 2),
-                    Text(risk.sourceNote!, style: _kMetaStyle, maxLines: 1,
+                    Text(risk.description, style: _kMetaStyle, maxLines: 2,
                         overflow: TextOverflow.ellipsis),
+                  ] else
+                    Text(risk.description, style: _kTitleStyle, maxLines: 3,
+                        overflow: TextOverflow.ellipsis),
+                  if (risk.steerco ||
+                      reviewOverdue(risk.nextReviewAt, DateTime.now())) ...[
+                    const SizedBox(height: 4),
+                    Wrap(spacing: 8, runSpacing: 2, children: [
+                      if (risk.steerco) const _SteercoBadge(),
+                      if (reviewOverdue(risk.nextReviewAt, DateTime.now()))
+                        Text('Review overdue · ${du.formatDate(risk.nextReviewAt)}',
+                            style: const TextStyle(
+                                color: KColors.amber, fontSize: 10)),
+                    ]),
                   ],
                 ],
               ),
             ),
             // Likelihood
-            SizedBox(width: _kLikeW, child: _MatrixDot(level: risk.likelihood)),
-            // Impact
-            SizedBox(width: _kImpW, child: _MatrixDot(level: risk.impact)),
+            SizedBox(
+                width: _kLikeW,
+                child: _MatrixDot(
+                    rank: likelihoodRank(risk.likelihood),
+                    label: likelihoodLabel(risk.likelihood))),
+            // Consequence
+            SizedBox(
+                width: _kImpW,
+                child: _MatrixDot(
+                    rank: consequenceRank(risk.impact),
+                    label: consequenceLabel(risk.impact))),
             // Mitigation
             SizedBox(
               width: _kMitigationW,
@@ -698,8 +884,16 @@ class _AssumptionsTab extends StatefulWidget {
   final String projectId;
   final AppDatabase db;
   final bool triggerNew;
+  final bool showClosed;
+  final VoidCallback onShowClosed;
 
-  const _AssumptionsTab({required this.projectId, required this.db, this.triggerNew = false});
+  const _AssumptionsTab({
+    required this.projectId,
+    required this.db,
+    required this.showClosed,
+    required this.onShowClosed,
+    this.triggerNew = false,
+  });
 
   @override
   State<_AssumptionsTab> createState() => _AssumptionsTabState();
@@ -761,7 +955,20 @@ class _AssumptionsTabState extends State<_AssumptionsTab> {
                         if (!snap.hasData) {
                           return const Center(child: CircularProgressIndicator());
                         }
-                        final items = snap.data!;
+                        final part = partitionAgedOut<Assumption>(
+                          snap.data!,
+                          kind: RaidKind.assumption,
+                          status: (x) => x.status,
+                          closedAt: (x) => x.closedAt,
+                          updatedAt: (x) => x.updatedAt,
+                          showClosed: widget.showClosed,
+                        );
+                        final items = part.visible;
+                        if (items.isEmpty && part.hidden.isNotEmpty) {
+                          return HiddenClosedNotice(
+                              hiddenCount: part.hidden.length,
+                              onShow: widget.onShowClosed);
+                        }
                         if (items.isEmpty) {
                           return const CompassEmptyState(
                             message: 'All assumptions holding steady',
@@ -936,8 +1143,16 @@ class _IssuesTab extends StatefulWidget {
   final String projectId;
   final AppDatabase db;
   final bool triggerNew;
+  final bool showClosed;
+  final VoidCallback onShowClosed;
 
-  const _IssuesTab({required this.projectId, required this.db, this.triggerNew = false});
+  const _IssuesTab({
+    required this.projectId,
+    required this.db,
+    required this.showClosed,
+    required this.onShowClosed,
+    this.triggerNew = false,
+  });
 
   @override
   State<_IssuesTab> createState() => _IssuesTabState();
@@ -1004,7 +1219,20 @@ class _IssuesTabState extends State<_IssuesTab> {
                         if (!snap.hasData) {
                           return const Center(child: CircularProgressIndicator());
                         }
-                        final items = snap.data!;
+                        final part = partitionAgedOut<Issue>(
+                          snap.data!,
+                          kind: RaidKind.issue,
+                          status: (x) => x.status,
+                          closedAt: (x) => x.closedAt,
+                          updatedAt: (x) => x.updatedAt,
+                          showClosed: widget.showClosed,
+                        );
+                        final items = part.visible;
+                        if (items.isEmpty && part.hidden.isNotEmpty) {
+                          return HiddenClosedNotice(
+                              hiddenCount: part.hidden.length,
+                              onShow: widget.onShowClosed);
+                        }
                         if (items.isEmpty) {
                           return const CompassEmptyState(
                             message: 'Clear water ahead — no issues logged',
@@ -1286,17 +1514,31 @@ class _DependenciesTab extends StatefulWidget {
   final String projectId;
   final AppDatabase db;
   final bool triggerNew;
+  final bool showClosed;
+  final VoidCallback onShowClosed;
 
-  const _DependenciesTab({required this.projectId, required this.db, this.triggerNew = false});
+  const _DependenciesTab({
+    required this.projectId,
+    required this.db,
+    required this.showClosed,
+    required this.onShowClosed,
+    this.triggerNew = false,
+  });
 
   @override
   State<_DependenciesTab> createState() => _DependenciesTabState();
 }
 
 class _DependenciesTabState extends State<_DependenciesTab> {
+  // Plan context for the slack chips — loaded once per tab build; the
+  // dependency stream re-renders rows but plan dates change rarely.
+  Map<String, TimelineActivity> _activitiesById = const {};
+  String? _month0Date;
+
   @override
   void initState() {
     super.initState();
+    _loadPlan();
     if (widget.triggerNew) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) showDialog(
@@ -1305,6 +1547,33 @@ class _DependenciesTabState extends State<_DependenciesTab> {
         );
       });
     }
+  }
+
+  Future<void> _loadPlan() async {
+    final acts = await widget.db.programmeGanttDao
+        .getActivitiesForProject(widget.projectId);
+    final header =
+        await widget.db.programmeGanttDao.getHeader(widget.projectId);
+    if (!mounted) return;
+    setState(() {
+      _activitiesById = {for (final a in acts) a.id: a};
+      _month0Date = header?.month0Date;
+    });
+  }
+
+  DependencySlack? _slackFor(ProgramDependency d) {
+    if (isTerminalStatus(RaidKind.dependency, d.status)) return null;
+    final a = d.planActivityId != null ? _activitiesById[d.planActivityId] : null;
+    if (a == null) return null;
+    return dependencySlack(
+      dueDate: d.dueDate,
+      dependencyType: d.dependencyType,
+      activityStartDate: a.startDate,
+      activityEndDate: a.endDate,
+      activityStartMonth: a.startMonth,
+      activityEndMonth: a.endMonth,
+      month0Date: _month0Date,
+    );
   }
 
   @override
@@ -1322,7 +1591,7 @@ class _DependenciesTabState extends State<_DependenciesTab> {
                 onPressed: () => showDialog(
                   context: context,
                   builder: (_) => DependencyFormDialog(projectId: projectId, db: db),
-                ),
+                ).then((_) => _loadPlan()),
                 icon: const Icon(Icons.add, size: 14),
                 label: const Text('Add Dependency'),
               ),
@@ -1351,7 +1620,20 @@ class _DependenciesTabState extends State<_DependenciesTab> {
                         if (!snap.hasData) {
                           return const Center(child: CircularProgressIndicator());
                         }
-                        final items = snap.data!;
+                        final part = partitionAgedOut<ProgramDependency>(
+                          snap.data!,
+                          kind: RaidKind.dependency,
+                          status: (x) => x.status,
+                          closedAt: (x) => x.closedAt,
+                          updatedAt: (x) => x.updatedAt,
+                          showClosed: widget.showClosed,
+                        );
+                        final items = part.visible;
+                        if (items.isEmpty && part.hidden.isNotEmpty) {
+                          return HiddenClosedNotice(
+                              hiddenCount: part.hidden.length,
+                              onShow: widget.onShowClosed);
+                        }
                         if (items.isEmpty) {
                           return const CompassEmptyState(
                             message: 'No dependencies charted',
@@ -1360,8 +1642,15 @@ class _DependenciesTabState extends State<_DependenciesTab> {
                         }
                         return ListView.builder(
                           itemCount: items.length,
-                          itemBuilder: (ctx, i) =>
-                              _DependencyRow(dep: items[i], db: db, projectId: projectId),
+                          itemBuilder: (ctx, i) => _DependencyRow(
+                              dep: items[i],
+                              db: db,
+                              projectId: projectId,
+                              slack: _slackFor(items[i]),
+                              activityName: items[i].planActivityId != null
+                                  ? _activitiesById[items[i].planActivityId]
+                                      ?.name
+                                  : null),
                         );
                       },
                     ),
@@ -1379,9 +1668,16 @@ class _DependencyRow extends StatelessWidget {
   final ProgramDependency dep;
   final AppDatabase db;
   final String projectId;
+  final DependencySlack? slack;
+  final String? activityName;
 
-  const _DependencyRow(
-      {required this.dep, required this.db, required this.projectId});
+  const _DependencyRow({
+    required this.dep,
+    required this.db,
+    required this.projectId,
+    this.slack,
+    this.activityName,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1418,8 +1714,49 @@ class _DependencyRow extends StatelessWidget {
               ),
             ),
             Expanded(
-              child: Text(dep.description, style: _kTitleStyle, maxLines: 3,
-                  overflow: TextOverflow.ellipsis),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(dep.description, style: _kTitleStyle, maxLines: 3,
+                      overflow: TextOverflow.ellipsis),
+                  if ((dep.counterparty != null &&
+                          dep.counterparty!.isNotEmpty) ||
+                      activityName != null ||
+                      slack != null) ...[
+                    const SizedBox(height: 4),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        if (dep.counterparty != null &&
+                            dep.counterparty!.isNotEmpty)
+                          Text(
+                            dep.dependencyType == 'outbound'
+                                ? '→ ${dep.counterparty}'
+                                : '← ${dep.counterparty}',
+                            style: _kMetaStyle,
+                          ),
+                        if (activityName != null)
+                          Row(mainAxisSize: MainAxisSize.min, children: [
+                            const Icon(Icons.timeline,
+                                size: 11, color: KColors.textMuted),
+                            const SizedBox(width: 3),
+                            ConstrainedBox(
+                              constraints:
+                                  const BoxConstraints(maxWidth: 220),
+                              child: Text(activityName!,
+                                  style: _kMetaStyle,
+                                  overflow: TextOverflow.ellipsis),
+                            ),
+                          ]),
+                        if (slack != null)
+                          DependencySlackChip(slack: slack!, compact: true),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
             ),
             SizedBox(
               width: _kTypeW,
@@ -1478,6 +1815,8 @@ class _DependencyRow extends StatelessWidget {
                               itemId: dep.id,
                             );
                           }
+                          await DependencyPlanLink.remove(
+                              db, projectId, dep.id);
                           await db.raidDao.deleteDependency(dep.id);
                         } else if (val == 'escalate') {
                           await db.raidDao
