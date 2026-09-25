@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../core/llm/llm_client_factory.dart';
+import '../../core/raid/risk_rating.dart';
+import '../../core/status/risk_ranking.dart';
 import '../../core/status/status_calculator.dart';
 import '../../providers/settings_provider.dart';
 import '../../shared/theme/keel_colors.dart';
@@ -93,8 +95,12 @@ class _StatusNarrativePanelState extends State<StatusNarrativePanel> {
     if (d.topRisks.isNotEmpty) {
       sb.writeln('Top risks:');
       for (final r in d.topRisks) {
+        final soWhat = riskSoWhat(r);
         sb.writeln(
-            '  ${r.ref ?? ''} ${r.description} [${r.likelihood}/${r.impact}]');
+            '  ${r.ref ?? ''}${r.steerco ? ' [STEERCO]' : ''} '
+            '${r.title ?? r.description} '
+            '[${ratingSummary(r.likelihood, r.impact)}]'
+            '${soWhat != null ? ' — $soWhat' : ''}');
       }
       sb.writeln();
     }

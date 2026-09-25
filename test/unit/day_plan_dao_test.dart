@@ -242,6 +242,40 @@ void main() {
       );
     });
 
+    test('dated activities query spans projects, carries the WP code, '
+        'skips month-only and complete rows', () async {
+      await seedProject('p1', 'Alpha');
+      await seedProject('p2', 'Beta');
+      await db.programmeGanttDao.upsertWorkPackage(const TimelineWorkPackagesCompanion(
+        id: Value('wp1'), projectId: Value('p1'), name: Value('Integration'),
+        shortCode: Value('INT'), sortOrder: Value(0),
+      ));
+      await db.programmeGanttDao.upsertWorkPackage(const TimelineWorkPackagesCompanion(
+        id: Value('wp2'), projectId: Value('p2'), name: Value('Claims'),
+        sortOrder: Value(0),
+      ));
+      Future<void> act(String id, String wp, String pid, String name,
+          {String? start, String? end, String status = 'not_started'}) {
+        return db.programmeGanttDao.upsertActivity(TimelineActivitiesCompanion(
+          id: Value(id), workPackageId: Value(wp), projectId: Value(pid),
+          name: Value(name), startDate: Value(start), endDate: Value(end),
+          startMonth: const Value(2), endMonth: const Value(3),
+          status: Value(status), sortOrder: const Value(0),
+        ));
+      }
+      await act('x1', 'wp1', 'p1', 'Dated start', start: '2026-10-01');
+      await act('x2', 'wp2', 'p2', 'Dated end', end: '2026-10-15');
+      await act('x3', 'wp1', 'p1', 'Month only');
+      await act('x4', 'wp1', 'p1', 'Done', start: '2026-09-01', status: 'complete');
+
+      final items = await db.dayPlanDao.watchDatedActivitiesAllProjects().first;
+      expect(items.map((i) => i.activity.id).toSet(), {'x1', 'x2'});
+      final byId = {for (final i in items) i.activity.id: i};
+      expect(byId['x1']!.projectName, 'Alpha');
+      expect(byId['x1']!.wpCode, 'INT');
+      expect(byId['x2']!.wpCode, 'Claims'); // no short code → WP name
+    });
+
     test('browse query lists ALL open actions across projects, '
         'dated first, closed and cascaded excluded', () async {
       await seedProject('p1', 'Alpha');

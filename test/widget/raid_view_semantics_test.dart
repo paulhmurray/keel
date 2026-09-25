@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:keel/core/database/database.dart';
 import 'package:keel/features/decisions/decisions_view.dart';
+import 'package:keel/features/helm/helm_view.dart';
 import 'package:keel/features/raid/raid_view.dart';
 import 'package:keel/providers/project_provider.dart';
 import 'package:keel/providers/settings_provider.dart';
@@ -190,6 +191,46 @@ void main() {
     // Toggle closed on and off.
     await tester.tap(find.text('Hiding closed'));
     await tester.pump(const Duration(milliseconds: 100));
+    _noException(tester);
+    handle.dispose();
+    await _teardown(tester);
+  });
+
+  testWidgets('Helm rail shows the planning horizon across registers',
+      (tester) async {
+    // Date the seed relative to now so the buckets fire whatever day the
+    // suite runs on.
+    final now = DateTime.now();
+    String iso(DateTime d) => '${d.year.toString().padLeft(4, '0')}-'
+        '${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    await db.actionsDao.insertAction(ProjectActionsCompanion.insert(
+      id: 'a-today', projectId: _pid, description: 'Send the brief',
+      ref: const Value('AC7'), dueDate: Value(iso(now)),
+    ));
+    await db.actionsDao.insertAction(ProjectActionsCompanion.insert(
+      id: 'a-late', projectId: _pid, description: 'Chase the contract',
+      ref: const Value('AC8'), dueDate: Value(iso(now.subtract(const Duration(days: 3)))),
+    ));
+    await db.decisionsDao.upsertDecision(DecisionsCompanion(
+      id: const Value('dc-soon'), projectId: const Value(_pid),
+      ref: const Value('DC9'), description: const Value('Pick the gateway'),
+      status: const Value('pending'),
+      dueDate: Value(iso(now.add(const Duration(days: 9)))), // next week-ish
+    ));
+    await db.raidDao.upsertRisk(RisksCompanion(
+      id: const Value('r-review'), projectId: const Value(_pid),
+      ref: const Value('R7'), title: const Value('Vendor slips'),
+      description: const Value('d'), nextReviewAt: Value(iso(now)),
+    ));
+
+    final handle = tester.ensureSemantics();
+    await _pump(tester, db, const HelmView());
+    expect(find.text('TODAY'), findsOneWidget);
+    expect(find.text('AC7 Send the brief'), findsOneWidget);
+    expect(find.text('R7 Vendor slips'), findsOneWidget);
+    expect(find.text('BEHIND'), findsOneWidget);
+    expect(find.text('AC8 Chase the contract'), findsOneWidget);
+    expect(find.textContaining('Risk review'), findsWidgets);
     _noException(tester);
     handle.dispose();
     await _teardown(tester);

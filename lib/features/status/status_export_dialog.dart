@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../core/export/pdf_exporter.dart';
+import '../../core/raid/risk_rating.dart';
+import '../../core/status/risk_ranking.dart';
 import '../../core/export/status_html_exporter.dart';
 import '../../core/status/status_calculator.dart';
 import '../../shared/theme/keel_colors.dart';
@@ -57,6 +59,7 @@ class _StatusExportDialogState extends State<StatusExportDialog> {
         trendArrow:        d.programmeTrend.arrow,
         trendLabel:        d.programmeTrend.label,
         narrative:         widget.narrative,
+        playbookStage:     d.playbookStageLine,
         workstreams: d.workstreams.map((ws) => StatusWorkstreamPdf(
           name:  ws.wp.shortCode != null
               ? '${ws.wp.shortCode} — ${ws.wp.name}'
@@ -82,9 +85,18 @@ class _StatusExportDialogState extends State<StatusExportDialog> {
         }).toList(),
         risks: d.topRisks.map((r) => StatusRiskPdf(
           ref:         r.ref ?? '—',
-          likelihood:  r.likelihood,
-          impact:      r.impact,
+          likelihood:  likelihoodLabel(r.likelihood),
+          impact:      consequenceLabel(r.impact),
           description: r.description,
+          title:       r.title,
+          rating:      ratingSummary(r.likelihood, r.impact),
+          steerco:     r.steerco,
+          soWhat:      riskSoWhat(r),
+          strategy:    kRiskStrategyLabels[r.strategy]?.split(' — ').first,
+          owner:       r.owner,
+          dueDate:     r.dueDate,
+          change:      riskChangeLabel(
+              riskChangeSince(r, d.previousTopRisks), r, d.previousTopRisks),
         )).toList(),
         decisions: d.pendingDecisions.map((dec) => StatusDecisionPdf(
           ref:         dec.ref ?? '—',

@@ -1,7 +1,9 @@
 import 'dart:convert';
 
 import '../database/database.dart';
-import '../raid/risk_rating.dart';
+import '../playbook/current_stage.dart';
+import 'risk_ranking.dart' as ranking;
+import 'status_snapshot_decoder.dart' show SnapshotRisk;
 
 // ─── RAG enum ─────────────────────────────────────────────────────────────────
 
@@ -77,6 +79,8 @@ class ProgrammeStatusData {
   final List<WorkstreamRagStatus> workstreams;
   final List<TimelineActivity> upcomingMilestones;
   final List<Risk> topRisks;
+  /// Last snapshot's frozen top risks by id — null when there is none.
+  final Map<String, SnapshotRisk>? previousTopRisks;
   final List<Decision> pendingDecisions;
   final int overdueActionsCount;
   final int openActionsCount;
@@ -84,6 +88,9 @@ class ProgrammeStatusData {
   final ProjectPlaybook? projectPlaybook;
   final PlaybookStage? currentStage;
   final ProjectStageProgressesData? stageProgress;
+  final int playbookStagesDone;
+  final int playbookStagesTotal;
+  final bool playbookAllComplete;
 
   const ProgrammeStatusData({
     required this.programmeRag,
@@ -92,6 +99,7 @@ class ProgrammeStatusData {
     required this.workstreams,
     required this.upcomingMilestones,
     required this.topRisks,
+    this.previousTopRisks,
     required this.pendingDecisions,
     required this.overdueActionsCount,
     required this.openActionsCount,
@@ -99,9 +107,25 @@ class ProgrammeStatusData {
     this.projectPlaybook,
     this.currentStage,
     this.stageProgress,
+    this.playbookStagesDone = 0,
+    this.playbookStagesTotal = 0,
+    this.playbookAllComplete = false,
   });
 
   int get pendingDecisionsCount => pendingDecisions.length;
+
+  /// "Stage 4: Procurement — Blocked · 3 of 5 stages complete", or null
+  /// when no playbook is attached. Shared by the HTML and PDF exports.
+  String? get playbookStageLine {
+    final s = currentStage;
+    if (s == null) return null;
+    final status = stageProgress?.status ?? 'not_started';
+    final statusLabel = playbookAllComplete
+        ? 'All stages complete'
+        : playbookStatusLabel(status);
+    return 'Stage ${s.sortOrder + 1}: ${s.name} — $statusLabel · '
+        '$playbookStagesDone of $playbookStagesTotal stages complete';
+  }
 }
 
 // ─── Calculator ───────────────────────────────────────────────────────────────
@@ -153,21 +177,11 @@ class StatusCalculator {
     return jsonEncode(map);
   }
 
-  /// Return the top-3 risks sorted by likelihood × impact score,
-  /// tie-broken by most recently updated.
-  static List<Risk> topRisks(List<Risk> all, {int limit = 3}) {
-    final open = all.where((r) => r.status == 'open').toList();
-    open.sort((a, b) {
-      final sa = _riskScore(a.likelihood, a.impact);
-      final sb = _riskScore(b.likelihood, b.impact);
-      if (sa != sb) return sb.compareTo(sa);
-      return b.updatedAt.compareTo(a.updatedAt);
-    });
-    return open.take(limit).toList();
-  }
-
-  static int _riskScore(String likelihood, String impact) =>
-      riskScore(likelihood, impact);
+  /// The top risks by the shared ranking (score, SteerCo, due date,
+  /// review, ref) — see risk_ranking.dart. Open and in-progress risks
+  /// qualify.
+  static List<Risk> topRisks(List<Risk> all, {int limit = 5}) =>
+      ranking.topRisks(all, limit: limit);
 
   /// Filter activities to milestone-type entries whose month falls within
   /// the next [days] days. Completed milestones are excluded.

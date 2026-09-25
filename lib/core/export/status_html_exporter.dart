@@ -1,4 +1,6 @@
 import '../platform/web_download.dart';
+import '../raid/risk_rating.dart';
+import '../status/risk_ranking.dart';
 import '../status/status_calculator.dart';
 
 class StatusHtmlExporter {
@@ -98,6 +100,13 @@ class StatusHtmlExporter {
     sb.writeln('</div>');
     sb.writeln('</div>');
 
+    // Current playbook stage (if a playbook is attached)
+    final stageLine = data.playbookStageLine;
+    if (stageLine != null) {
+      sb.writeln('<h2>Current Playbook Stage</h2>');
+      sb.writeln('<div class="card">${_esc(stageLine)}</div>');
+    }
+
     // Narrative (if any)
     if (narrative != null && narrative.isNotEmpty) {
       sb.writeln('<h2>Status Narrative</h2>');
@@ -159,13 +168,28 @@ class StatusHtmlExporter {
     if (data.topRisks.isNotEmpty) {
       sb.writeln('<h2>Top Risks</h2>');
       sb.writeln('<div class="card"><table>');
-      sb.writeln('<tr><th>REF</th><th>LIKELIHOOD / IMPACT</th><th>DESCRIPTION</th></tr>');
+      sb.writeln('<tr><th>REF</th><th>RATING</th><th>RISK</th>'
+          '<th>WHAT WE ARE DOING</th><th>OWNER · DUE</th></tr>');
       for (final r in data.topRisks) {
+        final change = riskChangeLabel(
+            riskChangeSince(r, data.previousTopRisks), r, data.previousTopRisks);
+        final soWhat = riskSoWhat(r);
+        final headline = r.title != null && r.title!.isNotEmpty
+            ? '<b>${_esc(r.title!)}</b><br><span style="color:#8a9faf;">'
+                '${_esc(r.description)}</span>'
+            : _esc(r.description);
         sb.writeln('<tr>'
-            '<td class="risk-ref">${_esc(r.ref ?? '—')}</td>'
-            '<td style="color:#fbbf24;font-size:11px;">'
-            '${_cap(r.likelihood)} / ${_cap(r.impact)}</td>'
-            '<td>${_esc(r.description)}</td>'
+            '<td class="risk-ref">${_esc(r.ref ?? '—')}'
+            '${r.steerco ? '<br><span style="color:#ef4444;font-size:9px;">▲ STEERCO</span>' : ''}</td>'
+            '<td style="color:#fbbf24;font-size:11px;white-space:nowrap;">'
+            '${_esc(ratingSummary(r.likelihood, r.impact))}'
+            '${change != null ? '<br><span style="color:#8a9faf;font-size:10px;">${_esc(change)}</span>' : ''}</td>'
+            '<td>$headline</td>'
+            '<td style="font-size:11px;">${soWhat != null ? _esc(soWhat) : '—'}'
+            '<br><span style="color:#8a9faf;font-size:10px;">'
+            '${_esc(kRiskStrategyLabels[r.strategy]?.split(' — ').first ?? r.strategy)}</span></td>'
+            '<td style="font-size:11px;white-space:nowrap;">${_esc(r.owner ?? '—')}'
+            '${r.dueDate != null ? '<br><span style="color:#8a9faf;font-size:10px;">due ${_esc(r.dueDate!)}</span>' : ''}</td>'
             '</tr>');
       }
       sb.writeln('</table></div>');
@@ -213,8 +237,6 @@ class StatusHtmlExporter {
       .replaceAll('<', '&lt;')
       .replaceAll('>', '&gt;');
 
-  static String _cap(String s) =>
-      s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
   static String _month(int m) => const [
         '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',

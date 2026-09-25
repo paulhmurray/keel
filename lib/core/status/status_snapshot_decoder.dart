@@ -22,6 +22,10 @@ class SnapshotRisk {
   final String description;
   final String likelihood;
   final String impact;
+  // Added Sep 2026; null on older snapshots.
+  final String? title;
+  final bool steerco;
+  final String? status;
 
   const SnapshotRisk({
     required this.id,
@@ -29,6 +33,9 @@ class SnapshotRisk {
     required this.description,
     required this.likelihood,
     required this.impact,
+    this.title,
+    this.steerco = false,
+    this.status,
   });
 }
 
@@ -98,6 +105,9 @@ class SnapshotDecoder {
           description: m['description'] as String,
           likelihood: m['likelihood'] as String,
           impact: m['impact'] as String,
+          title: m['title'] as String?,
+          steerco: m['steerco'] as bool? ?? false,
+          status: m['status'] as String?,
         ));
   }
 

@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/database/database.dart';
 import '../../core/raid/risk_rating.dart';
+import '../../core/status/risk_ranking.dart';
 import '../../core/helm/day_plan_logic.dart';
 import '../../providers/project_provider.dart';
 import '../../shared/theme/keel_colors.dart';
@@ -574,23 +575,21 @@ class _TopRisksSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<Risk>>(
-      stream: db.raidDao.watchOpenRisksForProject(projectId),
+      // All risks, ranked by the shared rule (score, SteerCo, due date,
+      // review, ref) — the same order the Status page shows.
+      stream: db.raidDao.watchRisksForProject(projectId),
       builder: (context, snap) {
         if (!snap.hasData) return const _PulseLoading();
-        final sorted = snap.data!.toList()
-          ..sort((a, b) =>
-            riskScore(b.likelihood, b.impact) -
-            riskScore(a.likelihood, a.impact));
-        final risks = sorted.take(3).toList();
+        final risks = topRisks(snap.data!, limit: 3);
         if (risks.isEmpty) {
           return const _PulseEmpty(message: 'No open risks');
         }
         return Column(
           children: risks
               .map((r) => _PulseItem(
-                    label: r.ref != null
-                        ? '[${r.ref}] ${r.description}'
-                        : r.description,
+                    label: '${r.steerco ? '▲ ' : ''}'
+                        '${r.ref != null ? '[${r.ref}] ' : ''}'
+                        '${r.title ?? r.description}',
                     barColor: _riskBarColor(r.likelihood, r.impact),
                     trailing: RAGBadge(
                       rag: _riskRag(r.likelihood, r.impact),

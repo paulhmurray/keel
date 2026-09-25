@@ -7,6 +7,11 @@ typedef HelmRiskItem = ({Risk risk, String projectName});
 typedef HelmDecisionItem = ({Decision decision, String projectName});
 typedef HelmIssueItem = ({Issue issue, String projectName});
 typedef HelmAssumptionItem = ({Assumption assumption, String projectName});
+typedef HelmActivityItem = ({
+  TimelineActivity activity,
+  String projectName,
+  String? wpCode,
+});
 typedef HelmDependencyItem = ({
   ProgramDependency dependency,
   String projectName
@@ -405,6 +410,29 @@ class DayPlanDao extends DatabaseAccessor<AppDatabase>
         .map((r) => (
               dependency: r.readTable(programDependencies),
               projectName: r.readTable(projects).name,
+            ))
+        .toList());
+  }
+
+  /// Plan activities with at least one real date, across projects, for
+  /// the planning horizon (starts, ends, milestones, gates, deadlines).
+  /// Month-only activities have no day to plan against and are left out.
+  Stream<List<HelmActivityItem>> watchDatedActivitiesAllProjects() {
+    final acts = attachedDatabase.timelineActivities;
+    final wps = attachedDatabase.timelineWorkPackages;
+    final q = attachedDatabase.select(acts).join([
+      innerJoin(projects, projects.id.equalsExp(acts.projectId)),
+      leftOuterJoin(wps, wps.id.equalsExp(acts.workPackageId)),
+    ])
+      ..where((acts.startDate.isNotNull() | acts.endDate.isNotNull()) &
+          acts.status.equals('complete').not())
+      ..orderBy([OrderingTerm.asc(acts.startDate)]);
+    return q.watch().map((rows) => rows
+        .map((r) => (
+              activity: r.readTable(acts),
+              projectName: r.readTable(projects).name,
+              wpCode: r.readTableOrNull(wps)?.shortCode ??
+                  r.readTableOrNull(wps)?.name,
             ))
         .toList());
   }

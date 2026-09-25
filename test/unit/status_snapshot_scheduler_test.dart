@@ -168,7 +168,18 @@ void main() {
           {'id': 'wp2', 'name': 'Migration', 'rag': 'amber'});
     });
 
-    test('topRisksJson is capped at 3 and ordered by severity', () async {
+    test('topRisksJson is capped at 5, ordered by severity, and carries the '
+        'fields the report needs', () async {
+      await _seedRisk(db,
+          id: 'r-fifth',
+          description: 'fifth',
+          likelihood: 'low',
+          impact: 'medium');
+      await _seedRisk(db,
+          id: 'r-sixth',
+          description: 'sixth',
+          likelihood: 'rare',
+          impact: 'minimal');
       await _seedRisk(db,
           id: 'r-low',
           description: 'low',
@@ -194,12 +205,16 @@ void main() {
 
       final snap = await db.statusSnapshotDao.getMostRecent(_projectId);
       final decoded = jsonDecode(snap!.topRisksJson!) as List;
-      expect(decoded, hasLength(3));
+      expect(decoded, hasLength(5));
       // The high-severity risk should be first.
       expect(decoded.first['id'], 'r-high');
-      // The low-severity ones drop out in favour of the others.
-      expect(decoded.map((e) => e['id']),
-          isNot(contains('r-low')));
+      // The lowest one drops out in favour of the others.
+      expect(decoded.map((e) => e['id']), isNot(contains('r-sixth')));
+      // Rich fields ride along so later reports can show what changed.
+      expect(decoded.first['score'], 16); // legacy high/high → likely/major
+      expect(decoded.first['steerco'], isFalse);
+      expect(decoded.first['status'], 'open');
+      expect(decoded.first.containsKey('strategy'), isTrue);
     });
 
     test('pendingDecisionsJson includes only pending decisions', () async {
@@ -230,6 +245,51 @@ void main() {
 
       final snap = await db.statusSnapshotDao.getMostRecent(_projectId);
       expect(snap!.playbookStageJson, isNull);
+    });
+
+    test('playbookStageJson captures a BLOCKED stage as current (used to '
+        'report nothing when no stage was in progress or not started)',
+        () async {
+      await db.playbookDao.upsertOrganisation(const OrganisationsCompanion(
+        id: Value('org-1'),
+        name: Value('Org'),
+      ));
+      await db.playbookDao.upsertPlaybook(const PlaybooksCompanion(
+        id: Value('pb-1'),
+        organisationId: Value('org-1'),
+        name: Value('Project Delivery'),
+      ));
+      for (final (i, name) in ['Lean Canvas', 'CEO Brief', 'Procurement',
+        'Business Case'].indexed) {
+        await db.playbookDao.upsertStage(PlaybookStagesCompanion(
+          id: Value('st-$i'),
+          playbookId: const Value('pb-1'),
+          name: Value(name),
+          sortOrder: Value(i),
+        ));
+      }
+      await db.playbookDao.upsertProjectPlaybook(const ProjectPlaybooksCompanion(
+        id: Value('pp-1'),
+        projectId: Value(_projectId),
+        playbookId: Value('pb-1'),
+      ));
+      for (final (i, status) in ['complete', 'complete', 'blocked', 'complete']
+          .indexed) {
+        await db.playbookDao.upsertProgress(ProjectStageProgressesCompanion(
+          id: Value('prog-$i'),
+          projectPlaybookId: const Value('pp-1'),
+          stageId: Value('st-$i'),
+          status: Value(status),
+        ));
+      }
+
+      await StatusSnapshotScheduler.createNow(db, _projectId);
+      final snap = await db.statusSnapshotDao.getMostRecent(_projectId);
+      final stage = jsonDecode(snap!.playbookStageJson!) as Map<String, dynamic>;
+      expect(stage['stageName'], 'Procurement');
+      expect(stage['status'], 'blocked');
+      expect(stage['stagesDone'], 3);
+      expect(stage['stagesTotal'], 4);
     });
   });
 

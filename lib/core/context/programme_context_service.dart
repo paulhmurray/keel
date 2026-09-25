@@ -1,6 +1,7 @@
 import '../../shared/utils/money.dart';
 import '../raid/risk_rating.dart';
 import '../database/database.dart';
+import '../playbook/current_stage.dart';
 import '../finance/variance.dart';
 import '../status/status_calculator.dart' show StatusCalculator, Rag;
 import 'programme_context.dart';
@@ -39,17 +40,17 @@ class ProgrammeContextService {
     int stagesTotal = 0;
     final pp = await db.playbookDao.getProjectPlaybook(projectId);
     if (pp != null) {
+      final stages =
+          await db.playbookDao.getStagesForPlaybook(pp.playbookId);
       final progresses = await db.playbookDao
           .getProgressForProjectPlaybook(pp.id);
-      stagesTotal = progresses.length;
-      stagesDone = progresses.where((p) => p.status == 'complete').length;
-      final inProgress = progresses
-          .where((p) => p.status == 'in_progress')
-          .firstOrNull;
-      if (inProgress != null) {
-        final stage = await db.playbookDao.getStageById(inProgress.stageId);
-        stageName = stage?.name;
-        stageStatus = inProgress.status;
+      final current =
+          resolveCurrentStage(stages: stages, progresses: progresses);
+      if (current != null) {
+        stagesTotal = current.stagesTotal;
+        stagesDone = current.stagesDone;
+        stageName = current.stage.name;
+        stageStatus = current.allComplete ? 'complete' : current.status;
       }
     }
 

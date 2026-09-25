@@ -31,9 +31,28 @@ class StatusRiskPdf {
   final String likelihood;
   final String impact;
   final String description;
+  final String? title;
+  final String? rating; // "Likely / Major (16)"
+  final bool steerco;
+  final String? soWhat; // latest status note or first treatment line
+  final String? strategy;
+  final String? owner;
+  final String? dueDate;
+  final String? change; // "NEW to top risks", "▲ was …"
   const StatusRiskPdf({
-      required this.ref, required this.likelihood,
-      required this.impact, required this.description});
+    required this.ref,
+    required this.likelihood,
+    required this.impact,
+    required this.description,
+    this.title,
+    this.rating,
+    this.steerco = false,
+    this.soWhat,
+    this.strategy,
+    this.owner,
+    this.dueDate,
+    this.change,
+  });
 }
 
 class StatusDecisionPdf {
@@ -49,6 +68,8 @@ class StatusSummaryForPdf {
   final String trendArrow;
   final String trendLabel;
   final String? narrative;
+  /// "Stage 4: Procurement — Blocked · 3 of 5 stages complete", or null.
+  final String? playbookStage;
   final List<StatusWorkstreamPdf> workstreams;
   final List<StatusMilestonePdf> milestones;
   final List<StatusRiskPdf> risks;
@@ -63,6 +84,7 @@ class StatusSummaryForPdf {
     required this.trendArrow,
     required this.trendLabel,
     this.narrative,
+    this.playbookStage,
     required this.workstreams,
     required this.milestones,
     required this.risks,
@@ -564,6 +586,15 @@ class PdfExporter {
           ),
           pw.SizedBox(height: 16),
 
+          // Current playbook stage
+          if (summary.playbookStage != null) ...[
+            _sectionHeader('Current Playbook Stage'),
+            pw.SizedBox(height: 6),
+            pw.Text(_sanitize(summary.playbookStage!),
+                style: const pw.TextStyle(fontSize: 10)),
+            pw.SizedBox(height: 16),
+          ],
+
           // Narrative
           if (summary.narrative != null &&
               summary.narrative!.isNotEmpty) ...[
@@ -633,9 +664,11 @@ class PdfExporter {
             pw.Table(
               border: pw.TableBorder.all(color: PdfColors.grey300),
               columnWidths: {
-                0: const pw.FixedColumnWidth(36),
-                1: const pw.FixedColumnWidth(80),
-                2: const pw.FlexColumnWidth(1),
+                0: const pw.FixedColumnWidth(44),
+                1: const pw.FixedColumnWidth(92),
+                2: const pw.FlexColumnWidth(2),
+                3: const pw.FlexColumnWidth(1.6),
+                4: const pw.FixedColumnWidth(84),
               },
               children: [
                 pw.TableRow(
@@ -643,15 +676,28 @@ class PdfExporter {
                       const pw.BoxDecoration(color: PdfColors.grey100),
                   children: [
                     _tableHeader('REF'),
-                    _tableHeader('LIKELIHOOD/IMPACT'),
-                    _tableHeader('DESCRIPTION'),
+                    _tableHeader('RATING'),
+                    _tableHeader('RISK'),
+                    _tableHeader('WHAT WE ARE DOING'),
+                    _tableHeader('OWNER / DUE'),
                   ],
                 ),
                 for (final r in summary.risks)
                   pw.TableRow(children: [
-                    _tableCell(r.ref),
-                    _tableCell('${r.likelihood} / ${r.impact}'),
-                    _tableCell(r.description),
+                    _tableCell(
+                        '${r.ref}${r.steerco ? '\nSTEERCO' : ''}'),
+                    _tableCell(
+                        '${r.rating ?? '${r.likelihood} / ${r.impact}'}'
+                        '${r.change != null ? '\n${r.change}' : ''}'),
+                    _tableCell(r.title != null && r.title!.isNotEmpty
+                        ? '${r.title}\n${r.description}'
+                        : r.description),
+                    _tableCell(
+                        '${r.soWhat ?? '—'}'
+                        '${r.strategy != null ? '\n${r.strategy}' : ''}'),
+                    _tableCell(
+                        '${r.owner ?? '—'}'
+                        '${r.dueDate != null ? '\ndue ${r.dueDate}' : ''}'),
                   ]),
               ],
             ),

@@ -4,6 +4,8 @@ import 'package:drift/drift.dart' show Value;
 import 'package:uuid/uuid.dart';
 
 import '../database/database.dart';
+import '../playbook/current_stage.dart';
+import '../raid/risk_rating.dart';
 import 'status_calculator.dart';
 
 /// Captures a frozen view of the live Status dashboard at a point in time.
@@ -76,7 +78,7 @@ class StatusSnapshotScheduler {
     final monthLabels = _parseMonthLabels(header?.monthLabels);
     final upcoming = StatusCalculator.upcomingMilestones(
         activities, monthLabels, month0Date: header?.month0Date);
-    final top = StatusCalculator.topRisks(risks, limit: 3);
+    final top = StatusCalculator.topRisks(risks, limit: 5);
 
     final workstreamHealthJson = jsonEncode([
       for (final wp in wps)
@@ -95,6 +97,13 @@ class StatusSnapshotScheduler {
           'description': r.description,
           'likelihood': r.likelihood,
           'impact': r.impact,
+          'title': r.title,
+          'score': riskScore(r.likelihood, r.impact),
+          'steerco': r.steerco,
+          'status': r.status,
+          'strategy': r.strategy,
+          'owner': r.owner,
+          'due_date': r.dueDate,
         },
     ]);
 
@@ -150,22 +159,19 @@ class StatusSnapshotScheduler {
     final pp = await db.playbookDao.getProjectPlaybook(projectId);
     if (pp == null) return null;
 
+    final stages = await db.playbookDao.getStagesForPlaybook(pp.playbookId);
     final progresses =
         await db.playbookDao.getProgressForProjectPlaybook(pp.id);
-    final inProgress = progresses.where((p) => p.status == 'in_progress');
-    final notStarted = progresses.where((p) => p.status == 'not_started');
-    final target = inProgress.isNotEmpty
-        ? inProgress.first
-        : (notStarted.isNotEmpty ? notStarted.first : null);
-    if (target == null) return null;
-
-    final stage = await db.playbookDao.getStageById(target.stageId);
-    if (stage == null) return null;
+    final current =
+        resolveCurrentStage(stages: stages, progresses: progresses);
+    if (current == null) return null;
 
     return jsonEncode({
-      'stageId': stage.id,
-      'stageName': stage.name,
-      'status': target.status,
+      'stageId': current.stage.id,
+      'stageName': current.stage.name,
+      'status': current.allComplete ? 'complete' : current.status,
+      'stagesDone': current.stagesDone,
+      'stagesTotal': current.stagesTotal,
     });
   }
 

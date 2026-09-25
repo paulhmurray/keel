@@ -7,6 +7,9 @@ import 'package:provider/provider.dart';
 
 import '../../core/database/database.dart';
 import '../../core/helm/day_plan_logic.dart';
+import '../../shared/utils/date_utils.dart' as du;
+import '../../core/helm/combine_latest.dart';
+import '../../core/helm/planning_horizon.dart';
 import '../../providers/settings_provider.dart';
 import '../../shared/theme/keel_colors.dart';
 import 'helm_quarter_view.dart';
@@ -1235,8 +1238,6 @@ class _PlanningRailState extends State<_PlanningRail> {
   // Memoized streams — the parent's minute tick rebuilds this subtree,
   // and inline-created streams would make every section resubscribe and
   // blink empty once a minute. Re-anchored only when the date changes.
-  late Stream<List<HelmActionItem>> _dueToday;
-  late Stream<List<HelmActionItem>> _overdue;
   late Stream<List<HelmRiskItem>> _unownedRisks;
   late Stream<List<HelmDecisionItem>> _pendingDecisions;
   late Stream<List<HelmActionItem>> _allActions;
@@ -1244,6 +1245,9 @@ class _PlanningRailState extends State<_PlanningRail> {
   late Stream<List<HelmIssueItem>> _allIssues;
   late Stream<List<HelmAssumptionItem>> _allAssumptions;
   late Stream<List<HelmDependencyItem>> _allDependencies;
+  late Stream<List<HelmActivityItem>> _datedActivities;
+  // Everything with a date across every project, bucketed for planning.
+  late Stream<PlanningHorizon> _horizon;
   Stream<DayPlan?>? _carryPlanStream;
   String? _carryDateIso;
   Stream<List<DayPlanBlock>>? _carryBlocksStream;
@@ -1282,8 +1286,6 @@ class _PlanningRailState extends State<_PlanningRail> {
 
   void _initStreams() {
     final dao = db.dayPlanDao;
-    _dueToday = dao.watchActionsDueTodayAllProjects();
-    _overdue = dao.watchOverdueActionsAllProjects();
     _unownedRisks = dao.watchUnownedOpenRisksAllProjects();
     _pendingDecisions = dao.watchPendingDecisionsAllProjects();
     _allActions = dao.watchOpenActionsAllProjects();
@@ -1291,6 +1293,23 @@ class _PlanningRailState extends State<_PlanningRail> {
     _allIssues = dao.watchOpenIssuesAllProjects();
     _allAssumptions = dao.watchOpenAssumptionsAllProjects();
     _allDependencies = dao.watchOpenDependenciesAllProjects();
+    _datedActivities = dao.watchDatedActivitiesAllProjects();
+    _horizon = combineLatest<List<Object>>([
+      _allActions,
+      _pendingDecisions,
+      _allDependencies,
+      _allRisks,
+      _allIssues,
+      _datedActivities,
+    ]).map((lists) => buildPlanningHorizon(
+          today: widget.date,
+          actions: lists[0].cast<HelmActionItem>(),
+          decisions: lists[1].cast<HelmDecisionItem>(),
+          dependencies: lists[2].cast<HelmDependencyItem>(),
+          risks: lists[3].cast<HelmRiskItem>(),
+          issues: lists[4].cast<HelmIssueItem>(),
+          activities: lists[5].cast<HelmActivityItem>(),
+        ));
   }
 
   bool _isExpanded(String key) => _expandedSections.contains(key);
@@ -1362,21 +1381,14 @@ class _PlanningRailState extends State<_PlanningRail> {
     );
   }
 
+  // The morning ritual: the week's big rocks, what didn't get done
+  // yesterday, then everything dated — today, behind, the rest of this
+  // week by day, next week — across every register, so the day and the
+  // week are planned from what is coming rather than what slipped.
   List<Widget> _suggestedSections(String yesterdayIso) => [
         _thisWeekSection(),
         _carryOverSection(yesterdayIso),
-        _actionSection(
-          title: 'Due today',
-          icon: Icons.today_outlined,
-          stream: _dueToday,
-          barColor: KColors.amber,
-        ),
-        _actionSection(
-          title: 'Overdue',
-          icon: Icons.warning_amber_rounded,
-          stream: _overdue,
-          barColor: KColors.red,
-        ),
+        _horizonSections(),
         _riskSection(
           title: 'Risks needing an owner',
           stream: _unownedRisks,
@@ -1384,6 +1396,105 @@ class _PlanningRailState extends State<_PlanningRail> {
         ),
         _decisionSection(cap: 5),
       ];
+
+  Widget _horizonSections() {
+    return StreamBuilder<PlanningHorizon>(
+      stream: _horizon,
+      builder: (context, snap) {
+        final h = snap.data;
+        if (h == null || h.isEmpty) return const SizedBox.shrink();
+        return Column(children: [
+          if (h.today.isNotEmpty)
+            _RailSection(
+              title: 'Today',
+              icon: Icons.today_outlined,
+              children: [for (final it in h.today) _horizonItem(it, KColors.amber)],
+            ),
+          if (h.overdue.isNotEmpty)
+            _RailSection(
+              title: 'Behind',
+              icon: Icons.warning_amber_rounded,
+              count: h.overdue.length,
+              expanded: _isExpanded('behind') || h.overdue.length <= 6,
+              onToggle: h.overdue.length <= 6
+                  ? null
+                  : () => _toggleSection('behind'),
+              children: [
+                for (final it in h.overdue) _horizonItem(it, KColors.red),
+              ],
+            ),
+          if (h.restOfWeek.isNotEmpty)
+            _RailSection(
+              title: 'Rest of this week',
+              icon: Icons.view_week_outlined,
+              children: [
+                for (final day in h.restOfWeek) ...[
+                  _RailDayHeader(label: planningDayLabel(day.date)),
+                  for (final it in day.items) _horizonItem(it, KColors.phosphor),
+                ],
+              ],
+            ),
+          if (h.nextWeek.isNotEmpty)
+            _RailSection(
+              title: 'Next week',
+              icon: Icons.next_week_outlined,
+              count: h.nextWeek.length,
+              expanded: _isExpanded('nextweek'),
+              onToggle: () => _toggleSection('nextweek'),
+              children: [
+                for (final it in h.nextWeek) _horizonItem(it, KColors.blue),
+              ],
+            ),
+        ]);
+      },
+    );
+  }
+
+  /// One dated item: label, then "Project · Date kind · due". Actions
+  /// drop as linked focus blocks; everything else drops as an admin
+  /// block carrying the item's label, and taps open the item.
+  Widget _horizonItem(PlanningItem it, Color bar) {
+    final isAction = it.kind == PlanningKind.action;
+    final dueLabel = du.formatDate(it.dueIso);
+    return _RailItem(
+      label: it.label,
+      detail: '${it.projectName} · ${it.dateKind} · $dueLabel',
+      barColor: bar,
+      payload: _RailDrag(
+        label: isAction ? it.label : '${it.dateKind}: ${it.label}',
+        kind: isAction ? 'focus' : 'admin',
+        projectId: it.projectId,
+        linkedActionId: it.linkedActionId,
+      ),
+      onTap: () => _openHorizonItem(it),
+    );
+  }
+
+  Future<void> _openHorizonItem(PlanningItem it) async {
+    switch (it.kind) {
+      case PlanningKind.action:
+        final a = await db.actionsDao.getActionById(it.id);
+        if (a != null) widget.onOpenAction?.call(a);
+      case PlanningKind.decision:
+        final d = await db.decisionsDao.getDecisionById(it.id);
+        if (d != null) widget.onOpenDecision?.call(d);
+      case PlanningKind.dependency:
+        final d = await db.raidDao.getDependencyById(it.id);
+        if (d != null) widget.onOpenDependency?.call(d);
+      case PlanningKind.riskTreatment:
+      case PlanningKind.riskReview:
+        final r = await db.raidDao.getRiskById(it.id);
+        if (r != null) widget.onOpenRisk?.call(r);
+      case PlanningKind.issue:
+        final i = await db.raidDao.getIssueById(it.id);
+        if (i != null) widget.onOpenIssue?.call(i);
+      case PlanningKind.activityStart:
+      case PlanningKind.activityEnd:
+      case PlanningKind.milestone:
+        // Plan activities open in the Plan view; nothing to open here.
+        break;
+    }
+  }
 
   List<Widget> _browseSections() => [
         _actionSection(
@@ -1749,6 +1860,26 @@ class _PlanningRailState extends State<_PlanningRail> {
       },
     );
   }
+}
+
+/// Sub-header inside "Rest of this week": the weekday the items below
+/// fall due on.
+class _RailDayHeader extends StatelessWidget {
+  final String label;
+  const _RailDayHeader({required this.label});
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(14, 8, 14, 2),
+        color: KColors.surface2,
+        child: Text(label.toUpperCase(),
+            style: const TextStyle(
+                color: KColors.textMuted,
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.4)),
+      );
 }
 
 class _RailModeChip extends StatelessWidget {

@@ -12,6 +12,8 @@ import '../../providers/settings_provider.dart';
 import '../../shared/theme/keel_colors.dart';
 import 'financial_summary_panel.dart';
 import 'pending_decisions_panel.dart';
+import '../../core/playbook/current_stage.dart';
+import '../../core/status/status_snapshot_decoder.dart';
 import 'playbook_stage_summary.dart';
 import 'programme_rag_widget.dart';
 import 'rag_sparkline.dart';
@@ -147,7 +149,12 @@ class _StatusContentState extends State<_StatusContent> {
           allActs, months, month0Date: header?.month0Date);
 
       // Top risks
-      final top = StatusCalculator.topRisks(risks, limit: 3);
+      final top = StatusCalculator.topRisks(risks, limit: 5);
+      final prevTop = lastSnapshot == null
+          ? null
+          : {
+              for (final r in SnapshotDecoder.topRisks(lastSnapshot)) r.id: r
+            };
 
       // Pending decisions (sorted by due date)
       final pending = decisions
@@ -169,27 +176,16 @@ class _StatusContentState extends State<_StatusContent> {
       final openCount = actions.where((a) => a.status == 'open').length;
       final openRisksCount = risks.where((r) => r.status == 'open').length;
 
-      // Playbook
+      // Playbook — first stage that isn't complete (blocked and
+      // pending-approval included), via the shared resolver.
       final pp = await db.playbookDao.getProjectPlaybook(_projectId);
-      PlaybookStage? currentStage;
-      ProjectStageProgressesData? stageProgress;
+      CurrentStage? current;
       if (pp != null) {
+        final stages =
+            await db.playbookDao.getStagesForPlaybook(pp.playbookId);
         final progresses =
             await db.playbookDao.getProgressForProjectPlaybook(pp.id);
-        // Find the first in-progress stage, or first not-started
-        final inProgress = progresses
-            .where((p) => p.status == 'in_progress')
-            .toList();
-        final notStarted = progresses
-            .where((p) => p.status == 'not_started')
-            .toList();
-        final target = inProgress.isNotEmpty
-            ? inProgress.first
-            : (notStarted.isNotEmpty ? notStarted.first : null);
-        if (target != null) {
-          stageProgress = target;
-          currentStage = await db.playbookDao.getStageById(target.stageId);
-        }
+        current = resolveCurrentStage(stages: stages, progresses: progresses);
       }
 
       // Finance — approved budget + latest forecast/actuals (v2).
@@ -239,13 +235,17 @@ class _StatusContentState extends State<_StatusContent> {
           workstreams:         wsStatuses,
           upcomingMilestones:  upcoming,
           topRisks:            top,
+          previousTopRisks:    prevTop,
           pendingDecisions:    pending,
           overdueActionsCount: overdueCount,
           openActionsCount:    openCount,
           openRisksCount:      openRisksCount,
           projectPlaybook:     pp,
-          currentStage:        currentStage,
-          stageProgress:       stageProgress,
+          currentStage:        current?.stage,
+          stageProgress:       current?.progress,
+          playbookStagesDone:  current?.stagesDone ?? 0,
+          playbookStagesTotal: current?.stagesTotal ?? 0,
+          playbookAllComplete: current?.allComplete ?? false,
         );
         _monthLabels = months;
         _loading = false;
@@ -390,7 +390,9 @@ class _StatusContentState extends State<_StatusContent> {
 
                 // Top risks
                 _SectionLabel('TOP RISKS'),
-                TopRisksPanel(risks: data.topRisks),
+                TopRisksPanel(
+                    risks: data.topRisks,
+                    previous: data.previousTopRisks),
                 const SizedBox(height: 20),
 
                 // Pending decisions
@@ -403,6 +405,10 @@ class _StatusContentState extends State<_StatusContent> {
                 PlaybookStageSummary(
                   stage:    data.currentStage,
                   progress: data.stageProgress,
+                  attached: data.projectPlaybook != null,
+                  stagesDone: data.playbookStagesDone,
+                  stagesTotal: data.playbookStagesTotal,
+                  allComplete: data.playbookAllComplete,
                 ),
                 const SizedBox(height: 20),
 
