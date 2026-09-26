@@ -197,6 +197,21 @@ void main() {
     expect(r.impact, 'minor');
   });
 
+  test('the plan header hard-deadline date survives export → import', () async {
+    await src.programmeGanttDao.upsertHeader(const ProgrammeHeadersCompanion(
+      id: Value('h1'),
+      projectId: Value('p1'),
+      hardDeadline: Value('Integrations in production by Aug 27'),
+      hardDeadlineDate: Value('2027-08-31'),
+    ));
+    final blob =
+        await JsonExporter.exportProjectToString(projectId: 'p1', db: src);
+    await JsonImporter.importFromString(blob, dst);
+    final h = (await dst.programmeGanttDao.getHeader('p1'))!;
+    expect(h.hardDeadline, 'Integrations in production by Aug 27');
+    expect(h.hardDeadlineDate, '2027-08-31');
+  });
+
   test('blobs from before v59 still import with the new fields null',
       () async {
     await src.raidDao.upsertDependency(const ProgramDependenciesCompanion(

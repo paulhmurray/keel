@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/cascade/cascade_service.dart';
 import '../../../core/database/database.dart';
 import '../../../core/status/status_calculator.dart';
 import '../../../providers/project_provider.dart';
@@ -98,6 +99,8 @@ class PerProjectPulse extends StatelessWidget {
       overdueDecisions: await db.decisionsDao
           .getOverdueCascadedDecisionsForProgramme(programmeId),
       reports: await db.reportsDao.getReportsForProject(programmeId),
+      activities: await db.programmeGanttDao.getActivitiesForProject(programmeId),
+      links: await db.programmeLinksDao.getLinksForEntity(programmeId),
     );
     return _PulseData(rows);
   }
@@ -113,7 +116,39 @@ List<ProjectPulseStat> computePerProjectPulse({
   required List<ProjectAction> overdueActions,
   required List<Decision> overdueDecisions,
   required List<StatusReport> reports,
+  List<TimelineActivity> activities = const [],
+  List<ProgrammeLink> links = const [],
+  DateTime? today,
 }) {
+  final now = today ?? DateTime.now();
+  final todayIso = '${now.year.toString().padLeft(4, '0')}-'
+      '${now.month.toString().padLeft(2, '0')}-'
+      '${now.day.toString().padLeft(2, '0')}';
+  // Share level per source: the programme-side link row for that partner.
+  final shareBySource = <String, String>{
+    for (final l in links)
+      if (l.status == 'active' && l.partnerLocalId != null)
+        l.partnerLocalId!: l.shareLevel,
+  };
+  // Next dated milestone/gate/deadline still open, per source project.
+  TimelineActivity? nextMilestone(String src) {
+    TimelineActivity? best;
+    for (final a in activities) {
+      if (a.sourceProjectId != src) continue;
+      if (a.status == 'complete') continue;
+      if (a.activityType != 'milestone' &&
+          a.activityType != 'gate' &&
+          a.activityType != 'hard_deadline') {
+        continue;
+      }
+      final d = a.startDate ?? a.endDate;
+      if (d == null || d.compareTo(todayIso) < 0) continue;
+      if (best == null || d.compareTo(best.startDate ?? best.endDate!) < 0) {
+        best = a;
+      }
+    }
+    return best;
+  }
   final wpsBySource = <String, List<TimelineWorkPackage>>{};
   for (final wp in workPackages) {
     final src = wp.sourceProjectId;
@@ -148,6 +183,8 @@ List<ProjectPulseStat> computePerProjectPulse({
       if (d.sourceProjectId != null) d.sourceProjectId!,
     for (final r in reports)
       if (r.sourceProjectId != null) r.sourceProjectId!,
+    for (final a in activities)
+      if (a.sourceProjectId != null) a.sourceProjectId!,
   };
 
   return [
@@ -160,6 +197,8 @@ List<ProjectPulseStat> computePerProjectPulse({
         risks: riskCount(src),
         overdue: overdueCount(src),
         lastStatus: lastStatus(src),
+        shareLevel: shareBySource[src],
+        nextMilestone: nextMilestone(src),
       ),
   ];
 }
@@ -175,13 +214,20 @@ class ProjectPulseStat {
   final int risks;
   final int overdue;
   final DateTime? lastStatus;
+  /// 'full' | 'escalated' | null when the link isn't local.
+  final String? shareLevel;
+  final TimelineActivity? nextMilestone;
   const ProjectPulseStat({
     required this.sourceId,
     required this.rag,
     required this.risks,
     required this.overdue,
     required this.lastStatus,
+    this.shareLevel,
+    this.nextMilestone,
   });
+
+  bool get isFullShare => CascadeShareLevels.isFull(shareLevel);
 }
 
 class _ProjectPulseRow extends StatelessWidget {
@@ -208,15 +254,42 @@ class _ProjectPulseRow extends StatelessWidget {
         _RagChip(row.rag),
         const SizedBox(width: 10),
         Expanded(
-          child: Text(label,
-              style: const TextStyle(
-                  color: KColors.text,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600),
-              overflow: TextOverflow.ellipsis),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(children: [
+                Flexible(
+                  child: Text(label,
+                      style: const TextStyle(
+                          color: KColors.text,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600),
+                      overflow: TextOverflow.ellipsis),
+                ),
+                if (row.shareLevel != null) ...[
+                  const SizedBox(width: 8),
+                  _ShareTag(full: row.isFullShare),
+                ],
+              ]),
+              if (row.nextMilestone != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(
+                    '◆ ${row.nextMilestone!.name} · '
+                    '${_shortDate(row.nextMilestone!.startDate ?? row.nextMilestone!.endDate)}',
+                    style: const TextStyle(
+                        color: KColors.textDim, fontSize: 10.5),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+            ],
+          ),
         ),
         _metric('▲', '${row.risks}',
-            '${row.risks == 1 ? 'risk' : 'risks'}',
+            row.isFullShare
+                ? 'open ${row.risks == 1 ? 'risk' : 'risks'}'
+                : 'escalated',
             row.risks > 0 ? KColors.amber : KColors.textMuted),
         const SizedBox(width: 14),
         _metric('⏰', '${row.overdue}', 'overdue',
@@ -242,6 +315,13 @@ class _ProjectPulseRow extends StatelessWidget {
       Text(unit,
           style: const TextStyle(color: KColors.textMuted, fontSize: 10)),
     ]);
+  }
+
+  static String _shortDate(String? iso) {
+    final d = iso == null ? null : DateTime.tryParse(iso);
+    if (d == null) return '';
+    const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return '${d.day} ${m[d.month - 1]}';
   }
 
   static String _ago(DateTime? d) {
@@ -280,6 +360,37 @@ class _RagChip extends StatelessWidget {
           textAlign: TextAlign.center,
           style: TextStyle(
               color: fg, fontSize: 9, fontWeight: FontWeight.w800)),
+    );
+  }
+}
+
+/// "FULL" / "ESC" — how much of the project this programme receives.
+class _ShareTag extends StatelessWidget {
+  final bool full;
+  const _ShareTag({required this.full});
+
+  @override
+  Widget build(BuildContext context) {
+    final colour = full ? KColors.phosphor : KColors.amber;
+    return Tooltip(
+      message: full
+          ? 'Full detail: whole RAID, all actions and decisions, plan to '
+              'task level'
+          : 'Escalated only: the project PM chooses what you see',
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+        decoration: BoxDecoration(
+          color: colour.withValues(alpha: 0.12),
+          border: Border.all(color: colour.withValues(alpha: 0.6), width: 0.5),
+          borderRadius: BorderRadius.circular(2),
+        ),
+        child: Text(full ? 'FULL' : 'ESC',
+            style: TextStyle(
+                color: colour,
+                fontSize: 8.5,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.6)),
+      ),
     );
   }
 }

@@ -20,6 +20,8 @@ import '../programme/overdue_cascade_panel.dart';
 import 'decision_form.dart';
 import '../raid/dependency_slack_chip.dart';
 import '../../shared/widgets/closed_toggle.dart';
+import '../../core/programme/source_filter.dart';
+import '../../shared/widgets/source_filter_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DecisionsView extends StatefulWidget {
@@ -40,6 +42,7 @@ class _DecisionsViewState extends State<DecisionsView> {
   // Made decisions age out of the list two weeks after they were
   // decided; the toggle (per project) brings them back.
   bool _showClosed = false;
+  SourceFilter _sourceFilter = SourceFilter.all;
 
   Future<void> _loadPrefs(String projectId) async {
     final prefs = await SharedPreferences.getInstance();
@@ -163,6 +166,11 @@ class _DecisionsViewState extends State<DecisionsView> {
           // nothing) on project-kind installs and on programmes with
           // no overdue cascaded decisions.
           const OverdueCascadePanel(kind: OverdueCascadeKind.decision),
+          SourceFilterBar(
+            filter: _sourceFilter,
+            padding: const EdgeInsets.only(bottom: 10),
+            onChanged: (f) => setState(() => _sourceFilter = f),
+          ),
           // List
           Expanded(
             child: StreamBuilder<List<Decision>>(
@@ -179,7 +187,9 @@ class _DecisionsViewState extends State<DecisionsView> {
                   updatedAt: (d) => d.updatedAt,
                   showClosed: _showClosed,
                 );
-                final items = part.visible;
+                final items = _sourceFilter.apply(part.visible,
+                    sourceProjectId: (d) => d.sourceProjectId,
+                    escalatedAt: (d) => d.escalatedAt);
                 if (items.isEmpty && part.hidden.isNotEmpty) {
                   return HiddenClosedNotice(
                       hiddenCount: part.hidden.length,
@@ -364,8 +374,7 @@ class _DecisionCard extends StatelessWidget {
                                       db: db,
                                       decision: decision),
                                 );
-                                if (context.mounted &&
-                                    decision.escalatedAt != null) {
+                                if (context.mounted) {
                                   final fresh = await db.decisionsDao
                                       .getDecisionById(decision.id);
                                   if (fresh != null && context.mounted) {
@@ -384,20 +393,15 @@ class _DecisionCard extends StatelessWidget {
                                       .pushDecision(fresh);
                                 }
                               } else if (val == 'unescalate') {
-                                if (context.mounted) {
-                                  await _cascadeFor(context, db)
-                                      .tombstoneRaidItem(
-                                    projectId: projectId,
-                                    itemKind: CascadeKinds.decision,
-                                    itemId: decision.id,
-                                  );
-                                }
-                                await db.decisionsDao
-                                    .setDecisionEscalated(
-                                        decision.id, false);
+                                await db.decisionsDao.setDecisionEscalated(decision.id, false);
+                          // Re-push with the flag off: full-detail links keep
+                          // the row unflagged, escalated-only links get a tombstone.
+                          final fresh = await db.decisionsDao.getDecisionById(decision.id);
+                          if (fresh != null && context.mounted) {
+                            await _cascadeFor(context, db).pushDecision(fresh);
+                          }
                               } else if (val == 'delete') {
-                                if (decision.escalatedAt != null &&
-                                    context.mounted) {
+                                if (context.mounted) {
                                   await _cascadeFor(context, db)
                                       .tombstoneRaidItem(
                                     projectId: projectId,

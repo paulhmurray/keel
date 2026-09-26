@@ -455,6 +455,11 @@ class SyncProvider extends ChangeNotifier {
             : SyncCascadeGateway(client: _getClient(), accessToken: token),
       ),
     );
+    // Heal half-formed same-machine pairs first, otherwise the project
+    // side has no row to push over and the programme silently starves.
+    try {
+      await db.programmeLinksDao.repairSameMachineLinks();
+    } catch (_) {}
     // Local entities to reconcile: the owner plus any same-machine
     // partner (so a single-install link populates both directions).
     final ids = <String>{ownerEntityId};

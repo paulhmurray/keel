@@ -425,7 +425,10 @@ class DayPlanDao extends DatabaseAccessor<AppDatabase>
       leftOuterJoin(wps, wps.id.equalsExp(acts.workPackageId)),
     ])
       ..where((acts.startDate.isNotNull() | acts.endDate.isNotNull()) &
-          acts.status.equals('complete').not())
+          acts.status.equals('complete').not() &
+          // A programme's cascaded copies would double every linked
+          // project's milestones in the rail.
+          acts.sourceProjectId.isNull())
       ..orderBy([OrderingTerm.asc(acts.startDate)]);
     return q.watch().map((rows) => rows
         .map((r) => (

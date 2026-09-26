@@ -160,10 +160,12 @@ class _GroupRow extends _GRow {
   // null = native programme group; otherwise the source project id.
   final String? sourceProjectId;
   final int wpCount;
+  final bool collapsed;
   _GroupRow({
     required this.label,
     required this.sourceProjectId,
     required this.wpCount,
+    this.collapsed = false,
   });
   @override
   double get height => _kGroupRowH;
@@ -296,6 +298,9 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
   List<_GRow> _rows = [];
   // Parent activities whose task rows are folded away.
   final Set<String> _collapsedTasks = {};
+  // Swimlane groups folded away on a multi-project programme plan. Keyed
+  // by source project id; '' is the programme's own group.
+  final Set<String> _collapsedGroups = {};
   bool _loading = true;
   Map<String, ({int count, String urgency})> _actionSummary = {};
 
@@ -381,10 +386,13 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
         final label = g.sourceProjectId == null
             ? (projectsById[pid]?.name ?? 'This programme')
             : nameFor(g.sourceProjectId!);
+        final collapsed = _collapsedGroups.contains(g.sourceProjectId ?? '');
         rows.add(_GroupRow(
             label: label,
             sourceProjectId: g.sourceProjectId,
-            wpCount: g.wps.length));
+            wpCount: g.wps.length,
+            collapsed: collapsed));
+        if (collapsed) continue;
       }
       for (final wp in g.wps) {
         rows.add(_WpRow(wp));
@@ -508,7 +516,8 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
         updatedAt: Value(DateTime.now()),
       ),
     );
-    _load();
+    await _load();
+    await _repushWp(act.workPackageId);
   }
 
   void _cancelInlineEdit() => setState(() => _editingNameId = null);
@@ -605,7 +614,10 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     if (wpId == null || !mounted) return;
     final wp = _wps.where((w) => w.id == wpId).firstOrNull;
     if (wp == null || wp.sourceProjectId != null) return;
-    await buildCascadeService(context).pushWorkPackage(wp);
+    final cascade = buildCascadeService(context);
+    await cascade.pushWorkPackage(wp);
+    // Full-detail links also get the activities, tasks and arrows.
+    await cascade.pushPlanDetailForWp(widget.projectId, wp.id);
   }
 
   /// Returns the effective start/end months for a cell render, accounting
@@ -749,6 +761,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     await _db.programmeGanttDao
         .reorderActivitiesWithinWp(wpId, siblings);
     await _load();
+    await _repushWp(wpId);
   }
 
   Future<void> _openEditWp(TimelineWorkPackage wp) async {
@@ -1426,7 +1439,15 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
   Widget _buildNameCell(_GRow row) {
     if (row is _GroupRow) {
       final isCascaded = row.sourceProjectId != null;
-      return Container(
+      return InkWell(
+        onTap: () {
+          final key = row.sourceProjectId ?? '';
+          setState(() {
+            if (!_collapsedGroups.remove(key)) _collapsedGroups.add(key);
+          });
+          _load();
+        },
+        child: Container(
         height: _kGroupRowH,
         padding: const EdgeInsets.only(left: 8, right: 8),
         decoration: const BoxDecoration(
@@ -1437,6 +1458,9 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
           ),
         ),
         child: Row(children: [
+          Icon(row.collapsed ? Icons.chevron_right : Icons.expand_more,
+              size: 13, color: KColors.textDim),
+          const SizedBox(width: 2),
           Icon(isCascaded ? Icons.link : Icons.workspaces_outlined,
               size: 12, color: KColors.textDim),
           const SizedBox(width: 6),
@@ -1457,6 +1481,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                   fontSize: 10,
                   fontWeight: FontWeight.w600)),
         ]),
+        ),
       );
     }
 
@@ -1538,6 +1563,10 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     };
 
     final isEditing = _editingNameId == act.id;
+    // Cascaded copies (full-detail share from a linked project) are
+    // read-only here — the canonical row lives on the project. No drag,
+    // rename, edit, add-task, status change or reorder.
+    final isCascaded = act.sourceProjectId != null;
     // Tasks reorder among siblings under the same parent; activities
     // among top-level rows of the same WP. Payload parent scoping keys
     // that: tasks carry their parent activity id instead of the WP id.
@@ -1549,6 +1578,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
 
     return _ReorderDropTarget(
       accepts: (p) =>
+          !isCascaded &&
           p.kind == payload.kind &&
           p.parentWpId == payload.parentWpId &&
           p.id != act.id,
@@ -1578,14 +1608,17 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
         // Drag handle in the indent gutter — keeps the visual indent
         // intact (handle replaces what was a SizedBox of similar width)
         // while making the row reorderable.
-        _DragHandle(
-          payload: payload,
-          feedbackLabel: act.name,
-          colour: c,
-          // Activity rows are denser so a slightly smaller hit area is
-          // fine; the gutter is only 14 px wide.
-          width: 14,
-        ),
+        if (isCascaded)
+          const SizedBox(width: 14)
+        else
+          _DragHandle(
+            payload: payload,
+            feedbackLabel: act.name,
+            colour: c,
+            // Activity rows are denser so a slightly smaller hit area is
+            // fine; the gutter is only 14 px wide.
+            width: 14,
+          ),
         // WBS indent: tasks sit one level deeper than activities.
         if (row.isTask) const SizedBox(width: 14),
         Container(width: 2, height: 14, color: c.withValues(alpha: 0.4)),
@@ -1638,10 +1671,13 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                   ),
                 )
               : GestureDetector(
-                  onTap: () => _startInlineEdit(act),
-                  onDoubleTap: () => _openEditActivity(act, row.wp),
+                  onTap: isCascaded ? null : () => _startInlineEdit(act),
+                  onDoubleTap:
+                      isCascaded ? null : () => _openEditActivity(act, row.wp),
                   child: MouseRegion(
-                    cursor: SystemMouseCursors.text,
+                    cursor: isCascaded
+                        ? SystemMouseCursors.basic
+                        : SystemMouseCursors.text,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -1696,18 +1732,19 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
         // Row actions — real 24px hit targets with hover feedback, kept
         // clear of the pane edge (the status slot sits between them and
         // any scrollbar).
-        if (!row.isTask)
+        if (!row.isTask && !isCascaded)
           _RowIconButton(
             icon: Icons.add,
             tooltip: 'Add task under this activity',
             onTap: () =>
                 _openAddActivity(row.wp, parentActivityId: act.id),
           ),
-        _RowIconButton(
-          icon: Icons.edit_outlined,
-          tooltip: 'Edit',
-          onTap: () => _openEditActivity(act, row.wp),
-        ),
+        if (!isCascaded)
+          _RowIconButton(
+            icon: Icons.edit_outlined,
+            tooltip: 'Edit',
+            onTap: () => _openEditActivity(act, row.wp),
+          ),
         const SizedBox(width: 2),
         // STATUS column — the chip IS the control: click for the
         // status menu, no need to open the full edit dialog.
@@ -1715,13 +1752,17 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
           width: _kStatusW,
           child: Align(
             alignment: Alignment.centerLeft,
-            child: _StatusDropdown(
+            child: IgnorePointer(
+              ignoring: isCascaded,
+              child: _StatusDropdown(
               status: act.status,
               onChanged: (s) async {
                 await _db.programmeGanttDao
                     .setActivityStatus(act.id, s);
-                _load();
+                await _load();
+                await _repushWp(act.workPackageId);
               },
+            ),
             ),
           ),
         ),
@@ -2102,6 +2143,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     // disposed when the preview shifts the bar off the originating cell.
     // Dragging a summary parent moves its whole subtree.
     final isDraggable = (isActive || isDragging) &&
+        act.sourceProjectId == null &&
         (act.activityType == 'activity' ||
          act.activityType == 'ongoing' ||
          act.activityType == 'dependency_marker');
@@ -2231,7 +2273,9 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
         return MouseRegion(
           cursor: SystemMouseCursors.grab,
           child: GestureDetector(
-            onTap: () => _openEditActivity(act, row.wp),
+            onTap: act.sourceProjectId != null
+            ? null
+            : () => _openEditActivity(act, row.wp),
             onHorizontalDragStart: (_) => _onDragStart(act),
             onHorizontalDragUpdate: (d) => _onDragUpdate(d.delta.dx),
             onHorizontalDragEnd: (_) => _onDragEnd(),
@@ -2240,7 +2284,9 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
         );
       }
       return GestureDetector(
-        onTap: () => _openEditActivity(act, row.wp),
+        onTap: act.sourceProjectId != null
+            ? null
+            : () => _openEditActivity(act, row.wp),
         child: summaryCell,
       );
     }
@@ -2349,7 +2395,9 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
       return MouseRegion(
         cursor: SystemMouseCursors.grab,
         child: GestureDetector(
-          onTap: () => _openEditActivity(act, row.wp),
+          onTap: act.sourceProjectId != null
+            ? null
+            : () => _openEditActivity(act, row.wp),
           onHorizontalDragStart: (_) => _onDragStart(act),
           onHorizontalDragUpdate: (d) => _onDragUpdate(d.delta.dx),
           onHorizontalDragEnd: (_) => _onDragEnd(),
@@ -2359,7 +2407,9 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     }
 
     return GestureDetector(
-      onTap: () => _openEditActivity(act, row.wp),
+      onTap: act.sourceProjectId != null
+            ? null
+            : () => _openEditActivity(act, row.wp),
       child: cell,
     );
   }
@@ -2950,6 +3000,8 @@ class _HeaderSettingsDialogState extends State<_HeaderSettingsDialog> {
   late TextEditingController _deadlineCtrl;
   late TextEditingController _monthCountCtrl;
   String? _month0Date;
+  // Date behind the hard-deadline statement; drives the banner's tone.
+  String? _deadlineDate;
   bool _saving = false;
 
   @override
@@ -2959,6 +3011,7 @@ class _HeaderSettingsDialogState extends State<_HeaderSettingsDialog> {
     _titleCtrl    = TextEditingController(text: h?.title ?? '');
     _subtitleCtrl = TextEditingController(text: h?.subtitle ?? '');
     _deadlineCtrl = TextEditingController(text: h?.hardDeadline ?? '');
+    _deadlineDate = h?.hardDeadlineDate;
     _month0Date   = h?.month0Date;
 
     // Derive month count from existing labels
@@ -3008,10 +3061,21 @@ class _HeaderSettingsDialogState extends State<_HeaderSettingsDialog> {
       title:        Value(_titleCtrl.text.trim().isEmpty ? null : _titleCtrl.text.trim()),
       subtitle:     Value(_subtitleCtrl.text.trim().isEmpty ? null : _subtitleCtrl.text.trim()),
       hardDeadline: Value(_deadlineCtrl.text.trim().isEmpty ? null : _deadlineCtrl.text.trim()),
+      hardDeadlineDate: Value(_deadlineDate),
       month0Date:   Value(_month0Date),
       monthLabels:  Value(jsonEncode(labels)),
       updatedAt:    Value(now),
     ));
+
+    // Cascaded activities were re-keyed onto the OLD anchor when they
+    // arrived; a programme that moves its month-0 must pull again so the
+    // copies land on the new axis. Cheap: the pull re-reads the channel.
+    if (mounted) {
+      final me = await widget.db.projectDao.getProjectById(widget.projectId);
+      if (me?.kind == 'programme' && mounted) {
+        await buildCascadeService(context).pullForProgramme(widget.projectId);
+      }
+    }
 
     if (mounted) Navigator.of(context).pop();
   }
@@ -3047,8 +3111,22 @@ class _HeaderSettingsDialogState extends State<_HeaderSettingsDialog> {
                 controller: _deadlineCtrl,
                 decoration: const InputDecoration(
                     labelText: 'Hard deadline statement (optional)',
-                    hintText: 'e.g. All environments live by end Sept 2025'),
+                    hintText: 'e.g. Integrations in production by Aug 27'),
                 style: const TextStyle(color: KColors.text, fontSize: 13),
+              ),
+              const SizedBox(height: 10),
+              DatePickerField(
+                label: 'Hard deadline date (optional)',
+                isoValue: _deadlineDate,
+                onChanged: (v) => setState(() => _deadlineDate = v),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'The banner on the milestone tracker stays quiet while the '
+                'date is ahead, turns amber inside two weeks and red once '
+                'it has passed. Without a date it reads one from the '
+                'statement where it can.',
+                style: TextStyle(color: KColors.textMuted, fontSize: 10),
               ),
               const SizedBox(height: 16),
               const Text('MONTH COLUMNS',
@@ -3741,6 +3819,10 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
 
   Future<void> _removeTask(TimelineActivity task) async {
     await widget.db.programmeGanttDao.deleteActivity(task.id);
+    if (mounted) {
+      await buildCascadeService(context).deleteActivity(
+          projectId: widget.projectId, activityId: task.id);
+    }
     await _loadDependencies();
   }
 
@@ -3857,7 +3939,20 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
       ),
     );
     if (confirm != true || !mounted) return;
-    await widget.db.programmeGanttDao.deleteActivity(widget.activity!.id);
+    final deletedId = widget.activity!.id;
+    // Tasks go with their parent; tombstone them on the channel too.
+    final tasks =
+        await widget.db.programmeGanttDao.getTasksForActivity(deletedId);
+    await widget.db.programmeGanttDao.deleteActivity(deletedId);
+    if (mounted) {
+      final cascade = buildCascadeService(context);
+      for (final t in tasks) {
+        await cascade.deleteActivity(
+            projectId: widget.projectId, activityId: t.id);
+      }
+      await cascade.deleteActivity(
+          projectId: widget.projectId, activityId: deletedId);
+    }
     if (mounted) Navigator.of(context).pop();
   }
 

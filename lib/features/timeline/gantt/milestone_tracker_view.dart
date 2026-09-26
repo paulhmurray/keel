@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/database/database.dart';
+import '../../../core/plan/deadline_banner.dart';
 import '../../../shared/theme/keel_colors.dart';
 
 // ─── Status metadata ──────────────────────────────────────────────────────────
@@ -89,7 +90,12 @@ class MilestoneTrackerView extends StatelessWidget {
     return Column(children: [
       // ── Header band ────────────────────────────────────────────────────
       if (header?.hardDeadline != null)
-        _HardDeadlineBanner(text: header!.hardDeadline!),
+        _HardDeadlineBanner(
+          text: header!.hardDeadline!,
+          deadline: effectiveDeadline(
+              explicitIso: header!.hardDeadlineDate,
+              statement: header!.hardDeadline),
+        ),
 
       // ── List ───────────────────────────────────────────────────────────
       Expanded(
@@ -300,28 +306,48 @@ class _ColumnHeader extends StatelessWidget {
 }
 
 // ─── Hard deadline banner ─────────────────────────────────────────────────────
+/// Tone follows the deadline: quiet while ahead, amber within a
+/// fortnight, red once overdue; neutral when no date can be found.
 class _HardDeadlineBanner extends StatelessWidget {
   final String text;
-  const _HardDeadlineBanner({required this.text});
+  final DateTime? deadline;
+  const _HardDeadlineBanner({required this.text, this.deadline});
 
   @override
   Widget build(BuildContext context) {
+    final today = DateTime.now();
+    final tone = deadlineTone(deadline, today);
+    final (bg, fg, icon) = switch (tone) {
+      DeadlineTone.overdue => (KColors.redDim, KColors.red, '⚠  '),
+      DeadlineTone.near => (KColors.amberDim, KColors.amber, '◷  '),
+      DeadlineTone.ahead => (KColors.surface2, KColors.textDim, '◆  '),
+      DeadlineTone.unknown => (KColors.surface2, KColors.textDim, '◆  '),
+    };
+    final countdown = deadlineCountdown(deadline, today);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: const BoxDecoration(
-        color: KColors.redDim,
-        border: Border(bottom: BorderSide(color: KColors.red)),
+      decoration: BoxDecoration(
+        color: bg,
+        border: Border(bottom: BorderSide(color: fg)),
       ),
       child: Row(children: [
-        const Text('⚠  ', style: TextStyle(color: KColors.red, fontSize: 13)),
+        Text(icon, style: TextStyle(color: fg, fontSize: 13)),
         Expanded(
           child: Text(text,
-              style: const TextStyle(
-                  color: KColors.red,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600)),
+              style: TextStyle(
+                  color: fg, fontSize: 12, fontWeight: FontWeight.w600)),
         ),
+        if (countdown != null) ...[
+          const SizedBox(width: 12),
+          Text(countdown,
+              style: TextStyle(
+                  color: fg,
+                  fontSize: 11,
+                  fontWeight: tone == DeadlineTone.overdue
+                      ? FontWeight.w700
+                      : FontWeight.normal)),
+        ],
       ]),
     );
   }

@@ -4,6 +4,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:provider/provider.dart';
 
 import '../../core/analytics/keel_events.dart';
+import '../../core/cascade/cascade_factory.dart';
 import '../../core/database/database.dart';
 import '../../providers/settings_provider.dart';
 import '../../shared/theme/keel_colors.dart';
@@ -250,6 +251,14 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
         KeelEvents.actionCreated,
         props: {KeelEventProps.source: 'action_form'},
       );
+    }
+    // Cascade an edited action to linked programmes; the service decides
+    // per link. New rows reach the programme on the next reconcile.
+    if (widget.action != null && mounted) {
+      final fresh = await widget.db.actionsDao.getActionById(widget.action!.id);
+      if (fresh != null && mounted) {
+        await buildCascadeService(context).pushAction(fresh);
+      }
     }
     if (mounted) Navigator.of(context).pop();
   }

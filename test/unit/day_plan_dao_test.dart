@@ -267,6 +267,15 @@ void main() {
       await act('x2', 'wp2', 'p2', 'Dated end', end: '2026-10-15');
       await act('x3', 'wp1', 'p1', 'Month only');
       await act('x4', 'wp1', 'p1', 'Done', start: '2026-09-01', status: 'complete');
+      // A programme's cascaded copy of x1 must not double it in the rail.
+      await db.programmeGanttDao.upsertActivity(TimelineActivitiesCompanion(
+        id: const Value('cascade:activity:p1:x1'),
+        workPackageId: const Value('cascade:p1:wp1'),
+        projectId: const Value('p2'),
+        name: const Value('Dated start (copy)'),
+        startDate: const Value('2026-10-01'),
+        sourceProjectId: const Value('p1'),
+      ));
 
       final items = await db.dayPlanDao.watchDatedActivitiesAllProjects().first;
       expect(items.map((i) => i.activity.id).toSet(), {'x1', 'x2'});

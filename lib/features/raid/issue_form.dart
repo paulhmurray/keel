@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 import 'package:drift/drift.dart' show Value;
 
 import '../../core/analytics/keel_events.dart';
+import '../../core/cascade/cascade_factory.dart';
 import '../../core/database/database.dart';
 import '../../core/llm/context_builder.dart';
 import '../../core/llm/raid_assist_prompts.dart';
@@ -154,6 +155,14 @@ class _IssueFormDialogState extends State<IssueFormDialog> {
         KeelEvents.issueCreated,
         props: {KeelEventProps.source: 'issue_form'},
       );
+    }
+    // Cascade to linked programmes; the service decides per link
+    // (full detail vs escalated only) so no flag check here.
+    if (mounted) {
+      final fresh = await widget.db.raidDao.getIssueById(id);
+      if (fresh != null && mounted) {
+        await buildCascadeService(context).pushIssue(fresh);
+      }
     }
     if (mounted) Navigator.of(context).pop();
   }

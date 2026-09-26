@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 import 'package:drift/drift.dart' show Value;
 
 import '../../core/analytics/keel_events.dart';
+import '../../core/cascade/cascade_factory.dart';
 import '../../core/database/database.dart';
 import '../../core/raid/raid_conversion_service.dart';
 import '../../core/raid/raid_lifecycle.dart';
@@ -113,6 +114,14 @@ class _AssumptionFormDialogState extends State<AssumptionFormDialog> {
         KeelEvents.assumptionCreated,
         props: {KeelEventProps.source: 'assumption_form'},
       );
+    }
+    // Cascade to linked programmes; the service decides per link
+    // (full detail vs escalated only) so no flag check here.
+    if (mounted) {
+      final fresh = await widget.db.raidDao.getAssumptionById(id);
+      if (fresh != null && mounted) {
+        await buildCascadeService(context).pushAssumption(fresh);
+      }
     }
     if (mounted) Navigator.of(context).pop();
   }

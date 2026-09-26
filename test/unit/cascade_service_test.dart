@@ -109,6 +109,14 @@ void main() {
 
   tearDown(() async => db.close());
 
+  /// Pins every link on the seeded pair to the escalated-only contract
+  /// (same-machine redeem defaults to full detail).
+  Future<void> escalatedOnly() async {
+    for (final l in await db.programmeLinksDao.getLinksForEntity('proj')) {
+      await db.programmeLinksDao.setShareLevel(l.id, 'escalated');
+    }
+  }
+
   Future<void> insertWp(String id, {String name = 'WP'}) async {
     await db.programmeGanttDao.upsertWorkPackage(
       TimelineWorkPackagesCompanion.insert(
@@ -339,7 +347,9 @@ void main() {
       return (await db.raidDao.getRiskById(id))!;
     }
 
-    test('pushRisk fires only when escalatedAt is set', () async {
+    test('pushRisk fires only when escalatedAt is set (escalated-only link)',
+        () async {
+      await escalatedOnly();
       final gw = _FakeCascadeGateway();
       final svc = CascadeService(db, gateway: gw);
 
@@ -355,6 +365,72 @@ void main() {
       expect(gw.pushes.single.payload['description'], 'A risk');
       expect(gw.pushes.single.payload['likelihood'], 'medium');
       expect(gw.pushes.single.payload['impact'], 'high');
+      expect(gw.pushes.single.payload['escalated'], isTrue);
+    });
+
+    test('a full-detail link gets unescalated rows too, flagged as such',
+        () async {
+      final gw = _FakeCascadeGateway();
+      final svc = CascadeService(db, gateway: gw);
+      final notEscalated = await insertRisk();
+      await svc.pushRisk(notEscalated);
+      expect(gw.pushes, hasLength(1));
+      expect(gw.pushes.single.payload['escalated'], isFalse);
+    });
+
+    test('the programme keeps the PM\'s escalation signal on apply',
+        () async {
+      final code =
+          (await db.programmeLinksDao.getLinksForEntity('prog')).single.code;
+      final gw = _FakeCascadeGateway()
+        ..scriptPull(
+          code,
+          CascadePullSnapshot(cursor: 'c', items: [
+            const CascadeRecord(
+              sourceEntityId: 'proj',
+              itemKind: CascadeKinds.risk,
+              itemId: 'r-flag',
+              payload: {'description': 'flagged', 'escalated': true},
+              deleted: false,
+            ),
+            const CascadeRecord(
+              sourceEntityId: 'proj',
+              itemKind: CascadeKinds.risk,
+              itemId: 'r-quiet',
+              payload: {'description': 'quiet', 'escalated': false},
+              deleted: false,
+            ),
+            // Pre-share-level sender: no key means escalated.
+            const CascadeRecord(
+              sourceEntityId: 'proj',
+              itemKind: CascadeKinds.risk,
+              itemId: 'r-legacy',
+              payload: {'description': 'legacy'},
+              deleted: false,
+            ),
+          ]),
+        );
+      await CascadeService(db, gateway: gw).pullForProgramme('prog');
+      final rows = await db.raidDao.getRisksForProject('prog');
+      DateTime? stamp(String id) =>
+          rows.firstWhere((r) => r.id.endsWith(':$id')).escalatedAt;
+      expect(stamp('r-flag'), isNotNull);
+      expect(stamp('r-quiet'), isNull);
+      expect(stamp('r-legacy'), isNotNull);
+    });
+
+    test('retractUnescalated tombstones only unflagged rows on '
+        'escalated-only links', () async {
+      await insertRisk(id: 'r-quiet');
+      await insertRisk(id: 'r-loud', escalatedAt: DateTime.now());
+      final gw = _FakeCascadeGateway();
+      final svc = CascadeService(db, gateway: gw);
+      // Full link: nothing to retract.
+      await svc.retractUnescalated('proj');
+      expect(gw.deletes, isEmpty);
+      await escalatedOnly();
+      await svc.retractUnescalated('proj');
+      expect(gw.deletes.map((d) => d.itemId).toList(), ['r-quiet']);
     });
 
     test(
@@ -1098,8 +1174,9 @@ void main() {
     });
 
     test(
-        'pushAllEscalatedDelivery replays escalated actions + '
-        'decisions for link activation', () async {
+        'pushAllDelivery replays escalated actions + '
+        'decisions for link activation (escalated-only link)', () async {
+      await escalatedOnly();
       await db.actionsDao.upsertAction(ProjectActionsCompanion.insert(
         id: 'a-1',
         projectId: 'proj',
@@ -1121,13 +1198,14 @@ void main() {
 
       final gw = _FakeCascadeGateway();
       await CascadeService(db, gateway: gw)
-          .pushAllEscalatedDelivery('proj');
+          .pushAllDelivery('proj');
       final ids = gw.pushes.map((p) => p.itemId).toSet();
       expect(ids, {'a-1', 'd-1'});
     });
 
-    test('pushAllEscalatedRaid replays every escalated kind on demand',
+    test('pushAllRaid replays every escalated kind on demand',
         () async {
+      await escalatedOnly();
       // Seed one escalated item of each kind.
       await db.raidDao.upsertRisk(RisksCompanion.insert(
         id: 'r-1',
@@ -1157,7 +1235,7 @@ void main() {
 
       final gw = _FakeCascadeGateway();
       final svc = CascadeService(db, gateway: gw);
-      await svc.pushAllEscalatedRaid('proj');
+      await svc.pushAllRaid('proj');
 
       final kinds = gw.pushes.map((p) => p.itemKind).toSet();
       expect(kinds, {

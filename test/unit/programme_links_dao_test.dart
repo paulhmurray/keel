@@ -280,6 +280,70 @@ void main() {
       expect(n, 0);
     });
   });
+
+  group('repairSameMachineLinks', () {
+    test('creates the missing project-side row, revokes rows whose partner '
+        'is gone, and leaves cross-machine rows alone', () async {
+      // Programme row pointing at a local project that has no row of its own.
+      await db.into(db.programmeLinks).insert(ProgrammeLinksCompanion.insert(
+        id: 'half',
+        ownerEntityId: 'prog',
+        ownerKind: 'programme',
+        partnerKind: 'project',
+        partnerName: const Value('Sub Project'),
+        partnerLocalId: const Value('proj'),
+        code: 'KL-HALF-HALF-HALF',
+        linkSecret: const Value('s3cret'),
+        status: const Value('active'),
+        shareLevel: const Value('full'),
+      ));
+      // Programme row pointing at a project that no longer exists.
+      await db.into(db.programmeLinks).insert(ProgrammeLinksCompanion.insert(
+        id: 'orphan',
+        ownerEntityId: 'prog',
+        ownerKind: 'programme',
+        partnerKind: 'project',
+        partnerLocalId: const Value('gone'),
+        code: 'KL-GONE-GONE-GONE',
+        status: const Value('active'),
+      ));
+      // Cross-machine row: nothing local to check.
+      await db.into(db.programmeLinks).insert(ProgrammeLinksCompanion.insert(
+        id: 'remote',
+        ownerEntityId: 'prog',
+        ownerKind: 'programme',
+        partnerKind: 'project',
+        code: 'KL-REMO-REMO-REMO',
+        status: const Value('active'),
+      ));
+
+      final changed = await db.programmeLinksDao.repairSameMachineLinks();
+      expect(changed, 2);
+
+      final projRows = await db.programmeLinksDao.getLinksForEntity('proj');
+      expect(projRows, hasLength(1));
+      final mirror = projRows.single;
+      expect(mirror.code, 'KL-HALF-HALF-HALF');
+      expect(mirror.ownerKind, 'project');
+      expect(mirror.partnerKind, 'programme');
+      expect(mirror.partnerLocalId, 'prog');
+      expect(mirror.partnerName, 'Big Programme');
+      expect(mirror.linkSecret, 's3cret');
+      expect(mirror.status, 'active');
+      expect(mirror.shareLevel, 'full');
+
+      final all = {
+        for (final l in await db.programmeLinksDao.getLinksForEntity('prog'))
+          l.id: l
+      };
+      expect(all['orphan']!.status, 'revoked');
+      expect(all['remote']!.status, 'active');
+      expect(all['half']!.status, 'active');
+
+      // Idempotent.
+      expect(await db.programmeLinksDao.repairSameMachineLinks(), 0);
+    });
+  });
 }
 
 /// Test double for [RemoteLinksGateway]. Honest about the side-effects
@@ -355,4 +419,5 @@ class _FakeGateway implements RemoteLinksGateway {
   Future<void> revoke(String code) async {
     _byCode.remove(code);
   }
+
 }

@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/cascade/cascade_service.dart';
 import '../../core/cascade/cascade_factory.dart';
 import '../../core/database/database.dart';
+import '../../core/programme/source_filter.dart';
+import '../../shared/widgets/source_filter_bar.dart';
 import '../../providers/project_provider.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/widgets/cascaded_source_badge.dart';
@@ -31,6 +33,8 @@ class _ActionsViewState extends State<ActionsView> {
   bool _showBoard = false;
   bool _showOldClosed = false;
   String? _ownerFilter; // null = All; _kUnassignedKey = no owner
+  // Programme-side lens: which linked project / escalated only.
+  SourceFilter _sourceFilter = SourceFilter.all;
   String? _projectId;
   Map<String, String> _planTagMap = {}; // activityId → "[WP] Activity name"
   final Set<String> _collapsedParents = {};
@@ -322,6 +326,11 @@ class _ActionsViewState extends State<ActionsView> {
           // actions. Surfaces what's slipping across the portfolio at
           // a glance, above the per-row list.
           const OverdueCascadePanel(kind: OverdueCascadeKind.action),
+          SourceFilterBar(
+            filter: _sourceFilter,
+            padding: const EdgeInsets.only(bottom: 10),
+            onChanged: (f) => setState(() => _sourceFilter = f),
+          ),
           Expanded(
             child: StreamBuilder<List<ActionCategory>>(
               stream: db.actionCategoriesDao.watchForProject(projectId),
@@ -335,7 +344,9 @@ class _ActionsViewState extends State<ActionsView> {
                     if (!snap.hasData) {
                       return const Center(child: CircularProgressIndicator());
                     }
-                    final all = snap.data!;
+                    final all = _sourceFilter.apply(snap.data!,
+                        sourceProjectId: (a) => a.sourceProjectId,
+                        escalatedAt: (a) => a.escalatedAt);
                     final visible =
                         _showOldClosed ? all : _visibleActions(all);
                     final hiddenOldClosed = all.length - visible.length;
@@ -1036,8 +1047,8 @@ class _ActionCard extends StatelessWidget {
                         builder: (_) => ActionFormDialog(
                             projectId: projectId, db: db, action: action),
                       );
-                      // Re-push after edit when escalated.
-                      if (context.mounted && action.escalatedAt != null) {
+                      // Re-push after edit; the service decides per link.
+                      if (context.mounted) {
                         final fresh =
                             await db.actionsDao.getActionById(action.id);
                         if (fresh != null && context.mounted) {
@@ -1055,8 +1066,7 @@ class _ActionCard extends StatelessWidget {
                           updatedAt: Value(DateTime.now()),
                         ),
                       );
-                      if (context.mounted &&
-                          action.escalatedAt != null) {
+                      if (context.mounted) {
                         final fresh =
                             await db.actionsDao.getActionById(action.id);
                         if (fresh != null && context.mounted) {
@@ -1073,17 +1083,15 @@ class _ActionCard extends StatelessWidget {
                         await _cascadeFor(context, db).pushAction(fresh);
                       }
                     } else if (val == 'unescalate') {
-                      if (context.mounted) {
-                        await _cascadeFor(context, db).tombstoneRaidItem(
-                          projectId: projectId,
-                          itemKind: CascadeKinds.action,
-                          itemId: action.id,
-                        );
-                      }
-                      await db.actionsDao
-                          .setActionEscalated(action.id, false);
+                      await db.actionsDao.setActionEscalated(action.id, false);
+                          // Re-push with the flag off: full-detail links keep
+                          // the row unflagged, escalated-only links get a tombstone.
+                          final fresh = await db.actionsDao.getActionById(action.id);
+                          if (fresh != null && context.mounted) {
+                            await _cascadeFor(context, db).pushAction(fresh);
+                          }
                     } else if (val == 'delete') {
-                      if (action.escalatedAt != null && context.mounted) {
+                      if (context.mounted) {
                         await _cascadeFor(context, db).tombstoneRaidItem(
                           projectId: projectId,
                           itemKind: CascadeKinds.action,

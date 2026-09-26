@@ -6,6 +6,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/analytics/analytics_service.dart';
+import '../../core/cascade/cascade_factory.dart';
+import '../../core/cascade/cascade_service.dart';
 import '../../core/database/database.dart';
 import '../../core/sync/links_gateway.dart';
 import '../../core/sync/sync_client.dart';
@@ -1768,6 +1770,10 @@ class _LinkRow extends StatelessWidget {
                     color: KColors.text, fontSize: 12),
                 overflow: TextOverflow.ellipsis),
           ),
+          if (!isPending && !isRevoked) ...[
+            _ShareLevelControl(link: link),
+            const SizedBox(width: 8),
+          ],
           Text(
             link.code,
             style: const TextStyle(
@@ -1808,3 +1814,112 @@ class _LinkRow extends StatelessWidget {
   }
 }
 
+
+/// What flows over a link. On the PROJECT side it's a control — the
+/// project owns its data and decides how much the programme sees. On the
+/// programme side it's a read-only tag showing what is being received.
+class _ShareLevelControl extends StatelessWidget {
+  final ProgrammeLink link;
+  const _ShareLevelControl({required this.link});
+
+  static const _labels = {
+    CascadeShareLevels.full: 'Full detail',
+    CascadeShareLevels.escalated: 'Escalated only',
+  };
+
+  Future<void> _set(BuildContext context, String level) async {
+    if (level == link.shareLevel) return;
+    final db = context.read<AppDatabase>();
+    final sync = context.read<SyncProvider>();
+    await db.programmeLinksDao.setShareLevel(link.id, level);
+    if (!context.mounted) return;
+    if (level == CascadeShareLevels.full) {
+      // Everything the programme is now entitled to goes up in one pass.
+      await sync.replayCascadeForActivation(link.ownerEntityId, db);
+    } else {
+      // Withdraw what the programme is no longer entitled to, then let a
+      // same-machine programme pull the tombstones straight away.
+      await buildCascadeService(context)
+          .retractUnescalated(link.ownerEntityId);
+      if (!context.mounted) return;
+      await sync.replayCascadeForActivation(link.ownerEntityId, db);
+    }
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(level == CascadeShareLevels.full
+              ? 'Sharing full detail with the programme'
+              : 'Sharing escalated items only')));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isFull = CascadeShareLevels.isFull(link.shareLevel);
+    final label = _labels[link.shareLevel] ?? 'Escalated only';
+    final colour = isFull ? KColors.phosphor : KColors.amber;
+    final tag = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: colour.withValues(alpha: 0.12),
+        border: Border.all(color: colour.withValues(alpha: 0.6), width: 0.5),
+        borderRadius: BorderRadius.circular(2),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(isFull ? Icons.visibility : Icons.arrow_upward,
+            size: 10, color: colour),
+        const SizedBox(width: 4),
+        Text(label.toUpperCase(),
+            style: TextStyle(
+                color: colour,
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.6)),
+        if (link.ownerKind == 'project') ...[
+          const SizedBox(width: 2),
+          Icon(Icons.arrow_drop_down, size: 14, color: colour),
+        ],
+      ]),
+    );
+    if (link.ownerKind != 'project') {
+      return Tooltip(
+        message: isFull
+            ? 'This project shares its whole RAID, actions, decisions '
+                'and plan detail with you.'
+            : 'This project shares only what its PM escalates. Ask them '
+                'to switch the link to full detail if you need more.',
+        child: tag,
+      );
+    }
+    return PopupMenuButton<String>(
+      tooltip: 'What the programme sees over this link',
+      padding: EdgeInsets.zero,
+      onSelected: (v) => _set(context, v),
+      itemBuilder: (_) => [
+        const PopupMenuItem(
+          value: CascadeShareLevels.full,
+          child: ListTile(
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(Icons.visibility, size: 16),
+            title: Text('Full detail'),
+            subtitle: Text('Whole RAID, every action and decision, and the '
+                'plan down to tasks and arrows. For a hands-on '
+                'programme manager.'),
+          ),
+        ),
+        const PopupMenuItem(
+          value: CascadeShareLevels.escalated,
+          child: ListTile(
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(Icons.arrow_upward, size: 16),
+            title: Text('Escalated only'),
+            subtitle: Text('Only items you escalate, plus work-package '
+                'headers, status reports, charter and people.'),
+          ),
+        ),
+      ],
+      child: tag,
+    );
+  }
+}

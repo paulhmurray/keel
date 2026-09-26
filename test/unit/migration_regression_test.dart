@@ -464,4 +464,119 @@ void main() {
     expect(pv.strategy, 'transfer');
     expect(pv.nextReviewAt, '2026-09-23');
   });
+
+  test('upgrade from v63 adds share_level (full for same-machine links) and '
+      'the plan-detail cascade markers', () async {
+    final dir = await Directory.systemTemp.createTemp('keel_mig_test');
+    addTearDown(() => dir.deleteSync(recursive: true));
+    final path = '${dir.path}/v63.db';
+
+    final raw = sqlite3.open(path);
+    raw.execute('''
+      CREATE TABLE projects (
+        id TEXT NOT NULL PRIMARY KEY,
+        name TEXT NOT NULL,
+        description TEXT,
+        start_date TEXT,
+        status TEXT NOT NULL DEFAULT 'active',
+        kind TEXT NOT NULL DEFAULT 'project',
+        parent_programme_id TEXT
+      );
+    ''');
+    raw.execute('''
+      CREATE TABLE programme_links (
+        id TEXT NOT NULL PRIMARY KEY,
+        owner_entity_id TEXT NOT NULL,
+        owner_kind TEXT NOT NULL,
+        partner_kind TEXT NOT NULL,
+        partner_name TEXT,
+        partner_local_id TEXT,
+        code TEXT NOT NULL,
+        link_secret TEXT,
+        status TEXT NOT NULL DEFAULT 'pending_remote',
+        generated_here INTEGER NOT NULL DEFAULT 0,
+        created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+      );
+    ''');
+    raw.execute('''
+      CREATE TABLE timeline_work_packages (
+        id TEXT NOT NULL PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        colour_theme TEXT NOT NULL DEFAULT 'wp1',
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        rag_status TEXT NOT NULL DEFAULT 'not_started',
+        created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+        updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+      );
+    ''');
+    raw.execute('''
+      CREATE TABLE timeline_activities (
+        id TEXT NOT NULL PRIMARY KEY,
+        work_package_id TEXT NOT NULL,
+        project_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        activity_type TEXT NOT NULL DEFAULT 'activity',
+        status TEXT NOT NULL DEFAULT 'not_started',
+        is_critical INTEGER NOT NULL DEFAULT 0,
+        is_baseline INTEGER NOT NULL DEFAULT 0,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+        updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+      );
+    ''');
+    raw.execute('''
+      CREATE TABLE timeline_dependencies (
+        id TEXT NOT NULL PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        from_activity_id TEXT NOT NULL,
+        to_activity_id TEXT NOT NULL,
+        dependency_type TEXT NOT NULL DEFAULT 'finish_to_start',
+        notes TEXT,
+        external_label TEXT,
+        created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+      );
+    ''');
+    raw.execute("INSERT INTO projects (id, name, kind) VALUES "
+        "('prog', 'Prog', 'programme'), ('proj', 'Proj', 'project');");
+    raw.execute("INSERT INTO programme_links "
+        "(id, owner_entity_id, owner_kind, partner_kind, partner_local_id, code, status) VALUES "
+        "('l-local', 'proj', 'project', 'programme', 'prog', 'KL-AAAA-AAAA-AAAA', 'active'), "
+        "('l-remote', 'proj', 'project', 'programme', NULL, 'KL-BBBB-BBBB-BBBB', 'active');");
+    raw.execute("INSERT INTO timeline_work_packages (id, project_id, name) VALUES ('wp', 'proj', 'WP');");
+    raw.execute("INSERT INTO timeline_activities (id, work_package_id, project_id, name) "
+        "VALUES ('a1', 'wp', 'proj', 'Existing activity');");
+    raw.execute('PRAGMA user_version = 63;');
+    raw.dispose();
+
+    final db = AppDatabase.forTesting(NativeDatabase(File(path)));
+    addTearDown(db.close);
+
+    final links = await db.programmeLinksDao.getLinksForEntity('proj');
+    final byId = {for (final l in links) l.id: l};
+    expect(byId['l-local']!.shareLevel, 'full');
+    expect(byId['l-remote']!.shareLevel, 'escalated');
+
+    final a1 = (await db.programmeGanttDao.getActivityById('a1'))!;
+    expect(a1.sourceProjectId, isNull);
+    await db.programmeGanttDao.upsertActivity(TimelineActivitiesCompanion.insert(
+      id: 'cascade:activity:proj:a1',
+      workPackageId: 'cascade:proj:wp',
+      projectId: 'prog',
+      name: 'copy',
+      sourceProjectId: const Value('proj'),
+    ));
+    final copy = (await db.programmeGanttDao
+        .getActivityById('cascade:activity:proj:a1'))!;
+    expect(copy.sourceProjectId, 'proj');
+    await db.programmeGanttDao.upsertDependency(TimelineDependenciesCompanion.insert(
+      id: 'dep',
+      projectId: 'prog',
+      fromActivityId: 'x',
+      toActivityId: 'cascade:activity:proj:a1',
+      sourceProjectId: const Value('proj'),
+    ));
+    expect((await db.programmeGanttDao.getDependencies('prog')).single.sourceProjectId,
+        'proj');
+  });
 }

@@ -138,4 +138,59 @@ void main() {
     );
     expect(rows, isEmpty);
   });
+
+  test('carries the link\'s share level and the next open milestone', () {
+    TimelineActivity ms(String id, String src, String date,
+            {String status = 'not_started', String type = 'milestone'}) =>
+        TimelineActivity(
+          id: id,
+          workPackageId: 'wp',
+          projectId: 'prog',
+          name: id,
+          activityType: type,
+          status: status,
+          isCritical: false,
+          isBaseline: false,
+          sortOrder: 0,
+          startDate: date,
+          sourceProjectId: src,
+          createdAt: DateTime(2026, 1, 1),
+          updatedAt: DateTime(2026, 1, 1),
+        );
+    ProgrammeLink link(String partner, String level) => ProgrammeLink(
+          id: 'l-$partner',
+          ownerEntityId: 'prog',
+          ownerKind: 'programme',
+          partnerKind: 'project',
+          partnerLocalId: partner,
+          code: 'KL-$partner',
+          status: 'active',
+          generatedHere: true,
+          shareLevel: level,
+          createdAt: DateTime(2026, 1, 1),
+        );
+    final rows = computePerProjectPulse(
+      workPackages: [wp('a1', 'projA', 'green'), wp('b1', 'projB', 'green')],
+      risks: const [],
+      issues: const [],
+      overdueActions: const [],
+      overdueDecisions: const [],
+      reports: const [],
+      links: [link('projA', 'full'), link('projB', 'escalated')],
+      activities: [
+        ms('past', 'projA', '2026-09-01'),
+        ms('done', 'projA', '2026-10-01', status: 'complete'),
+        ms('gate', 'projA', '2026-11-15', type: 'gate'),
+        ms('soon', 'projA', '2026-10-20'),
+        ms('plain', 'projA', '2026-10-05', type: 'activity'), // not a milestone
+      ],
+      today: DateTime(2026, 9, 26),
+    );
+    final a = rows.firstWhere((r) => r.sourceId == 'projA');
+    expect(a.isFullShare, isTrue);
+    expect(a.nextMilestone?.id, 'soon');
+    final b = rows.firstWhere((r) => r.sourceId == 'projB');
+    expect(b.isFullShare, isFalse);
+    expect(b.nextMilestone, isNull);
+  });
 }

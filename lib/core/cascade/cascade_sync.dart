@@ -51,12 +51,14 @@ Future<int> reconcileCascade({
   }
 
   // 2b) Project side: replay all cascade-eligible content up the links.
-  // Each push is internally guarded (escalation flag, never-re-cascade,
-  // active-links-only) and best-effort, so calling them unconditionally
-  // is safe and idempotent.
-  await cascade.pushAllEscalatedRaid(project.id);
-  await cascade.pushAllEscalatedDelivery(project.id);
+  // Each push is internally guarded (per-link share level, escalation
+  // flag, never-re-cascade, active-links-only) and best-effort, so
+  // calling them unconditionally is safe and idempotent.
+  await cascade.pushAllRaid(project.id);
+  await cascade.pushAllDelivery(project.id);
   await cascade.pushAllWorkPackages(project.id);
+  await cascade.pushAllActivities(project.id);
+  await cascade.pushAllPlanDependencies(project.id);
   await cascade.pushAllStatusReports(project.id);
   await cascade.pushAllPeople(projectId: project.id, projectName: project.name);
   await cascade.pushAllRoles(project.id);

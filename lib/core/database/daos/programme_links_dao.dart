@@ -186,6 +186,10 @@ class ProgrammeLinksDao extends DatabaseAccessor<AppDatabase>
             // this machine); fall back to the pasted one.
             linkSecret: Value(partner.linkSecret ?? secret),
             status: const Value('active'),
+            // One person wears both hats on a same-machine link, so it
+            // starts at full detail; cross-machine links stay
+            // escalated-only until the project PM opts in.
+            shareLevel: const Value('full'),
           ),
         );
         await (update(programmeLinks)
@@ -194,6 +198,7 @@ class ProgrammeLinksDao extends DatabaseAccessor<AppDatabase>
           partnerLocalId: Value(ownerEntityId),
           partnerName: Value(myName),
           status: const Value('active'),
+          shareLevel: const Value('full'),
         ));
         return (id: id, outcome: RedeemOutcome.activatedLocally);
       }
@@ -250,6 +255,79 @@ class ProgrammeLinksDao extends DatabaseAccessor<AppDatabase>
 
   /// Hard-deletes a link row. Used by the settings UI to fully discard
   /// a `pending_remote` invitation that's never going to be accepted.
+  /// Heals same-machine link pairs. A link is two rows sharing a code, one
+  /// per side; a sync/import or an older build can leave one side without
+  /// its row, and then that side can never push (pushes go out over a
+  /// project's OWN rows). For every active row whose partner is local:
+  ///   - partner project gone      → revoke the row (dangling link)
+  ///   - partner has no row w/code → insert the mirror row
+  /// Cross-machine rows (no partnerLocalId) are left alone. Returns how
+  /// many rows were created or revoked.
+  Future<int> repairSameMachineLinks() async {
+    var changed = 0;
+    final rows = await (select(programmeLinks)
+          ..where((t) =>
+              t.status.equals('active') & t.partnerLocalId.isNotNull()))
+        .get();
+    for (final r in rows) {
+      final partnerId = r.partnerLocalId!;
+      final partner = await (select(attachedDatabase.projects)
+            ..where((t) => t.id.equals(partnerId)))
+          .getSingleOrNull();
+      if (partner == null) {
+        await (update(programmeLinks)..where((t) => t.id.equals(r.id)))
+            .write(const ProgrammeLinksCompanion(status: Value('revoked')));
+        changed++;
+        continue;
+      }
+      final mirror = (await getByCode(r.code))
+          .where((m) => m.ownerEntityId == partnerId)
+          .toList();
+      if (mirror.isNotEmpty) {
+        // Make sure the partner's row is live too.
+        for (final m in mirror) {
+          if (m.status != 'active' || m.partnerLocalId != r.ownerEntityId) {
+            await (update(programmeLinks)..where((t) => t.id.equals(m.id)))
+                .write(ProgrammeLinksCompanion(
+              status: const Value('active'),
+              partnerLocalId: Value(r.ownerEntityId),
+              partnerName: Value(await _lookupProjectName(r.ownerEntityId)),
+            ));
+            changed++;
+          }
+        }
+        continue;
+      }
+      await into(programmeLinks).insert(ProgrammeLinksCompanion.insert(
+        id: const Uuid().v4(),
+        ownerEntityId: partnerId,
+        ownerKind: r.partnerKind,
+        partnerKind: r.ownerKind,
+        partnerName: Value(await _lookupProjectName(r.ownerEntityId)),
+        partnerLocalId: Value(r.ownerEntityId),
+        code: r.code,
+        linkSecret: Value(r.linkSecret),
+        status: const Value('active'),
+        shareLevel: Value(r.shareLevel),
+      ));
+      changed++;
+    }
+    return changed;
+  }
+
+  /// Sets how much of the project flows over [linkId]: 'escalated' or
+  /// 'full'. Mirrored onto the same-machine partner row (same code) so
+  /// the programme side can show what it is receiving. Cross-machine
+  /// partners learn it from the payloads themselves.
+  Future<void> setShareLevel(String linkId, String level) async {
+    final link = await (select(programmeLinks)
+          ..where((t) => t.id.equals(linkId)))
+        .getSingleOrNull();
+    if (link == null) return;
+    await (update(programmeLinks)..where((t) => t.code.equals(link.code)))
+        .write(ProgrammeLinksCompanion(shareLevel: Value(level)));
+  }
+
   Future<void> deleteLink(String id) =>
       (delete(programmeLinks)..where((t) => t.id.equals(id))).go();
 

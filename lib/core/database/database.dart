@@ -109,6 +109,18 @@ class ProgrammeLinks extends Table {
   // — lets settings show the host/joiner distinction.
   BoolColumn get generatedHere =>
       boolean().withDefault(const Constant(false))();
+  // How much of the project the programme sees over this link. Set by
+  // the PROJECT side (the data owner) and mirrored onto the partner row
+  // when both live on this machine.
+  //   'escalated' — only items the PM explicitly escalates (plus WP
+  //                 headers, reports, charter, people). The original
+  //                 contract; the default for cross-machine links.
+  //   'full'      — the whole RAID, every action and decision, and the
+  //                 plan down to activities, tasks and arrows. What a
+  //                 hands-on programme manager asks for. The default for
+  //                 same-machine links, where both sides are one person.
+  TextColumn get shareLevel =>
+      text().withDefault(const Constant('escalated'))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
   @override
@@ -977,6 +989,12 @@ class TimelineActivities extends Table {
   TextColumn get contributors => text().nullable()();
   TextColumn get contributorIds => text().nullable()();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  // Programme-side copy of a linked project's activity (full-detail
+  // share). Holds the source project's id; null on native rows. Copies
+  // are read-only and re-keyed onto the programme's own timeline axis
+  // at apply time, so every consumer of startMonth/endMonth works
+  // unchanged.
+  TextColumn get sourceProjectId => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
@@ -1002,6 +1020,8 @@ class TimelineDependencies extends Table {
   // anchors the arrow to the left of the target row rather than to a
   // source row that doesn't exist.
   TextColumn get externalLabel => text().nullable()();
+  // Programme-side copy of a linked project's arrow (full-detail share).
+  TextColumn get sourceProjectId => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
   @override
@@ -1014,6 +1034,9 @@ class ProgrammeHeaders extends Table {
   TextColumn get title => text().nullable()();
   TextColumn get subtitle => text().nullable()();
   TextColumn get hardDeadline => text().nullable()();
+  // ISO date behind the statement, so the tracker can colour the banner
+  // by how close the deadline is instead of always shouting red.
+  TextColumn get hardDeadlineDate => text().nullable()();
   TextColumn get inScope => text().nullable()();
   TextColumn get outOfScope => text().nullable()();
   TextColumn get monthLabels => text().nullable()(); // JSON array of strings
@@ -1671,7 +1694,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(QueryExecutor executor) : super(executor);
 
   @override
-  int get schemaVersion => 62;
+  int get schemaVersion => 64;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -2169,6 +2192,30 @@ class AppDatabase extends _$AppDatabase {
                   "impact = CASE impact "
                   "WHEN 'low' THEN 'minor' WHEN 'medium' THEN 'moderate' "
                   "WHEN 'high' THEN 'major' ELSE impact END");
+            } catch (_) {}
+          }
+          if (from < 63) {
+            // Hard-deadline banner gets a real date beside its statement.
+            await ensureColumn(
+                programmeHeaders, programmeHeaders.hardDeadlineDate);
+          }
+          if (from < 64) {
+            // Full-detail cascade: a per-link share level, and cascade
+            // markers on activities + plan arrows so a programme can hold
+            // read-only copies of each linked project's WBS.
+            await ensureColumn(programmeLinks, programmeLinks.shareLevel);
+            await ensureColumn(
+                timelineActivities, timelineActivities.sourceProjectId);
+            await ensureColumn(
+                timelineDependencies, timelineDependencies.sourceProjectId);
+            // Same-machine links are one person wearing both hats — no
+            // privacy boundary to respect — so they start at full detail.
+            // Cross-machine links keep the escalated-only contract until
+            // the project PM opts in.
+            try {
+              await customStatement(
+                  "UPDATE programme_links SET share_level = 'full' "
+                  "WHERE partner_local_id IS NOT NULL");
             } catch (_) {}
           }
         },

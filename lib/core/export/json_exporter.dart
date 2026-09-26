@@ -589,6 +589,7 @@ class JsonExporter {
                 'title': programmeHeader.title,
                 'subtitle': programmeHeader.subtitle,
                 'hard_deadline': programmeHeader.hardDeadline,
+                'hard_deadline_date': programmeHeader.hardDeadlineDate,
                 'in_scope': programmeHeader.inScope,
                 'out_of_scope': programmeHeader.outOfScope,
                 'month_labels': programmeHeader.monthLabels,
@@ -647,6 +648,7 @@ class JsonExporter {
                   'contributors': a.contributors,
                   'contributor_ids': a.contributorIds,
                   'sort_order': a.sortOrder,
+                  'source_project_id': a.sourceProjectId,
                   'created_at': a.createdAt.toIso8601String(),
                   'updated_at': a.updatedAt.toIso8601String(),
                 })
@@ -662,6 +664,7 @@ class JsonExporter {
                   // leaving corrupt type='external' label=null rows.
                   'external_label': d.externalLabel,
                   'notes': d.notes,
+                  'source_project_id': d.sourceProjectId,
                   'created_at': d.createdAt.toIso8601String(),
                 })
             .toList(),
@@ -752,6 +755,7 @@ class JsonExporter {
               'link_secret': l.linkSecret,
               'status': l.status,
               'generated_here': l.generatedHere,
+              'share_level': l.shareLevel,
               'created_at': l.createdAt.toIso8601String(),
             })
         .toList();

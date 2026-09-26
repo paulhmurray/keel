@@ -684,6 +684,18 @@ class $ProgrammeLinksTable extends ProgrammeLinks
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _shareLevelMeta = const VerificationMeta(
+    'shareLevel',
+  );
+  @override
+  late final GeneratedColumn<String> shareLevel = GeneratedColumn<String>(
+    'share_level',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('escalated'),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -708,6 +720,7 @@ class $ProgrammeLinksTable extends ProgrammeLinks
     linkSecret,
     status,
     generatedHere,
+    shareLevel,
     createdAt,
   ];
   @override
@@ -804,6 +817,12 @@ class $ProgrammeLinksTable extends ProgrammeLinks
         ),
       );
     }
+    if (data.containsKey('share_level')) {
+      context.handle(
+        _shareLevelMeta,
+        shareLevel.isAcceptableOrUnknown(data['share_level']!, _shareLevelMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -859,6 +878,10 @@ class $ProgrammeLinksTable extends ProgrammeLinks
         DriftSqlType.bool,
         data['${effectivePrefix}generated_here'],
       )!,
+      shareLevel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}share_level'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -883,6 +906,7 @@ class ProgrammeLink extends DataClass implements Insertable<ProgrammeLink> {
   final String? linkSecret;
   final String status;
   final bool generatedHere;
+  final String shareLevel;
   final DateTime createdAt;
   const ProgrammeLink({
     required this.id,
@@ -895,6 +919,7 @@ class ProgrammeLink extends DataClass implements Insertable<ProgrammeLink> {
     this.linkSecret,
     required this.status,
     required this.generatedHere,
+    required this.shareLevel,
     required this.createdAt,
   });
   @override
@@ -916,6 +941,7 @@ class ProgrammeLink extends DataClass implements Insertable<ProgrammeLink> {
     }
     map['status'] = Variable<String>(status);
     map['generated_here'] = Variable<bool>(generatedHere);
+    map['share_level'] = Variable<String>(shareLevel);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -938,6 +964,7 @@ class ProgrammeLink extends DataClass implements Insertable<ProgrammeLink> {
           : Value(linkSecret),
       status: Value(status),
       generatedHere: Value(generatedHere),
+      shareLevel: Value(shareLevel),
       createdAt: Value(createdAt),
     );
   }
@@ -958,6 +985,7 @@ class ProgrammeLink extends DataClass implements Insertable<ProgrammeLink> {
       linkSecret: serializer.fromJson<String?>(json['linkSecret']),
       status: serializer.fromJson<String>(json['status']),
       generatedHere: serializer.fromJson<bool>(json['generatedHere']),
+      shareLevel: serializer.fromJson<String>(json['shareLevel']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -975,6 +1003,7 @@ class ProgrammeLink extends DataClass implements Insertable<ProgrammeLink> {
       'linkSecret': serializer.toJson<String?>(linkSecret),
       'status': serializer.toJson<String>(status),
       'generatedHere': serializer.toJson<bool>(generatedHere),
+      'shareLevel': serializer.toJson<String>(shareLevel),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -990,6 +1019,7 @@ class ProgrammeLink extends DataClass implements Insertable<ProgrammeLink> {
     Value<String?> linkSecret = const Value.absent(),
     String? status,
     bool? generatedHere,
+    String? shareLevel,
     DateTime? createdAt,
   }) => ProgrammeLink(
     id: id ?? this.id,
@@ -1004,6 +1034,7 @@ class ProgrammeLink extends DataClass implements Insertable<ProgrammeLink> {
     linkSecret: linkSecret.present ? linkSecret.value : this.linkSecret,
     status: status ?? this.status,
     generatedHere: generatedHere ?? this.generatedHere,
+    shareLevel: shareLevel ?? this.shareLevel,
     createdAt: createdAt ?? this.createdAt,
   );
   ProgrammeLink copyWithCompanion(ProgrammeLinksCompanion data) {
@@ -1030,6 +1061,9 @@ class ProgrammeLink extends DataClass implements Insertable<ProgrammeLink> {
       generatedHere: data.generatedHere.present
           ? data.generatedHere.value
           : this.generatedHere,
+      shareLevel: data.shareLevel.present
+          ? data.shareLevel.value
+          : this.shareLevel,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -1047,6 +1081,7 @@ class ProgrammeLink extends DataClass implements Insertable<ProgrammeLink> {
           ..write('linkSecret: $linkSecret, ')
           ..write('status: $status, ')
           ..write('generatedHere: $generatedHere, ')
+          ..write('shareLevel: $shareLevel, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -1064,6 +1099,7 @@ class ProgrammeLink extends DataClass implements Insertable<ProgrammeLink> {
     linkSecret,
     status,
     generatedHere,
+    shareLevel,
     createdAt,
   );
   @override
@@ -1080,6 +1116,7 @@ class ProgrammeLink extends DataClass implements Insertable<ProgrammeLink> {
           other.linkSecret == this.linkSecret &&
           other.status == this.status &&
           other.generatedHere == this.generatedHere &&
+          other.shareLevel == this.shareLevel &&
           other.createdAt == this.createdAt);
 }
 
@@ -1094,6 +1131,7 @@ class ProgrammeLinksCompanion extends UpdateCompanion<ProgrammeLink> {
   final Value<String?> linkSecret;
   final Value<String> status;
   final Value<bool> generatedHere;
+  final Value<String> shareLevel;
   final Value<DateTime> createdAt;
   final Value<int> rowid;
   const ProgrammeLinksCompanion({
@@ -1107,6 +1145,7 @@ class ProgrammeLinksCompanion extends UpdateCompanion<ProgrammeLink> {
     this.linkSecret = const Value.absent(),
     this.status = const Value.absent(),
     this.generatedHere = const Value.absent(),
+    this.shareLevel = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -1121,6 +1160,7 @@ class ProgrammeLinksCompanion extends UpdateCompanion<ProgrammeLink> {
     this.linkSecret = const Value.absent(),
     this.status = const Value.absent(),
     this.generatedHere = const Value.absent(),
+    this.shareLevel = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -1139,6 +1179,7 @@ class ProgrammeLinksCompanion extends UpdateCompanion<ProgrammeLink> {
     Expression<String>? linkSecret,
     Expression<String>? status,
     Expression<bool>? generatedHere,
+    Expression<String>? shareLevel,
     Expression<DateTime>? createdAt,
     Expression<int>? rowid,
   }) {
@@ -1153,6 +1194,7 @@ class ProgrammeLinksCompanion extends UpdateCompanion<ProgrammeLink> {
       if (linkSecret != null) 'link_secret': linkSecret,
       if (status != null) 'status': status,
       if (generatedHere != null) 'generated_here': generatedHere,
+      if (shareLevel != null) 'share_level': shareLevel,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -1169,6 +1211,7 @@ class ProgrammeLinksCompanion extends UpdateCompanion<ProgrammeLink> {
     Value<String?>? linkSecret,
     Value<String>? status,
     Value<bool>? generatedHere,
+    Value<String>? shareLevel,
     Value<DateTime>? createdAt,
     Value<int>? rowid,
   }) {
@@ -1183,6 +1226,7 @@ class ProgrammeLinksCompanion extends UpdateCompanion<ProgrammeLink> {
       linkSecret: linkSecret ?? this.linkSecret,
       status: status ?? this.status,
       generatedHere: generatedHere ?? this.generatedHere,
+      shareLevel: shareLevel ?? this.shareLevel,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
     );
@@ -1221,6 +1265,9 @@ class ProgrammeLinksCompanion extends UpdateCompanion<ProgrammeLink> {
     if (generatedHere.present) {
       map['generated_here'] = Variable<bool>(generatedHere.value);
     }
+    if (shareLevel.present) {
+      map['share_level'] = Variable<String>(shareLevel.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1243,6 +1290,7 @@ class ProgrammeLinksCompanion extends UpdateCompanion<ProgrammeLink> {
           ..write('linkSecret: $linkSecret, ')
           ..write('status: $status, ')
           ..write('generatedHere: $generatedHere, ')
+          ..write('shareLevel: $shareLevel, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -26264,6 +26312,17 @@ class $TimelineActivitiesTable extends TimelineActivities
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _sourceProjectIdMeta = const VerificationMeta(
+    'sourceProjectId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceProjectId = GeneratedColumn<String>(
+    'source_project_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -26317,6 +26376,7 @@ class $TimelineActivitiesTable extends TimelineActivities
     contributors,
     contributorIds,
     sortOrder,
+    sourceProjectId,
     createdAt,
     updatedAt,
   ];
@@ -26532,6 +26592,15 @@ class $TimelineActivitiesTable extends TimelineActivities
         sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
       );
     }
+    if (data.containsKey('source_project_id')) {
+      context.handle(
+        _sourceProjectIdMeta,
+        sourceProjectId.isAcceptableOrUnknown(
+          data['source_project_id']!,
+          _sourceProjectIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -26661,6 +26730,10 @@ class $TimelineActivitiesTable extends TimelineActivities
         DriftSqlType.int,
         data['${effectivePrefix}sort_order'],
       )!,
+      sourceProjectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_project_id'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -26707,6 +26780,7 @@ class TimelineActivity extends DataClass
   final String? contributors;
   final String? contributorIds;
   final int sortOrder;
+  final String? sourceProjectId;
   final DateTime createdAt;
   final DateTime updatedAt;
   const TimelineActivity({
@@ -26737,6 +26811,7 @@ class TimelineActivity extends DataClass
     this.contributors,
     this.contributorIds,
     required this.sortOrder,
+    this.sourceProjectId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -26806,6 +26881,9 @@ class TimelineActivity extends DataClass
       map['contributor_ids'] = Variable<String>(contributorIds);
     }
     map['sort_order'] = Variable<int>(sortOrder);
+    if (!nullToAbsent || sourceProjectId != null) {
+      map['source_project_id'] = Variable<String>(sourceProjectId);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -26876,6 +26954,9 @@ class TimelineActivity extends DataClass
           ? const Value.absent()
           : Value(contributorIds),
       sortOrder: Value(sortOrder),
+      sourceProjectId: sourceProjectId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceProjectId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -26916,6 +26997,7 @@ class TimelineActivity extends DataClass
       contributors: serializer.fromJson<String?>(json['contributors']),
       contributorIds: serializer.fromJson<String?>(json['contributorIds']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      sourceProjectId: serializer.fromJson<String?>(json['sourceProjectId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -26953,6 +27035,7 @@ class TimelineActivity extends DataClass
       'contributors': serializer.toJson<String?>(contributors),
       'contributorIds': serializer.toJson<String?>(contributorIds),
       'sortOrder': serializer.toJson<int>(sortOrder),
+      'sourceProjectId': serializer.toJson<String?>(sourceProjectId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -26986,6 +27069,7 @@ class TimelineActivity extends DataClass
     Value<String?> contributors = const Value.absent(),
     Value<String?> contributorIds = const Value.absent(),
     int? sortOrder,
+    Value<String?> sourceProjectId = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => TimelineActivity(
@@ -27028,6 +27112,9 @@ class TimelineActivity extends DataClass
         ? contributorIds.value
         : this.contributorIds,
     sortOrder: sortOrder ?? this.sortOrder,
+    sourceProjectId: sourceProjectId.present
+        ? sourceProjectId.value
+        : this.sourceProjectId,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -27088,6 +27175,9 @@ class TimelineActivity extends DataClass
           ? data.contributorIds.value
           : this.contributorIds,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      sourceProjectId: data.sourceProjectId.present
+          ? data.sourceProjectId.value
+          : this.sourceProjectId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -27123,6 +27213,7 @@ class TimelineActivity extends DataClass
           ..write('contributors: $contributors, ')
           ..write('contributorIds: $contributorIds, ')
           ..write('sortOrder: $sortOrder, ')
+          ..write('sourceProjectId: $sourceProjectId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -27158,6 +27249,7 @@ class TimelineActivity extends DataClass
     contributors,
     contributorIds,
     sortOrder,
+    sourceProjectId,
     createdAt,
     updatedAt,
   ]);
@@ -27192,6 +27284,7 @@ class TimelineActivity extends DataClass
           other.contributors == this.contributors &&
           other.contributorIds == this.contributorIds &&
           other.sortOrder == this.sortOrder &&
+          other.sourceProjectId == this.sourceProjectId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -27224,6 +27317,7 @@ class TimelineActivitiesCompanion extends UpdateCompanion<TimelineActivity> {
   final Value<String?> contributors;
   final Value<String?> contributorIds;
   final Value<int> sortOrder;
+  final Value<String?> sourceProjectId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -27255,6 +27349,7 @@ class TimelineActivitiesCompanion extends UpdateCompanion<TimelineActivity> {
     this.contributors = const Value.absent(),
     this.contributorIds = const Value.absent(),
     this.sortOrder = const Value.absent(),
+    this.sourceProjectId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -27287,6 +27382,7 @@ class TimelineActivitiesCompanion extends UpdateCompanion<TimelineActivity> {
     this.contributors = const Value.absent(),
     this.contributorIds = const Value.absent(),
     this.sortOrder = const Value.absent(),
+    this.sourceProjectId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -27322,6 +27418,7 @@ class TimelineActivitiesCompanion extends UpdateCompanion<TimelineActivity> {
     Expression<String>? contributors,
     Expression<String>? contributorIds,
     Expression<int>? sortOrder,
+    Expression<String>? sourceProjectId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -27355,6 +27452,7 @@ class TimelineActivitiesCompanion extends UpdateCompanion<TimelineActivity> {
       if (contributors != null) 'contributors': contributors,
       if (contributorIds != null) 'contributor_ids': contributorIds,
       if (sortOrder != null) 'sort_order': sortOrder,
+      if (sourceProjectId != null) 'source_project_id': sourceProjectId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -27389,6 +27487,7 @@ class TimelineActivitiesCompanion extends UpdateCompanion<TimelineActivity> {
     Value<String?>? contributors,
     Value<String?>? contributorIds,
     Value<int>? sortOrder,
+    Value<String?>? sourceProjectId,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -27422,6 +27521,7 @@ class TimelineActivitiesCompanion extends UpdateCompanion<TimelineActivity> {
       contributors: contributors ?? this.contributors,
       contributorIds: contributorIds ?? this.contributorIds,
       sortOrder: sortOrder ?? this.sortOrder,
+      sourceProjectId: sourceProjectId ?? this.sourceProjectId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -27514,6 +27614,9 @@ class TimelineActivitiesCompanion extends UpdateCompanion<TimelineActivity> {
     if (sortOrder.present) {
       map['sort_order'] = Variable<int>(sortOrder.value);
     }
+    if (sourceProjectId.present) {
+      map['source_project_id'] = Variable<String>(sourceProjectId.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -27556,6 +27659,7 @@ class TimelineActivitiesCompanion extends UpdateCompanion<TimelineActivity> {
           ..write('contributors: $contributors, ')
           ..write('contributorIds: $contributorIds, ')
           ..write('sortOrder: $sortOrder, ')
+          ..write('sourceProjectId: $sourceProjectId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -27647,6 +27751,17 @@ class $TimelineDependenciesTable extends TimelineDependencies
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _sourceProjectIdMeta = const VerificationMeta(
+    'sourceProjectId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceProjectId = GeneratedColumn<String>(
+    'source_project_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -27668,6 +27783,7 @@ class $TimelineDependenciesTable extends TimelineDependencies
     dependencyType,
     notes,
     externalLabel,
+    sourceProjectId,
     createdAt,
   ];
   @override
@@ -27741,6 +27857,15 @@ class $TimelineDependenciesTable extends TimelineDependencies
         ),
       );
     }
+    if (data.containsKey('source_project_id')) {
+      context.handle(
+        _sourceProjectIdMeta,
+        sourceProjectId.isAcceptableOrUnknown(
+          data['source_project_id']!,
+          _sourceProjectIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -27784,6 +27909,10 @@ class $TimelineDependenciesTable extends TimelineDependencies
         DriftSqlType.string,
         data['${effectivePrefix}external_label'],
       ),
+      sourceProjectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_project_id'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -27806,6 +27935,7 @@ class TimelineDependency extends DataClass
   final String dependencyType;
   final String? notes;
   final String? externalLabel;
+  final String? sourceProjectId;
   final DateTime createdAt;
   const TimelineDependency({
     required this.id,
@@ -27815,6 +27945,7 @@ class TimelineDependency extends DataClass
     required this.dependencyType,
     this.notes,
     this.externalLabel,
+    this.sourceProjectId,
     required this.createdAt,
   });
   @override
@@ -27830,6 +27961,9 @@ class TimelineDependency extends DataClass
     }
     if (!nullToAbsent || externalLabel != null) {
       map['external_label'] = Variable<String>(externalLabel);
+    }
+    if (!nullToAbsent || sourceProjectId != null) {
+      map['source_project_id'] = Variable<String>(sourceProjectId);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
@@ -27848,6 +27982,9 @@ class TimelineDependency extends DataClass
       externalLabel: externalLabel == null && nullToAbsent
           ? const Value.absent()
           : Value(externalLabel),
+      sourceProjectId: sourceProjectId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceProjectId),
       createdAt: Value(createdAt),
     );
   }
@@ -27865,6 +28002,7 @@ class TimelineDependency extends DataClass
       dependencyType: serializer.fromJson<String>(json['dependencyType']),
       notes: serializer.fromJson<String?>(json['notes']),
       externalLabel: serializer.fromJson<String?>(json['externalLabel']),
+      sourceProjectId: serializer.fromJson<String?>(json['sourceProjectId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -27879,6 +28017,7 @@ class TimelineDependency extends DataClass
       'dependencyType': serializer.toJson<String>(dependencyType),
       'notes': serializer.toJson<String?>(notes),
       'externalLabel': serializer.toJson<String?>(externalLabel),
+      'sourceProjectId': serializer.toJson<String?>(sourceProjectId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -27891,6 +28030,7 @@ class TimelineDependency extends DataClass
     String? dependencyType,
     Value<String?> notes = const Value.absent(),
     Value<String?> externalLabel = const Value.absent(),
+    Value<String?> sourceProjectId = const Value.absent(),
     DateTime? createdAt,
   }) => TimelineDependency(
     id: id ?? this.id,
@@ -27902,6 +28042,9 @@ class TimelineDependency extends DataClass
     externalLabel: externalLabel.present
         ? externalLabel.value
         : this.externalLabel,
+    sourceProjectId: sourceProjectId.present
+        ? sourceProjectId.value
+        : this.sourceProjectId,
     createdAt: createdAt ?? this.createdAt,
   );
   TimelineDependency copyWithCompanion(TimelineDependenciesCompanion data) {
@@ -27921,6 +28064,9 @@ class TimelineDependency extends DataClass
       externalLabel: data.externalLabel.present
           ? data.externalLabel.value
           : this.externalLabel,
+      sourceProjectId: data.sourceProjectId.present
+          ? data.sourceProjectId.value
+          : this.sourceProjectId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -27935,6 +28081,7 @@ class TimelineDependency extends DataClass
           ..write('dependencyType: $dependencyType, ')
           ..write('notes: $notes, ')
           ..write('externalLabel: $externalLabel, ')
+          ..write('sourceProjectId: $sourceProjectId, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -27949,6 +28096,7 @@ class TimelineDependency extends DataClass
     dependencyType,
     notes,
     externalLabel,
+    sourceProjectId,
     createdAt,
   );
   @override
@@ -27962,6 +28110,7 @@ class TimelineDependency extends DataClass
           other.dependencyType == this.dependencyType &&
           other.notes == this.notes &&
           other.externalLabel == this.externalLabel &&
+          other.sourceProjectId == this.sourceProjectId &&
           other.createdAt == this.createdAt);
 }
 
@@ -27974,6 +28123,7 @@ class TimelineDependenciesCompanion
   final Value<String> dependencyType;
   final Value<String?> notes;
   final Value<String?> externalLabel;
+  final Value<String?> sourceProjectId;
   final Value<DateTime> createdAt;
   final Value<int> rowid;
   const TimelineDependenciesCompanion({
@@ -27984,6 +28134,7 @@ class TimelineDependenciesCompanion
     this.dependencyType = const Value.absent(),
     this.notes = const Value.absent(),
     this.externalLabel = const Value.absent(),
+    this.sourceProjectId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -27995,6 +28146,7 @@ class TimelineDependenciesCompanion
     this.dependencyType = const Value.absent(),
     this.notes = const Value.absent(),
     this.externalLabel = const Value.absent(),
+    this.sourceProjectId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -28009,6 +28161,7 @@ class TimelineDependenciesCompanion
     Expression<String>? dependencyType,
     Expression<String>? notes,
     Expression<String>? externalLabel,
+    Expression<String>? sourceProjectId,
     Expression<DateTime>? createdAt,
     Expression<int>? rowid,
   }) {
@@ -28020,6 +28173,7 @@ class TimelineDependenciesCompanion
       if (dependencyType != null) 'dependency_type': dependencyType,
       if (notes != null) 'notes': notes,
       if (externalLabel != null) 'external_label': externalLabel,
+      if (sourceProjectId != null) 'source_project_id': sourceProjectId,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -28033,6 +28187,7 @@ class TimelineDependenciesCompanion
     Value<String>? dependencyType,
     Value<String?>? notes,
     Value<String?>? externalLabel,
+    Value<String?>? sourceProjectId,
     Value<DateTime>? createdAt,
     Value<int>? rowid,
   }) {
@@ -28044,6 +28199,7 @@ class TimelineDependenciesCompanion
       dependencyType: dependencyType ?? this.dependencyType,
       notes: notes ?? this.notes,
       externalLabel: externalLabel ?? this.externalLabel,
+      sourceProjectId: sourceProjectId ?? this.sourceProjectId,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
     );
@@ -28073,6 +28229,9 @@ class TimelineDependenciesCompanion
     if (externalLabel.present) {
       map['external_label'] = Variable<String>(externalLabel.value);
     }
+    if (sourceProjectId.present) {
+      map['source_project_id'] = Variable<String>(sourceProjectId.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -28092,6 +28251,7 @@ class TimelineDependenciesCompanion
           ..write('dependencyType: $dependencyType, ')
           ..write('notes: $notes, ')
           ..write('externalLabel: $externalLabel, ')
+          ..write('sourceProjectId: $sourceProjectId, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -28151,6 +28311,17 @@ class $ProgrammeHeadersTable extends ProgrammeHeaders
   @override
   late final GeneratedColumn<String> hardDeadline = GeneratedColumn<String>(
     'hard_deadline',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _hardDeadlineDateMeta = const VerificationMeta(
+    'hardDeadlineDate',
+  );
+  @override
+  late final GeneratedColumn<String> hardDeadlineDate = GeneratedColumn<String>(
+    'hard_deadline_date',
     aliasedName,
     true,
     type: DriftSqlType.string,
@@ -28231,6 +28402,7 @@ class $ProgrammeHeadersTable extends ProgrammeHeaders
     title,
     subtitle,
     hardDeadline,
+    hardDeadlineDate,
     inScope,
     outOfScope,
     monthLabels,
@@ -28281,6 +28453,15 @@ class $ProgrammeHeadersTable extends ProgrammeHeaders
         hardDeadline.isAcceptableOrUnknown(
           data['hard_deadline']!,
           _hardDeadlineMeta,
+        ),
+      );
+    }
+    if (data.containsKey('hard_deadline_date')) {
+      context.handle(
+        _hardDeadlineDateMeta,
+        hardDeadlineDate.isAcceptableOrUnknown(
+          data['hard_deadline_date']!,
+          _hardDeadlineDateMeta,
         ),
       );
     }
@@ -28355,6 +28536,10 @@ class $ProgrammeHeadersTable extends ProgrammeHeaders
         DriftSqlType.string,
         data['${effectivePrefix}hard_deadline'],
       ),
+      hardDeadlineDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}hard_deadline_date'],
+      ),
       inScope: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}in_scope'],
@@ -28394,6 +28579,7 @@ class ProgrammeHeader extends DataClass implements Insertable<ProgrammeHeader> {
   final String? title;
   final String? subtitle;
   final String? hardDeadline;
+  final String? hardDeadlineDate;
   final String? inScope;
   final String? outOfScope;
   final String? monthLabels;
@@ -28406,6 +28592,7 @@ class ProgrammeHeader extends DataClass implements Insertable<ProgrammeHeader> {
     this.title,
     this.subtitle,
     this.hardDeadline,
+    this.hardDeadlineDate,
     this.inScope,
     this.outOfScope,
     this.monthLabels,
@@ -28426,6 +28613,9 @@ class ProgrammeHeader extends DataClass implements Insertable<ProgrammeHeader> {
     }
     if (!nullToAbsent || hardDeadline != null) {
       map['hard_deadline'] = Variable<String>(hardDeadline);
+    }
+    if (!nullToAbsent || hardDeadlineDate != null) {
+      map['hard_deadline_date'] = Variable<String>(hardDeadlineDate);
     }
     if (!nullToAbsent || inScope != null) {
       map['in_scope'] = Variable<String>(inScope);
@@ -28457,6 +28647,9 @@ class ProgrammeHeader extends DataClass implements Insertable<ProgrammeHeader> {
       hardDeadline: hardDeadline == null && nullToAbsent
           ? const Value.absent()
           : Value(hardDeadline),
+      hardDeadlineDate: hardDeadlineDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(hardDeadlineDate),
       inScope: inScope == null && nullToAbsent
           ? const Value.absent()
           : Value(inScope),
@@ -28485,6 +28678,7 @@ class ProgrammeHeader extends DataClass implements Insertable<ProgrammeHeader> {
       title: serializer.fromJson<String?>(json['title']),
       subtitle: serializer.fromJson<String?>(json['subtitle']),
       hardDeadline: serializer.fromJson<String?>(json['hardDeadline']),
+      hardDeadlineDate: serializer.fromJson<String?>(json['hardDeadlineDate']),
       inScope: serializer.fromJson<String?>(json['inScope']),
       outOfScope: serializer.fromJson<String?>(json['outOfScope']),
       monthLabels: serializer.fromJson<String?>(json['monthLabels']),
@@ -28502,6 +28696,7 @@ class ProgrammeHeader extends DataClass implements Insertable<ProgrammeHeader> {
       'title': serializer.toJson<String?>(title),
       'subtitle': serializer.toJson<String?>(subtitle),
       'hardDeadline': serializer.toJson<String?>(hardDeadline),
+      'hardDeadlineDate': serializer.toJson<String?>(hardDeadlineDate),
       'inScope': serializer.toJson<String?>(inScope),
       'outOfScope': serializer.toJson<String?>(outOfScope),
       'monthLabels': serializer.toJson<String?>(monthLabels),
@@ -28517,6 +28712,7 @@ class ProgrammeHeader extends DataClass implements Insertable<ProgrammeHeader> {
     Value<String?> title = const Value.absent(),
     Value<String?> subtitle = const Value.absent(),
     Value<String?> hardDeadline = const Value.absent(),
+    Value<String?> hardDeadlineDate = const Value.absent(),
     Value<String?> inScope = const Value.absent(),
     Value<String?> outOfScope = const Value.absent(),
     Value<String?> monthLabels = const Value.absent(),
@@ -28529,6 +28725,9 @@ class ProgrammeHeader extends DataClass implements Insertable<ProgrammeHeader> {
     title: title.present ? title.value : this.title,
     subtitle: subtitle.present ? subtitle.value : this.subtitle,
     hardDeadline: hardDeadline.present ? hardDeadline.value : this.hardDeadline,
+    hardDeadlineDate: hardDeadlineDate.present
+        ? hardDeadlineDate.value
+        : this.hardDeadlineDate,
     inScope: inScope.present ? inScope.value : this.inScope,
     outOfScope: outOfScope.present ? outOfScope.value : this.outOfScope,
     monthLabels: monthLabels.present ? monthLabels.value : this.monthLabels,
@@ -28545,6 +28744,9 @@ class ProgrammeHeader extends DataClass implements Insertable<ProgrammeHeader> {
       hardDeadline: data.hardDeadline.present
           ? data.hardDeadline.value
           : this.hardDeadline,
+      hardDeadlineDate: data.hardDeadlineDate.present
+          ? data.hardDeadlineDate.value
+          : this.hardDeadlineDate,
       inScope: data.inScope.present ? data.inScope.value : this.inScope,
       outOfScope: data.outOfScope.present
           ? data.outOfScope.value
@@ -28568,6 +28770,7 @@ class ProgrammeHeader extends DataClass implements Insertable<ProgrammeHeader> {
           ..write('title: $title, ')
           ..write('subtitle: $subtitle, ')
           ..write('hardDeadline: $hardDeadline, ')
+          ..write('hardDeadlineDate: $hardDeadlineDate, ')
           ..write('inScope: $inScope, ')
           ..write('outOfScope: $outOfScope, ')
           ..write('monthLabels: $monthLabels, ')
@@ -28585,6 +28788,7 @@ class ProgrammeHeader extends DataClass implements Insertable<ProgrammeHeader> {
     title,
     subtitle,
     hardDeadline,
+    hardDeadlineDate,
     inScope,
     outOfScope,
     monthLabels,
@@ -28601,6 +28805,7 @@ class ProgrammeHeader extends DataClass implements Insertable<ProgrammeHeader> {
           other.title == this.title &&
           other.subtitle == this.subtitle &&
           other.hardDeadline == this.hardDeadline &&
+          other.hardDeadlineDate == this.hardDeadlineDate &&
           other.inScope == this.inScope &&
           other.outOfScope == this.outOfScope &&
           other.monthLabels == this.monthLabels &&
@@ -28615,6 +28820,7 @@ class ProgrammeHeadersCompanion extends UpdateCompanion<ProgrammeHeader> {
   final Value<String?> title;
   final Value<String?> subtitle;
   final Value<String?> hardDeadline;
+  final Value<String?> hardDeadlineDate;
   final Value<String?> inScope;
   final Value<String?> outOfScope;
   final Value<String?> monthLabels;
@@ -28628,6 +28834,7 @@ class ProgrammeHeadersCompanion extends UpdateCompanion<ProgrammeHeader> {
     this.title = const Value.absent(),
     this.subtitle = const Value.absent(),
     this.hardDeadline = const Value.absent(),
+    this.hardDeadlineDate = const Value.absent(),
     this.inScope = const Value.absent(),
     this.outOfScope = const Value.absent(),
     this.monthLabels = const Value.absent(),
@@ -28642,6 +28849,7 @@ class ProgrammeHeadersCompanion extends UpdateCompanion<ProgrammeHeader> {
     this.title = const Value.absent(),
     this.subtitle = const Value.absent(),
     this.hardDeadline = const Value.absent(),
+    this.hardDeadlineDate = const Value.absent(),
     this.inScope = const Value.absent(),
     this.outOfScope = const Value.absent(),
     this.monthLabels = const Value.absent(),
@@ -28657,6 +28865,7 @@ class ProgrammeHeadersCompanion extends UpdateCompanion<ProgrammeHeader> {
     Expression<String>? title,
     Expression<String>? subtitle,
     Expression<String>? hardDeadline,
+    Expression<String>? hardDeadlineDate,
     Expression<String>? inScope,
     Expression<String>? outOfScope,
     Expression<String>? monthLabels,
@@ -28671,6 +28880,7 @@ class ProgrammeHeadersCompanion extends UpdateCompanion<ProgrammeHeader> {
       if (title != null) 'title': title,
       if (subtitle != null) 'subtitle': subtitle,
       if (hardDeadline != null) 'hard_deadline': hardDeadline,
+      if (hardDeadlineDate != null) 'hard_deadline_date': hardDeadlineDate,
       if (inScope != null) 'in_scope': inScope,
       if (outOfScope != null) 'out_of_scope': outOfScope,
       if (monthLabels != null) 'month_labels': monthLabels,
@@ -28687,6 +28897,7 @@ class ProgrammeHeadersCompanion extends UpdateCompanion<ProgrammeHeader> {
     Value<String?>? title,
     Value<String?>? subtitle,
     Value<String?>? hardDeadline,
+    Value<String?>? hardDeadlineDate,
     Value<String?>? inScope,
     Value<String?>? outOfScope,
     Value<String?>? monthLabels,
@@ -28701,6 +28912,7 @@ class ProgrammeHeadersCompanion extends UpdateCompanion<ProgrammeHeader> {
       title: title ?? this.title,
       subtitle: subtitle ?? this.subtitle,
       hardDeadline: hardDeadline ?? this.hardDeadline,
+      hardDeadlineDate: hardDeadlineDate ?? this.hardDeadlineDate,
       inScope: inScope ?? this.inScope,
       outOfScope: outOfScope ?? this.outOfScope,
       monthLabels: monthLabels ?? this.monthLabels,
@@ -28728,6 +28940,9 @@ class ProgrammeHeadersCompanion extends UpdateCompanion<ProgrammeHeader> {
     }
     if (hardDeadline.present) {
       map['hard_deadline'] = Variable<String>(hardDeadline.value);
+    }
+    if (hardDeadlineDate.present) {
+      map['hard_deadline_date'] = Variable<String>(hardDeadlineDate.value);
     }
     if (inScope.present) {
       map['in_scope'] = Variable<String>(inScope.value);
@@ -28761,6 +28976,7 @@ class ProgrammeHeadersCompanion extends UpdateCompanion<ProgrammeHeader> {
           ..write('title: $title, ')
           ..write('subtitle: $subtitle, ')
           ..write('hardDeadline: $hardDeadline, ')
+          ..write('hardDeadlineDate: $hardDeadlineDate, ')
           ..write('inScope: $inScope, ')
           ..write('outOfScope: $outOfScope, ')
           ..write('monthLabels: $monthLabels, ')
@@ -48417,6 +48633,7 @@ typedef $$ProgrammeLinksTableCreateCompanionBuilder =
       Value<String?> linkSecret,
       Value<String> status,
       Value<bool> generatedHere,
+      Value<String> shareLevel,
       Value<DateTime> createdAt,
       Value<int> rowid,
     });
@@ -48432,6 +48649,7 @@ typedef $$ProgrammeLinksTableUpdateCompanionBuilder =
       Value<String?> linkSecret,
       Value<String> status,
       Value<bool> generatedHere,
+      Value<String> shareLevel,
       Value<DateTime> createdAt,
       Value<int> rowid,
     });
@@ -48518,6 +48736,11 @@ class $$ProgrammeLinksTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get shareLevel => $composableBuilder(
+    column: $table.shareLevel,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnFilters(column),
@@ -48601,6 +48824,11 @@ class $$ProgrammeLinksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get shareLevel => $composableBuilder(
+    column: $table.shareLevel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -48676,6 +48904,11 @@ class $$ProgrammeLinksTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get shareLevel => $composableBuilder(
+    column: $table.shareLevel,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -48743,6 +48976,7 @@ class $$ProgrammeLinksTableTableManager
                 Value<String?> linkSecret = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<bool> generatedHere = const Value.absent(),
+                Value<String> shareLevel = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProgrammeLinksCompanion(
@@ -48756,6 +48990,7 @@ class $$ProgrammeLinksTableTableManager
                 linkSecret: linkSecret,
                 status: status,
                 generatedHere: generatedHere,
+                shareLevel: shareLevel,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
@@ -48771,6 +49006,7 @@ class $$ProgrammeLinksTableTableManager
                 Value<String?> linkSecret = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<bool> generatedHere = const Value.absent(),
+                Value<String> shareLevel = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProgrammeLinksCompanion.insert(
@@ -48784,6 +49020,7 @@ class $$ProgrammeLinksTableTableManager
                 linkSecret: linkSecret,
                 status: status,
                 generatedHere: generatedHere,
+                shareLevel: shareLevel,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
@@ -66299,6 +66536,7 @@ typedef $$TimelineActivitiesTableCreateCompanionBuilder =
       Value<String?> contributors,
       Value<String?> contributorIds,
       Value<int> sortOrder,
+      Value<String?> sourceProjectId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -66332,6 +66570,7 @@ typedef $$TimelineActivitiesTableUpdateCompanionBuilder =
       Value<String?> contributors,
       Value<String?> contributorIds,
       Value<int> sortOrder,
+      Value<String?> sourceProjectId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -66526,6 +66765,11 @@ class $$TimelineActivitiesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnFilters(column),
@@ -66717,6 +66961,11 @@ class $$TimelineActivitiesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -66885,6 +67134,11 @@ class $$TimelineActivitiesTableAnnotationComposer
   GeneratedColumn<int> get sortOrder =>
       $composableBuilder(column: $table.sortOrder, builder: (column) => column);
 
+  GeneratedColumn<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -66999,6 +67253,7 @@ class $$TimelineActivitiesTableTableManager
                 Value<String?> contributors = const Value.absent(),
                 Value<String?> contributorIds = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
+                Value<String?> sourceProjectId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -67030,6 +67285,7 @@ class $$TimelineActivitiesTableTableManager
                 contributors: contributors,
                 contributorIds: contributorIds,
                 sortOrder: sortOrder,
+                sourceProjectId: sourceProjectId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -67063,6 +67319,7 @@ class $$TimelineActivitiesTableTableManager
                 Value<String?> contributors = const Value.absent(),
                 Value<String?> contributorIds = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
+                Value<String?> sourceProjectId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -67094,6 +67351,7 @@ class $$TimelineActivitiesTableTableManager
                 contributors: contributors,
                 contributorIds: contributorIds,
                 sortOrder: sortOrder,
+                sourceProjectId: sourceProjectId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -67191,6 +67449,7 @@ typedef $$TimelineDependenciesTableCreateCompanionBuilder =
       Value<String> dependencyType,
       Value<String?> notes,
       Value<String?> externalLabel,
+      Value<String?> sourceProjectId,
       Value<DateTime> createdAt,
       Value<int> rowid,
     });
@@ -67203,6 +67462,7 @@ typedef $$TimelineDependenciesTableUpdateCompanionBuilder =
       Value<String> dependencyType,
       Value<String?> notes,
       Value<String?> externalLabel,
+      Value<String?> sourceProjectId,
       Value<DateTime> createdAt,
       Value<int> rowid,
     });
@@ -67279,6 +67539,11 @@ class $$TimelineDependenciesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnFilters(column),
@@ -67347,6 +67612,11 @@ class $$TimelineDependenciesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -67408,6 +67678,11 @@ class $$TimelineDependenciesTableAnnotationComposer
 
   GeneratedColumn<String> get externalLabel => $composableBuilder(
     column: $table.externalLabel,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
     builder: (column) => column,
   );
 
@@ -67481,6 +67756,7 @@ class $$TimelineDependenciesTableTableManager
                 Value<String> dependencyType = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<String?> externalLabel = const Value.absent(),
+                Value<String?> sourceProjectId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TimelineDependenciesCompanion(
@@ -67491,6 +67767,7 @@ class $$TimelineDependenciesTableTableManager
                 dependencyType: dependencyType,
                 notes: notes,
                 externalLabel: externalLabel,
+                sourceProjectId: sourceProjectId,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
@@ -67503,6 +67780,7 @@ class $$TimelineDependenciesTableTableManager
                 Value<String> dependencyType = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<String?> externalLabel = const Value.absent(),
+                Value<String?> sourceProjectId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TimelineDependenciesCompanion.insert(
@@ -67513,6 +67791,7 @@ class $$TimelineDependenciesTableTableManager
                 dependencyType: dependencyType,
                 notes: notes,
                 externalLabel: externalLabel,
+                sourceProjectId: sourceProjectId,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
@@ -67592,6 +67871,7 @@ typedef $$ProgrammeHeadersTableCreateCompanionBuilder =
       Value<String?> title,
       Value<String?> subtitle,
       Value<String?> hardDeadline,
+      Value<String?> hardDeadlineDate,
       Value<String?> inScope,
       Value<String?> outOfScope,
       Value<String?> monthLabels,
@@ -67607,6 +67887,7 @@ typedef $$ProgrammeHeadersTableUpdateCompanionBuilder =
       Value<String?> title,
       Value<String?> subtitle,
       Value<String?> hardDeadline,
+      Value<String?> hardDeadlineDate,
       Value<String?> inScope,
       Value<String?> outOfScope,
       Value<String?> monthLabels,
@@ -67647,6 +67928,11 @@ class $$ProgrammeHeadersTableFilterComposer
 
   ColumnFilters<String> get hardDeadline => $composableBuilder(
     column: $table.hardDeadline,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get hardDeadlineDate => $composableBuilder(
+    column: $table.hardDeadlineDate,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -67715,6 +68001,11 @@ class $$ProgrammeHeadersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get hardDeadlineDate => $composableBuilder(
+    column: $table.hardDeadlineDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get inScope => $composableBuilder(
     column: $table.inScope,
     builder: (column) => ColumnOrderings(column),
@@ -67769,6 +68060,11 @@ class $$ProgrammeHeadersTableAnnotationComposer
 
   GeneratedColumn<String> get hardDeadline => $composableBuilder(
     column: $table.hardDeadline,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get hardDeadlineDate => $composableBuilder(
+    column: $table.hardDeadlineDate,
     builder: (column) => column,
   );
 
@@ -67839,6 +68135,7 @@ class $$ProgrammeHeadersTableTableManager
                 Value<String?> title = const Value.absent(),
                 Value<String?> subtitle = const Value.absent(),
                 Value<String?> hardDeadline = const Value.absent(),
+                Value<String?> hardDeadlineDate = const Value.absent(),
                 Value<String?> inScope = const Value.absent(),
                 Value<String?> outOfScope = const Value.absent(),
                 Value<String?> monthLabels = const Value.absent(),
@@ -67852,6 +68149,7 @@ class $$ProgrammeHeadersTableTableManager
                 title: title,
                 subtitle: subtitle,
                 hardDeadline: hardDeadline,
+                hardDeadlineDate: hardDeadlineDate,
                 inScope: inScope,
                 outOfScope: outOfScope,
                 monthLabels: monthLabels,
@@ -67867,6 +68165,7 @@ class $$ProgrammeHeadersTableTableManager
                 Value<String?> title = const Value.absent(),
                 Value<String?> subtitle = const Value.absent(),
                 Value<String?> hardDeadline = const Value.absent(),
+                Value<String?> hardDeadlineDate = const Value.absent(),
                 Value<String?> inScope = const Value.absent(),
                 Value<String?> outOfScope = const Value.absent(),
                 Value<String?> monthLabels = const Value.absent(),
@@ -67880,6 +68179,7 @@ class $$ProgrammeHeadersTableTableManager
                 title: title,
                 subtitle: subtitle,
                 hardDeadline: hardDeadline,
+                hardDeadlineDate: hardDeadlineDate,
                 inScope: inScope,
                 outOfScope: outOfScope,
                 monthLabels: monthLabels,

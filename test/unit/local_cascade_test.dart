@@ -234,8 +234,12 @@ void main() {
       expect(await db.raidDao.getRisksForProject('prog'), isEmpty);
     });
 
-    test('a non-escalated risk does not cascade', () async {
+    test('a non-escalated risk does not cascade over an escalated-only link',
+        () async {
       await linkSameMachine();
+      for (final l in await db.programmeLinksDao.getLinksForEntity('proj')) {
+        await db.programmeLinksDao.setShareLevel(l.id, 'escalated');
+      }
       final cascade = CascadeService(
         db,
         gateway: CompositeCascadeGateway(db, remote: null),
@@ -248,6 +252,25 @@ void main() {
       await cascade.pushRisk((await db.raidDao.getRiskById('r1'))!);
       await cascade.pullForProgramme('prog');
       expect(await db.raidDao.getRisksForProject('prog'), isEmpty);
+    });
+
+    test('a same-machine link defaults to full detail: a non-escalated risk '
+        'arrives, unflagged and read-only', () async {
+      await linkSameMachine();
+      final cascade = CascadeService(
+        db,
+        gateway: CompositeCascadeGateway(db, remote: null),
+      );
+      await db.raidDao.upsertRisk(RisksCompanion.insert(
+        id: 'r1',
+        projectId: 'proj',
+        description: 'Whole-register risk',
+      ));
+      await cascade.pushRisk((await db.raidDao.getRiskById('r1'))!);
+      await cascade.pullForProgramme('prog');
+      final copy = (await db.raidDao.getRisksForProject('prog')).single;
+      expect(copy.sourceProjectId, 'proj');
+      expect(copy.escalatedAt, isNull);
     });
   });
 

@@ -1,7 +1,10 @@
-import 'package:drift/drift.dart' show Value;
+import 'dart:convert';
+
+import 'package:drift/drift.dart';
 
 import '../database/database.dart';
 import '../raid/risk_rating.dart';
+import 'cascade_plan_detail.dart';
 
 /// Item kinds for cascade payloads. Server is agnostic — these are
 /// just stable strings the sender and receiver agree on.
@@ -27,6 +30,23 @@ class CascadeKinds {
   // render each project's full People overview (roles + coverage).
   static const stakeholderRole = 'stakeholder_role';
   static const teamRole = 'team_role';
+  // Plan detail (full-share links only). Activities carry tasks via
+  // parent_activity_id; plan dependencies are the Gantt arrows.
+  static const activity = 'activity';
+  static const planDependency = 'plan_dependency';
+}
+
+/// How much of a project a link carries. Stored on ProgrammeLinks.
+class CascadeShareLevels {
+  CascadeShareLevels._();
+  /// Only explicitly escalated RAID / actions / decisions, plus the
+  /// always-on kinds (WP headers, reports, charter, people, roles).
+  static const escalated = 'escalated';
+  /// Everything: the whole RAID and delivery registers, and the plan
+  /// down to activities, tasks and arrows.
+  static const full = 'full';
+
+  static bool isFull(String? level) => level == full;
 }
 
 /// Abstract gateway the CascadeService talks to. Mirrors the
@@ -111,7 +131,7 @@ class CascadeService {
   Future<void> pushWorkPackage(TimelineWorkPackage wp) async {
     if (gateway == null) return;
     if (wp.sourceProjectId != null) return; // never re-cascade
-    final links = await _activeLinksForEntity(wp.projectId);
+    final links = await _pushLinksForEntity(wp.projectId);
     if (links.isEmpty) return;
     final payload = _workPackagePayload(wp)
       ..addAll(await _workPackageSpanPayload(wp));
@@ -148,7 +168,7 @@ class CascadeService {
     required String workPackageId,
   }) async {
     if (gateway == null) return;
-    final links = await _activeLinksForEntity(projectId);
+    final links = await _pushLinksForEntity(projectId);
     for (final link in links) {
       try {
         await gateway!.delete(
@@ -172,45 +192,48 @@ class CascadeService {
   // on every subsequent save while the row is escalated. Unescalating
   // a row tombstones it on the channel.
 
-  Future<void> pushRisk(Risk risk) async {
-    if (!_canPush(risk.escalatedAt, risk.sourceProjectId)) return;
-    await _pushToAllLinks(
-      projectId: risk.projectId,
-      itemKind: CascadeKinds.risk,
-      itemId: risk.id,
-      payload: _riskPayload(risk),
-    );
-  }
+  // Every register push is SELF-GATING per link: a full-share link gets
+  // the row whatever its escalation state; an escalated-only link gets
+  // it only while escalatedAt is set and is sent a tombstone otherwise.
+  // Callers therefore push on every save (and after un-escalating)
+  // without checking the flag themselves. Rows that are themselves
+  // cascaded copies never re-cascade.
 
-  Future<void> pushAssumption(Assumption a) async {
-    if (!_canPush(a.escalatedAt, a.sourceProjectId)) return;
-    await _pushToAllLinks(
-      projectId: a.projectId,
-      itemKind: CascadeKinds.assumption,
-      itemId: a.id,
-      payload: _assumptionPayload(a),
-    );
-  }
+  Future<void> pushRisk(Risk risk) => _pushRegisterItem(
+        projectId: risk.projectId,
+        itemKind: CascadeKinds.risk,
+        itemId: risk.id,
+        escalatedAt: risk.escalatedAt,
+        sourceProjectId: risk.sourceProjectId,
+        payload: _riskPayload(risk),
+      );
 
-  Future<void> pushIssue(Issue i) async {
-    if (!_canPush(i.escalatedAt, i.sourceProjectId)) return;
-    await _pushToAllLinks(
-      projectId: i.projectId,
-      itemKind: CascadeKinds.issue,
-      itemId: i.id,
-      payload: _issuePayload(i),
-    );
-  }
+  Future<void> pushAssumption(Assumption a) => _pushRegisterItem(
+        projectId: a.projectId,
+        itemKind: CascadeKinds.assumption,
+        itemId: a.id,
+        escalatedAt: a.escalatedAt,
+        sourceProjectId: a.sourceProjectId,
+        payload: _assumptionPayload(a),
+      );
 
-  Future<void> pushDependency(ProgramDependency d) async {
-    if (!_canPush(d.escalatedAt, d.sourceProjectId)) return;
-    await _pushToAllLinks(
-      projectId: d.projectId,
-      itemKind: CascadeKinds.dependency,
-      itemId: d.id,
-      payload: _dependencyPayload(d),
-    );
-  }
+  Future<void> pushIssue(Issue i) => _pushRegisterItem(
+        projectId: i.projectId,
+        itemKind: CascadeKinds.issue,
+        itemId: i.id,
+        escalatedAt: i.escalatedAt,
+        sourceProjectId: i.sourceProjectId,
+        payload: _issuePayload(i),
+      );
+
+  Future<void> pushDependency(ProgramDependency d) => _pushRegisterItem(
+        projectId: d.projectId,
+        itemKind: CascadeKinds.dependency,
+        itemId: d.id,
+        escalatedAt: d.escalatedAt,
+        sourceProjectId: d.sourceProjectId,
+        payload: _dependencyPayload(d),
+      );
 
   /// Tombstones an item that the PM has unescalated. Called BEFORE
   /// the DAO clears escalatedAt — we still want the (kind, id) to be
@@ -222,7 +245,7 @@ class CascadeService {
     required String itemId,
   }) async {
     if (gateway == null) return;
-    final links = await _activeLinksForEntity(projectId);
+    final links = await _pushLinksForEntity(projectId);
     for (final link in links) {
       try {
         await gateway!.delete(
@@ -260,7 +283,7 @@ class CascadeService {
     required String reportId,
   }) async {
     if (gateway == null) return;
-    final links = await _activeLinksForEntity(projectId);
+    final links = await _pushLinksForEntity(projectId);
     for (final link in links) {
       try {
         await gateway!.delete(
@@ -311,7 +334,7 @@ class CascadeService {
     required String charterId,
   }) async {
     if (gateway == null) return;
-    final links = await _activeLinksForEntity(projectId);
+    final links = await _pushLinksForEntity(projectId);
     for (final link in links) {
       try {
         await gateway!.delete(
@@ -372,7 +395,7 @@ class CascadeService {
     required String personId,
   }) async {
     if (gateway == null) return;
-    final links = await _activeLinksForEntity(projectId);
+    final links = await _pushLinksForEntity(projectId);
     for (final link in links) {
       try {
         await gateway!.delete(
@@ -458,7 +481,7 @@ class CascadeService {
   Future<void> _tombstone(
       String projectId, String itemKind, String itemId) async {
     if (gateway == null) return;
-    final links = await _activeLinksForEntity(projectId);
+    final links = await _pushLinksForEntity(projectId);
     for (final link in links) {
       try {
         await gateway!
@@ -476,66 +499,192 @@ class CascadeService {
   // tombstones on unescalate-or-delete. Programme-side rows render
   // read-only.
 
-  Future<void> pushAction(ProjectAction a) async {
-    if (!_canPush(a.escalatedAt, a.sourceProjectId)) return;
-    await _pushToAllLinks(
-      projectId: a.projectId,
-      itemKind: CascadeKinds.action,
-      itemId: a.id,
-      payload: _actionPayload(a),
-    );
-  }
+  Future<void> pushAction(ProjectAction a) => _pushRegisterItem(
+        projectId: a.projectId,
+        itemKind: CascadeKinds.action,
+        itemId: a.id,
+        escalatedAt: a.escalatedAt,
+        sourceProjectId: a.sourceProjectId,
+        payload: _actionPayload(a),
+      );
 
-  Future<void> pushDecision(Decision d) async {
-    if (!_canPush(d.escalatedAt, d.sourceProjectId)) return;
-    await _pushToAllLinks(
-      projectId: d.projectId,
-      itemKind: CascadeKinds.decision,
-      itemId: d.id,
-      payload: _decisionPayload(d),
-    );
-  }
+  Future<void> pushDecision(Decision d) => _pushRegisterItem(
+        projectId: d.projectId,
+        itemKind: CascadeKinds.decision,
+        itemId: d.id,
+        escalatedAt: d.escalatedAt,
+        sourceProjectId: d.sourceProjectId,
+        payload: _decisionPayload(d),
+      );
 
-  /// Replays every escalated Action + Decision so a freshly-linked
-  /// programme sees the existing escalated portfolio. Symmetrical
-  /// with [pushAllEscalatedRaid].
-  Future<void> pushAllEscalatedDelivery(String projectId) async {
+  /// Replays every Action + Decision through the per-link gate so a
+  /// freshly-linked programme sees what it is entitled to. Symmetrical
+  /// with [pushAllRaid].
+  Future<void> pushAllDelivery(String projectId) async {
     if (gateway == null) return;
-    final actions =
-        await db.actionsDao.getEscalatedActionsForProject(projectId);
-    for (final a in actions) {
+    for (final a in await db.actionsDao.getActionsForProject(projectId)) {
       await pushAction(a);
     }
-    final decisions = await db.decisionsDao
-        .getEscalatedDecisionsForProject(projectId);
-    for (final d in decisions) {
+    for (final d
+        in await db.decisionsDao.getDecisionsForProject(projectId)) {
       await pushDecision(d);
     }
   }
 
-  /// Replays every currently-escalated RAID item on the project so a
-  /// newly-activated link sees the existing escalated portfolio. Used
-  /// the same way as [pushAllWorkPackages].
-  Future<void> pushAllEscalatedRaid(String projectId) async {
+  /// Replays every RAID row through the per-link gate. Used the same
+  /// way as [pushAllWorkPackages].
+  Future<void> pushAllRaid(String projectId) async {
     if (gateway == null) return;
-    final risks = await db.raidDao.getEscalatedRisksForProject(projectId);
-    for (final r in risks) {
+    for (final r in await db.raidDao.getRisksForProject(projectId)) {
       await pushRisk(r);
     }
-    final assumptions =
-        await db.raidDao.getEscalatedAssumptionsForProject(projectId);
-    for (final a in assumptions) {
+    for (final a in await db.raidDao.getAssumptionsForProject(projectId)) {
       await pushAssumption(a);
     }
-    final issues =
-        await db.raidDao.getEscalatedIssuesForProject(projectId);
-    for (final i in issues) {
+    for (final i in await db.raidDao.getIssuesForProject(projectId)) {
       await pushIssue(i);
     }
-    final deps =
-        await db.raidDao.getEscalatedDependenciesForProject(projectId);
-    for (final d in deps) {
+    for (final d
+        in await db.raidDao.getDependenciesForProject(projectId)) {
       await pushDependency(d);
+    }
+  }
+
+  /// Tombstones every item an escalated-only link is no longer entitled
+  /// to. Called when the project PM turns a link DOWN from full detail:
+  /// unescalated RAID / actions / decisions and all plan detail are
+  /// withdrawn from every escalated-only link; full-share links are
+  /// untouched. Escalated rows stay.
+  Future<void> retractUnescalated(String projectId) async {
+    if (gateway == null) return;
+    final links = (await _pushLinksForEntity(projectId))
+        .where((l) => !CascadeShareLevels.isFull(l.shareLevel))
+        .toList();
+    if (links.isEmpty) return;
+
+    Future<void> drop(String kind, String id) async {
+      for (final link in links) {
+        try {
+          await gateway!.delete(code: link.code, itemKind: kind, itemId: id);
+        } catch (_) {}
+      }
+    }
+
+    for (final r in await db.raidDao.getRisksForProject(projectId)) {
+      if (r.escalatedAt == null) await drop(CascadeKinds.risk, r.id);
+    }
+    for (final a in await db.raidDao.getAssumptionsForProject(projectId)) {
+      if (a.escalatedAt == null) await drop(CascadeKinds.assumption, a.id);
+    }
+    for (final i in await db.raidDao.getIssuesForProject(projectId)) {
+      if (i.escalatedAt == null) await drop(CascadeKinds.issue, i.id);
+    }
+    for (final d
+        in await db.raidDao.getDependenciesForProject(projectId)) {
+      if (d.escalatedAt == null) await drop(CascadeKinds.dependency, d.id);
+    }
+    for (final a in await db.actionsDao.getActionsForProject(projectId)) {
+      if (a.escalatedAt == null) await drop(CascadeKinds.action, a.id);
+    }
+    for (final d
+        in await db.decisionsDao.getDecisionsForProject(projectId)) {
+      if (d.escalatedAt == null) await drop(CascadeKinds.decision, d.id);
+    }
+    for (final a
+        in await db.programmeGanttDao.getActivitiesForProject(projectId)) {
+      await drop(CascadeKinds.activity, a.id);
+    }
+    for (final d in await db.programmeGanttDao.getDependencies(projectId)) {
+      await drop(CascadeKinds.planDependency, d.id);
+    }
+  }
+
+  // ── Plan detail (full-share links only) ─────────────────────────────────
+  //
+  // Activities, tasks and arrows cascade as a unit with their WP so a
+  // programme on a full-share link holds the project's whole WBS. Months
+  // travel raw AND as absolute dates (when the source has a calendar
+  // anchor) so the programme can re-key them onto its own axis.
+
+  Future<void> pushActivity(TimelineActivity a) async {
+    if (gateway == null || a.sourceProjectId != null) return;
+    final links = await _fullLinksForEntity(a.projectId);
+    if (links.isEmpty) return;
+    final payload = await _activityPayload(a);
+    for (final link in links) {
+      try {
+        await gateway!.push(
+          code: link.code,
+          sourceEntityId: a.projectId,
+          itemKind: CascadeKinds.activity,
+          itemId: a.id,
+          payload: payload,
+        );
+      } catch (_) {}
+    }
+  }
+
+  Future<void> pushAllActivities(String projectId) async {
+    if (gateway == null) return;
+    if ((await _fullLinksForEntity(projectId)).isEmpty) return;
+    for (final a
+        in await db.programmeGanttDao.getActivitiesForProject(projectId)) {
+      await pushActivity(a);
+    }
+  }
+
+  Future<void> deleteActivity({
+    required String projectId,
+    required String activityId,
+  }) =>
+      _tombstone(projectId, CascadeKinds.activity, activityId);
+
+  Future<void> pushPlanDependency(TimelineDependency d) async {
+    if (gateway == null || d.sourceProjectId != null) return;
+    final links = await _fullLinksForEntity(d.projectId);
+    if (links.isEmpty) return;
+    final payload = _planDependencyPayload(d);
+    for (final link in links) {
+      try {
+        await gateway!.push(
+          code: link.code,
+          sourceEntityId: d.projectId,
+          itemKind: CascadeKinds.planDependency,
+          itemId: d.id,
+          payload: payload,
+        );
+      } catch (_) {}
+    }
+  }
+
+  Future<void> pushAllPlanDependencies(String projectId) async {
+    if (gateway == null) return;
+    if ((await _fullLinksForEntity(projectId)).isEmpty) return;
+    for (final d in await db.programmeGanttDao.getDependencies(projectId)) {
+      await pushPlanDependency(d);
+    }
+  }
+
+  Future<void> deletePlanDependency({
+    required String projectId,
+    required String dependencyId,
+  }) =>
+      _tombstone(projectId, CascadeKinds.planDependency, dependencyId);
+
+  /// Pushes a WP's activities and every arrow touching them. The Gantt
+  /// calls this beside its WP re-push after any activity edit.
+  Future<void> pushPlanDetailForWp(String projectId, String wpId) async {
+    if (gateway == null) return;
+    if ((await _fullLinksForEntity(projectId)).isEmpty) return;
+    final acts = await db.programmeGanttDao.getActivitiesForWP(wpId);
+    final ids = {for (final a in acts) a.id};
+    for (final a in acts) {
+      await pushActivity(a);
+    }
+    for (final d in await db.programmeGanttDao.getDependencies(projectId)) {
+      if (ids.contains(d.fromActivityId) || ids.contains(d.toActivityId)) {
+        await pushPlanDependency(d);
+      }
     }
   }
 
@@ -549,6 +698,7 @@ class CascadeService {
   /// to surface a "n items synced" toast.
   Future<int> pullForProgramme(String programmeId) async {
     if (gateway == null) return 0;
+    await _purgeSelfCopies(programmeId);
     final links = await _activeLinksForEntity(programmeId);
     var applied = 0;
     for (final link in links) {
@@ -558,7 +708,15 @@ class CascadeService {
         // and avoids cursor-corruption corner cases. A future slice
         // adds per-link cursors when payload volumes grow.
         final snap = await gateway!.pull(code: link.code);
-        for (final rec in snap.items) {
+        // Activities need their WP row, arrows need their activities, so
+        // apply plan detail after everything else regardless of the
+        // order the channel returns it in.
+        final ordered = [...snap.items]..sort(
+            (a, b) => _applyRank(a.itemKind).compareTo(_applyRank(b.itemKind)));
+        for (final rec in ordered) {
+          // A programme's own rows on the channel (from a build that let
+          // programme-native saves push) are not cascade input.
+          if (rec.sourceEntityId == programmeId) continue;
           switch (rec.itemKind) {
             case CascadeKinds.workPackage:
               await _applyWorkPackage(programmeId, rec);
@@ -596,6 +754,12 @@ class CascadeService {
             case CascadeKinds.teamRole:
               await _applyTeamRole(programmeId, rec);
               applied++;
+            case CascadeKinds.activity:
+              await _applyActivity(programmeId, rec);
+              applied++;
+            case CascadeKinds.planDependency:
+              await _applyPlanDependency(programmeId, rec);
+              applied++;
             default:
               // Unknown kinds — silently skip so a server that's
               // ahead of the client doesn't crash anything.
@@ -611,9 +775,123 @@ class CascadeService {
 
   // ── Internals ───────────────────────────────────────────────────────────
 
+  /// Removes rows the programme once cascaded onto itself (native data
+  /// that round-tripped through its own link code). One cheap sweep per
+  /// pull keeps the registers honest after upgrading.
+  Future<void> _purgeSelfCopies(String programmeId) async {
+    Future<void> sweep(TableInfo table, GeneratedColumn<String> projectId,
+        GeneratedColumn<String> source) async {
+      await (db.delete(table)
+            ..where((_) =>
+                projectId.equals(programmeId) & source.equals(programmeId)))
+          .go();
+    }
+
+    await sweep(db.timelineDependencies, db.timelineDependencies.projectId,
+        db.timelineDependencies.sourceProjectId);
+    await sweep(db.timelineActivities, db.timelineActivities.projectId,
+        db.timelineActivities.sourceProjectId);
+    await sweep(db.timelineWorkPackages, db.timelineWorkPackages.projectId,
+        db.timelineWorkPackages.sourceProjectId);
+    await sweep(db.risks, db.risks.projectId, db.risks.sourceProjectId);
+    await sweep(db.assumptions, db.assumptions.projectId,
+        db.assumptions.sourceProjectId);
+    await sweep(db.issues, db.issues.projectId, db.issues.sourceProjectId);
+    await sweep(db.programDependencies, db.programDependencies.projectId,
+        db.programDependencies.sourceProjectId);
+    await sweep(db.projectActions, db.projectActions.projectId,
+        db.projectActions.sourceProjectId);
+    await sweep(db.decisions, db.decisions.projectId,
+        db.decisions.sourceProjectId);
+  }
+
   Future<List<ProgrammeLink>> _activeLinksForEntity(String id) async {
     final all = await db.programmeLinksDao.getLinksForEntity(id);
     return all.where((l) => l.status == 'active').toList();
+  }
+
+  /// Links a PROJECT pushes over: its own active rows. A programme also
+  /// owns link rows (the other side of each pair), and pushing its native
+  /// data over those would pull it straight back as a copy of itself —
+  /// so push paths use this, never [_activeLinksForEntity].
+  Future<List<ProgrammeLink>> _pushLinksForEntity(String id) async =>
+      (await _activeLinksForEntity(id))
+          .where((l) => l.ownerKind == 'project')
+          .toList();
+
+  Future<List<ProgrammeLink>> _fullLinksForEntity(String id) async =>
+      (await _pushLinksForEntity(id))
+          .where((l) => CascadeShareLevels.isFull(l.shareLevel))
+          .toList();
+
+  /// Pushes [payload] for ([itemKind], [itemId]) to every active link
+  /// the source project is part of, regardless of share level — the
+  /// always-on kinds (reports, charter, people, roles). Best-effort.
+  Future<void> _pushToAllLinks({
+    required String projectId,
+    required String itemKind,
+    required String itemId,
+    required Map<String, dynamic> payload,
+  }) async {
+    if (gateway == null) return;
+    final links = await _pushLinksForEntity(projectId);
+    for (final link in links) {
+      try {
+        await gateway!.push(
+          code: link.code,
+          sourceEntityId: projectId,
+          itemKind: itemKind,
+          itemId: itemId,
+          payload: payload,
+        );
+      } catch (_) {
+        // Best-effort — next save / refresh will retry.
+      }
+    }
+  }
+
+  static int _applyRank(String kind) => switch (kind) {
+        CascadeKinds.activity => 1,
+        CascadeKinds.planDependency => 2,
+        _ => 0,
+      };
+
+  /// The per-link gate for RAID / actions / decisions. Pushes to every
+  /// active link entitled to the row; cascaded copies never re-cascade.
+  Future<void> _pushRegisterItem({
+    required String projectId,
+    required String itemKind,
+    required String itemId,
+    required DateTime? escalatedAt,
+    required String? sourceProjectId,
+    required Map<String, dynamic> payload,
+  }) async {
+    if (gateway == null || sourceProjectId != null) return;
+    final links = await _pushLinksForEntity(projectId);
+    final body = {...payload, 'escalated': escalatedAt != null};
+    for (final link in links) {
+      final entitled =
+          CascadeShareLevels.isFull(link.shareLevel) || escalatedAt != null;
+      try {
+        if (entitled) {
+          await gateway!.push(
+            code: link.code,
+            sourceEntityId: projectId,
+            itemKind: itemKind,
+            itemId: itemId,
+            payload: body,
+          );
+        } else {
+          // Not entitled (any more): withdraw it. This is what makes
+          // "Stop escalating" take the row off an escalated-only
+          // programme while a full-detail one simply keeps it unflagged.
+          await gateway!.delete(
+              code: link.code, itemKind: itemKind, itemId: itemId);
+        }
+      } catch (_) {
+        // Best-effort — next save / refresh will retry.
+      }
+    }
   }
 
   Map<String, dynamic> _workPackagePayload(TimelineWorkPackage wp) {
@@ -677,39 +955,6 @@ class CascadeService {
     return payload;
   }
 
-  /// True when the PM has flagged this row for cascade AND it's not
-  /// itself a cascaded row arriving from upstream (prevents re-cascade
-  /// loops on a programme that's also linked elsewhere).
-  bool _canPush(DateTime? escalatedAt, String? sourceProjectId) {
-    return escalatedAt != null && sourceProjectId == null;
-  }
-
-  /// Pushes [payload] for ([itemKind], [itemId]) to every active link
-  /// the source project is part of. Failures are swallowed per the
-  /// best-effort posture documented on the WP path.
-  Future<void> _pushToAllLinks({
-    required String projectId,
-    required String itemKind,
-    required String itemId,
-    required Map<String, dynamic> payload,
-  }) async {
-    if (gateway == null) return;
-    final links = await _activeLinksForEntity(projectId);
-    for (final link in links) {
-      try {
-        await gateway!.push(
-          code: link.code,
-          sourceEntityId: projectId,
-          itemKind: itemKind,
-          itemId: itemId,
-          payload: payload,
-        );
-      } catch (_) {
-        // Best-effort — next save / refresh will retry.
-      }
-    }
-  }
-
   Map<String, dynamic> _riskPayload(Risk r) => {
         if (r.ref != null) 'ref': r.ref,
         'description': r.description,
@@ -729,6 +974,12 @@ class CascadeService {
           'enterprise_risk_link': r.enterpriseRiskLink,
         if (r.dueDate != null) 'due_date': r.dueDate,
         if (r.statusNote != null) 'status_note': r.statusNote,
+        'steerco': r.steerco,
+        if (r.lastReviewedAt != null) 'last_reviewed_at': r.lastReviewedAt,
+        if (r.nextReviewAt != null) 'next_review_at': r.nextReviewAt,
+        if (r.likelihoodRationale != null)
+          'likelihood_rationale': r.likelihoodRationale,
+        if (r.impactRationale != null) 'impact_rationale': r.impactRationale,
       };
 
   Map<String, dynamic> _assumptionPayload(Assumption a) => {
@@ -737,6 +988,7 @@ class CascadeService {
         'status': a.status,
         if (a.owner != null) 'owner': a.owner,
         if (a.closedAt != null) 'closed_at': a.closedAt,
+        if (a.validatedBy != null) 'validated_by': a.validatedBy,
       };
 
   Map<String, dynamic> _issuePayload(Issue i) => {
@@ -748,6 +1000,9 @@ class CascadeService {
         if (i.dueDate != null) 'due_date': i.dueDate,
         if (i.resolution != null) 'resolution': i.resolution,
         if (i.closedAt != null) 'closed_at': i.closedAt,
+        if (i.title != null) 'title': i.title,
+        if (i.impactStatement != null) 'impact_statement': i.impactStatement,
+        'escalation_required': i.escalationRequired,
       };
 
   Map<String, dynamic> _dependencyPayload(ProgramDependency d) => {
@@ -788,6 +1043,65 @@ class CascadeService {
         if (d.decidedAt != null) 'decided_at': d.decidedAt,
         // plan_activity_id deliberately omitted — project-local id.
       };
+
+  /// Plan detail payload. Months travel raw; when the source project has
+  /// a calendar anchor the start month also travels as an absolute date so
+  /// the programme can re-key onto its own axis. Day-precise start/end
+  /// dates on the activity pass through untouched.
+  Future<Map<String, dynamic>> _activityPayload(TimelineActivity a) async {
+    final header = await db.programmeGanttDao.getHeader(a.projectId);
+    final anchor = _parseDate(header?.month0Date);
+    final startMonthDate = anchor == null || a.startMonth == null
+        ? null
+        : DateTime(anchor.year, anchor.month + a.startMonth!, 1)
+            .toIso8601String();
+    return {
+      'work_package_id': a.workPackageId,
+      'name': a.name,
+      if (a.owner != null) 'owner': a.owner,
+      if (a.ownerId != null) 'owner_id': a.ownerId,
+      'activity_type': a.activityType,
+      if (a.parentActivityId != null) 'parent_activity_id': a.parentActivityId,
+      if (a.startMonth != null) 'start_month': a.startMonth,
+      if (a.endMonth != null) 'end_month': a.endMonth,
+      if (a.likelyMonth != null) 'likely_month': a.likelyMonth,
+      if (a.safeMonth != null) 'safe_month': a.safeMonth,
+      if (a.startDate != null) 'start_date': a.startDate,
+      if (a.endDate != null) 'end_date': a.endDate,
+      'start_month_date': ?startMonthDate,
+      if (a.varianceRaidType != null) 'variance_raid_type': a.varianceRaidType,
+      if (a.varianceRaidId != null) 'variance_raid_id': a.varianceRaidId,
+      if (a.varianceRaidLinksJson != null)
+        'variance_raid_links': a.varianceRaidLinksJson,
+      'status': a.status,
+      'is_critical': a.isCritical,
+      'is_baseline': a.isBaseline,
+      if (a.baselineStart != null) 'baseline_start': a.baselineStart,
+      if (a.baselineEnd != null) 'baseline_end': a.baselineEnd,
+      if (a.cellLabel != null) 'cell_label': a.cellLabel,
+      if (a.notes != null) 'notes': a.notes,
+      if (a.contributors != null) 'contributors': a.contributors,
+      if (a.contributorIds != null) 'contributor_ids': a.contributorIds,
+      'sort_order': a.sortOrder,
+    };
+  }
+
+  Map<String, dynamic> _planDependencyPayload(TimelineDependency d) => {
+        'from_activity_id': d.fromActivityId,
+        'to_activity_id': d.toActivityId,
+        'dependency_type': d.dependencyType,
+        if (d.externalLabel != null) 'external_label': d.externalLabel,
+        if (d.notes != null) 'notes': d.notes,
+      };
+
+  static DateTime? _parseDate(String? iso) {
+    if (iso == null || iso.isEmpty) return null;
+    try {
+      return DateTime.parse(iso);
+    } catch (_) {
+      return null;
+    }
+  }
 
   Map<String, dynamic> _personPayload(
     Person p,
@@ -890,6 +1204,16 @@ class CascadeService {
     // so two projects with colliding WP ids can both cascade up safely.
     final localId = 'cascade:${rec.sourceEntityId}:${rec.itemId}';
     if (rec.deleted) {
+      // Take the WP's cascaded plan detail down with it.
+      final acts = await db.programmeGanttDao.getActivitiesForWP(localId);
+      final ids = {for (final a in acts) a.id};
+      if (ids.isNotEmpty) {
+        await (db.delete(db.timelineDependencies)
+              ..where((t) =>
+                  t.fromActivityId.isIn(ids) | t.toActivityId.isIn(ids)))
+            .go();
+      }
+      await db.programmeGanttDao.deleteActivitiesForWP(localId);
       await (db.delete(db.timelineWorkPackages)
             ..where((t) => t.id.equals(localId)))
           .go();
@@ -923,6 +1247,13 @@ class CascadeService {
   String _raidId(String kind, CascadeRecord rec) =>
       'cascade:$kind:${rec.sourceEntityId}:${rec.itemId}';
 
+  /// The programme-side escalation stamp. Full-share links carry rows the
+  /// PM never flagged, so the payload says which; senders from before the
+  /// share level existed only ever pushed escalated rows, so a missing
+  /// key reads as escalated.
+  DateTime? _escalatedStamp(CascadeRecord rec) =>
+      (rec.payload['escalated'] as bool? ?? true) ? DateTime.now() : null;
+
   Future<void> _applyRisk(String programmeId, CascadeRecord rec) async {
     final id = _raidId(CascadeKinds.risk, rec);
     if (rec.deleted) {
@@ -950,8 +1281,13 @@ class CascadeService {
       enterpriseRiskLink: Value(p['enterprise_risk_link'] as String?),
       dueDate: Value(p['due_date'] as String?),
       statusNote: Value(p['status_note'] as String?),
+      steerco: Value(p['steerco'] as bool? ?? false),
+      lastReviewedAt: Value(p['last_reviewed_at'] as String?),
+      nextReviewAt: Value(p['next_review_at'] as String?),
+      likelihoodRationale: Value(p['likelihood_rationale'] as String?),
+      impactRationale: Value(p['impact_rationale'] as String?),
       source: const Value('cascade'),
-      escalatedAt: Value(DateTime.now()),
+      escalatedAt: Value(_escalatedStamp(rec)),
       sourceProjectId: Value(rec.sourceEntityId),
       updatedAt: Value(DateTime.now()),
     ));
@@ -973,8 +1309,9 @@ class CascadeService {
       status: Value(p['status'] as String? ?? 'open'),
       owner: Value(p['owner'] as String?),
       closedAt: Value(p['closed_at'] as String?),
+      validatedBy: Value(p['validated_by'] as String?),
       source: const Value('cascade'),
-      escalatedAt: Value(DateTime.now()),
+      escalatedAt: Value(_escalatedStamp(rec)),
       sourceProjectId: Value(rec.sourceEntityId),
       updatedAt: Value(DateTime.now()),
     ));
@@ -998,8 +1335,11 @@ class CascadeService {
       dueDate: Value(p['due_date'] as String?),
       resolution: Value(p['resolution'] as String?),
       closedAt: Value(p['closed_at'] as String?),
+      title: Value(p['title'] as String?),
+      impactStatement: Value(p['impact_statement'] as String?),
+      escalationRequired: Value(p['escalation_required'] as bool? ?? false),
       source: const Value('cascade'),
-      escalatedAt: Value(DateTime.now()),
+      escalatedAt: Value(_escalatedStamp(rec)),
       sourceProjectId: Value(rec.sourceEntityId),
       updatedAt: Value(DateTime.now()),
     ));
@@ -1030,7 +1370,7 @@ class CascadeService {
       rationale: Value(p['rationale'] as String?),
       impactStatement: Value(p['impact_statement'] as String?),
       source: const Value('cascade'),
-      escalatedAt: Value(DateTime.now()),
+      escalatedAt: Value(_escalatedStamp(rec)),
       sourceProjectId: Value(rec.sourceEntityId),
       updatedAt: Value(DateTime.now()),
     ));
@@ -1058,7 +1398,7 @@ class CascadeService {
       priority: Value(p['priority'] as String? ?? 'medium'),
       source: const Value('cascade'),
       outcome: Value(p['outcome'] as String?),
-      escalatedAt: Value(DateTime.now()),
+      escalatedAt: Value(_escalatedStamp(rec)),
       sourceProjectId: Value(rec.sourceEntityId),
       updatedAt: Value(DateTime.now()),
     ));
@@ -1088,7 +1428,7 @@ class CascadeService {
       impactStatement: Value(p['impact_statement'] as String?),
       decidedAt: Value(p['decided_at'] as String?),
       source: const Value('cascade'),
-      escalatedAt: Value(DateTime.now()),
+      escalatedAt: Value(_escalatedStamp(rec)),
       sourceProjectId: Value(rec.sourceEntityId),
       updatedAt: Value(DateTime.now()),
     ));
@@ -1173,6 +1513,141 @@ class CascadeService {
   String? _remapPersonId(CascadeRecord rec, String? sourcePersonId) {
     if (sourcePersonId == null) return null;
     return 'cascade:${CascadeKinds.person}:${rec.sourceEntityId}:$sourcePersonId';
+  }
+
+  String _activityLocalId(String sourceEntityId, String activityId) =>
+      'cascade:${CascadeKinds.activity}:$sourceEntityId:$activityId';
+
+  /// Re-keys a source RAID id (risk/assumption/issue/dependency/decision)
+  /// onto the cascaded row's synthetic id so plan ↔ register links keep
+  /// resolving on the programme side.
+  String _remapRegisterId(String sourceEntityId, String kind, String id) =>
+      'cascade:$kind:$sourceEntityId:$id';
+
+  /// Programme-side copy of a linked project's activity or task. Months
+  /// are re-keyed onto the programme's own axis when both sides carry a
+  /// calendar anchor (the offset between the two anchors is applied to
+  /// every month column); otherwise the raw indices are kept, assuming
+  /// aligned axes — the same rule the WP swimlane bar uses.
+  Future<void> _applyActivity(String programmeId, CascadeRecord rec) async {
+    final id = _activityLocalId(rec.sourceEntityId, rec.itemId);
+    if (rec.deleted) {
+      await (db.delete(db.timelineDependencies)
+            ..where((t) =>
+                t.fromActivityId.equals(id) | t.toActivityId.equals(id)))
+          .go();
+      await db.programmeGanttDao.deleteActivity(id);
+      return;
+    }
+    final p = rec.payload;
+    final wpSource = p['work_package_id'] as String?;
+    if (wpSource == null) return;
+    final wpLocal = 'cascade:${rec.sourceEntityId}:$wpSource';
+
+    final rawStart = p['start_month'] as int?;
+    final header = await db.programmeGanttDao.getHeader(programmeId);
+    final offset = cascadeMonthOffset(
+      rawStartMonth: rawStart,
+      startMonthDate: _parseDate(p['start_month_date'] as String?),
+      programmeAnchor: _parseDate(header?.month0Date),
+    );
+    int? shift(int? m) => m == null ? null : m + offset;
+
+    String? remapRaid(String? type, String? rid) => type == null || rid == null
+        ? null
+        : _remapRegisterId(rec.sourceEntityId, type, rid);
+    final linksJson = p['variance_raid_links'] as String?;
+    String? remappedLinks;
+    if (linksJson != null) {
+      try {
+        final list = (jsonDecode(linksJson) as List)
+            .cast<Map<String, dynamic>>()
+            .map((m) => {
+                  'type': m['type'],
+                  'id': remapRaid(m['type'] as String?, m['id'] as String?),
+                })
+            .toList();
+        remappedLinks = jsonEncode(list);
+      } catch (_) {
+        remappedLinks = null;
+      }
+    }
+    String? remapIds(String? json) {
+      if (json == null) return null;
+      try {
+        final list = (jsonDecode(json) as List)
+            .map((e) => _remapPersonId(rec, e as String?))
+            .toList();
+        return jsonEncode(list);
+      } catch (_) {
+        return null;
+      }
+    }
+
+    final parentSource = p['parent_activity_id'] as String?;
+    await db.programmeGanttDao.upsertActivity(TimelineActivitiesCompanion(
+      id: Value(id),
+      workPackageId: Value(wpLocal),
+      projectId: Value(programmeId),
+      name: Value(p['name'] as String? ?? '(unnamed)'),
+      owner: Value(p['owner'] as String?),
+      ownerId: Value(_remapPersonId(rec, p['owner_id'] as String?)),
+      activityType: Value(p['activity_type'] as String? ?? 'activity'),
+      parentActivityId: Value(parentSource == null
+          ? null
+          : _activityLocalId(rec.sourceEntityId, parentSource)),
+      startMonth: Value(shift(rawStart)),
+      endMonth: Value(shift(p['end_month'] as int?)),
+      likelyMonth: Value(shift(p['likely_month'] as int?)),
+      safeMonth: Value(shift(p['safe_month'] as int?)),
+      startDate: Value(p['start_date'] as String?),
+      endDate: Value(p['end_date'] as String?),
+      varianceRaidType: Value(p['variance_raid_type'] as String?),
+      varianceRaidId: Value(remapRaid(p['variance_raid_type'] as String?,
+          p['variance_raid_id'] as String?)),
+      varianceRaidLinksJson: Value(remappedLinks),
+      status: Value(p['status'] as String? ?? 'not_started'),
+      isCritical: Value(p['is_critical'] as bool? ?? false),
+      isBaseline: Value(p['is_baseline'] as bool? ?? false),
+      baselineStart: Value(shift(p['baseline_start'] as int?)),
+      baselineEnd: Value(shift(p['baseline_end'] as int?)),
+      cellLabel: Value(p['cell_label'] as String?),
+      notes: Value(p['notes'] as String?),
+      contributors: Value(p['contributors'] as String?),
+      contributorIds: Value(remapIds(p['contributor_ids'] as String?)),
+      sortOrder: Value(p['sort_order'] as int? ?? 0),
+      sourceProjectId: Value(rec.sourceEntityId),
+      updatedAt: Value(DateTime.now()),
+    ));
+  }
+
+  /// Programme-side copy of a Gantt arrow. Endpoints are re-keyed to the
+  /// cascaded activity ids; a register marker in the notes (a RAID
+  /// dependency or decision drawn onto the plan) is re-keyed the same
+  /// way so the programme's plan-link code still finds its RAID row.
+  Future<void> _applyPlanDependency(
+      String programmeId, CascadeRecord rec) async {
+    final id =
+        'cascade:${CascadeKinds.planDependency}:${rec.sourceEntityId}:${rec.itemId}';
+    if (rec.deleted) {
+      await db.programmeGanttDao.deleteDependency(id);
+      return;
+    }
+    final p = rec.payload;
+    final from = p['from_activity_id'] as String? ?? '';
+    final to = p['to_activity_id'] as String?;
+    if (to == null || to.isEmpty) return;
+    await db.programmeGanttDao.upsertDependency(TimelineDependenciesCompanion(
+      id: Value(id),
+      projectId: Value(programmeId),
+      fromActivityId:
+          Value(from.isEmpty ? '' : _activityLocalId(rec.sourceEntityId, from)),
+      toActivityId: Value(_activityLocalId(rec.sourceEntityId, to)),
+      dependencyType: Value(p['dependency_type'] as String? ?? 'finish_to_start'),
+      externalLabel: Value(p['external_label'] as String?),
+      notes: Value(remapPlanLinkNote(rec.sourceEntityId, p['notes'] as String?)),
+      sourceProjectId: Value(rec.sourceEntityId),
+    ));
   }
 
   Future<void> _applyStakeholderRole(

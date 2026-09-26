@@ -10,6 +10,8 @@ import '../../core/raid/raid_conversion_service.dart' show RaidKind;
 import '../../core/raid/raid_lifecycle.dart';
 import '../../core/raid/risk_rating.dart';
 import '../../shared/widgets/closed_toggle.dart';
+import '../../core/programme/source_filter.dart';
+import '../../shared/widgets/source_filter_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../providers/project_provider.dart';
 import '../../shared/theme/keel_colors.dart';
@@ -326,6 +328,9 @@ class _RaidViewState extends State<RaidView> with SingleTickerProviderStateMixin
   // after closing; this brings them back.
   bool _showClosed = false;
   String? _prefsProjectId;
+  // Programme-side source filter (which linked project, escalated only).
+  // Session-scoped: it's a lens, not a setting.
+  SourceFilter _filter = SourceFilter.all;
 
   Future<void> _loadPrefs(String projectId) async {
     final prefs = await SharedPreferences.getInstance();
@@ -399,6 +404,12 @@ class _RaidViewState extends State<RaidView> with SingleTickerProviderStateMixin
           ),
         ),
 
+        // Programme-only: which linked project / escalated only.
+        SourceFilterBar(
+          filter: _filter,
+          onChanged: (f) => setState(() => _filter = f),
+        ),
+
         // Tab bar
         Container(
           margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
@@ -429,15 +440,19 @@ class _RaidViewState extends State<RaidView> with SingleTickerProviderStateMixin
             children: [
               _RisksTab(projectId: projectId, db: db,
                   showClosed: _showClosed, onShowClosed: _toggleShowClosed,
+                  filter: _filter,
                   triggerNew: widget.initialTab == 0 && widget.triggerNew),
               _AssumptionsTab(projectId: projectId, db: db,
                   showClosed: _showClosed, onShowClosed: _toggleShowClosed,
+                  filter: _filter,
                   triggerNew: widget.initialTab == 1 && widget.triggerNew),
               _IssuesTab(projectId: projectId, db: db,
                   showClosed: _showClosed, onShowClosed: _toggleShowClosed,
+                  filter: _filter,
                   triggerNew: widget.initialTab == 2 && widget.triggerNew),
               _DependenciesTab(projectId: projectId, db: db,
                   showClosed: _showClosed, onShowClosed: _toggleShowClosed,
+                  filter: _filter,
                   triggerNew: widget.initialTab == 3 && widget.triggerNew),
             ],
           ),
@@ -566,12 +581,14 @@ class _RisksTab extends StatefulWidget {
   final bool triggerNew;
   final bool showClosed;
   final VoidCallback onShowClosed;
+  final SourceFilter filter;
 
   const _RisksTab({
     required this.projectId,
     required this.db,
     required this.showClosed,
     required this.onShowClosed,
+    this.filter = SourceFilter.all,
     this.triggerNew = false,
   });
 
@@ -653,7 +670,9 @@ class _RisksTabState extends State<_RisksTab> {
                           updatedAt: (x) => x.updatedAt,
                           showClosed: widget.showClosed,
                         );
-                        final items = part.visible;
+                        final items = widget.filter.apply(part.visible,
+                            sourceProjectId: (x) => x.sourceProjectId,
+                            escalatedAt: (x) => x.escalatedAt);
                         if (items.isEmpty && part.hidden.isNotEmpty) {
                           return HiddenClosedNotice(
                               hiddenCount: part.hidden.length,
@@ -791,8 +810,7 @@ class _RiskRow extends StatelessWidget {
                 runSpacing: 2,
                 children: [
                   SourceBadge(source: risk.source),
-                  if (risk.escalatedAt != null &&
-                      !_isCascaded(risk.sourceProjectId))
+                  if (risk.escalatedAt != null)
                     const _EscalatedBadge(),
                   if (_isCascaded(risk.sourceProjectId))
                     _CascadedBadge(sourceProjectId: risk.sourceProjectId),
@@ -816,7 +834,7 @@ class _RiskRow extends StatelessWidget {
                             builder: (_) => RiskFormDialog(
                                 projectId: projectId, db: db, risk: risk),
                           );
-                          if (context.mounted && risk.escalatedAt != null) {
+                          if (context.mounted) {
                             final fresh =
                                 await db.raidDao.getRiskById(risk.id);
                             if (fresh != null && context.mounted) {
@@ -824,7 +842,7 @@ class _RiskRow extends StatelessWidget {
                             }
                           }
                         } else if (val == 'delete') {
-                          if (risk.escalatedAt != null && context.mounted) {
+                          if (context.mounted) {
                             await _cascadeFor(context, db).tombstoneRaidItem(
                               projectId: projectId,
                               itemKind: CascadeKinds.risk,
@@ -841,15 +859,13 @@ class _RiskRow extends StatelessWidget {
                             await _cascadeFor(context, db).pushRisk(fresh);
                           }
                         } else if (val == 'unescalate') {
-                          if (context.mounted) {
-                            await _cascadeFor(context, db).tombstoneRaidItem(
-                              projectId: projectId,
-                              itemKind: CascadeKinds.risk,
-                              itemId: risk.id,
-                            );
+                          await db.raidDao.setRiskEscalated(risk.id, false);
+                          // Re-push with the flag off: full-detail links keep
+                          // the row unflagged, escalated-only links get a tombstone.
+                          final fresh = await db.raidDao.getRiskById(risk.id);
+                          if (fresh != null && context.mounted) {
+                            await _cascadeFor(context, db).pushRisk(fresh);
                           }
-                          await db.raidDao
-                              .setRiskEscalated(risk.id, false);
                         }
                       },
                       itemBuilder: (_) => [
@@ -886,12 +902,14 @@ class _AssumptionsTab extends StatefulWidget {
   final bool triggerNew;
   final bool showClosed;
   final VoidCallback onShowClosed;
+  final SourceFilter filter;
 
   const _AssumptionsTab({
     required this.projectId,
     required this.db,
     required this.showClosed,
     required this.onShowClosed,
+    this.filter = SourceFilter.all,
     this.triggerNew = false,
   });
 
@@ -963,7 +981,9 @@ class _AssumptionsTabState extends State<_AssumptionsTab> {
                           updatedAt: (x) => x.updatedAt,
                           showClosed: widget.showClosed,
                         );
-                        final items = part.visible;
+                        final items = widget.filter.apply(part.visible,
+                            sourceProjectId: (x) => x.sourceProjectId,
+                            escalatedAt: (x) => x.escalatedAt);
                         if (items.isEmpty && part.hidden.isNotEmpty) {
                           return HiddenClosedNotice(
                               hiddenCount: part.hidden.length,
@@ -1046,8 +1066,7 @@ class _AssumptionRow extends StatelessWidget {
                 runSpacing: 2,
                 children: [
                   SourceBadge(source: assumption.source),
-                  if (assumption.escalatedAt != null &&
-                      !_isCascaded(assumption.sourceProjectId))
+                  if (assumption.escalatedAt != null)
                     const _EscalatedBadge(),
                   if (_isCascaded(assumption.sourceProjectId))
                     _CascadedBadge(sourceProjectId: assumption.sourceProjectId),
@@ -1071,8 +1090,7 @@ class _AssumptionRow extends StatelessWidget {
                                 db: db,
                                 assumption: assumption),
                           );
-                          if (context.mounted &&
-                              assumption.escalatedAt != null) {
+                          if (context.mounted) {
                             final fresh = await db.raidDao
                                 .getAssumptionById(assumption.id);
                             if (fresh != null && context.mounted) {
@@ -1081,8 +1099,7 @@ class _AssumptionRow extends StatelessWidget {
                             }
                           }
                         } else if (val == 'delete') {
-                          if (assumption.escalatedAt != null &&
-                              context.mounted) {
+                          if (context.mounted) {
                             await _cascadeFor(context, db).tombstoneRaidItem(
                               projectId: projectId,
                               itemKind: CascadeKinds.assumption,
@@ -1100,15 +1117,13 @@ class _AssumptionRow extends StatelessWidget {
                                 .pushAssumption(fresh);
                           }
                         } else if (val == 'unescalate') {
-                          if (context.mounted) {
-                            await _cascadeFor(context, db).tombstoneRaidItem(
-                              projectId: projectId,
-                              itemKind: CascadeKinds.assumption,
-                              itemId: assumption.id,
-                            );
+                          await db.raidDao.setAssumptionEscalated(assumption.id, false);
+                          // Re-push with the flag off: full-detail links keep
+                          // the row unflagged, escalated-only links get a tombstone.
+                          final fresh = await db.raidDao.getAssumptionById(assumption.id);
+                          if (fresh != null && context.mounted) {
+                            await _cascadeFor(context, db).pushAssumption(fresh);
                           }
-                          await db.raidDao
-                              .setAssumptionEscalated(assumption.id, false);
                         }
                       },
                       itemBuilder: (_) => [
@@ -1145,12 +1160,14 @@ class _IssuesTab extends StatefulWidget {
   final bool triggerNew;
   final bool showClosed;
   final VoidCallback onShowClosed;
+  final SourceFilter filter;
 
   const _IssuesTab({
     required this.projectId,
     required this.db,
     required this.showClosed,
     required this.onShowClosed,
+    this.filter = SourceFilter.all,
     this.triggerNew = false,
   });
 
@@ -1227,7 +1244,9 @@ class _IssuesTabState extends State<_IssuesTab> {
                           updatedAt: (x) => x.updatedAt,
                           showClosed: widget.showClosed,
                         );
-                        final items = part.visible;
+                        final items = widget.filter.apply(part.visible,
+                            sourceProjectId: (x) => x.sourceProjectId,
+                            escalatedAt: (x) => x.escalatedAt);
                         if (items.isEmpty && part.hidden.isNotEmpty) {
                           return HiddenClosedNotice(
                               hiddenCount: part.hidden.length,
@@ -1418,8 +1437,7 @@ class _IssueRow extends StatelessWidget {
                 runSpacing: 2,
                 children: [
                   SourceBadge(source: issue.source),
-                  if (issue.escalatedAt != null &&
-                      !_isCascaded(issue.sourceProjectId))
+                  if (issue.escalatedAt != null)
                     const _EscalatedBadge(),
                   if (_isCascaded(issue.sourceProjectId))
                     _CascadedBadge(sourceProjectId: issue.sourceProjectId),
@@ -1443,8 +1461,7 @@ class _IssueRow extends StatelessWidget {
                                 db: db,
                                 issue: issue),
                           );
-                          if (context.mounted &&
-                              issue.escalatedAt != null) {
+                          if (context.mounted) {
                             final fresh =
                                 await db.raidDao.getIssueById(issue.id);
                             if (fresh != null && context.mounted) {
@@ -1453,8 +1470,7 @@ class _IssueRow extends StatelessWidget {
                             }
                           }
                         } else if (val == 'delete') {
-                          if (issue.escalatedAt != null &&
-                              context.mounted) {
+                          if (context.mounted) {
                             await _cascadeFor(context, db).tombstoneRaidItem(
                               projectId: projectId,
                               itemKind: CascadeKinds.issue,
@@ -1471,15 +1487,13 @@ class _IssueRow extends StatelessWidget {
                             await _cascadeFor(context, db).pushIssue(fresh);
                           }
                         } else if (val == 'unescalate') {
-                          if (context.mounted) {
-                            await _cascadeFor(context, db).tombstoneRaidItem(
-                              projectId: projectId,
-                              itemKind: CascadeKinds.issue,
-                              itemId: issue.id,
-                            );
+                          await db.raidDao.setIssueEscalated(issue.id, false);
+                          // Re-push with the flag off: full-detail links keep
+                          // the row unflagged, escalated-only links get a tombstone.
+                          final fresh = await db.raidDao.getIssueById(issue.id);
+                          if (fresh != null && context.mounted) {
+                            await _cascadeFor(context, db).pushIssue(fresh);
                           }
-                          await db.raidDao
-                              .setIssueEscalated(issue.id, false);
                         }
                       },
                       itemBuilder: (_) => [
@@ -1516,12 +1530,14 @@ class _DependenciesTab extends StatefulWidget {
   final bool triggerNew;
   final bool showClosed;
   final VoidCallback onShowClosed;
+  final SourceFilter filter;
 
   const _DependenciesTab({
     required this.projectId,
     required this.db,
     required this.showClosed,
     required this.onShowClosed,
+    this.filter = SourceFilter.all,
     this.triggerNew = false,
   });
 
@@ -1628,7 +1644,9 @@ class _DependenciesTabState extends State<_DependenciesTab> {
                           updatedAt: (x) => x.updatedAt,
                           showClosed: widget.showClosed,
                         );
-                        final items = part.visible;
+                        final items = widget.filter.apply(part.visible,
+                            sourceProjectId: (x) => x.sourceProjectId,
+                            escalatedAt: (x) => x.escalatedAt);
                         if (items.isEmpty && part.hidden.isNotEmpty) {
                           return HiddenClosedNotice(
                               hiddenCount: part.hidden.length,
@@ -1774,8 +1792,7 @@ class _DependencyRow extends StatelessWidget {
                 runSpacing: 2,
                 children: [
                   SourceBadge(source: dep.source),
-                  if (dep.escalatedAt != null &&
-                      !_isCascaded(dep.sourceProjectId))
+                  if (dep.escalatedAt != null)
                     const _EscalatedBadge(),
                   if (_isCascaded(dep.sourceProjectId))
                     _CascadedBadge(sourceProjectId: dep.sourceProjectId),
@@ -1799,7 +1816,7 @@ class _DependencyRow extends StatelessWidget {
                                 db: db,
                                 dependency: dep),
                           );
-                          if (context.mounted && dep.escalatedAt != null) {
+                          if (context.mounted) {
                             final fresh =
                                 await db.raidDao.getDependencyById(dep.id);
                             if (fresh != null && context.mounted) {
@@ -1808,7 +1825,7 @@ class _DependencyRow extends StatelessWidget {
                             }
                           }
                         } else if (val == 'delete') {
-                          if (dep.escalatedAt != null && context.mounted) {
+                          if (context.mounted) {
                             await _cascadeFor(context, db).tombstoneRaidItem(
                               projectId: projectId,
                               itemKind: CascadeKinds.dependency,
@@ -1828,15 +1845,13 @@ class _DependencyRow extends StatelessWidget {
                                 .pushDependency(fresh);
                           }
                         } else if (val == 'unescalate') {
-                          if (context.mounted) {
-                            await _cascadeFor(context, db).tombstoneRaidItem(
-                              projectId: projectId,
-                              itemKind: CascadeKinds.dependency,
-                              itemId: dep.id,
-                            );
+                          await db.raidDao.setDependencyEscalated(dep.id, false);
+                          // Re-push with the flag off: full-detail links keep
+                          // the row unflagged, escalated-only links get a tombstone.
+                          final fresh = await db.raidDao.getDependencyById(dep.id);
+                          if (fresh != null && context.mounted) {
+                            await _cascadeFor(context, db).pushDependency(fresh);
                           }
-                          await db.raidDao
-                              .setDependencyEscalated(dep.id, false);
                         }
                       },
                       itemBuilder: (_) => [

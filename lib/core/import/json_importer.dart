@@ -770,6 +770,7 @@ class JsonImporter {
           title: Value(headerData['title'] as String?),
           subtitle: Value(headerData['subtitle'] as String?),
           hardDeadline: Value(headerData['hard_deadline'] as String?),
+          hardDeadlineDate: Value(headerData['hard_deadline_date'] as String?),
           inScope: Value(headerData['in_scope'] as String?),
           outOfScope: Value(headerData['out_of_scope'] as String?),
           monthLabels: Value(headerData['month_labels'] as String?),
@@ -831,6 +832,7 @@ class JsonImporter {
           contributors: Value(am['contributors'] as String?),
           contributorIds: Value(am['contributor_ids'] as String?),
           sortOrder: Value(am['sort_order'] as int? ?? 0),
+          sourceProjectId: Value(am['source_project_id'] as String?),
         ));
       }
       for (final d in (timelineData['dependencies'] as List? ?? [])) {
@@ -844,6 +846,7 @@ class JsonImporter {
               Value(dm['dependency_type'] as String? ?? 'finish_to_start'),
           externalLabel: Value(dm['external_label'] as String?),
           notes: Value(dm['notes'] as String?),
+          sourceProjectId: Value(dm['source_project_id'] as String?),
         ));
       }
       for (final d in (timelineData['integration_domains'] as List? ?? [])) {
@@ -949,6 +952,7 @@ class JsonImporter {
               linkSecret: Value(lm['link_secret'] as String?),
               status: Value(lm['status'] as String? ?? 'pending_remote'),
               generatedHere: Value(lm['generated_here'] as bool? ?? false),
+              shareLevel: Value(lm['share_level'] as String? ?? 'escalated'),
             ),
           );
     }
