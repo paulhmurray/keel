@@ -11,6 +11,10 @@ class StatusNarrativePanel extends StatefulWidget {
   final ProgrammeStatusData data;
   final SettingsProvider settings;
   final String projectName;
+  /// Programme-kind entity → "programme" wording; otherwise "project".
+  /// A project's narrative may still mention the programme it reports
+  /// into, but never call the project itself a programme.
+  final bool isProgramme;
   final ValueChanged<String?> onNarrativeChanged;
   final String? initialNarrative;
 
@@ -21,6 +25,7 @@ class StatusNarrativePanel extends StatefulWidget {
     required this.projectName,
     required this.onNarrativeChanged,
     this.initialNarrative,
+    this.isProgramme = false,
   });
 
   @override
@@ -56,10 +61,26 @@ class _StatusNarrativePanelState extends State<StatusNarrativePanel> {
       final client =
           LLMClientFactory.fromSettings(widget.settings.settings);
       final prompt = _buildPrompt();
+      final entity = widget.isProgramme ? 'programme' : 'project';
       final result = await client.complete(
-        systemPrompt: 'You are an expert programme manager writing a weekly '
-            'status narrative for a steering committee. Be concise, factual, '
-            'and professional. Write in third person. 150-250 words.',
+        systemPrompt: 'You are an expert ${widget.isProgramme ? 'programme' : 'project'} '
+            'manager writing a weekly status narrative for a steering '
+            'committee about a $entity. Be concise, factual, and '
+            'professional. Write in third person. 150-250 words. '
+            'Refer to it as "the $entity" throughout'
+            '${widget.isProgramme ? '' : '; use the word "programme" only for '
+                'the wider programme this project reports into, if the '
+                'context names one'}. Section headings, if any, must say '
+            '"$entity", e.g. "Overall ${entity[0].toUpperCase()}${entity.substring(1)} Health". '
+            'The reader cannot open Keel and has no access to the risk, '
+            'decision or action registers, so never rely on a reference code '
+            'alone: say what the item is in plain words — what it is, who '
+            'owns it, when it is due — and put the code in brackets after, '
+            'e.g. "the decision on where payments originate during '
+            'transition, needed from the CFO by 3 October (DC14)". A risk '
+            'marked [ESCALATED] has been raised above the $entity for '
+            'attention; say it has been escalated without naming a forum '
+            'unless the context does.',
         userMessage: prompt,
         maxTokens: 500,
       );
@@ -76,7 +97,8 @@ class _StatusNarrativePanelState extends State<StatusNarrativePanel> {
   String _buildPrompt() {
     final d = widget.data;
     final sb = StringBuffer();
-    sb.writeln('Programme: ${widget.projectName}');
+    final entity = widget.isProgramme ? 'programme' : 'project';
+    sb.writeln('${widget.isProgramme ? 'Programme' : 'Project'}: ${widget.projectName}');
     sb.writeln('Overall RAG: ${d.programmeRag.label}');
     sb.writeln('Trend: ${d.programmeTrend.label}');
     sb.writeln();
@@ -97,7 +119,7 @@ class _StatusNarrativePanelState extends State<StatusNarrativePanel> {
       for (final r in d.topRisks) {
         final soWhat = riskSoWhat(r);
         sb.writeln(
-            '  ${r.ref ?? ''}${r.steerco ? ' [STEERCO]' : ''} '
+            '  ${r.ref ?? ''}${r.steerco ? ' [ESCALATED]' : ''} '
             '${r.title ?? r.description} '
             '[${ratingSummary(r.likelihood, r.impact)}]'
             '${soWhat != null ? ' — $soWhat' : ''}');
@@ -117,7 +139,7 @@ class _StatusNarrativePanelState extends State<StatusNarrativePanel> {
     sb.writeln('Open risks: ${d.openRisksCount}');
     sb.writeln();
     sb.writeln(
-        'Write a status narrative covering: overall programme health, '
+        'Write a status narrative covering: overall $entity health, '
         'key highlights, key concerns, and next week\'s focus.');
     return sb.toString();
   }

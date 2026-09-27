@@ -34,6 +34,12 @@ class CascadeKinds {
   // parent_activity_id; plan dependencies are the Gantt arrows.
   static const activity = 'activity';
   static const planDependency = 'plan_dependency';
+  // Finance (full-share links only). Budget + snapshot payloads embed
+  // their lines so a header and its cells land atomically.
+  static const costCategory = 'cost_category';
+  static const budget = 'budget';
+  static const forecastSnapshot = 'forecast_snapshot';
+  static const actual = 'actual';
 }
 
 /// How much of a project a link carries. Stored on ProgrammeLinks.
@@ -597,6 +603,167 @@ class CascadeService {
     for (final d in await db.programmeGanttDao.getDependencies(projectId)) {
       await drop(CascadeKinds.planDependency, d.id);
     }
+    for (final c in await db.financeDao.getCategories(projectId)) {
+      await drop(CascadeKinds.costCategory, c.id);
+    }
+    for (final b in await db.financeDao.getBudgets(projectId)) {
+      await drop(CascadeKinds.budget, b.id);
+    }
+    for (final sn in await db.financeDao.getSnapshots(projectId)) {
+      await drop(CascadeKinds.forecastSnapshot, sn.id);
+    }
+    for (final a in await db.financeDao.getActuals(projectId)) {
+      await drop(CascadeKinds.actual, a.id);
+    }
+  }
+
+  // ── Finance (full-share links only) ─────────────────────────────────────
+  //
+  // Projects own the detail; the programme holds read-only copies. Only
+  // the APPROVED budget and SUBMITTED snapshots leave the project —
+  // drafts and working forecasts are the PM's own. The audit log never
+  // cascades.
+
+  Future<void> pushCostCategory(CostCategory c) async {
+    if (gateway == null || c.sourceProjectId != null) return;
+    await _pushFinance(c.projectId, CascadeKinds.costCategory, c.id, {
+      'name': c.name,
+      'sort_order': c.sortOrder,
+    });
+  }
+
+  Future<void> deleteCostCategory({
+    required String projectId,
+    required String categoryId,
+  }) =>
+      _tombstone(projectId, CascadeKinds.costCategory, categoryId);
+
+  /// Pushes [budgetId] with its lines when it is the approved budget;
+  /// anything else is a no-op (drafts stay home; the programme drops
+  /// superseded copies itself when the new approved one arrives).
+  Future<void> pushBudget(String budgetId) async {
+    if (gateway == null) return;
+    final b = await db.financeDao.getBudgetById(budgetId);
+    if (b == null || b.sourceProjectId != null || b.status != 'approved') {
+      return;
+    }
+    final lines = await db.financeDao.getLines(b.id);
+    // The channel must hold ONE budget per project: tombstone the ones
+    // this approval superseded so a later replay can't resurrect them.
+    for (final other in await db.financeDao.getBudgets(b.projectId)) {
+      if (other.id != b.id && other.status != 'draft') {
+        await _tombstone(b.projectId, CascadeKinds.budget, other.id);
+      }
+    }
+    await _pushFinance(b.projectId, CascadeKinds.budget, b.id, {
+      'name': b.name,
+      'status': b.status,
+      if (b.approvedBy != null) 'approved_by': b.approvedBy,
+      if (b.approvedAt != null) 'approved_at': b.approvedAt!.toIso8601String(),
+      'currency': b.currency,
+      if (b.fundingSource != null) 'funding_source': b.fundingSource,
+      if (b.notes != null) 'notes': b.notes,
+      'variance_tolerance_bp': b.varianceToleranceBp,
+      'lines': [for (final l in lines) _moneyLine(l.id, l.costCategoryId,
+          l.workstreamId, l.financialYear, l.amountMinor, l.notes)],
+    });
+  }
+
+  Future<void> deleteBudget({
+    required String projectId,
+    required String budgetId,
+  }) =>
+      _tombstone(projectId, CascadeKinds.budget, budgetId);
+
+  /// Pushes a SUBMITTED snapshot with its lines; working ones are a no-op.
+  /// Reopening must tombstone explicitly ([deleteForecastSnapshot]).
+  Future<void> pushForecastSnapshot(String snapshotId) async {
+    if (gateway == null) return;
+    final sn = await db.financeDao.getSnapshotById(snapshotId);
+    if (sn == null || sn.sourceProjectId != null || sn.status != 'submitted') {
+      return;
+    }
+    final lines = await db.financeDao.getForecastLines(sn.id);
+    await _pushFinance(sn.projectId, CascadeKinds.forecastSnapshot, sn.id, {
+      'period': sn.period,
+      'status': sn.status,
+      if (sn.submittedAt != null)
+        'submitted_at': sn.submittedAt!.toIso8601String(),
+      'lines': [for (final l in lines) _moneyLine(l.id, l.costCategoryId,
+          l.workstreamId, l.financialYear, l.amountMinor, l.notes)],
+    });
+  }
+
+  Future<void> deleteForecastSnapshot({
+    required String projectId,
+    required String snapshotId,
+  }) =>
+      _tombstone(projectId, CascadeKinds.forecastSnapshot, snapshotId);
+
+  Future<void> pushActual(ActualLine a) async {
+    if (gateway == null || a.sourceProjectId != null) return;
+    await _pushFinance(a.projectId, CascadeKinds.actual, a.id, {
+      'period': a.period,
+      'cost_category_id': a.costCategoryId,
+      if (a.workstreamId != null) 'workstream_id': a.workstreamId,
+      'amount_minor': a.amountMinor,
+      'source': a.source,
+      if (a.sourceRef != null) 'source_ref': a.sourceRef,
+      if (a.enteredBy != null) 'entered_by': a.enteredBy,
+      if (a.notes != null) 'notes': a.notes,
+    });
+  }
+
+  Future<void> deleteActual({
+    required String projectId,
+    required String actualId,
+  }) =>
+      _tombstone(projectId, CascadeKinds.actual, actualId);
+
+  /// Replays everything finance a full-share link is entitled to:
+  /// categories, the approved budget, submitted snapshots, actuals.
+  Future<void> pushAllFinance(String projectId) async {
+    if (gateway == null) return;
+    if ((await _fullLinksForEntity(projectId)).isEmpty) return;
+    for (final c in await db.financeDao.getCategories(projectId)) {
+      await pushCostCategory(c);
+    }
+    final approved = await db.financeDao.getApprovedBudget(projectId);
+    if (approved != null) await pushBudget(approved.id);
+    for (final sn in await db.financeDao.getSnapshots(projectId)) {
+      if (sn.status == 'submitted') await pushForecastSnapshot(sn.id);
+    }
+    for (final a in await db.financeDao.getActuals(projectId)) {
+      await pushActual(a);
+    }
+  }
+
+  Map<String, dynamic> _moneyLine(String id, String categoryId,
+          String? workstreamId, String financialYear, int amountMinor,
+          String? notes) =>
+      {
+        'id': id,
+        'cost_category_id': categoryId,
+        if (workstreamId != null) 'workstream_id': workstreamId,
+        'financial_year': financialYear,
+        'amount_minor': amountMinor,
+        if (notes != null) 'notes': notes,
+      };
+
+  Future<void> _pushFinance(String projectId, String kind, String id,
+      Map<String, dynamic> payload) async {
+    final links = await _fullLinksForEntity(projectId);
+    for (final link in links) {
+      try {
+        await gateway!.push(
+          code: link.code,
+          sourceEntityId: projectId,
+          itemKind: kind,
+          itemId: id,
+          payload: payload,
+        );
+      } catch (_) {}
+    }
   }
 
   // ── Plan detail (full-share links only) ─────────────────────────────────
@@ -760,6 +927,18 @@ class CascadeService {
             case CascadeKinds.planDependency:
               await _applyPlanDependency(programmeId, rec);
               applied++;
+            case CascadeKinds.costCategory:
+              await _applyCostCategory(programmeId, rec);
+              applied++;
+            case CascadeKinds.budget:
+              await _applyBudget(programmeId, rec);
+              applied++;
+            case CascadeKinds.forecastSnapshot:
+              await _applyForecastSnapshot(programmeId, rec);
+              applied++;
+            case CascadeKinds.actual:
+              await _applyActual(programmeId, rec);
+              applied++;
             default:
               // Unknown kinds — silently skip so a server that's
               // ahead of the client doesn't crash anything.
@@ -803,6 +982,18 @@ class CascadeService {
         db.projectActions.sourceProjectId);
     await sweep(db.decisions, db.decisions.projectId,
         db.decisions.sourceProjectId);
+    await sweep(db.budgetLines, db.budgetLines.projectId,
+        db.budgetLines.sourceProjectId);
+    await sweep(db.forecastLines, db.forecastLines.projectId,
+        db.forecastLines.sourceProjectId);
+    await sweep(db.projectBudgets, db.projectBudgets.projectId,
+        db.projectBudgets.sourceProjectId);
+    await sweep(db.forecastSnapshots, db.forecastSnapshots.projectId,
+        db.forecastSnapshots.sourceProjectId);
+    await sweep(db.actualLines, db.actualLines.projectId,
+        db.actualLines.sourceProjectId);
+    await sweep(db.costCategories, db.costCategories.projectId,
+        db.costCategories.sourceProjectId);
   }
 
   Future<List<ProgrammeLink>> _activeLinksForEntity(String id) async {
@@ -853,6 +1044,12 @@ class CascadeService {
   static int _applyRank(String kind) => switch (kind) {
         CascadeKinds.activity => 1,
         CascadeKinds.planDependency => 2,
+        // Finance lines reference categories (and WPs), so categories go
+        // first and the money after everything structural.
+        CascadeKinds.costCategory => 3,
+        CascadeKinds.budget => 4,
+        CascadeKinds.forecastSnapshot => 4,
+        CascadeKinds.actual => 4,
         _ => 0,
       };
 
@@ -883,7 +1080,7 @@ class CascadeService {
           );
         } else {
           // Not entitled (any more): withdraw it. This is what makes
-          // "Stop escalating" take the row off an escalated-only
+          // "Stop sharing" take the row off a shared-items-only
           // programme while a full-detail one simply keeps it unflagged.
           await gateway!.delete(
               code: link.code, itemKind: itemKind, itemId: itemId);
@@ -980,6 +1177,7 @@ class CascadeService {
         if (r.likelihoodRationale != null)
           'likelihood_rationale': r.likelihoodRationale,
         if (r.impactRationale != null) 'impact_rationale': r.impactRationale,
+        if (r.sourceNote != null) 'source_note': r.sourceNote,
       };
 
   Map<String, dynamic> _assumptionPayload(Assumption a) => {
@@ -989,6 +1187,7 @@ class CascadeService {
         if (a.owner != null) 'owner': a.owner,
         if (a.closedAt != null) 'closed_at': a.closedAt,
         if (a.validatedBy != null) 'validated_by': a.validatedBy,
+        if (a.sourceNote != null) 'source_note': a.sourceNote,
       };
 
   Map<String, dynamic> _issuePayload(Issue i) => {
@@ -1003,6 +1202,7 @@ class CascadeService {
         if (i.title != null) 'title': i.title,
         if (i.impactStatement != null) 'impact_statement': i.impactStatement,
         'escalation_required': i.escalationRequired,
+        if (i.sourceNote != null) 'source_note': i.sourceNote,
       };
 
   Map<String, dynamic> _dependencyPayload(ProgramDependency d) => {
@@ -1016,6 +1216,7 @@ class CascadeService {
         if (d.counterparty != null) 'counterparty': d.counterparty,
         if (d.rationale != null) 'rationale': d.rationale,
         if (d.impactStatement != null) 'impact_statement': d.impactStatement,
+        if (d.sourceNote != null) 'source_note': d.sourceNote,
         // plan_activity_id deliberately omitted — project-local id.
       };
 
@@ -1286,6 +1487,7 @@ class CascadeService {
       nextReviewAt: Value(p['next_review_at'] as String?),
       likelihoodRationale: Value(p['likelihood_rationale'] as String?),
       impactRationale: Value(p['impact_rationale'] as String?),
+      sourceNote: Value(p['source_note'] as String?),
       source: const Value('cascade'),
       escalatedAt: Value(_escalatedStamp(rec)),
       sourceProjectId: Value(rec.sourceEntityId),
@@ -1310,6 +1512,7 @@ class CascadeService {
       owner: Value(p['owner'] as String?),
       closedAt: Value(p['closed_at'] as String?),
       validatedBy: Value(p['validated_by'] as String?),
+      sourceNote: Value(p['source_note'] as String?),
       source: const Value('cascade'),
       escalatedAt: Value(_escalatedStamp(rec)),
       sourceProjectId: Value(rec.sourceEntityId),
@@ -1338,6 +1541,7 @@ class CascadeService {
       title: Value(p['title'] as String?),
       impactStatement: Value(p['impact_statement'] as String?),
       escalationRequired: Value(p['escalation_required'] as bool? ?? false),
+      sourceNote: Value(p['source_note'] as String?),
       source: const Value('cascade'),
       escalatedAt: Value(_escalatedStamp(rec)),
       sourceProjectId: Value(rec.sourceEntityId),
@@ -1369,6 +1573,7 @@ class CascadeService {
       counterparty: Value(p['counterparty'] as String?),
       rationale: Value(p['rationale'] as String?),
       impactStatement: Value(p['impact_statement'] as String?),
+      sourceNote: Value(p['source_note'] as String?),
       source: const Value('cascade'),
       escalatedAt: Value(_escalatedStamp(rec)),
       sourceProjectId: Value(rec.sourceEntityId),
@@ -1617,6 +1822,161 @@ class CascadeService {
       contributorIds: Value(remapIds(p['contributor_ids'] as String?)),
       sortOrder: Value(p['sort_order'] as int? ?? 0),
       sourceProjectId: Value(rec.sourceEntityId),
+      updatedAt: Value(DateTime.now()),
+    ));
+  }
+
+  String _financeId(String kind, String src, String id) =>
+      'cascade:$kind:$src:$id';
+
+  Future<void> _applyCostCategory(
+      String programmeId, CascadeRecord rec) async {
+    final id = _financeId(CascadeKinds.costCategory, rec.sourceEntityId, rec.itemId);
+    if (rec.deleted) {
+      await (db.delete(db.costCategories)..where((t) => t.id.equals(id))).go();
+      return;
+    }
+    final p = rec.payload;
+    await db.financeDao.upsertCategoryRaw(CostCategoriesCompanion(
+      id: Value(id),
+      projectId: Value(programmeId),
+      name: Value(p['name'] as String? ?? '(unnamed)'),
+      sortOrder: Value(p['sort_order'] as int? ?? 0),
+      sourceProjectId: Value(rec.sourceEntityId),
+      updatedAt: Value(DateTime.now()),
+    ));
+  }
+
+  String? _remapWorkstream(String src, String? wpId) =>
+      wpId == null ? null : 'cascade:$src:$wpId';
+
+  /// The approved budget with its lines. Only one budget per project is
+  /// ever approved, so applying a new one also drops any other cascaded
+  /// budget from the same source (the superseded one) — replay alone is
+  /// then correct after a supersede, no tombstone choreography needed.
+  Future<void> _applyBudget(String programmeId, CascadeRecord rec) async {
+    final src = rec.sourceEntityId;
+    final id = _financeId(CascadeKinds.budget, src, rec.itemId);
+    Future<void> dropBudget(String budgetId) async {
+      await (db.delete(db.budgetLines)..where((t) => t.budgetId.equals(budgetId)))
+          .go();
+      await (db.delete(db.projectBudgets)..where((t) => t.id.equals(budgetId)))
+          .go();
+    }
+    if (rec.deleted) {
+      await dropBudget(id);
+      return;
+    }
+    final p = rec.payload;
+    await db.transaction(() async {
+      // Supersede: any other cascaded budget from this source goes.
+      final others = (await db.financeDao.getCascadedBudgets(programmeId))
+          .where((b) => b.sourceProjectId == src && b.id != id);
+      for (final o in others) {
+        await dropBudget(o.id);
+      }
+      await db.financeDao.upsertBudgetRaw(ProjectBudgetsCompanion(
+        id: Value(id),
+        projectId: Value(programmeId),
+        name: Value(p['name'] as String? ?? '(unnamed)'),
+        status: Value(p['status'] as String? ?? 'approved'),
+        approvedBy: Value(p['approved_by'] as String?),
+        approvedAt: Value(_parseDate(p['approved_at'] as String?)),
+        currency: Value(p['currency'] as String? ?? 'AUD'),
+        fundingSource: Value(p['funding_source'] as String?),
+        notes: Value(p['notes'] as String?),
+        varianceToleranceBp: Value(p['variance_tolerance_bp'] as int? ?? 500),
+        sourceProjectId: Value(src),
+        updatedAt: Value(DateTime.now()),
+      ));
+      // Lines are replaced wholesale — the payload is the truth.
+      await (db.delete(db.budgetLines)..where((t) => t.budgetId.equals(id))).go();
+      for (final raw in (p['lines'] as List? ?? const [])) {
+        final l = (raw as Map).cast<String, dynamic>();
+        await db.financeDao.upsertLineRaw(BudgetLinesCompanion(
+          id: Value(_financeId('budget_line', src, l['id'] as String)),
+          projectId: Value(programmeId),
+          budgetId: Value(id),
+          costCategoryId: Value(_financeId(CascadeKinds.costCategory, src,
+              l['cost_category_id'] as String)),
+          workstreamId:
+              Value(_remapWorkstream(src, l['workstream_id'] as String?)),
+          financialYear: Value(l['financial_year'] as String? ?? ''),
+          amountMinor: Value(l['amount_minor'] as int? ?? 0),
+          notes: Value(l['notes'] as String?),
+          sourceProjectId: Value(src),
+          updatedAt: Value(DateTime.now()),
+        ));
+      }
+    });
+  }
+
+  Future<void> _applyForecastSnapshot(
+      String programmeId, CascadeRecord rec) async {
+    final src = rec.sourceEntityId;
+    final id = _financeId(CascadeKinds.forecastSnapshot, src, rec.itemId);
+    if (rec.deleted) {
+      await (db.delete(db.forecastLines)..where((t) => t.snapshotId.equals(id)))
+          .go();
+      await (db.delete(db.forecastSnapshots)..where((t) => t.id.equals(id)))
+          .go();
+      return;
+    }
+    final p = rec.payload;
+    await db.transaction(() async {
+      await db.financeDao.upsertSnapshotRaw(ForecastSnapshotsCompanion(
+        id: Value(id),
+        projectId: Value(programmeId),
+        period: Value(p['period'] as String? ?? ''),
+        status: Value(p['status'] as String? ?? 'submitted'),
+        submittedAt: Value(_parseDate(p['submitted_at'] as String?)),
+        sourceProjectId: Value(src),
+        updatedAt: Value(DateTime.now()),
+      ));
+      await (db.delete(db.forecastLines)..where((t) => t.snapshotId.equals(id)))
+          .go();
+      for (final raw in (p['lines'] as List? ?? const [])) {
+        final l = (raw as Map).cast<String, dynamic>();
+        await db.financeDao.upsertForecastLineRaw(ForecastLinesCompanion(
+          id: Value(_financeId('forecast_line', src, l['id'] as String)),
+          projectId: Value(programmeId),
+          snapshotId: Value(id),
+          costCategoryId: Value(_financeId(CascadeKinds.costCategory, src,
+              l['cost_category_id'] as String)),
+          workstreamId:
+              Value(_remapWorkstream(src, l['workstream_id'] as String?)),
+          financialYear: Value(l['financial_year'] as String? ?? ''),
+          amountMinor: Value(l['amount_minor'] as int? ?? 0),
+          notes: Value(l['notes'] as String?),
+          sourceProjectId: Value(src),
+          updatedAt: Value(DateTime.now()),
+        ));
+      }
+    });
+  }
+
+  Future<void> _applyActual(String programmeId, CascadeRecord rec) async {
+    final src = rec.sourceEntityId;
+    final id = _financeId(CascadeKinds.actual, src, rec.itemId);
+    if (rec.deleted) {
+      await (db.delete(db.actualLines)..where((t) => t.id.equals(id))).go();
+      return;
+    }
+    final p = rec.payload;
+    final cat = p['cost_category_id'] as String?;
+    if (cat == null) return;
+    await db.financeDao.upsertActualLineRaw(ActualLinesCompanion(
+      id: Value(id),
+      projectId: Value(programmeId),
+      period: Value(p['period'] as String? ?? ''),
+      costCategoryId: Value(_financeId(CascadeKinds.costCategory, src, cat)),
+      workstreamId: Value(_remapWorkstream(src, p['workstream_id'] as String?)),
+      amountMinor: Value(p['amount_minor'] as int? ?? 0),
+      source: Value(p['source'] as String? ?? 'manual'),
+      sourceRef: Value(p['source_ref'] as String?),
+      enteredBy: Value(p['entered_by'] as String?),
+      notes: Value(p['notes'] as String?),
+      sourceProjectId: Value(src),
       updatedAt: Value(DateTime.now()),
     ));
   }

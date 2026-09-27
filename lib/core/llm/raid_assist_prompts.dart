@@ -6,22 +6,38 @@
 /// and every form asks in the same voice.
 library;
 
+import '../raid/raid_conversion_service.dart' show RaidKind;
+import '../raid/raid_statements.dart';
+
 class RaidAssistPrompt {
   final String system;
   final String user;
   const RaidAssistPrompt({required this.system, required this.user});
 }
 
-enum RiskAssistField { likelihoodRationale, impactRationale, mitigation }
+enum RiskAssistField { description, likelihoodRationale, impactRationale, mitigation }
 
-enum IssueAssistField { impactStatement, resolution }
+enum IssueAssistField { description, impactStatement, resolution }
 
-enum DependencyAssistField { rationale, impactStatement }
+enum DependencyAssistField { description, rationale, impactStatement }
+
+enum AssumptionAssistField { description }
+
+/// The instruction for rewriting a description into the house pattern.
+/// Shared so every kind asks in the same way: one statement, in the
+/// shape, from the material given, gaps marked rather than invented.
+String _describeInstruction(RaidKind kind, {String? extra}) =>
+    'Rewrite the description as ONE statement in exactly this shape:\n'
+    '  ${kRaidStatementPatterns[kind]}\n'
+    '${kRaidStatementWhy[kind]} Use only what the fields above give you; '
+    'where a part is genuinely unknown, write it as a bracketed point to '
+    'confirm, e.g. "[impact to confirm]". Keep it under 50 words, plain '
+    'English, no heading.${extra == null ? '' : ' $extra'}';
 
 enum DecisionAssistField { rationale, optionsConsidered, impactStatement }
 
 const String _kPersona =
-    'You are helping a programme manager write one field of a RAID '
+    'You are helping a project or programme manager write one field of a RAID '
     'register entry. Write in plain, direct English suitable for a '
     'steering committee. Output ONLY the text for the field: no heading, '
     'no preamble, no markdown emphasis. Never invent facts (dates, names, '
@@ -63,8 +79,15 @@ RaidAssistPrompt riskAssistPrompt({
   if (field != RiskAssistField.mitigation) {
     sb.write(_field('Mitigation (existing)', mitigation));
   }
+  if (field == RiskAssistField.description) {
+    sb.write(_field('Description (existing, to rewrite)', description));
+  }
   sb.writeln();
   switch (field) {
+    case RiskAssistField.description:
+      sb.writeln(_describeInstruction(RaidKind.risk,
+          extra: 'The event must be uncertain ("may occur"), not something '
+              'that has already happened.'));
     case RiskAssistField.likelihoodRationale:
       sb.writeln(
           'Write the "Why this likelihood?" rationale: 2-3 sentences '
@@ -83,6 +106,32 @@ RaidAssistPrompt riskAssistPrompt({
           'its own line starting with "- " and a verb. Cover reducing '
           'the likelihood, reducing the impact if it lands, and an early '
           'warning trigger to watch. Keep each bullet under 25 words.');
+  }
+  return RaidAssistPrompt(
+      system: _system(projectContext), user: sb.toString());
+}
+
+/// Builds the prompt for one field of an assumption.
+RaidAssistPrompt assumptionAssistPrompt({
+  required AssumptionAssistField field,
+  required String description,
+  required String status,
+  String? owner,
+  String? validatedBy,
+  String? projectContext,
+}) {
+  final sb = StringBuffer();
+  sb.writeln('ASSUMPTION');
+  sb.write(_field('Description (existing, to rewrite)', description));
+  sb.writeln('Status: $status');
+  sb.write(_field('Owner', owner));
+  sb.write(_field('Validated by', validatedBy));
+  sb.writeln();
+  switch (field) {
+    case AssumptionAssistField.description:
+      sb.writeln(_describeInstruction(RaidKind.assumption,
+          extra: 'Make the validation concrete: who checks it, how, and '
+              'by when — a date or a named milestone.'));
   }
   return RaidAssistPrompt(
       system: _system(projectContext), user: sb.toString());
@@ -117,6 +166,9 @@ RaidAssistPrompt issueAssistPrompt({
   }
   sb.writeln();
   switch (field) {
+    case IssueAssistField.description:
+      sb.writeln(_describeInstruction(RaidKind.issue,
+          extra: 'Present tense — it has happened. No "may" or "could".'));
     case IssueAssistField.impactStatement:
       sb.writeln(
           'Write the impact statement: 2-3 sentences on what happens to '
@@ -164,6 +216,10 @@ RaidAssistPrompt dependencyAssistPrompt({
   }
   sb.writeln();
   switch (field) {
+    case DependencyAssistField.description:
+      sb.writeln(_describeInstruction(RaidKind.dependency,
+          extra: 'Respect the direction: inbound = they deliver to us, '
+              'outbound = we deliver to them, bilateral = both.'));
     case DependencyAssistField.rationale:
       sb.writeln(
           'Write "Why this is a dependency": 2-3 sentences on what we '

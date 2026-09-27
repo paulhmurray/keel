@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../core/cascade/cascade_factory.dart';
 import '../../core/database/database.dart';
 import '../../providers/settings_provider.dart';
 import '../../shared/theme/keel_colors.dart';
@@ -211,6 +212,11 @@ class _ApproveBudgetDialogState extends State<ApproveBudgetDialog> {
       approvedBy: approver.isEmpty ? null : approver,
       changedBy: financeActor(context),
     );
+    // Approval is the publish moment: full-detail programmes get the
+    // budget with its lines (they drop the superseded copy themselves).
+    if (mounted) {
+      await buildCascadeService(context).pushBudget(widget.budget.id);
+    }
     if (mounted) Navigator.of(context).pop();
   }
 

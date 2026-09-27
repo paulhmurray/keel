@@ -11,6 +11,8 @@ import '../../providers/project_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../shared/theme/keel_colors.dart';
 import 'financial_summary_panel.dart';
+import 'referenced_items_panel.dart';
+import '../../core/finance/programme_rollup.dart';
 import 'pending_decisions_panel.dart';
 import '../../core/playbook/current_stage.dart';
 import '../../core/status/status_snapshot_decoder.dart';
@@ -66,6 +68,8 @@ class _StatusContentState extends State<_StatusContent> {
   String? _forecastPeriod;
   int? _varianceBp;
   int? _actualsToDateMinor;
+  ProgrammeFinance? _portfolio;
+  Map<String, String> _portfolioNames = {};
 
   String get _projectId => widget.project.id;
 
@@ -216,11 +220,35 @@ class _StatusContentState extends State<_StatusContent> {
         final actuals = await db.financeDao.getActualsTotals(_projectId);
         if (actuals.totalMinor != 0) actualsToDate = actuals.totalMinor;
       }
+      // Programme roll-up over linked projects' cascaded finance (empty
+      // on a plain project, so the panel simply omits it).
+      final cascadedBudgets =
+          await db.financeDao.getCascadedBudgets(_projectId);
+      ProgrammeFinance? portfolio;
+      final portfolioNames = <String, String>{};
+      if (cascadedBudgets.isNotEmpty) {
+        portfolio = computeProgrammeFinance(
+          categories: await db.financeDao.getCascadedCategories(_projectId),
+          budgets: cascadedBudgets,
+          budgetLines: await db.financeDao.getCascadedBudgetLines(_projectId),
+          snapshots: await db.financeDao.getCascadedSnapshots(_projectId),
+          forecastLines:
+              await db.financeDao.getCascadedForecastLines(_projectId),
+          actuals: await db.financeDao.getCascadedActuals(_projectId),
+          merges: await db.financeDao.getMerges(_projectId),
+        );
+        for (final r in portfolio.projects) {
+          final p = await db.projectDao.getProjectById(r.sourceId);
+          portfolioNames[r.sourceId] = p?.name ?? 'Linked project';
+        }
+      }
 
       if (!mounted) return;
       setState(() {
         _approvedBudget = approvedBudget;
         _budgetTotals = budgetTotals;
+        _portfolio = portfolio;
+        _portfolioNames = portfolioNames;
         _forecastTotalMinor = forecastTotal;
         _forecastPeriod = forecastPeriod;
         _varianceBp = varianceBp;
@@ -339,6 +367,8 @@ class _StatusContentState extends State<_StatusContent> {
                   monthLabels: _monthLabels,
                   narrative:   _narrative,
                   weekOf:      now,
+                  db:          context.read<AppDatabase>(),
+                  projectId:   _projectId,
                 ),
               ),
               icon: const Icon(Icons.file_download_outlined, size: 14),
@@ -422,6 +452,8 @@ class _StatusContentState extends State<_StatusContent> {
                   forecastPeriod:     _forecastPeriod,
                   varianceBp:         _varianceBp,
                   actualsToDateMinor: _actualsToDateMinor,
+                  portfolio:          _portfolio,
+                  projectNames:       _portfolioNames,
                 ),
                 const SizedBox(height: 20),
 
@@ -441,8 +473,16 @@ class _StatusContentState extends State<_StatusContent> {
                   data:              data,
                   settings:          settings,
                   projectName:       widget.project.name,
+                  isProgramme:       widget.project.kind == 'programme',
                   initialNarrative:  _narrative,
                   onNarrativeChanged: (v) => setState(() => _narrative = v),
+                ),
+                // What the codes in the narrative mean — the same list the
+                // export carries, so the page previews what Bart will read.
+                ReferencedItemsPanel(
+                  db: context.read<AppDatabase>(),
+                  projectId: _projectId,
+                  narrative: _narrative,
                 ),
               ],
             ),

@@ -194,4 +194,53 @@ void main() {
       expect(i.user, contains('leaving this undecided'));
     });
   });
+
+  group('description drafts', () {
+    test('risk description asks for the cause/event/impact shape', () {
+      final p = riskAssistPrompt(
+        field: RiskAssistField.description,
+        description: 'Vendor might be late',
+        likelihood: 'likely',
+        impact: 'major',
+        mitigation: 'Weekly checkpoints',
+      );
+      expect(p.user, contains('If [cause], then [event] may occur, resulting in [impact].'));
+      expect(p.user, contains('Description (existing, to rewrite): Vendor might be late'));
+      expect(p.user, contains('Mitigation (existing): Weekly checkpoints'));
+      expect(p.user, contains('must be uncertain'));
+    });
+    test('issue description insists on the present tense', () {
+      final p = issueAssistPrompt(
+        field: IssueAssistField.description,
+        description: 'Contract not signed',
+        priority: 'high',
+        status: 'open',
+      );
+      expect(p.user, contains('[What has happened] because [cause]'));
+      expect(p.user, contains('Present tense'));
+    });
+    test('assumption description carries status, owner and validator', () {
+      final p = assumptionAssistPrompt(
+        field: AssumptionAssistField.description,
+        description: 'Environment available in Q4',
+        status: 'open',
+        owner: 'Paul',
+        validatedBy: 'Vendor PM',
+      );
+      expect(p.user, startsWith('ASSUMPTION'));
+      expect(p.user, contains('We are assuming [statement] because [basis].'));
+      expect(p.user, contains('Validated by: Vendor PM'));
+      expect(p.user, contains('who checks it'));
+    });
+    test('dependency description respects direction', () {
+      final p = dependencyAssistPrompt(
+        field: DependencyAssistField.description,
+        description: 'API contract',
+        dependencyType: 'inbound',
+        counterparty: 'Salesforce',
+      );
+      expect(p.user, contains('[Counterparty] must deliver [what] by [date]'));
+      expect(p.user, contains('inbound = they deliver to us'));
+    });
+  });
 }

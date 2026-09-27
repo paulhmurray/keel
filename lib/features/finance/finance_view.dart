@@ -10,6 +10,7 @@ import 'actuals_tab.dart';
 import 'budget_grid.dart';
 import 'finance_form.dart';
 import 'forecast_tab.dart';
+import 'programme_finance_tab.dart';
 
 /// FINANCE — Project Finance v1+v2.
 /// BUDGET: versioned baselines (draft → approved → superseded) in a
@@ -29,7 +30,7 @@ class FinanceView extends StatefulWidget {
 class _FinanceViewState extends State<FinanceView> {
   String? _selectedBudgetId;
   List<TimelineWorkPackage> _workPackages = [];
-  int _tab = 0; // 0 = budget, 1 = forecast, 2 = actuals
+  int _tab = 0; // 0 = budget, 1 = forecast, 2 = actuals, 3/4 = programme lenses
 
   /// The project the view is currently initialised for. Seeding and
   /// workstream loading re-run whenever the user switches project WHILE
@@ -86,7 +87,8 @@ class _FinanceViewState extends State<FinanceView> {
 
   @override
   Widget build(BuildContext context) {
-    final projectId = context.watch<ProjectProvider>().currentProjectId;
+    final provider = context.watch<ProjectProvider>();
+    final projectId = provider.currentProjectId;
     if (projectId == null) {
       return const Center(
           child: Text('Select a project to view finance.',
@@ -94,6 +96,8 @@ class _FinanceViewState extends State<FinanceView> {
     }
     _ensureInitedFor(projectId);
     final db = context.read<AppDatabase>();
+    final isProgramme = provider.isProgramme;
+    if (!isProgramme && _tab > 2) _tab = 0;
 
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -130,6 +134,23 @@ class _FinanceViewState extends State<FinanceView> {
                           label: 'ACTUALS',
                           selected: _tab == 2,
                           onTap: () => setState(() => _tab = 2)),
+                      // Programme lenses over linked projects' finance.
+                      if (isProgramme) ...[
+                        Container(
+                          width: 1,
+                          height: 16,
+                          margin: const EdgeInsets.symmetric(horizontal: 6),
+                          color: KColors.border,
+                        ),
+                        _TabChip(
+                            label: 'BY PROJECT',
+                            selected: _tab == 3,
+                            onTap: () => setState(() => _tab = 3)),
+                        _TabChip(
+                            label: 'BY CATEGORY',
+                            selected: _tab == 4,
+                            onTap: () => setState(() => _tab = 4)),
+                      ],
                     ],
                   ),
                 ),
@@ -139,6 +160,18 @@ class _FinanceViewState extends State<FinanceView> {
           const SizedBox(height: 16),
           Expanded(
             child: switch (_tab) {
+              3 => ProgrammeFinanceTab(
+                  db: db,
+                  programmeId: projectId,
+                  lens: ProgrammeFinanceLens.byProject,
+                  actor: financeActor(context),
+                ),
+              4 => ProgrammeFinanceTab(
+                  db: db,
+                  programmeId: projectId,
+                  lens: ProgrammeFinanceLens.byCategory,
+                  actor: financeActor(context),
+                ),
               1 => ForecastTab(
                   db: db,
                   projectId: projectId,

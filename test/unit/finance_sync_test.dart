@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:keel/core/database/database.dart';
 import 'package:keel/core/export/json_exporter.dart';
@@ -144,5 +145,59 @@ void main() {
     await JsonImporter.importFromString(stripped, db);
     expect(await db.financeDao.getBudgets(pid), isEmpty);
     expect(await db.financeDao.getCategories(pid), isEmpty);
+  });
+
+  test('cascaded copies and category merges ride in the blob', () async {
+    await db.projectDao.upsertProject(ProjectsCompanion.insert(
+        id: 'prog', name: 'Programme', kind: const Value('programme')));
+    await db.financeDao.upsertCategoryRaw(const CostCategoriesCompanion(
+      id: Value('cascade:cost_category:p1:c1'),
+      projectId: Value('prog'),
+      name: Value('People'),
+      sourceProjectId: Value('p1'),
+    ));
+    await db.financeDao.upsertBudgetRaw(const ProjectBudgetsCompanion(
+      id: Value('cascade:budget:p1:b1'),
+      projectId: Value('prog'),
+      name: Value('BC'),
+      status: Value('approved'),
+      sourceProjectId: Value('p1'),
+    ));
+    await db.financeDao.upsertLineRaw(const BudgetLinesCompanion(
+      id: Value('cascade:budget_line:p1:l1'),
+      projectId: Value('prog'),
+      budgetId: Value('cascade:budget:p1:b1'),
+      costCategoryId: Value('cascade:cost_category:p1:c1'),
+      financialYear: Value('FY26'),
+      amountMinor: Value(777),
+      sourceProjectId: Value('p1'),
+    ));
+    await db.financeDao.mergeCategories(
+        programmeId: 'prog',
+        sourceCategoryIds: const ['cascade:cost_category:p1:c1'],
+        targetName: 'Staff');
+
+    final blob =
+        await JsonExporter.exportProjectToString(projectId: 'prog', db: db);
+    final other = AppDatabase.memory();
+    addTearDown(other.close);
+    await JsonImporter.importFromString(blob, other);
+
+    expect(
+        (await other.financeDao.getCascadedBudgets('prog')).single.sourceProjectId,
+        'p1');
+    expect(await other.financeDao.getBudgets('prog'), isEmpty);
+    expect(
+        (await other.financeDao.getCascadedBudgetLines('prog')).single.amountMinor,
+        777);
+    expect((await other.financeDao.getCascadedCategories('prog')).single.name,
+        'People');
+    expect((await other.financeDao.getMerges('prog')).single.targetName, 'Staff');
+
+    // Importing the same blob again replaces rather than duplicates.
+    await JsonImporter.importFromString(blob, other);
+    expect(await other.financeDao.getCascadedBudgetLines('prog'), hasLength(1));
+    expect(await other.financeDao.getCascadedBudgets('prog'), hasLength(1));
+    expect(await other.financeDao.getMerges('prog'), hasLength(1));
   });
 }

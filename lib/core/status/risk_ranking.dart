@@ -4,7 +4,7 @@
 /// The report goes to the business owner, who has to be able to see WHY
 /// these are the top risks, so the order is deliberate and repeatable:
 ///   1. score (likelihood × consequence), highest first
-///   2. flagged to SteerCo before programme-level
+///   2. escalated (raised for attention) before not
 ///   3. treatment due date, overdue first then soonest; undated last
 ///   4. review overdue before reviewed
 ///   5. reference number, so equal risks always land in the same order

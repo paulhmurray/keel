@@ -763,24 +763,41 @@ class JsonExporter {
     // Finance — categories, versioned budgets with integer-minor-unit
     // lines, and the audit trail. The audit log travels in the payload
     // so history survives a machine move; import must never re-audit.
-    final costCategories = await db.financeDao.getCategories(projectId);
-    final budgets = await db.financeDao.getBudgets(projectId);
+    // Native + cascaded copies both ride in the blob, as WPs and RAID do,
+    // so a programme restored on another machine has its roll-up
+    // immediately (the next pull refreshes it anyway).
+    final costCategories = [
+      ...await db.financeDao.getCategories(projectId),
+      ...await db.financeDao.getCascadedCategories(projectId),
+    ];
+    final budgets = [
+      ...await db.financeDao.getBudgets(projectId),
+      ...await db.financeDao.getCascadedBudgets(projectId),
+    ];
     final budgetLines = <BudgetLine>[
       for (final b in budgets) ...await db.financeDao.getLines(b.id),
     ];
-    final forecastSnapshots = await db.financeDao.getSnapshots(projectId);
+    final forecastSnapshots = [
+      ...await db.financeDao.getSnapshots(projectId),
+      ...await db.financeDao.getCascadedSnapshots(projectId),
+    ];
     final forecastLines = <ForecastLine>[
       for (final s in forecastSnapshots)
         ...await db.financeDao.getForecastLines(s.id),
     ];
-    final actualLines = await db.financeDao.getActuals(projectId);
+    final actualLines = [
+      ...await db.financeDao.getActuals(projectId),
+      ...await db.financeDao.getCascadedActuals(projectId),
+    ];
     final financeAudit = await db.financeDao.getAuditLog(projectId);
+    final categoryMerges = await db.financeDao.getMerges(projectId);
     data['finance'] = {
       'cost_categories': costCategories
           .map((c) => {
                 'id': c.id,
                 'name': c.name,
                 'sort_order': c.sortOrder,
+                'source_project_id': c.sourceProjectId,
                 'created_at': c.createdAt.toIso8601String(),
                 'updated_at': c.updatedAt.toIso8601String(),
               })
@@ -796,6 +813,7 @@ class JsonExporter {
                 'funding_source': b.fundingSource,
                 'notes': b.notes,
                 'variance_tolerance_bp': b.varianceToleranceBp,
+                'source_project_id': b.sourceProjectId,
                 'created_at': b.createdAt.toIso8601String(),
                 'updated_at': b.updatedAt.toIso8601String(),
               })
@@ -809,6 +827,7 @@ class JsonExporter {
                 'financial_year': l.financialYear,
                 'amount_minor': l.amountMinor,
                 'notes': l.notes,
+                'source_project_id': l.sourceProjectId,
                 'created_at': l.createdAt.toIso8601String(),
                 'updated_at': l.updatedAt.toIso8601String(),
               })
@@ -819,6 +838,7 @@ class JsonExporter {
                 'period': s.period,
                 'status': s.status,
                 'submitted_at': s.submittedAt?.toIso8601String(),
+                'source_project_id': s.sourceProjectId,
                 'created_at': s.createdAt.toIso8601String(),
                 'updated_at': s.updatedAt.toIso8601String(),
               })
@@ -832,6 +852,7 @@ class JsonExporter {
                 'financial_year': l.financialYear,
                 'amount_minor': l.amountMinor,
                 'notes': l.notes,
+                'source_project_id': l.sourceProjectId,
                 'created_at': l.createdAt.toIso8601String(),
                 'updated_at': l.updatedAt.toIso8601String(),
               })
@@ -847,6 +868,7 @@ class JsonExporter {
                 'source_ref': l.sourceRef,
                 'entered_by': l.enteredBy,
                 'notes': l.notes,
+                'source_project_id': l.sourceProjectId,
                 'created_at': l.createdAt.toIso8601String(),
                 'updated_at': l.updatedAt.toIso8601String(),
               })
@@ -861,6 +883,14 @@ class JsonExporter {
                 'new_value': a.newValue,
                 'changed_by': a.changedBy,
                 'changed_at': a.changedAt.toIso8601String(),
+              })
+          .toList(),
+      'category_merges': categoryMerges
+          .map((m) => {
+                'id': m.id,
+                'source_category_id': m.sourceCategoryId,
+                'target_name': m.targetName,
+                'created_at': m.createdAt.toIso8601String(),
               })
           .toList(),
     };

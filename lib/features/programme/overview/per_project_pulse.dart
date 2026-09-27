@@ -289,7 +289,7 @@ class _ProjectPulseRow extends StatelessWidget {
         _metric('▲', '${row.risks}',
             row.isFullShare
                 ? 'open ${row.risks == 1 ? 'risk' : 'risks'}'
-                : 'escalated',
+                : 'shared',
             row.risks > 0 ? KColors.amber : KColors.textMuted),
         const SizedBox(width: 14),
         _metric('⏰', '${row.overdue}', 'overdue',
@@ -376,7 +376,7 @@ class _ShareTag extends StatelessWidget {
       message: full
           ? 'Full detail: whole RAID, all actions and decisions, plan to '
               'task level'
-          : 'Escalated only: the project PM chooses what you see',
+          : 'Shared items only: the project PM chooses what you see',
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
         decoration: BoxDecoration(
@@ -384,7 +384,7 @@ class _ShareTag extends StatelessWidget {
           border: Border.all(color: colour.withValues(alpha: 0.6), width: 0.5),
           borderRadius: BorderRadius.circular(2),
         ),
-        child: Text(full ? 'FULL' : 'ESC',
+        child: Text(full ? 'FULL' : 'SHARED',
             style: TextStyle(
                 color: colour,
                 fontSize: 8.5,

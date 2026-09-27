@@ -12,6 +12,8 @@ import '../../core/raid/raid_lifecycle.dart';
 import '../../core/raid/risk_rating.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/widgets/ai_assist_button.dart';
+import '../../shared/widgets/raid_quality_hints.dart';
+import '../../core/raid/raid_statements.dart';
 import '../../shared/widgets/detail_dialog.dart';
 import '../../shared/widgets/dropdown_field.dart';
 import '../../shared/widgets/date_picker_field.dart';
@@ -23,7 +25,7 @@ import 'raid_links_section.dart';
 
 /// Risk dialog in the register's Planview shape: title and statement,
 /// current and target rating on the 5-level scale with a live score,
-/// strategy, treatment plan, owner and assignee, SteerCo flag, review
+/// strategy, treatment plan, owner and assignee, escalation flag, review
 /// cadence and a status note.
 class RiskFormDialog extends StatefulWidget {
   final String projectId;
@@ -280,8 +282,9 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
         const Expanded(child: DetailTitle('Risk')),
         if (r.steerco) ...[
           const Tooltip(
-            message: 'Flagged to the Steering Committee',
-            child: Text('▲ STEERCO',
+            message: 'Escalated for attention — how and where it is raised '
+                'is the PM\'s call',
+            child: Text('▲ ESCALATED',
                 style: TextStyle(
                     color: KColors.red,
                     fontSize: 10,
@@ -477,17 +480,31 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
           ),
         ),
         const SizedBox(height: 12),
+        AiAssistedLabel(
+          label: 'Description',
+          target: _descCtrl,
+          tooltip: 'Rewrite as "If [cause], then [event] may occur, '
+              'resulting in [impact]" from what is here',
+          buildPrompt: () => _prompt(RiskAssistField.description),
+        ),
+        const SizedBox(height: 4),
         TextFormField(
           controller: _descCtrl,
           minLines: 3,
           maxLines: 8,
           style: const TextStyle(color: KColors.text, fontSize: 13),
-          decoration: const InputDecoration(
-            labelText: 'Description *',
-            hintText: 'What might happen, what would cause it, and what it hits',
+          decoration: InputDecoration(
+            hintText: kRaidStatementPatterns[RaidKind.risk],
             alignLabelWithHint: true,
+            isDense: true,
           ),
           validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+        ),
+        RaidQualityHints(
+          kind: RaidKind.risk,
+          description: _descCtrl,
+          title: _titleCtrl,
+          owner: _ownerCtrl,
         ),
         const SizedBox(height: 16),
         const DetailSectionLabel('Current rating'),
@@ -650,7 +667,7 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
               const SizedBox(width: 5),
               const Expanded(
                 child: Text(
-                  'Escalate to Steering Committee',
+                  'Escalate this risk',
                   style: TextStyle(color: KColors.text, fontSize: 12),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -661,9 +678,9 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
         if (_steerco) ...[
           const SizedBox(height: 4),
           const Text(
-            'Test: can the committee do something the business owner cannot '
-            '— a decision above them, a cross-programme conflict, or money '
-            'and contract terms?',
+            'Marks the risk as raised above the project. Where you take it — '
+            'sponsor, SteerCo, programme board — is your call; it leads the '
+            'status report and the Top Risks list either way.',
             style: TextStyle(color: KColors.textMuted, fontSize: 10),
           ),
         ],

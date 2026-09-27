@@ -2,6 +2,7 @@ import '../../shared/utils/money.dart';
 import '../raid/risk_rating.dart';
 import '../database/database.dart';
 import '../playbook/current_stage.dart';
+import '../finance/programme_rollup.dart';
 import '../finance/variance.dart';
 import '../status/status_calculator.dart' show StatusCalculator, Rag;
 import 'programme_context.dart';
@@ -145,6 +146,38 @@ class ProgrammeContextService {
       }
     }
 
+    // Portfolio finance — what the linked projects have cascaded up.
+    final portfolioLines = <String>[];
+    final cascadedBudgets = await db.financeDao.getCascadedBudgets(projectId);
+    if (cascadedBudgets.isNotEmpty) {
+      final f = computeProgrammeFinance(
+        categories: await db.financeDao.getCascadedCategories(projectId),
+        budgets: cascadedBudgets,
+        budgetLines: await db.financeDao.getCascadedBudgetLines(projectId),
+        snapshots: await db.financeDao.getCascadedSnapshots(projectId),
+        forecastLines: await db.financeDao.getCascadedForecastLines(projectId),
+        actuals: await db.financeDao.getCascadedActuals(projectId),
+        merges: await db.financeDao.getMerges(projectId),
+      );
+      final cur = f.currency ?? 'AUD';
+      portfolioLines.add(
+          '${f.projects.length} linked projects: budget '
+          '${Money.formatMinorCompact(f.budgetMinor, cur)}, forecast '
+          '${Money.formatMinorCompact(f.forecastMinor, cur)} '
+          '(${Money.formatBp(f.varianceBp)}), actuals '
+          '${Money.formatMinorCompact(f.actualsMinor, cur)}; '
+          '${f.breaches.length} beyond tolerance');
+      for (final r in f.projects) {
+        final p = await db.projectDao.getProjectById(r.sourceId);
+        final c = r.currency ?? cur;
+        portfolioLines.add(
+            '${p?.name ?? 'Linked project'}: budget '
+            '${Money.formatMinorCompact(r.budgetMinor, c)}, '
+            '${r.forecastMinor == null ? 'no forecast submitted' : 'forecast ${Money.formatMinorCompact(r.forecastMinor, c)} (${Money.formatBp(r.varianceBp)}${r.breach ? ', BEYOND tolerance' : ''})'}'
+            ', actuals ${Money.formatMinorCompact(r.actualsMinor, c)}');
+      }
+    }
+
     return ProgrammeContext(
       projectId: projectId,
       projectName: project?.name ?? 'Programme',
@@ -190,6 +223,8 @@ class ProgrammeContextService {
       forecastSummary: forecastSummary,
       forecastToleranceNote: forecastToleranceNote,
       actualsSummary: actualsSummary,
+      portfolioFinanceLines: portfolioLines,
+      isProgramme: project?.kind == 'programme',
       assembledAt: DateTime.now(),
     );
   }
@@ -201,10 +236,15 @@ class ProgrammeContextService {
   /// Formats context as a structured prompt string.
   String toPromptString(ProgrammeContext ctx) {
     final sb = StringBuffer();
-    sb.writeln('PROGRAMME CONTEXT');
+    final entity = ctx.isProgramme ? 'Programme' : 'Project';
+    sb.writeln('${entity.toUpperCase()} CONTEXT');
+    sb.writeln('This is a ${entity.toLowerCase()}. Refer to it as '
+        '"the ${entity.toLowerCase()}"'
+        '${ctx.isProgramme ? '' : '; "programme" means only the wider '
+            'programme it reports into'}.');
     sb.writeln();
-    sb.writeln('Project: ${ctx.projectName}');
-    sb.writeln('Programme RAG: ${ctx.programmeRag.toUpperCase()}'
+    sb.writeln('$entity: ${ctx.projectName}');
+    sb.writeln('Overall RAG: ${ctx.programmeRag.toUpperCase()}'
         '${ctx.previousRag != null ? ' (was ${ctx.previousRag!.toUpperCase()} last snapshot)' : ''}');
     sb.writeln();
 
@@ -254,6 +294,14 @@ class ProgrammeContextService {
       }
       if (ctx.actualsSummary != null) {
         sb.writeln('  Actuals: ${ctx.actualsSummary}');
+      }
+      sb.writeln();
+    }
+
+    if (ctx.portfolioFinanceLines.isNotEmpty) {
+      sb.writeln('PORTFOLIO FINANCE (linked projects)');
+      for (final l in ctx.portfolioFinanceLines) {
+        sb.writeln('  $l');
       }
       sb.writeln();
     }

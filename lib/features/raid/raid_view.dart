@@ -10,6 +10,7 @@ import '../../core/raid/raid_conversion_service.dart' show RaidKind;
 import '../../core/raid/raid_lifecycle.dart';
 import '../../core/raid/risk_rating.dart';
 import '../../shared/widgets/closed_toggle.dart';
+import '../../shared/widgets/raid_quality_hints.dart';
 import '../../core/programme/source_filter.dart';
 import '../../shared/widgets/source_filter_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -27,12 +28,15 @@ import 'assumption_form.dart';
 import 'issue_form.dart';
 import 'dependency_form.dart';
 import 'dependency_slack_chip.dart';
+import 'raid_tidy_dialog.dart';
+import '../../providers/settings_provider.dart';
 
 // ── Escalation helpers (Phase C.2) ─────────────────────────────────────────
 //
-// The four RAID row widgets share the same escalate / unescalate
-// affordance: an extra item in their popup menu + a small "↑ ESC"
-// badge when escalatedAt is non-null. Centralising the logic here so
+// The four RAID row widgets share the same share / stop-sharing
+// affordance: an extra item in their popup menu + a small "↑ SHARED"
+// badge when escalatedAt is non-null (the PM has explicitly shared the
+// row with linked programmes; the column name predates the wording). Centralising the logic here so
 // the four rows don't each grow their own cascade plumbing.
 
 /// Builds a [CascadeService] for the active providers. The gateway is
@@ -49,7 +53,9 @@ bool _isCascaded(String? sourceProjectId) => sourceProjectId != null;
 
 /// Small badge rendered next to the source badge when a row is
 /// escalated. Distinct visual so escalated rows pop without crowding.
-/// "▲ STEERCO" — flagged to the Steering Committee in the register.
+/// "▲ ESCALATED" — the PM has raised this risk for attention. Where it
+/// goes (SteerCo, sponsor, programme board…) is their call; Keel only
+/// records that it has been escalated.
 class _SteercoBadge extends StatelessWidget {
   const _SteercoBadge();
 
@@ -62,8 +68,9 @@ class _SteercoBadge extends StatelessWidget {
           borderRadius: BorderRadius.circular(2),
         ),
         child: const Tooltip(
-          message: 'Flagged to the Steering Committee',
-          child: Text('▲ STEERCO',
+          message: 'Escalated for attention — how and where it is raised is '
+              'the PM\'s call',
+          child: Text('▲ ESCALATED',
               style: TextStyle(
                   color: KColors.red,
                   fontSize: 9,
@@ -87,9 +94,9 @@ class _EscalatedBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(2),
       ),
       child: Tooltip(
-        message: 'Escalated — visible to linked programmes',
+        message: 'Shared with linked programmes by the PM',
         child: const Text(
-          '↑ ESC',
+          '↑ SHARED',
           style: TextStyle(
             color: KColors.amber,
             fontSize: 9,
@@ -394,6 +401,20 @@ class _RaidViewState extends State<RaidView> with SingleTickerProviderStateMixin
                     overflow: TextOverflow.ellipsis),
               ),
               const Spacer(),
+              // Needs an LLM to draft; hidden without a key like the
+              // per-field AI buttons.
+              if (context.watch<SettingsProvider>().hasApiKey) ...[
+                OutlinedButton.icon(
+                  onPressed: () => showDialog(
+                    context: context,
+                    builder: (_) =>
+                        RaidTidyDialog(db: db, projectId: projectId),
+                  ),
+                  icon: const Icon(Icons.auto_fix_high, size: 14),
+                  label: const Text('Tidy register…'),
+                ),
+                const SizedBox(width: 10),
+              ],
               _RaidClosedToggle(
                 db: db,
                 projectId: projectId,
@@ -767,17 +788,22 @@ class _RiskRow extends StatelessWidget {
                   ] else
                     Text(risk.description, style: _kTitleStyle, maxLines: 3,
                         overflow: TextOverflow.ellipsis),
-                  if (risk.steerco ||
-                      reviewOverdue(risk.nextReviewAt, DateTime.now())) ...[
-                    const SizedBox(height: 4),
-                    Wrap(spacing: 8, runSpacing: 2, children: [
+                  const SizedBox(height: 4),
+                  Wrap(spacing: 8, runSpacing: 2, children: [
+                      RaidQualityMarker(
+                        kind: RaidKind.risk,
+                        description: risk.description,
+                        title: risk.title,
+                        owner: risk.owner,
+                        enabled: !_isCascaded(risk.sourceProjectId) &&
+                            !isTerminalStatus(RaidKind.risk, risk.status),
+                      ),
                       if (risk.steerco) const _SteercoBadge(),
                       if (reviewOverdue(risk.nextReviewAt, DateTime.now()))
                         Text('Review overdue · ${du.formatDate(risk.nextReviewAt)}',
                             style: const TextStyle(
                                 color: KColors.amber, fontSize: 10)),
-                    ]),
-                  ],
+                  ]),
                 ],
               ),
             ),
@@ -874,11 +900,11 @@ class _RiskRow extends StatelessWidget {
                         if (risk.escalatedAt == null)
                           const PopupMenuItem(
                               value: 'escalate',
-                              child: Text('Escalate to programme'))
+                              child: Text('Share with programme'))
                         else
                           const PopupMenuItem(
                               value: 'unescalate',
-                              child: Text('Stop escalating')),
+                              child: Text('Stop sharing')),
                         const PopupMenuItem(
                             value: 'delete', child: Text('Delete')),
                       ],
@@ -1055,8 +1081,22 @@ class _AssumptionRow extends StatelessWidget {
               ),
             ),
             Expanded(
-              child: Text(assumption.description, style: _kTitleStyle, maxLines: 3,
-                  overflow: TextOverflow.ellipsis),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(assumption.description, style: _kTitleStyle, maxLines: 3,
+                      overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 4),
+                  RaidQualityMarker(
+                    kind: RaidKind.assumption,
+                    description: assumption.description,
+                    owner: assumption.owner,
+                    validatedBy: assumption.validatedBy,
+                    enabled: !_isCascaded(assumption.sourceProjectId) &&
+                        !isTerminalStatus(RaidKind.assumption, assumption.status),
+                  ),
+                ],
+              ),
             ),
             SizedBox(width: _kOwnerW, child: _OwnerChip(name: assumption.owner)),
             SizedBox(width: _kStatusW, child: StatusChip(status: assumption.status)),
@@ -1132,11 +1172,11 @@ class _AssumptionRow extends StatelessWidget {
                         if (assumption.escalatedAt == null)
                           const PopupMenuItem(
                               value: 'escalate',
-                              child: Text('Escalate to programme'))
+                              child: Text('Share with programme'))
                         else
                           const PopupMenuItem(
                               value: 'unescalate',
-                              child: Text('Stop escalating')),
+                              child: Text('Stop sharing')),
                         const PopupMenuItem(
                             value: 'delete', child: Text('Delete')),
                       ],
@@ -1384,6 +1424,17 @@ class _IssueRow extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis),
                   ],
+                  const SizedBox(height: 4),
+                  RaidQualityMarker(
+                    kind: RaidKind.issue,
+                    description: issue.description,
+                    title: issue.title,
+                    owner: issue.owner,
+                    dueDate: issue.dueDate,
+                    impactStatement: issue.impactStatement,
+                    enabled: !_isCascaded(issue.sourceProjectId) &&
+                        !isTerminalStatus(RaidKind.issue, issue.status),
+                  ),
                 ],
               ),
             ),
@@ -1502,11 +1553,11 @@ class _IssueRow extends StatelessWidget {
                         if (issue.escalatedAt == null)
                           const PopupMenuItem(
                               value: 'escalate',
-                              child: Text('Escalate to programme'))
+                              child: Text('Share with programme'))
                         else
                           const PopupMenuItem(
                               value: 'unescalate',
-                              child: Text('Stop escalating')),
+                              child: Text('Stop sharing')),
                         const PopupMenuItem(
                             value: 'delete', child: Text('Delete')),
                       ],
@@ -1737,6 +1788,17 @@ class _DependencyRow extends StatelessWidget {
                 children: [
                   Text(dep.description, style: _kTitleStyle, maxLines: 3,
                       overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 4),
+                  RaidQualityMarker(
+                    kind: RaidKind.dependency,
+                    description: dep.description,
+                    owner: dep.owner,
+                    dueDate: dep.dueDate,
+                    counterparty: dep.counterparty,
+                    impactStatement: dep.impactStatement,
+                    enabled: !_isCascaded(dep.sourceProjectId) &&
+                        !isTerminalStatus(RaidKind.dependency, dep.status),
+                  ),
                   if ((dep.counterparty != null &&
                           dep.counterparty!.isNotEmpty) ||
                       activityName != null ||
@@ -1860,11 +1922,11 @@ class _DependencyRow extends StatelessWidget {
                         if (dep.escalatedAt == null)
                           const PopupMenuItem(
                               value: 'escalate',
-                              child: Text('Escalate to programme'))
+                              child: Text('Share with programme'))
                         else
                           const PopupMenuItem(
                               value: 'unescalate',
-                              child: Text('Stop escalating')),
+                              child: Text('Stop sharing')),
                         const PopupMenuItem(
                             value: 'delete', child: Text('Delete')),
                       ],

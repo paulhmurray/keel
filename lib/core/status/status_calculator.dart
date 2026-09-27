@@ -177,7 +177,7 @@ class StatusCalculator {
     return jsonEncode(map);
   }
 
-  /// The top risks by the shared ranking (score, SteerCo, due date,
+  /// The top risks by the shared ranking (score, escalated, due date,
   /// review, ref) — see risk_ranking.dart. Open and in-progress risks
   /// qualify.
   static List<Risk> topRisks(List<Risk> all, {int limit = 5}) =>

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../core/cascade/cascade_factory.dart';
 import '../../core/database/database.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/utils/money.dart';
@@ -83,22 +84,36 @@ class ActualsTab extends StatelessWidget {
                           required workstreamId,
                           required columnKey,
                           required amountMinor,
-                        }) =>
-                            dao.upsertActualLine(
-                          id: existing?.id ?? const Uuid().v4(),
-                          projectId: projectId,
-                          period: columnKey,
-                          costCategoryId: categoryId,
-                          workstreamId:
-                              existing?.workstreamId ?? workstreamId,
-                          amountMinor: amountMinor,
-                          notes: existing?.notes,
-                          changedBy: actor,
-                        ),
+                        }) async {
+                          final id = existing?.id ?? const Uuid().v4();
+                          await dao.upsertActualLine(
+                            id: id,
+                            projectId: projectId,
+                            period: columnKey,
+                            costCategoryId: categoryId,
+                            workstreamId:
+                                existing?.workstreamId ?? workstreamId,
+                            amountMinor: amountMinor,
+                            notes: existing?.notes,
+                            changedBy: actor,
+                          );
+                          if (!context.mounted) return;
+                          final fresh = (await dao.getActuals(projectId))
+                              .where((a) => a.id == id)
+                              .firstOrNull;
+                          if (fresh != null && context.mounted) {
+                            await buildCascadeService(context)
+                                .pushActual(fresh);
+                          }
+                        },
                         onDelete: (cells) async {
                           for (final c in cells) {
                             await dao.deleteActualLine(c.id,
                                 changedBy: actor);
+                            if (context.mounted) {
+                              await buildCascadeService(context).deleteActual(
+                                  projectId: projectId, actualId: c.id);
+                            }
                           }
                         },
                       ),

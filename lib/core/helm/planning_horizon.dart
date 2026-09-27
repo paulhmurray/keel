@@ -42,7 +42,7 @@ class PlanningItem {
   /// Set for actions so a dropped block links back to the action.
   final String? linkedActionId;
 
-  /// Extra weight within a day: SteerCo risks and critical items first.
+  /// Extra weight within a day: escalated risks and critical items first.
   final int priority;
 
   const PlanningItem({

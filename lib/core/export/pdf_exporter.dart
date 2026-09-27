@@ -63,11 +63,26 @@ class StatusDecisionPdf {
       required this.ref, required this.dueDate, required this.description});
 }
 
+/// One register code the narrative mentions, spelled out.
+class StatusRefPdf {
+  final String ref;
+  final String kind;
+  final String headline;
+  final String detail;
+  const StatusRefPdf({
+    required this.ref,
+    required this.kind,
+    required this.headline,
+    required this.detail,
+  });
+}
+
 class StatusSummaryForPdf {
   final String programmeRag;
   final String trendArrow;
   final String trendLabel;
   final String? narrative;
+  final List<StatusRefPdf> referenced;
   /// "Stage 4: Procurement — Blocked · 3 of 5 stages complete", or null.
   final String? playbookStage;
   final List<StatusWorkstreamPdf> workstreams;
@@ -84,6 +99,7 @@ class StatusSummaryForPdf {
     required this.trendArrow,
     required this.trendLabel,
     this.narrative,
+    this.referenced = const [],
     this.playbookStage,
     required this.workstreams,
     required this.milestones,
@@ -603,6 +619,58 @@ class PdfExporter {
             pw.Text(_sanitize(summary.narrative!),
                 style: const pw.TextStyle(fontSize: 10, lineSpacing: 3)),
             pw.SizedBox(height: 16),
+            if (summary.referenced.isNotEmpty) ...[
+              _sectionHeader('Referenced Items'),
+              pw.SizedBox(height: 6),
+              pw.Table(
+                border: pw.TableBorder.all(color: PdfColors.grey300),
+                columnWidths: {
+                  0: const pw.FlexColumnWidth(1),
+                  1: const pw.FlexColumnWidth(4),
+                  2: const pw.FlexColumnWidth(3),
+                },
+                children: [
+                  pw.TableRow(
+                    decoration:
+                        const pw.BoxDecoration(color: PdfColors.grey100),
+                    children: [
+                      _tableHeader('REF'),
+                      _tableHeader('WHAT IT IS'),
+                      _tableHeader('DETAIL'),
+                    ],
+                  ),
+                  for (final r in summary.referenced)
+                    pw.TableRow(children: [
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.all(4),
+                        child: pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.start,
+                            children: [
+                              pw.Text(_sanitize(r.ref),
+                                  style: pw.TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: pw.FontWeight.bold)),
+                              pw.Text(_sanitize(r.kind),
+                                  style: const pw.TextStyle(
+                                      fontSize: 7, color: PdfColors.grey600)),
+                            ]),
+                      ),
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.all(4),
+                        child: pw.Text(_sanitize(r.headline),
+                            style: const pw.TextStyle(fontSize: 9)),
+                      ),
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.all(4),
+                        child: pw.Text(_sanitize(r.detail),
+                            style: const pw.TextStyle(
+                                fontSize: 8, color: PdfColors.grey700)),
+                      ),
+                    ]),
+                ],
+              ),
+              pw.SizedBox(height: 16),
+            ],
           ],
 
           // Workstreams
@@ -685,7 +753,7 @@ class PdfExporter {
                 for (final r in summary.risks)
                   pw.TableRow(children: [
                     _tableCell(
-                        '${r.ref}${r.steerco ? '\nSTEERCO' : ''}'),
+                        '${r.ref}${r.steerco ? '\nESCALATED' : ''}'),
                     _tableCell(
                         '${r.rating ?? '${r.likelihood} / ${r.impact}'}'
                         '${r.change != null ? '\n${r.change}' : ''}'),

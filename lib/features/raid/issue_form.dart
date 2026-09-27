@@ -11,6 +11,8 @@ import '../../core/raid/raid_conversion_service.dart';
 import '../../core/raid/raid_lifecycle.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/widgets/ai_assist_button.dart';
+import '../../shared/widgets/raid_quality_hints.dart';
+import '../../core/raid/raid_statements.dart';
 import '../../shared/widgets/detail_dialog.dart';
 import '../../shared/widgets/dropdown_field.dart';
 import '../../shared/widgets/date_picker_field.dart';
@@ -330,17 +332,33 @@ class _IssueFormDialogState extends State<IssueFormDialog> {
           ),
         ),
         const SizedBox(height: 12),
+        AiAssistedLabel(
+          label: 'Description',
+          target: _descCtrl,
+          tooltip: 'Rewrite as what has happened, why, and what it is doing '
+              'to the project now',
+          buildPrompt: () => _prompt(IssueAssistField.description),
+        ),
+        const SizedBox(height: 4),
         TextFormField(
           controller: _descCtrl,
           minLines: 3,
           maxLines: 8,
           style: const TextStyle(color: KColors.text, fontSize: 13),
-          decoration: const InputDecoration(
-            labelText: 'Description *',
-            hintText: 'What the issue is',
+          decoration: InputDecoration(
+            hintText: kRaidStatementPatterns[RaidKind.issue],
             alignLabelWithHint: true,
+            isDense: true,
           ),
           validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+        ),
+        RaidQualityHints(
+          kind: RaidKind.issue,
+          description: _descCtrl,
+          title: _titleCtrl,
+          owner: _ownerCtrl,
+          impactStatement: _impactCtrl,
+          dueDate: _dueDate,
         ),
         const SizedBox(height: 16),
         AiAssistedLabel(

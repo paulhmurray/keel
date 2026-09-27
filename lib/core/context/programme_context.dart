@@ -49,6 +49,14 @@ class ProgrammeContext {
   final String? forecastToleranceNote; // "beyond ±5.0% tolerance" | "within..."
   final String? actualsSummary; // "£12.4M actuals to date"
 
+  // Programme roll-up over linked projects (empty on a project). One
+  // pre-formatted line per project + a totals line first.
+  final List<String> portfolioFinanceLines;
+
+  /// True for a programme-kind entity. Drives "project" vs "programme"
+  /// wording in the prompt so a project is never called a programme.
+  final bool isProgramme;
+
   final DateTime assembledAt;
 
   const ProgrammeContext({
@@ -82,6 +90,8 @@ class ProgrammeContext {
     this.forecastSummary,
     this.forecastToleranceNote,
     this.actualsSummary,
+    this.portfolioFinanceLines = const [],
+    this.isProgramme = false,
     required this.assembledAt,
   });
 }

@@ -565,25 +565,61 @@ class SyncProvider extends ChangeNotifier {
     _persistSession(tokens.refreshToken, tokens.userId, userEmail, tokens.plan);
   }
 
+  // ── Secure storage, tolerant of a missing or locked keyring ─────────────
+  //
+  // On Linux the store is libsecret. When the session keyring is locked or
+  // no secret service is running (common on a fresh login, some desktops,
+  // and hot restarts under `flutter run`), every call throws a
+  // PlatformException. That must never crash startup or spam the log: a
+  // keyring we cannot read means "no remembered session", nothing more.
+  // The first failure is logged once; the rest are silent.
+  static bool _keyringWarned = false;
+
+  Future<T?> _secure<T>(Future<T?> Function() op, String what) async {
+    try {
+      return await op();
+    } catch (e) {
+      if (!_keyringWarned) {
+        _keyringWarned = true;
+        debugPrint('Keel: secure storage unavailable ($what): $e — '
+            'sign-in will not be remembered across launches.');
+      }
+      return null;
+    }
+  }
+
+  Future<String?> _secureRead(String key) =>
+      _secure(() => _secureStorage.read(key: key), 'read');
+
+  Future<void> _secureWrite(String key, String value) => _secure<bool>(() async {
+        await _secureStorage.write(key: key, value: value);
+        return true;
+      }, 'write');
+
+  Future<void> _secureDelete(String key) => _secure<bool>(() async {
+        await _secureStorage.delete(key: key);
+        return true;
+      }, 'delete');
+
   Future<void> _persistSession(
       String refreshToken, String userId, String userEmail, String plan) async {
-    await _secureStorage.write(key: _kSecureRefreshToken, value: refreshToken);
-    await _secureStorage.write(key: _kSecureUserId, value: userId);
-    await _secureStorage.write(key: _kSecureEmail, value: userEmail);
-    await _secureStorage.write(key: _kSecurePlan, value: plan);
+    await _secureWrite(_kSecureRefreshToken, refreshToken);
+    await _secureWrite(_kSecureUserId, userId);
+    await _secureWrite(_kSecureEmail, userEmail);
+    await _secureWrite(_kSecurePlan, plan);
   }
 
   /// Called on app startup. Silently restores session using the stored refresh
-  /// token. Returns true if session was successfully restored.
+  /// token. Returns true if session was successfully restored. A keyring we
+  /// cannot open is treated as "nothing stored" — it is NOT cleared, so the
+  /// session comes back once the keyring unlocks.
   Future<bool> tryRestoreSession() async {
+    final storedRefreshToken = await _secureRead(_kSecureRefreshToken);
+    if (storedRefreshToken == null) return false;
     try {
-      final storedRefreshToken =
-          await _secureStorage.read(key: _kSecureRefreshToken);
-      if (storedRefreshToken == null) return false;
-
-      final storedUserId = await _secureStorage.read(key: _kSecureUserId) ?? '';
-      final storedEmail = await _secureStorage.read(key: _kSecureEmail) ?? '';
-      final storedPlan = await _secureStorage.read(key: _kSecurePlan) ?? 'free';
+      final storedUserId = await _secureRead(_kSecureUserId) ?? '';
+      final storedEmail = await _secureRead(_kSecureEmail) ?? '';
+      final storedPlan = await _secureRead(_kSecurePlan) ?? 'free';
 
       final newAccessToken = await _getClient().refresh(storedRefreshToken);
 
@@ -602,10 +638,10 @@ class SyncProvider extends ChangeNotifier {
   }
 
   Future<void> _clearStoredSession() async {
-    await _secureStorage.delete(key: _kSecureRefreshToken);
-    await _secureStorage.delete(key: _kSecureUserId);
-    await _secureStorage.delete(key: _kSecureEmail);
-    await _secureStorage.delete(key: _kSecurePlan);
+    await _secureDelete(_kSecureRefreshToken);
+    await _secureDelete(_kSecureUserId);
+    await _secureDelete(_kSecureEmail);
+    await _secureDelete(_kSecurePlan);
   }
 
   /// Ensures we have a valid access token; refreshes if needed.

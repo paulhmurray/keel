@@ -241,7 +241,9 @@ class Risks extends Table {
   // Owner = accountable, reports on it. Assignee = does the treatment.
   TextColumn get owner => text().nullable()();
   TextColumn get assignee => text().nullable()();
-  // Flagged to the Steering Committee (distinct from [escalatedAt],
+  // Escalated by the PM for attention — the forum (SteerCo, sponsor,
+  // programme board) is their call. Column name is historical. Distinct
+  // from [escalatedAt],
   // which is the programme cascade).
   BoolColumn get steerco => boolean().withDefault(const Constant(false))();
   // Which enterprise risk category this rolls up to (free text; the
@@ -1197,6 +1199,9 @@ class CostCategories extends Table {
   TextColumn get projectId => text().references(Projects, #id)();
   TextColumn get name => text()();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  // Programme-side copy of a linked project's category (full-detail
+  // share). Null on native rows. Copies are read-only.
+  TextColumn get sourceProjectId => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
@@ -1225,6 +1230,9 @@ class ProjectBudgets extends Table {
   // this against the approved budget surfaces as a programme pressure.
   IntColumn get varianceToleranceBp =>
       integer().withDefault(const Constant(500))();
+  // Programme-side copy of a linked project's APPROVED budget. Null on
+  // native rows. Only the approved budget cascades; drafts stay home.
+  TextColumn get sourceProjectId => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
@@ -1247,6 +1255,7 @@ class BudgetLines extends Table {
   TextColumn get financialYear => text()(); // e.g. "FY26"
   IntColumn get amountMinor => integer()(); // cents — NEVER floats
   TextColumn get notes => text().nullable()();
+  TextColumn get sourceProjectId => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
@@ -1264,6 +1273,8 @@ class ForecastSnapshots extends Table {
   // working | submitted
   TextColumn get status => text().withDefault(const Constant('working'))();
   DateTimeColumn get submittedAt => dateTime().nullable()();
+  // Programme-side copy of a linked project's SUBMITTED snapshot.
+  TextColumn get sourceProjectId => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
@@ -1283,6 +1294,7 @@ class ForecastLines extends Table {
   TextColumn get financialYear => text()();
   IntColumn get amountMinor => integer()(); // cents — NEVER floats
   TextColumn get notes => text().nullable()();
+  TextColumn get sourceProjectId => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
@@ -1305,8 +1317,25 @@ class ActualLines extends Table {
   TextColumn get sourceRef => text().nullable()();
   TextColumn get enteredBy => text().nullable()();
   TextColumn get notes => text().nullable()();
+  TextColumn get sourceProjectId => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Programme-native: rolls a cascaded cost category up under a name the
+/// programme chose. Categories inherit and group by name on their own;
+/// a merge exists only where two projects call the same thing by
+/// different names ("Licences" vs "Software licences").
+class CategoryMerges extends Table {
+  TextColumn get id => text().named('id')();
+  TextColumn get projectId => text().references(Projects, #id)(); // programme
+  // The cascaded category's synthetic id (cascade:cost_category:<src>:<id>).
+  TextColumn get sourceCategoryId => text()();
+  TextColumn get targetName => text()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -1644,6 +1673,7 @@ class QuarterGoals extends Table {
     ForecastLines,
     ActualLines,
     FinancialAuditLog,
+    CategoryMerges,
     DayPlans,
     DayPlanBlocks,
     WeekPlans,
@@ -1694,7 +1724,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(QueryExecutor executor) : super(executor);
 
   @override
-  int get schemaVersion => 64;
+  int get schemaVersion => 65;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -2217,6 +2247,18 @@ class AppDatabase extends _$AppDatabase {
                   "UPDATE programme_links SET share_level = 'full' "
                   "WHERE partner_local_id IS NOT NULL");
             } catch (_) {}
+          }
+          if (from < 65) {
+            // Programme finance roll-up: cascade markers on the six
+            // finance tables + the programme's category merges.
+            await ensureColumn(costCategories, costCategories.sourceProjectId);
+            await ensureColumn(projectBudgets, projectBudgets.sourceProjectId);
+            await ensureColumn(budgetLines, budgetLines.sourceProjectId);
+            await ensureColumn(
+                forecastSnapshots, forecastSnapshots.sourceProjectId);
+            await ensureColumn(forecastLines, forecastLines.sourceProjectId);
+            await ensureColumn(actualLines, actualLines.sourceProjectId);
+            await ensureTable(categoryMerges);
           }
         },
       );

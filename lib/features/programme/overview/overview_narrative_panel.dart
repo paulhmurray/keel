@@ -88,10 +88,12 @@ class _OverviewNarrativePanelState extends State<OverviewNarrativePanel> {
           ProgrammeContextService(widget.db).toPromptString(ctx);
 
       final client = LLMClientFactory.fromSettings(settings.settings);
+      final entity = ctx.isProgramme ? 'programme' : 'project';
       final result = await client.complete(
         systemPrompt:
-            'You are writing a 30-second programme status narrative for a '
-            'Senior PM. Write one paragraph of 4–6 sentences, no bullet '
+            'You are writing a 30-second $entity status narrative for a '
+            'Senior PM. Call it "the $entity" throughout. '
+            'Write one paragraph of 4–6 sentences, no bullet '
             'points, plain prose. Focus on: current state, primary concern, '
             'what\'s moving. Do not list items. Do not add commentary. '
             'Write as if briefing a sponsor.',

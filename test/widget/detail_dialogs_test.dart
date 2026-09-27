@@ -294,9 +294,9 @@ void main() {
       expect(find.text('WHY THIS LIKELIHOOD?'), findsOneWidget);
       expect(find.text('WHY THIS CONSEQUENCE?'), findsOneWidget);
       expect(find.text('TREATMENT PLAN'), findsOneWidget);
-      expect(find.text('Escalate to Steering Committee'), findsOneWidget);
+      expect(find.text('Escalate this risk'), findsOneWidget);
       expect(find.text('Reviewed today (+14 days)'), findsOneWidget);
-      expect(find.byType(AiAssistButton), findsNWidgets(3));
+      expect(find.byType(AiAssistButton), findsNWidgets(4));
       expect(find.text('AI draft'), findsNothing);
       expect(find.text('RELATED ITEMS'), findsOneWidget);
       expect(find.text('Convert'), findsOneWidget);
@@ -332,7 +332,7 @@ void main() {
             size: size);
         expect(find.text('IMPACT STATEMENT'), findsOneWidget);
         expect(find.text('RESOLUTION'), findsOneWidget);
-        expect(find.byType(AiAssistButton), findsNWidgets(2));
+        expect(find.byType(AiAssistButton), findsNWidgets(3));
         _expectNoException(tester);
         await _close(tester);
       }
@@ -370,7 +370,7 @@ void main() {
       expect(find.text('18 days slack before the activity starts'),
           findsOneWidget);
       expect(find.textContaining('Show on the plan'), findsOneWidget);
-      expect(find.byType(AiAssistButton), findsNWidgets(2));
+      expect(find.byType(AiAssistButton), findsNWidgets(3));
       _expectNoException(tester);
       await _close(tester);
     });

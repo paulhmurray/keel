@@ -1121,11 +1121,11 @@ class _ActionCard extends StatelessWidget {
                     if (action.escalatedAt == null)
                       const PopupMenuItem(
                           value: 'escalate',
-                          child: Text('Escalate to programme'))
+                          child: Text('Share with programme'))
                     else
                       const PopupMenuItem(
                           value: 'unescalate',
-                          child: Text('Stop escalating')),
+                          child: Text('Stop sharing')),
                     const PopupMenuItem(
                         value: 'delete', child: Text('Delete this')),
                     if (action.recurrenceGroupId != null)

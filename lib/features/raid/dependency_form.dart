@@ -13,6 +13,8 @@ import '../../core/raid/raid_conversion_service.dart';
 import '../../core/raid/raid_lifecycle.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/widgets/ai_assist_button.dart';
+import '../../shared/widgets/raid_quality_hints.dart';
+import '../../core/raid/raid_statements.dart';
 import '../../shared/widgets/detail_dialog.dart';
 import '../../shared/widgets/dropdown_field.dart';
 import '../../shared/widgets/date_picker_field.dart';
@@ -436,19 +438,34 @@ class _DependencyFormDialogState extends State<DependencyFormDialog> {
           ),
       ],
       left: [
+        AiAssistedLabel(
+          label: 'Description',
+          target: _descCtrl,
+          tooltip: 'Rewrite as who must deliver what, by when, what it gates '
+              'and the cost of it slipping',
+          buildPrompt: () => _prompt(DependencyAssistField.description),
+        ),
+        const SizedBox(height: 4),
         TextFormField(
           controller: _descCtrl,
           autofocus: !isEdit,
           minLines: 2,
           maxLines: 6,
           style: const TextStyle(color: KColors.text, fontSize: 14),
-          decoration: const InputDecoration(
-            labelText: 'Description *',
-            hintText: 'What is needed, e.g. "Vendor delivers signed API '
-                'contract"',
+          decoration: InputDecoration(
+            hintText: kRaidStatementPatterns[RaidKind.dependency],
             alignLabelWithHint: true,
+            isDense: true,
           ),
           validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+        ),
+        RaidQualityHints(
+          kind: RaidKind.dependency,
+          description: _descCtrl,
+          owner: _ownerCtrl,
+          counterparty: _counterpartyCtrl,
+          impactStatement: _impactCtrl,
+          dueDate: _dueDate,
         ),
         const SizedBox(height: 14),
         Row(

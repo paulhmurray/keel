@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../core/database/database.dart';
+import '../../core/status/narrative_refs.dart';
+
 import '../../core/export/pdf_exporter.dart';
 import '../../core/raid/risk_rating.dart';
 import '../../core/status/risk_ranking.dart';
@@ -13,6 +16,10 @@ class StatusExportDialog extends StatefulWidget {
   final List<String> monthLabels;
   final String? narrative;
   final DateTime weekOf;
+  /// When given, codes in the narrative (R12, DC14…) are resolved to a
+  /// "Referenced items" section so the report reads without Keel.
+  final AppDatabase? db;
+  final String? projectId;
 
   const StatusExportDialog({
     super.key,
@@ -21,6 +28,8 @@ class StatusExportDialog extends StatefulWidget {
     required this.monthLabels,
     this.narrative,
     required this.weekOf,
+    this.db,
+    this.projectId,
   });
 
   @override
@@ -32,6 +41,13 @@ class _StatusExportDialogState extends State<StatusExportDialog> {
   String? _result;
   String? _error;
 
+  Future<List<ReferencedItem>> _referenced() async {
+    final db = widget.db;
+    final pid = widget.projectId;
+    if (db == null || pid == null) return const [];
+    return resolveNarrativeRefsFromDb(db, pid, widget.narrative);
+  }
+
   Future<void> _exportHtml() async {
     setState(() { _exporting = true; _error = null; _result = null; });
     try {
@@ -40,6 +56,7 @@ class _StatusExportDialogState extends State<StatusExportDialog> {
         data:         widget.data,
         monthLabels:  widget.monthLabels,
         narrative:    widget.narrative,
+        referenced:   await _referenced(),
         weekOf:       widget.weekOf,
       );
       setState(() => _result = path);
@@ -54,11 +71,16 @@ class _StatusExportDialogState extends State<StatusExportDialog> {
     setState(() { _exporting = true; _error = null; _result = null; });
     try {
       final d = widget.data;
+      final referenced = await _referenced();
       final summary = StatusSummaryForPdf(
         programmeRag:      d.programmeRag.value,
         trendArrow:        d.programmeTrend.arrow,
         trendLabel:        d.programmeTrend.label,
         narrative:         widget.narrative,
+        referenced: [
+          for (final r in referenced)
+            StatusRefPdf(ref: r.ref, kind: r.kind, headline: r.headline, detail: r.detail),
+        ],
         playbookStage:     d.playbookStageLine,
         workstreams: d.workstreams.map((ws) => StatusWorkstreamPdf(
           name:  ws.wp.shortCode != null

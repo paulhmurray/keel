@@ -40,7 +40,13 @@ class ContextBuilder {
     // --- Project metadata ---
     final project = await db.projectDao.getProjectById(projectId);
     if (project != null) {
-      buffer.writeln('## Current Project');
+      final isProgramme = project.kind == 'programme';
+      buffer.writeln(isProgramme ? '## Current Programme' : '## Current Project');
+      buffer.writeln(isProgramme
+          ? 'This is a programme: a portfolio of linked projects. Call it '
+              '"the programme".'
+          : 'This is a project. Call it "the project"; use "programme" only '
+              'for the wider programme it reports into, if one is named.');
       buffer.writeln('Name: ${project.name}');
       if (project.description != null && project.description!.isNotEmpty) {
         buffer.writeln('Description: ${project.description}');
@@ -288,7 +294,7 @@ class ContextBuilder {
           snapshot.weekEnding.toIso8601String().substring(0, 10);
       buffer.writeln('## Latest Status Snapshot (week ending $weekOf)');
       buffer.writeln(
-          'Programme RAG: ${snapshot.programmeRag.toUpperCase()}');
+          'Overall RAG: ${snapshot.programmeRag.toUpperCase()}');
       buffer.writeln('Open risks: ${snapshot.openRisksCount} · '
           'Open actions: ${snapshot.openActionsCount} '
           '(${snapshot.overdueActionsCount} overdue) · '

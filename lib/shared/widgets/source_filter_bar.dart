@@ -8,7 +8,7 @@ import '../theme/keel_colors.dart';
 
 /// Programme-side chip row for registers that mix native rows with
 /// cascaded copies: All · This programme · one chip per linked project,
-/// plus an "Escalated only" switch. Renders nothing on a plain project
+/// plus a "Shared by PM only" switch. Renders nothing on a plain project
 /// or on a programme with no active links, so it can be mounted
 /// unconditionally.
 class SourceFilterBar extends StatelessWidget {
@@ -83,15 +83,15 @@ class SourceFilterBar extends StatelessWidget {
                 ),
               const SizedBox(width: 6),
               _Chip(
-                label: 'Escalated only',
+                label: 'Shared by PM only',
                 icon: Icons.arrow_upward,
                 selected: filter.escalatedOnly,
                 accent: KColors.amber,
                 tooltip: filter.escalatedOnly
-                    ? 'Showing only items the project PMs escalated. '
+                    ? 'Showing only items the project PMs chose to share. '
                         'Click to see the full registers.'
                     : 'Full-detail links carry every item. Click to keep '
-                        'only what the project PMs escalated.',
+                        'only what the project PMs chose to share.',
                 onTap: () => onChanged(
                     filter.copyWith(escalatedOnly: !filter.escalatedOnly)),
               ),

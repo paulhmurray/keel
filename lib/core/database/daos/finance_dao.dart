@@ -68,6 +68,7 @@ class BudgetTotals {
   ForecastLines,
   ActualLines,
   FinancialAuditLog,
+  CategoryMerges,
 ])
 class FinanceDao extends DatabaseAccessor<AppDatabase>
     with _$FinanceDaoMixin {
@@ -114,18 +115,187 @@ class FinanceDao extends DatabaseAccessor<AppDatabase>
 
   // ── Cost categories ───────────────────────────────────────────────────
 
+  // Every native getter/watcher below excludes cascaded copies
+  // (sourceProjectId set): a programme's own Budget tab, status summary
+  // and pressures must never read a linked project's rows as its own.
+  // The cascaded* getters serve the programme roll-up.
+
   Stream<List<CostCategory>> watchCategories(String projectId) {
     return (select(costCategories)
-          ..where((t) => t.projectId.equals(projectId))
+          ..where((t) =>
+              t.projectId.equals(projectId) & t.sourceProjectId.isNull())
           ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
         .watch();
   }
 
   Future<List<CostCategory>> getCategories(String projectId) {
     return (select(costCategories)
-          ..where((t) => t.projectId.equals(projectId))
+          ..where((t) =>
+              t.projectId.equals(projectId) & t.sourceProjectId.isNull())
           ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
         .get();
+  }
+
+  // ── Cascaded copies (programme roll-up) ─────────────────────────────
+
+  Future<List<CostCategory>> getCascadedCategories(String programmeId) {
+    return (select(costCategories)
+          ..where((t) =>
+              t.projectId.equals(programmeId) & t.sourceProjectId.isNotNull())
+          ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
+        .get();
+  }
+
+  Stream<List<CostCategory>> watchCascadedCategories(String programmeId) {
+    return (select(costCategories)
+          ..where((t) =>
+              t.projectId.equals(programmeId) & t.sourceProjectId.isNotNull())
+          ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
+        .watch();
+  }
+
+  Future<List<ProjectBudget>> getCascadedBudgets(String programmeId) {
+    return (select(projectBudgets)
+          ..where((t) =>
+              t.projectId.equals(programmeId) & t.sourceProjectId.isNotNull()))
+        .get();
+  }
+
+  Stream<List<ProjectBudget>> watchCascadedBudgets(String programmeId) {
+    return (select(projectBudgets)
+          ..where((t) =>
+              t.projectId.equals(programmeId) & t.sourceProjectId.isNotNull()))
+        .watch();
+  }
+
+  Future<List<BudgetLine>> getCascadedBudgetLines(String programmeId) {
+    return (select(budgetLines)
+          ..where((t) =>
+              t.projectId.equals(programmeId) & t.sourceProjectId.isNotNull()))
+        .get();
+  }
+
+  Future<List<ForecastSnapshot>> getCascadedSnapshots(String programmeId) {
+    return (select(forecastSnapshots)
+          ..where((t) =>
+              t.projectId.equals(programmeId) & t.sourceProjectId.isNotNull())
+          ..orderBy([(t) => OrderingTerm.desc(t.period)]))
+        .get();
+  }
+
+  Stream<List<ForecastSnapshot>> watchCascadedSnapshots(String programmeId) {
+    return (select(forecastSnapshots)
+          ..where((t) =>
+              t.projectId.equals(programmeId) & t.sourceProjectId.isNotNull())
+          ..orderBy([(t) => OrderingTerm.desc(t.period)]))
+        .watch();
+  }
+
+  Future<List<ForecastLine>> getCascadedForecastLines(String programmeId) {
+    return (select(forecastLines)
+          ..where((t) =>
+              t.projectId.equals(programmeId) & t.sourceProjectId.isNotNull()))
+        .get();
+  }
+
+  Future<List<ActualLine>> getCascadedActuals(String programmeId) {
+    return (select(actualLines)
+          ..where((t) =>
+              t.projectId.equals(programmeId) & t.sourceProjectId.isNotNull())
+          ..orderBy([(t) => OrderingTerm.asc(t.period)]))
+        .get();
+  }
+
+  Stream<List<ActualLine>> watchCascadedActuals(String programmeId) {
+    return (select(actualLines)
+          ..where((t) =>
+              t.projectId.equals(programmeId) & t.sourceProjectId.isNotNull())
+          ..orderBy([(t) => OrderingTerm.asc(t.period)]))
+        .watch();
+  }
+
+  // ── Category merges (programme-native) ──────────────────────────────
+
+  Stream<List<CategoryMerge>> watchMerges(String programmeId) {
+    return (select(categoryMerges)
+          ..where((t) => t.projectId.equals(programmeId)))
+        .watch();
+  }
+
+  Future<List<CategoryMerge>> getMerges(String programmeId) {
+    return (select(categoryMerges)
+          ..where((t) => t.projectId.equals(programmeId)))
+        .get();
+  }
+
+  /// Rolls [sourceCategoryIds] (cascaded synthetic ids) up under
+  /// [targetName]. Replaces any earlier merge for those ids. Audited.
+  Future<void> mergeCategories({
+    required String programmeId,
+    required List<String> sourceCategoryIds,
+    required String targetName,
+    String? changedBy,
+  }) {
+    return transaction(() async {
+      String norm(String v) =>
+          v.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+      for (final src in sourceCategoryIds) {
+        // A category already called the target name rolls up there on
+        // its own; a merge row would be noise.
+        final cat = await (select(costCategories)..where((t) => t.id.equals(src)))
+            .getSingleOrNull();
+        if (cat != null && norm(cat.name) == norm(targetName)) continue;
+        await (delete(categoryMerges)
+              ..where((t) =>
+                  t.projectId.equals(programmeId) &
+                  t.sourceCategoryId.equals(src)))
+            .go();
+        final id = _uuid.v4();
+        await into(categoryMerges).insert(CategoryMergesCompanion.insert(
+          id: id,
+          projectId: programmeId,
+          sourceCategoryId: src,
+          targetName: targetName,
+        ));
+        await _audit(
+          projectId: programmeId,
+          entityType: 'CategoryMerge',
+          entityId: id,
+          field: 'created',
+          oldValue: src,
+          newValue: targetName,
+          changedBy: changedBy,
+        );
+      }
+    });
+  }
+
+  /// Undoes the merge for one cascaded category (it returns to its own
+  /// name). Audited.
+  Future<void> unmergeCategory(String programmeId, String sourceCategoryId,
+      {String? changedBy}) {
+    return transaction(() async {
+      final rows = await (select(categoryMerges)
+            ..where((t) =>
+                t.projectId.equals(programmeId) &
+                t.sourceCategoryId.equals(sourceCategoryId)))
+          .get();
+      for (final r in rows) {
+        await (delete(categoryMerges)..where((t) => t.id.equals(r.id))).go();
+        await _audit(
+          projectId: programmeId,
+          entityType: 'CategoryMerge',
+          entityId: r.id,
+          field: 'deleted',
+          oldValue: r.targetName,
+          changedBy: changedBy,
+        );
+      }
+    });
+  }
+
+  Future<void> upsertMergeRaw(CategoryMergesCompanion entry) {
+    return into(categoryMerges).insertOnConflictUpdate(entry);
   }
 
   /// Seeds the default categories if the project has none. Idempotent.
@@ -232,14 +402,16 @@ class FinanceDao extends DatabaseAccessor<AppDatabase>
 
   Stream<List<ProjectBudget>> watchBudgets(String projectId) {
     return (select(projectBudgets)
-          ..where((t) => t.projectId.equals(projectId))
+          ..where((t) =>
+              t.projectId.equals(projectId) & t.sourceProjectId.isNull())
           ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
         .watch();
   }
 
   Future<List<ProjectBudget>> getBudgets(String projectId) {
     return (select(projectBudgets)
-          ..where((t) => t.projectId.equals(projectId))
+          ..where((t) =>
+              t.projectId.equals(projectId) & t.sourceProjectId.isNull())
           ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
         .get();
   }
@@ -252,7 +424,9 @@ class FinanceDao extends DatabaseAccessor<AppDatabase>
   Future<ProjectBudget?> getApprovedBudget(String projectId) {
     return (select(projectBudgets)
           ..where((t) =>
-              t.projectId.equals(projectId) & t.status.equals('approved')))
+              t.projectId.equals(projectId) &
+              t.status.equals('approved') &
+              t.sourceProjectId.isNull()))
         .getSingleOrNull();
   }
 
@@ -538,14 +712,16 @@ class FinanceDao extends DatabaseAccessor<AppDatabase>
 
   Stream<List<ForecastSnapshot>> watchSnapshots(String projectId) {
     return (select(forecastSnapshots)
-          ..where((t) => t.projectId.equals(projectId))
+          ..where((t) =>
+              t.projectId.equals(projectId) & t.sourceProjectId.isNull())
           ..orderBy([(t) => OrderingTerm.desc(t.period)]))
         .watch();
   }
 
   Future<List<ForecastSnapshot>> getSnapshots(String projectId) {
     return (select(forecastSnapshots)
-          ..where((t) => t.projectId.equals(projectId))
+          ..where((t) =>
+              t.projectId.equals(projectId) & t.sourceProjectId.isNull())
           ..orderBy([(t) => OrderingTerm.desc(t.period)]))
         .get();
   }
@@ -559,7 +735,9 @@ class FinanceDao extends DatabaseAccessor<AppDatabase>
       String projectId, String period) {
     return (select(forecastSnapshots)
           ..where((t) =>
-              t.projectId.equals(projectId) & t.period.equals(period)))
+              t.projectId.equals(projectId) &
+              t.period.equals(period) &
+              t.sourceProjectId.isNull()))
         .getSingleOrNull();
   }
 
@@ -825,14 +1003,16 @@ class FinanceDao extends DatabaseAccessor<AppDatabase>
 
   Stream<List<ActualLine>> watchActuals(String projectId) {
     return (select(actualLines)
-          ..where((t) => t.projectId.equals(projectId))
+          ..where((t) =>
+              t.projectId.equals(projectId) & t.sourceProjectId.isNull())
           ..orderBy([(t) => OrderingTerm.asc(t.period)]))
         .watch();
   }
 
   Future<List<ActualLine>> getActuals(String projectId) {
     return (select(actualLines)
-          ..where((t) => t.projectId.equals(projectId))
+          ..where((t) =>
+              t.projectId.equals(projectId) & t.sourceProjectId.isNull())
           ..orderBy([(t) => OrderingTerm.asc(t.period)]))
         .get();
   }

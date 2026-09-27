@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../core/cascade/cascade_factory.dart';
 import '../../core/database/database.dart';
 import '../../core/finance/variance.dart';
 import '../../shared/theme/keel_colors.dart';
@@ -130,6 +131,11 @@ class _ForecastTabState extends State<ForecastTab> {
                     onPressed: () async {
                       await db.financeDao
                           .submitSnapshot(selected.id, changedBy: widget.actor);
+                      // Submitting is the publish moment for the month.
+                      if (context.mounted) {
+                        await buildCascadeService(context)
+                            .pushForecastSnapshot(selected.id);
+                      }
                     },
                     icon: const Icon(Icons.check, size: 14),
                     label: Text('Submit ${selected.period}'),
@@ -149,6 +155,13 @@ class _ForecastTabState extends State<ForecastTab> {
                       if (val == 'reopen') {
                         await db.financeDao.reopenSnapshot(selected.id,
                             changedBy: widget.actor);
+                        // A working month is the PM's own again.
+                        if (context.mounted) {
+                          await buildCascadeService(context)
+                              .deleteForecastSnapshot(
+                                  projectId: widget.projectId,
+                                  snapshotId: selected.id);
+                        }
                       } else if (val == 'delete') {
                         await db.financeDao.deleteWorkingSnapshot(selected.id,
                             changedBy: widget.actor);

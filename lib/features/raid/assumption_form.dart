@@ -5,10 +5,15 @@ import 'package:drift/drift.dart' show Value;
 import '../../core/analytics/keel_events.dart';
 import '../../core/cascade/cascade_factory.dart';
 import '../../core/database/database.dart';
+import '../../core/llm/context_builder.dart';
+import '../../core/llm/raid_assist_prompts.dart';
+import '../../core/raid/raid_statements.dart';
 import '../../core/raid/raid_conversion_service.dart';
 import '../../core/raid/raid_lifecycle.dart';
 import '../../shared/theme/keel_colors.dart';
+import '../../shared/widgets/ai_assist_button.dart';
 import '../../shared/widgets/detail_dialog.dart';
+import '../../shared/widgets/raid_quality_hints.dart';
 import '../../shared/widgets/dropdown_field.dart';
 import '../../shared/widgets/person_picker_field.dart';
 import '../../shared/utils/date_utils.dart' as du;
@@ -70,6 +75,21 @@ class _AssumptionFormDialogState extends State<AssumptionFormDialog> {
   Future<void> _loadPersons() async {
     final list = await widget.db.peopleDao.getPersonsForProject(widget.projectId);
     if (mounted) setState(() => _persons = list);
+  }
+
+  // ── AI assist ──────────────────────────────────────────────────────────────
+
+  Future<RaidAssistPrompt> _prompt() async {
+    final ctx =
+        await ContextBuilder(widget.db).buildSystemPrompt(widget.projectId);
+    return assumptionAssistPrompt(
+      field: AssumptionAssistField.description,
+      description: _descCtrl.text,
+      status: _status,
+      owner: _ownerCtrl.text,
+      validatedBy: widget.assumption?.validatedBy,
+      projectContext: ctx,
+    );
   }
 
   @override
@@ -236,18 +256,31 @@ class _AssumptionFormDialogState extends State<AssumptionFormDialog> {
           ),
       ],
       left: [
+        AiAssistedLabel(
+          label: 'Description',
+          target: _descCtrl,
+          tooltip: 'Rewrite as what we assume, why, what breaks if it is '
+              'wrong, and how it will be validated',
+          buildPrompt: _prompt,
+        ),
+        const SizedBox(height: 4),
         TextFormField(
           controller: _descCtrl,
           autofocus: !isEdit,
           minLines: 3,
           maxLines: 8,
           style: const TextStyle(color: KColors.text, fontSize: 14),
-          decoration: const InputDecoration(
-            labelText: 'Description *',
-            hintText: 'What we are taking as true, and what it underpins',
+          decoration: InputDecoration(
+            hintText: kRaidStatementPatterns[RaidKind.assumption],
             alignLabelWithHint: true,
+            isDense: true,
           ),
           validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+        ),
+        RaidQualityHints(
+          kind: RaidKind.assumption,
+          description: _descCtrl,
+          owner: _ownerCtrl,
         ),
         const SizedBox(height: 14),
         Row(

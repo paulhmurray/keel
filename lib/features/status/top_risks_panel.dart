@@ -8,7 +8,7 @@ import '../../shared/theme/keel_colors.dart';
 import '../../shared/utils/date_utils.dart' as du;
 
 /// Top risks for the business owner: each row says what the risk is,
-/// how bad (rating and score), whether it's with SteerCo, what we are
+/// how bad (rating and score), whether it has been escalated, what we are
 /// doing about it, who owns it and when, and what changed since the
 /// last report. Enough to be briefed from without opening the register.
 class TopRisksPanel extends StatelessWidget {
@@ -130,7 +130,7 @@ class _RiskRow extends StatelessWidget {
         const SizedBox(width: 8),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            // Headline: title (or description), SteerCo, change marker
+            // Headline: title (or description), escalated, change marker
             Wrap(
               spacing: 8,
               runSpacing: 2,
@@ -143,8 +143,9 @@ class _RiskRow extends StatelessWidget {
                         fontWeight: FontWeight.w600)),
                 if (risk.steerco)
                   const Tooltip(
-                    message: 'Flagged to the Steering Committee',
-                    child: Text('▲ STEERCO',
+                    message: 'Escalated for attention — how and where it is '
+                        'raised is the PM\'s call',
+                    child: Text('▲ ESCALATED',
                         style: TextStyle(
                             color: KColors.red,
                             fontSize: 9,

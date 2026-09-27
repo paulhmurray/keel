@@ -1,6 +1,7 @@
 import '../platform/web_download.dart';
 import '../raid/risk_rating.dart';
 import '../status/risk_ranking.dart';
+import '../status/narrative_refs.dart';
 import '../status/status_calculator.dart';
 
 class StatusHtmlExporter {
@@ -9,6 +10,7 @@ class StatusHtmlExporter {
     required ProgrammeStatusData data,
     required List<String> monthLabels,
     required String? narrative,
+    List<ReferencedItem> referenced = const [],
     required DateTime weekOf,
   }) async {
     final html = _buildHtml(
@@ -16,6 +18,7 @@ class StatusHtmlExporter {
       data: data,
       monthLabels: monthLabels,
       narrative: narrative,
+      referenced: referenced,
       weekOf: weekOf,
     );
     final slug =
@@ -29,6 +32,7 @@ class StatusHtmlExporter {
     required ProgrammeStatusData data,
     required List<String> monthLabels,
     required String? narrative,
+    List<ReferencedItem> referenced = const [],
     required DateTime weekOf,
   }) {
     final ragColor = switch (data.programmeRag) {
@@ -81,6 +85,8 @@ class StatusHtmlExporter {
   .count-tile { background: #1a1f2e; border: 1px solid #2e3446; border-radius: 4px; padding: 12px 16px; min-width: 140px; }
   .count-num { font-size: 24px; font-weight: 700; color: #fbbf24; }
   .count-label { font-size: 10px; color: #8a9faf; margin-top: 2px; }
+  .ref { color: #f59e0b; font-weight: 700; }
+  .dim { color: #8a9faf; font-size: 11px; }
   .narrative-box { background: #1a1f2e; border: 1px solid #2e3446; border-radius: 4px; padding: 16px; white-space: pre-wrap; line-height: 1.6; font-size: 13px; color: #e2e8f0; }
 </style>
 </head>
@@ -112,6 +118,20 @@ class StatusHtmlExporter {
       sb.writeln('<h2>Status Narrative</h2>');
       sb.writeln('<div class="card"><div class="narrative-box">'
           '${_esc(narrative)}</div></div>');
+      // Every code the narrative leans on, spelled out for a reader who
+      // cannot open the registers.
+      if (referenced.isNotEmpty) {
+        sb.writeln('<h2>Referenced Items</h2>');
+        sb.writeln('<div class="card"><table>');
+        sb.writeln('<tr><th>REF</th><th>WHAT IT IS</th><th>DETAIL</th></tr>');
+        for (final r in referenced) {
+          sb.writeln('<tr><td><span class="ref">${_esc(r.ref)}</span>'
+              '<br><span class="dim">${_esc(r.kind)}</span></td>'
+              '<td>${_esc(r.headline)}</td>'
+              '<td class="dim">${_esc(r.detail)}</td></tr>');
+        }
+        sb.writeln('</table></div>');
+      }
     }
 
     // Workstreams
@@ -180,7 +200,7 @@ class StatusHtmlExporter {
             : _esc(r.description);
         sb.writeln('<tr>'
             '<td class="risk-ref">${_esc(r.ref ?? '—')}'
-            '${r.steerco ? '<br><span style="color:#ef4444;font-size:9px;">▲ STEERCO</span>' : ''}</td>'
+            '${r.steerco ? '<br><span style="color:#ef4444;font-size:9px;">▲ ESCALATED</span>' : ''}</td>'
             '<td style="color:#fbbf24;font-size:11px;white-space:nowrap;">'
             '${_esc(ratingSummary(r.likelihood, r.impact))}'
             '${change != null ? '<br><span style="color:#8a9faf;font-size:10px;">${_esc(change)}</span>' : ''}</td>'

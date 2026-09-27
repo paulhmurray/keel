@@ -60,5 +60,17 @@ void main() {
     final risks = await db.raidDao.getRisksForProject(programmeId);
     print('programme risks: ${risks.length}, cascaded: '
         '${risks.where((r) => r.sourceProjectId != null).length}');
+    print('programme finance: own budgets '
+        '${(await db.financeDao.getBudgets(programmeId)).length}, cascaded budgets '
+        '${(await db.financeDao.getCascadedBudgets(programmeId)).length}, '
+        'cascaded snapshots '
+        '${(await db.financeDao.getCascadedSnapshots(programmeId)).length}, '
+        'cascaded actuals '
+        '${(await db.financeDao.getCascadedActuals(programmeId)).length}, '
+        'cascaded categories '
+        '${(await db.financeDao.getCascadedCategories(programmeId)).length}');
+    print('project finance: approved '
+        '${(await db.financeDao.getApprovedBudget(projectId))?.name}, snapshots '
+        '${(await db.financeDao.getSnapshots(projectId)).map((s) => '${s.period}:${s.status}').join(' ')}');
   });
 }

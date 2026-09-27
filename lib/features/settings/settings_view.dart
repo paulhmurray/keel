@@ -1824,7 +1824,7 @@ class _ShareLevelControl extends StatelessWidget {
 
   static const _labels = {
     CascadeShareLevels.full: 'Full detail',
-    CascadeShareLevels.escalated: 'Escalated only',
+    CascadeShareLevels.escalated: 'Shared items only',
   };
 
   Future<void> _set(BuildContext context, String level) async {
@@ -1848,14 +1848,14 @@ class _ShareLevelControl extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(level == CascadeShareLevels.full
               ? 'Sharing full detail with the programme'
-              : 'Sharing escalated items only')));
+              : 'Sharing chosen items only')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final isFull = CascadeShareLevels.isFull(link.shareLevel);
-    final label = _labels[link.shareLevel] ?? 'Escalated only';
+    final label = _labels[link.shareLevel] ?? 'Shared items only';
     final colour = isFull ? KColors.phosphor : KColors.amber;
     final tag = Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -1885,7 +1885,7 @@ class _ShareLevelControl extends StatelessWidget {
         message: isFull
             ? 'This project shares its whole RAID, actions, decisions '
                 'and plan detail with you.'
-            : 'This project shares only what its PM escalates. Ask them '
+            : 'This project shares only what its PM chooses to. Ask them '
                 'to switch the link to full detail if you need more.',
         child: tag,
       );
@@ -1913,9 +1913,9 @@ class _ShareLevelControl extends StatelessWidget {
             dense: true,
             contentPadding: EdgeInsets.zero,
             leading: Icon(Icons.arrow_upward, size: 16),
-            title: Text('Escalated only'),
-            subtitle: Text('Only items you escalate, plus work-package '
-                'headers, status reports, charter and people.'),
+            title: Text('Shared items only'),
+            subtitle: Text('Only items you choose to share, plus '
+                'work-package headers, status reports, charter and people.'),
           ),
         ),
       ],

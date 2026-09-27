@@ -343,9 +343,9 @@ class _DecisionCard extends StatelessWidget {
                             ),
                             child: const Tooltip(
                               message:
-                                  'Escalated — visible to linked programmes',
+                                  'Shared with linked programmes by the PM',
                               child: Text(
-                                '↑ ESC',
+                                '↑ SHARED',
                                 style: TextStyle(
                                   color: KColors.amber,
                                   fontSize: 9,
@@ -423,11 +423,11 @@ class _DecisionCard extends StatelessWidget {
                                 const PopupMenuItem(
                                     value: 'escalate',
                                     child:
-                                        Text('Escalate to programme'))
+                                        Text('Share with programme'))
                               else
                                 const PopupMenuItem(
                                     value: 'unescalate',
-                                    child: Text('Stop escalating')),
+                                    child: Text('Stop sharing')),
                               const PopupMenuItem(
                                   value: 'delete',
                                   child: Text('Delete')),

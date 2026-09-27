@@ -152,7 +152,7 @@ void main() {
     final handle = tester.ensureSemantics();
     await _pump(tester, db, const RaidView());
     expect(find.text('Steerco risk with everything set'), findsOneWidget);
-    expect(find.text('▲ STEERCO'), findsOneWidget);
+    expect(find.text('▲ ESCALATED'), findsOneWidget);
     expect(find.textContaining('Review overdue'), findsOneWidget);
     _noException(tester);
 
@@ -176,7 +176,7 @@ void main() {
     await gesture.addPointer(location: Offset.zero);
     addTearDown(gesture.removePointer);
     for (final target in [
-      find.text('▲ STEERCO'),
+      find.text('▲ ESCALATED'),
       find.text('4').first, // likelihood rank dot
       find.text('Hiding closed'),
     ]) {

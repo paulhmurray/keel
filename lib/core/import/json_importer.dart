@@ -970,6 +970,7 @@ class JsonImporter {
           projectId: Value(projectId),
           name: Value(cm['name'] as String? ?? ''),
           sortOrder: Value(cm['sort_order'] as int? ?? 0),
+          sourceProjectId: Value(cm['source_project_id'] as String?),
         ));
       }
       for (final b in (financeData['budgets'] as List? ?? [])) {
@@ -986,6 +987,7 @@ class JsonImporter {
           notes: Value(bm['notes'] as String?),
           varianceToleranceBp:
               Value(bm['variance_tolerance_bp'] as int? ?? 500),
+          sourceProjectId: Value(bm['source_project_id'] as String?),
         ));
       }
       for (final l in (financeData['budget_lines'] as List? ?? [])) {
@@ -999,6 +1001,7 @@ class JsonImporter {
           financialYear: Value(lm['financial_year'] as String? ?? ''),
           amountMinor: Value(lm['amount_minor'] as int? ?? 0),
           notes: Value(lm['notes'] as String?),
+          sourceProjectId: Value(lm['source_project_id'] as String?),
         ));
       }
       for (final s in (financeData['forecast_snapshots'] as List? ?? [])) {
@@ -1009,6 +1012,7 @@ class JsonImporter {
           period: Value(sm['period'] as String? ?? ''),
           status: Value(sm['status'] as String? ?? 'working'),
           submittedAt: Value(_parseDt(sm['submitted_at'])),
+          sourceProjectId: Value(sm['source_project_id'] as String?),
         ));
       }
       for (final l in (financeData['forecast_lines'] as List? ?? [])) {
@@ -1022,6 +1026,7 @@ class JsonImporter {
           financialYear: Value(lm['financial_year'] as String? ?? ''),
           amountMinor: Value(lm['amount_minor'] as int? ?? 0),
           notes: Value(lm['notes'] as String?),
+          sourceProjectId: Value(lm['source_project_id'] as String?),
         ));
       }
       for (final l in (financeData['actual_lines'] as List? ?? [])) {
@@ -1037,6 +1042,16 @@ class JsonImporter {
           sourceRef: Value(lm['source_ref'] as String?),
           enteredBy: Value(lm['entered_by'] as String?),
           notes: Value(lm['notes'] as String?),
+          sourceProjectId: Value(lm['source_project_id'] as String?),
+        ));
+      }
+      for (final m in (financeData['category_merges'] as List? ?? [])) {
+        final mm = m as Map<String, dynamic>;
+        await db.financeDao.upsertMergeRaw(CategoryMergesCompanion(
+          id: Value(mm['id'] as String),
+          projectId: Value(projectId),
+          sourceCategoryId: Value(mm['source_category_id'] as String? ?? ''),
+          targetName: Value(mm['target_name'] as String? ?? ''),
         ));
       }
       for (final a in (financeData['audit_log'] as List? ?? [])) {
@@ -1331,6 +1346,8 @@ class JsonImporter {
     await (db.delete(db.actualLines)..where((t) => t.projectId.equals(id)))
         .go();
     await (db.delete(db.costCategories)..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.categoryMerges)..where((t) => t.projectId.equals(id)))
         .go();
     await (db.delete(db.financialAuditLog)
           ..where((t) => t.projectId.equals(id)))

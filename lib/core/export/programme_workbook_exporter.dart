@@ -1152,7 +1152,7 @@ class ProgrammeWorkbookExporter {
 
   /// The risk register in the exact column shape TAC's Planview expects,
   /// so the PM can paste it across without re-typing. Open risks only,
-  /// SteerCo-flagged first, then by score; legend under the table.
+  /// Escalated first, then by score; legend under the table.
   static Future<void> _buildPlanviewRisksSheet(
       Excel excel, AppDatabase db, String projectId) async {
     final all = await db.raidDao.getRisksForProject(projectId);
@@ -1186,9 +1186,10 @@ class ProgrammeWorkbookExporter {
     }
     row++;
     _setCell(sheet, row, 0,
-        '$kPlanviewEscalateMark = flagged to Steering Committee in Planview '
-        '(${open.where((r) => r.steerco).length} of ${open.length}). All '
-        'others are managed at programme level and reported fortnightly.',
+        '$kPlanviewEscalateMark = escalated by the PM for attention '
+        '(${open.where((r) => r.steerco).length} of ${open.length}); the '
+        'forum is at their discretion. All others are managed at project '
+        'level and reported fortnightly.',
         style: _style(fgHex: kXlInkDim, fontSize: 9));
     row++;
 

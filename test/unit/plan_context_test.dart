@@ -173,7 +173,7 @@ void main() {
     expect(prompt, contains('Out of scope: No legacy CRM changes'));
     expect(prompt,
         contains('## Latest Status Snapshot (week ending 2026-08-07)'));
-    expect(prompt, contains('Programme RAG: AMBER'));
+    expect(prompt, contains('Overall RAG: AMBER'));
     expect(prompt, contains('Narrative: Slipping on data workstream'));
     expect(prompt, contains('## Assumptions'));
     expect(prompt, contains('[A1] Vendor API stays stable [open]'));

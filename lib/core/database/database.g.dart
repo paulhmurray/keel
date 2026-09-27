@@ -36172,6 +36172,17 @@ class $CostCategoriesTable extends CostCategories
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _sourceProjectIdMeta = const VerificationMeta(
+    'sourceProjectId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceProjectId = GeneratedColumn<String>(
+    'source_project_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -36202,6 +36213,7 @@ class $CostCategoriesTable extends CostCategories
     projectId,
     name,
     sortOrder,
+    sourceProjectId,
     createdAt,
     updatedAt,
   ];
@@ -36244,6 +36256,15 @@ class $CostCategoriesTable extends CostCategories
         sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
       );
     }
+    if (data.containsKey('source_project_id')) {
+      context.handle(
+        _sourceProjectIdMeta,
+        sourceProjectId.isAcceptableOrUnknown(
+          data['source_project_id']!,
+          _sourceProjectIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -36281,6 +36302,10 @@ class $CostCategoriesTable extends CostCategories
         DriftSqlType.int,
         data['${effectivePrefix}sort_order'],
       )!,
+      sourceProjectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_project_id'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -36303,6 +36328,7 @@ class CostCategory extends DataClass implements Insertable<CostCategory> {
   final String projectId;
   final String name;
   final int sortOrder;
+  final String? sourceProjectId;
   final DateTime createdAt;
   final DateTime updatedAt;
   const CostCategory({
@@ -36310,6 +36336,7 @@ class CostCategory extends DataClass implements Insertable<CostCategory> {
     required this.projectId,
     required this.name,
     required this.sortOrder,
+    this.sourceProjectId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -36320,6 +36347,9 @@ class CostCategory extends DataClass implements Insertable<CostCategory> {
     map['project_id'] = Variable<String>(projectId);
     map['name'] = Variable<String>(name);
     map['sort_order'] = Variable<int>(sortOrder);
+    if (!nullToAbsent || sourceProjectId != null) {
+      map['source_project_id'] = Variable<String>(sourceProjectId);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -36331,6 +36361,9 @@ class CostCategory extends DataClass implements Insertable<CostCategory> {
       projectId: Value(projectId),
       name: Value(name),
       sortOrder: Value(sortOrder),
+      sourceProjectId: sourceProjectId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceProjectId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -36346,6 +36379,7 @@ class CostCategory extends DataClass implements Insertable<CostCategory> {
       projectId: serializer.fromJson<String>(json['projectId']),
       name: serializer.fromJson<String>(json['name']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      sourceProjectId: serializer.fromJson<String?>(json['sourceProjectId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -36358,6 +36392,7 @@ class CostCategory extends DataClass implements Insertable<CostCategory> {
       'projectId': serializer.toJson<String>(projectId),
       'name': serializer.toJson<String>(name),
       'sortOrder': serializer.toJson<int>(sortOrder),
+      'sourceProjectId': serializer.toJson<String?>(sourceProjectId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -36368,6 +36403,7 @@ class CostCategory extends DataClass implements Insertable<CostCategory> {
     String? projectId,
     String? name,
     int? sortOrder,
+    Value<String?> sourceProjectId = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => CostCategory(
@@ -36375,6 +36411,9 @@ class CostCategory extends DataClass implements Insertable<CostCategory> {
     projectId: projectId ?? this.projectId,
     name: name ?? this.name,
     sortOrder: sortOrder ?? this.sortOrder,
+    sourceProjectId: sourceProjectId.present
+        ? sourceProjectId.value
+        : this.sourceProjectId,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -36384,6 +36423,9 @@ class CostCategory extends DataClass implements Insertable<CostCategory> {
       projectId: data.projectId.present ? data.projectId.value : this.projectId,
       name: data.name.present ? data.name.value : this.name,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      sourceProjectId: data.sourceProjectId.present
+          ? data.sourceProjectId.value
+          : this.sourceProjectId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -36396,6 +36438,7 @@ class CostCategory extends DataClass implements Insertable<CostCategory> {
           ..write('projectId: $projectId, ')
           ..write('name: $name, ')
           ..write('sortOrder: $sortOrder, ')
+          ..write('sourceProjectId: $sourceProjectId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -36403,8 +36446,15 @@ class CostCategory extends DataClass implements Insertable<CostCategory> {
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, projectId, name, sortOrder, createdAt, updatedAt);
+  int get hashCode => Object.hash(
+    id,
+    projectId,
+    name,
+    sortOrder,
+    sourceProjectId,
+    createdAt,
+    updatedAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -36413,6 +36463,7 @@ class CostCategory extends DataClass implements Insertable<CostCategory> {
           other.projectId == this.projectId &&
           other.name == this.name &&
           other.sortOrder == this.sortOrder &&
+          other.sourceProjectId == this.sourceProjectId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -36422,6 +36473,7 @@ class CostCategoriesCompanion extends UpdateCompanion<CostCategory> {
   final Value<String> projectId;
   final Value<String> name;
   final Value<int> sortOrder;
+  final Value<String?> sourceProjectId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -36430,6 +36482,7 @@ class CostCategoriesCompanion extends UpdateCompanion<CostCategory> {
     this.projectId = const Value.absent(),
     this.name = const Value.absent(),
     this.sortOrder = const Value.absent(),
+    this.sourceProjectId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -36439,6 +36492,7 @@ class CostCategoriesCompanion extends UpdateCompanion<CostCategory> {
     required String projectId,
     required String name,
     this.sortOrder = const Value.absent(),
+    this.sourceProjectId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -36450,6 +36504,7 @@ class CostCategoriesCompanion extends UpdateCompanion<CostCategory> {
     Expression<String>? projectId,
     Expression<String>? name,
     Expression<int>? sortOrder,
+    Expression<String>? sourceProjectId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -36459,6 +36514,7 @@ class CostCategoriesCompanion extends UpdateCompanion<CostCategory> {
       if (projectId != null) 'project_id': projectId,
       if (name != null) 'name': name,
       if (sortOrder != null) 'sort_order': sortOrder,
+      if (sourceProjectId != null) 'source_project_id': sourceProjectId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -36470,6 +36526,7 @@ class CostCategoriesCompanion extends UpdateCompanion<CostCategory> {
     Value<String>? projectId,
     Value<String>? name,
     Value<int>? sortOrder,
+    Value<String?>? sourceProjectId,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -36479,6 +36536,7 @@ class CostCategoriesCompanion extends UpdateCompanion<CostCategory> {
       projectId: projectId ?? this.projectId,
       name: name ?? this.name,
       sortOrder: sortOrder ?? this.sortOrder,
+      sourceProjectId: sourceProjectId ?? this.sourceProjectId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -36500,6 +36558,9 @@ class CostCategoriesCompanion extends UpdateCompanion<CostCategory> {
     if (sortOrder.present) {
       map['sort_order'] = Variable<int>(sortOrder.value);
     }
+    if (sourceProjectId.present) {
+      map['source_project_id'] = Variable<String>(sourceProjectId.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -36519,6 +36580,7 @@ class CostCategoriesCompanion extends UpdateCompanion<CostCategory> {
           ..write('projectId: $projectId, ')
           ..write('name: $name, ')
           ..write('sortOrder: $sortOrder, ')
+          ..write('sourceProjectId: $sourceProjectId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -36640,6 +36702,17 @@ class $ProjectBudgetsTable extends ProjectBudgets
     requiredDuringInsert: false,
     defaultValue: const Constant(500),
   );
+  static const VerificationMeta _sourceProjectIdMeta = const VerificationMeta(
+    'sourceProjectId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceProjectId = GeneratedColumn<String>(
+    'source_project_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -36676,6 +36749,7 @@ class $ProjectBudgetsTable extends ProjectBudgets
     fundingSource,
     notes,
     varianceToleranceBp,
+    sourceProjectId,
     createdAt,
     updatedAt,
   ];
@@ -36760,6 +36834,15 @@ class $ProjectBudgetsTable extends ProjectBudgets
         ),
       );
     }
+    if (data.containsKey('source_project_id')) {
+      context.handle(
+        _sourceProjectIdMeta,
+        sourceProjectId.isAcceptableOrUnknown(
+          data['source_project_id']!,
+          _sourceProjectIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -36821,6 +36904,10 @@ class $ProjectBudgetsTable extends ProjectBudgets
         DriftSqlType.int,
         data['${effectivePrefix}variance_tolerance_bp'],
       )!,
+      sourceProjectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_project_id'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -36849,6 +36936,7 @@ class ProjectBudget extends DataClass implements Insertable<ProjectBudget> {
   final String? fundingSource;
   final String? notes;
   final int varianceToleranceBp;
+  final String? sourceProjectId;
   final DateTime createdAt;
   final DateTime updatedAt;
   const ProjectBudget({
@@ -36862,6 +36950,7 @@ class ProjectBudget extends DataClass implements Insertable<ProjectBudget> {
     this.fundingSource,
     this.notes,
     required this.varianceToleranceBp,
+    this.sourceProjectId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -36886,6 +36975,9 @@ class ProjectBudget extends DataClass implements Insertable<ProjectBudget> {
       map['notes'] = Variable<String>(notes);
     }
     map['variance_tolerance_bp'] = Variable<int>(varianceToleranceBp);
+    if (!nullToAbsent || sourceProjectId != null) {
+      map['source_project_id'] = Variable<String>(sourceProjectId);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -36911,6 +37003,9 @@ class ProjectBudget extends DataClass implements Insertable<ProjectBudget> {
           ? const Value.absent()
           : Value(notes),
       varianceToleranceBp: Value(varianceToleranceBp),
+      sourceProjectId: sourceProjectId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceProjectId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -36934,6 +37029,7 @@ class ProjectBudget extends DataClass implements Insertable<ProjectBudget> {
       varianceToleranceBp: serializer.fromJson<int>(
         json['varianceToleranceBp'],
       ),
+      sourceProjectId: serializer.fromJson<String?>(json['sourceProjectId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -36952,6 +37048,7 @@ class ProjectBudget extends DataClass implements Insertable<ProjectBudget> {
       'fundingSource': serializer.toJson<String?>(fundingSource),
       'notes': serializer.toJson<String?>(notes),
       'varianceToleranceBp': serializer.toJson<int>(varianceToleranceBp),
+      'sourceProjectId': serializer.toJson<String?>(sourceProjectId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -36968,6 +37065,7 @@ class ProjectBudget extends DataClass implements Insertable<ProjectBudget> {
     Value<String?> fundingSource = const Value.absent(),
     Value<String?> notes = const Value.absent(),
     int? varianceToleranceBp,
+    Value<String?> sourceProjectId = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => ProjectBudget(
@@ -36983,6 +37081,9 @@ class ProjectBudget extends DataClass implements Insertable<ProjectBudget> {
         : this.fundingSource,
     notes: notes.present ? notes.value : this.notes,
     varianceToleranceBp: varianceToleranceBp ?? this.varianceToleranceBp,
+    sourceProjectId: sourceProjectId.present
+        ? sourceProjectId.value
+        : this.sourceProjectId,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -37006,6 +37107,9 @@ class ProjectBudget extends DataClass implements Insertable<ProjectBudget> {
       varianceToleranceBp: data.varianceToleranceBp.present
           ? data.varianceToleranceBp.value
           : this.varianceToleranceBp,
+      sourceProjectId: data.sourceProjectId.present
+          ? data.sourceProjectId.value
+          : this.sourceProjectId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -37024,6 +37128,7 @@ class ProjectBudget extends DataClass implements Insertable<ProjectBudget> {
           ..write('fundingSource: $fundingSource, ')
           ..write('notes: $notes, ')
           ..write('varianceToleranceBp: $varianceToleranceBp, ')
+          ..write('sourceProjectId: $sourceProjectId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -37042,6 +37147,7 @@ class ProjectBudget extends DataClass implements Insertable<ProjectBudget> {
     fundingSource,
     notes,
     varianceToleranceBp,
+    sourceProjectId,
     createdAt,
     updatedAt,
   );
@@ -37059,6 +37165,7 @@ class ProjectBudget extends DataClass implements Insertable<ProjectBudget> {
           other.fundingSource == this.fundingSource &&
           other.notes == this.notes &&
           other.varianceToleranceBp == this.varianceToleranceBp &&
+          other.sourceProjectId == this.sourceProjectId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -37074,6 +37181,7 @@ class ProjectBudgetsCompanion extends UpdateCompanion<ProjectBudget> {
   final Value<String?> fundingSource;
   final Value<String?> notes;
   final Value<int> varianceToleranceBp;
+  final Value<String?> sourceProjectId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -37088,6 +37196,7 @@ class ProjectBudgetsCompanion extends UpdateCompanion<ProjectBudget> {
     this.fundingSource = const Value.absent(),
     this.notes = const Value.absent(),
     this.varianceToleranceBp = const Value.absent(),
+    this.sourceProjectId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -37103,6 +37212,7 @@ class ProjectBudgetsCompanion extends UpdateCompanion<ProjectBudget> {
     this.fundingSource = const Value.absent(),
     this.notes = const Value.absent(),
     this.varianceToleranceBp = const Value.absent(),
+    this.sourceProjectId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -37120,6 +37230,7 @@ class ProjectBudgetsCompanion extends UpdateCompanion<ProjectBudget> {
     Expression<String>? fundingSource,
     Expression<String>? notes,
     Expression<int>? varianceToleranceBp,
+    Expression<String>? sourceProjectId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -37136,6 +37247,7 @@ class ProjectBudgetsCompanion extends UpdateCompanion<ProjectBudget> {
       if (notes != null) 'notes': notes,
       if (varianceToleranceBp != null)
         'variance_tolerance_bp': varianceToleranceBp,
+      if (sourceProjectId != null) 'source_project_id': sourceProjectId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -37153,6 +37265,7 @@ class ProjectBudgetsCompanion extends UpdateCompanion<ProjectBudget> {
     Value<String?>? fundingSource,
     Value<String?>? notes,
     Value<int>? varianceToleranceBp,
+    Value<String?>? sourceProjectId,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -37168,6 +37281,7 @@ class ProjectBudgetsCompanion extends UpdateCompanion<ProjectBudget> {
       fundingSource: fundingSource ?? this.fundingSource,
       notes: notes ?? this.notes,
       varianceToleranceBp: varianceToleranceBp ?? this.varianceToleranceBp,
+      sourceProjectId: sourceProjectId ?? this.sourceProjectId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -37207,6 +37321,9 @@ class ProjectBudgetsCompanion extends UpdateCompanion<ProjectBudget> {
     if (varianceToleranceBp.present) {
       map['variance_tolerance_bp'] = Variable<int>(varianceToleranceBp.value);
     }
+    if (sourceProjectId.present) {
+      map['source_project_id'] = Variable<String>(sourceProjectId.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -37232,6 +37349,7 @@ class ProjectBudgetsCompanion extends UpdateCompanion<ProjectBudget> {
           ..write('fundingSource: $fundingSource, ')
           ..write('notes: $notes, ')
           ..write('varianceToleranceBp: $varianceToleranceBp, ')
+          ..write('sourceProjectId: $sourceProjectId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -37339,6 +37457,17 @@ class $BudgetLinesTable extends BudgetLines
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _sourceProjectIdMeta = const VerificationMeta(
+    'sourceProjectId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceProjectId = GeneratedColumn<String>(
+    'source_project_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -37373,6 +37502,7 @@ class $BudgetLinesTable extends BudgetLines
     financialYear,
     amountMinor,
     notes,
+    sourceProjectId,
     createdAt,
     updatedAt,
   ];
@@ -37457,6 +37587,15 @@ class $BudgetLinesTable extends BudgetLines
         notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
       );
     }
+    if (data.containsKey('source_project_id')) {
+      context.handle(
+        _sourceProjectIdMeta,
+        sourceProjectId.isAcceptableOrUnknown(
+          data['source_project_id']!,
+          _sourceProjectIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -37510,6 +37649,10 @@ class $BudgetLinesTable extends BudgetLines
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
       ),
+      sourceProjectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_project_id'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -37536,6 +37679,7 @@ class BudgetLine extends DataClass implements Insertable<BudgetLine> {
   final String financialYear;
   final int amountMinor;
   final String? notes;
+  final String? sourceProjectId;
   final DateTime createdAt;
   final DateTime updatedAt;
   const BudgetLine({
@@ -37547,6 +37691,7 @@ class BudgetLine extends DataClass implements Insertable<BudgetLine> {
     required this.financialYear,
     required this.amountMinor,
     this.notes,
+    this.sourceProjectId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -37564,6 +37709,9 @@ class BudgetLine extends DataClass implements Insertable<BudgetLine> {
     map['amount_minor'] = Variable<int>(amountMinor);
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
+    }
+    if (!nullToAbsent || sourceProjectId != null) {
+      map['source_project_id'] = Variable<String>(sourceProjectId);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -37584,6 +37732,9 @@ class BudgetLine extends DataClass implements Insertable<BudgetLine> {
       notes: notes == null && nullToAbsent
           ? const Value.absent()
           : Value(notes),
+      sourceProjectId: sourceProjectId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceProjectId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -37603,6 +37754,7 @@ class BudgetLine extends DataClass implements Insertable<BudgetLine> {
       financialYear: serializer.fromJson<String>(json['financialYear']),
       amountMinor: serializer.fromJson<int>(json['amountMinor']),
       notes: serializer.fromJson<String?>(json['notes']),
+      sourceProjectId: serializer.fromJson<String?>(json['sourceProjectId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -37619,6 +37771,7 @@ class BudgetLine extends DataClass implements Insertable<BudgetLine> {
       'financialYear': serializer.toJson<String>(financialYear),
       'amountMinor': serializer.toJson<int>(amountMinor),
       'notes': serializer.toJson<String?>(notes),
+      'sourceProjectId': serializer.toJson<String?>(sourceProjectId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -37633,6 +37786,7 @@ class BudgetLine extends DataClass implements Insertable<BudgetLine> {
     String? financialYear,
     int? amountMinor,
     Value<String?> notes = const Value.absent(),
+    Value<String?> sourceProjectId = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => BudgetLine(
@@ -37644,6 +37798,9 @@ class BudgetLine extends DataClass implements Insertable<BudgetLine> {
     financialYear: financialYear ?? this.financialYear,
     amountMinor: amountMinor ?? this.amountMinor,
     notes: notes.present ? notes.value : this.notes,
+    sourceProjectId: sourceProjectId.present
+        ? sourceProjectId.value
+        : this.sourceProjectId,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -37665,6 +37822,9 @@ class BudgetLine extends DataClass implements Insertable<BudgetLine> {
           ? data.amountMinor.value
           : this.amountMinor,
       notes: data.notes.present ? data.notes.value : this.notes,
+      sourceProjectId: data.sourceProjectId.present
+          ? data.sourceProjectId.value
+          : this.sourceProjectId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -37681,6 +37841,7 @@ class BudgetLine extends DataClass implements Insertable<BudgetLine> {
           ..write('financialYear: $financialYear, ')
           ..write('amountMinor: $amountMinor, ')
           ..write('notes: $notes, ')
+          ..write('sourceProjectId: $sourceProjectId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -37697,6 +37858,7 @@ class BudgetLine extends DataClass implements Insertable<BudgetLine> {
     financialYear,
     amountMinor,
     notes,
+    sourceProjectId,
     createdAt,
     updatedAt,
   );
@@ -37712,6 +37874,7 @@ class BudgetLine extends DataClass implements Insertable<BudgetLine> {
           other.financialYear == this.financialYear &&
           other.amountMinor == this.amountMinor &&
           other.notes == this.notes &&
+          other.sourceProjectId == this.sourceProjectId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -37725,6 +37888,7 @@ class BudgetLinesCompanion extends UpdateCompanion<BudgetLine> {
   final Value<String> financialYear;
   final Value<int> amountMinor;
   final Value<String?> notes;
+  final Value<String?> sourceProjectId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -37737,6 +37901,7 @@ class BudgetLinesCompanion extends UpdateCompanion<BudgetLine> {
     this.financialYear = const Value.absent(),
     this.amountMinor = const Value.absent(),
     this.notes = const Value.absent(),
+    this.sourceProjectId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -37750,6 +37915,7 @@ class BudgetLinesCompanion extends UpdateCompanion<BudgetLine> {
     required String financialYear,
     required int amountMinor,
     this.notes = const Value.absent(),
+    this.sourceProjectId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -37768,6 +37934,7 @@ class BudgetLinesCompanion extends UpdateCompanion<BudgetLine> {
     Expression<String>? financialYear,
     Expression<int>? amountMinor,
     Expression<String>? notes,
+    Expression<String>? sourceProjectId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -37781,6 +37948,7 @@ class BudgetLinesCompanion extends UpdateCompanion<BudgetLine> {
       if (financialYear != null) 'financial_year': financialYear,
       if (amountMinor != null) 'amount_minor': amountMinor,
       if (notes != null) 'notes': notes,
+      if (sourceProjectId != null) 'source_project_id': sourceProjectId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -37796,6 +37964,7 @@ class BudgetLinesCompanion extends UpdateCompanion<BudgetLine> {
     Value<String>? financialYear,
     Value<int>? amountMinor,
     Value<String?>? notes,
+    Value<String?>? sourceProjectId,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -37809,6 +37978,7 @@ class BudgetLinesCompanion extends UpdateCompanion<BudgetLine> {
       financialYear: financialYear ?? this.financialYear,
       amountMinor: amountMinor ?? this.amountMinor,
       notes: notes ?? this.notes,
+      sourceProjectId: sourceProjectId ?? this.sourceProjectId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -37842,6 +38012,9 @@ class BudgetLinesCompanion extends UpdateCompanion<BudgetLine> {
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
+    if (sourceProjectId.present) {
+      map['source_project_id'] = Variable<String>(sourceProjectId.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -37865,6 +38038,7 @@ class BudgetLinesCompanion extends UpdateCompanion<BudgetLine> {
           ..write('financialYear: $financialYear, ')
           ..write('amountMinor: $amountMinor, ')
           ..write('notes: $notes, ')
+          ..write('sourceProjectId: $sourceProjectId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -37932,6 +38106,17 @@ class $ForecastSnapshotsTable extends ForecastSnapshots
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _sourceProjectIdMeta = const VerificationMeta(
+    'sourceProjectId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceProjectId = GeneratedColumn<String>(
+    'source_project_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -37963,6 +38148,7 @@ class $ForecastSnapshotsTable extends ForecastSnapshots
     period,
     status,
     submittedAt,
+    sourceProjectId,
     createdAt,
     updatedAt,
   ];
@@ -38014,6 +38200,15 @@ class $ForecastSnapshotsTable extends ForecastSnapshots
         ),
       );
     }
+    if (data.containsKey('source_project_id')) {
+      context.handle(
+        _sourceProjectIdMeta,
+        sourceProjectId.isAcceptableOrUnknown(
+          data['source_project_id']!,
+          _sourceProjectIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -38055,6 +38250,10 @@ class $ForecastSnapshotsTable extends ForecastSnapshots
         DriftSqlType.dateTime,
         data['${effectivePrefix}submitted_at'],
       ),
+      sourceProjectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_project_id'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -38079,6 +38278,7 @@ class ForecastSnapshot extends DataClass
   final String period;
   final String status;
   final DateTime? submittedAt;
+  final String? sourceProjectId;
   final DateTime createdAt;
   final DateTime updatedAt;
   const ForecastSnapshot({
@@ -38087,6 +38287,7 @@ class ForecastSnapshot extends DataClass
     required this.period,
     required this.status,
     this.submittedAt,
+    this.sourceProjectId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -38099,6 +38300,9 @@ class ForecastSnapshot extends DataClass
     map['status'] = Variable<String>(status);
     if (!nullToAbsent || submittedAt != null) {
       map['submitted_at'] = Variable<DateTime>(submittedAt);
+    }
+    if (!nullToAbsent || sourceProjectId != null) {
+      map['source_project_id'] = Variable<String>(sourceProjectId);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -38114,6 +38318,9 @@ class ForecastSnapshot extends DataClass
       submittedAt: submittedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(submittedAt),
+      sourceProjectId: sourceProjectId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceProjectId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -38130,6 +38337,7 @@ class ForecastSnapshot extends DataClass
       period: serializer.fromJson<String>(json['period']),
       status: serializer.fromJson<String>(json['status']),
       submittedAt: serializer.fromJson<DateTime?>(json['submittedAt']),
+      sourceProjectId: serializer.fromJson<String?>(json['sourceProjectId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -38143,6 +38351,7 @@ class ForecastSnapshot extends DataClass
       'period': serializer.toJson<String>(period),
       'status': serializer.toJson<String>(status),
       'submittedAt': serializer.toJson<DateTime?>(submittedAt),
+      'sourceProjectId': serializer.toJson<String?>(sourceProjectId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -38154,6 +38363,7 @@ class ForecastSnapshot extends DataClass
     String? period,
     String? status,
     Value<DateTime?> submittedAt = const Value.absent(),
+    Value<String?> sourceProjectId = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => ForecastSnapshot(
@@ -38162,6 +38372,9 @@ class ForecastSnapshot extends DataClass
     period: period ?? this.period,
     status: status ?? this.status,
     submittedAt: submittedAt.present ? submittedAt.value : this.submittedAt,
+    sourceProjectId: sourceProjectId.present
+        ? sourceProjectId.value
+        : this.sourceProjectId,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -38174,6 +38387,9 @@ class ForecastSnapshot extends DataClass
       submittedAt: data.submittedAt.present
           ? data.submittedAt.value
           : this.submittedAt,
+      sourceProjectId: data.sourceProjectId.present
+          ? data.sourceProjectId.value
+          : this.sourceProjectId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -38187,6 +38403,7 @@ class ForecastSnapshot extends DataClass
           ..write('period: $period, ')
           ..write('status: $status, ')
           ..write('submittedAt: $submittedAt, ')
+          ..write('sourceProjectId: $sourceProjectId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -38200,6 +38417,7 @@ class ForecastSnapshot extends DataClass
     period,
     status,
     submittedAt,
+    sourceProjectId,
     createdAt,
     updatedAt,
   );
@@ -38212,6 +38430,7 @@ class ForecastSnapshot extends DataClass
           other.period == this.period &&
           other.status == this.status &&
           other.submittedAt == this.submittedAt &&
+          other.sourceProjectId == this.sourceProjectId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -38222,6 +38441,7 @@ class ForecastSnapshotsCompanion extends UpdateCompanion<ForecastSnapshot> {
   final Value<String> period;
   final Value<String> status;
   final Value<DateTime?> submittedAt;
+  final Value<String?> sourceProjectId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -38231,6 +38451,7 @@ class ForecastSnapshotsCompanion extends UpdateCompanion<ForecastSnapshot> {
     this.period = const Value.absent(),
     this.status = const Value.absent(),
     this.submittedAt = const Value.absent(),
+    this.sourceProjectId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -38241,6 +38462,7 @@ class ForecastSnapshotsCompanion extends UpdateCompanion<ForecastSnapshot> {
     required String period,
     this.status = const Value.absent(),
     this.submittedAt = const Value.absent(),
+    this.sourceProjectId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -38253,6 +38475,7 @@ class ForecastSnapshotsCompanion extends UpdateCompanion<ForecastSnapshot> {
     Expression<String>? period,
     Expression<String>? status,
     Expression<DateTime>? submittedAt,
+    Expression<String>? sourceProjectId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -38263,6 +38486,7 @@ class ForecastSnapshotsCompanion extends UpdateCompanion<ForecastSnapshot> {
       if (period != null) 'period': period,
       if (status != null) 'status': status,
       if (submittedAt != null) 'submitted_at': submittedAt,
+      if (sourceProjectId != null) 'source_project_id': sourceProjectId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -38275,6 +38499,7 @@ class ForecastSnapshotsCompanion extends UpdateCompanion<ForecastSnapshot> {
     Value<String>? period,
     Value<String>? status,
     Value<DateTime?>? submittedAt,
+    Value<String?>? sourceProjectId,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -38285,6 +38510,7 @@ class ForecastSnapshotsCompanion extends UpdateCompanion<ForecastSnapshot> {
       period: period ?? this.period,
       status: status ?? this.status,
       submittedAt: submittedAt ?? this.submittedAt,
+      sourceProjectId: sourceProjectId ?? this.sourceProjectId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -38309,6 +38535,9 @@ class ForecastSnapshotsCompanion extends UpdateCompanion<ForecastSnapshot> {
     if (submittedAt.present) {
       map['submitted_at'] = Variable<DateTime>(submittedAt.value);
     }
+    if (sourceProjectId.present) {
+      map['source_project_id'] = Variable<String>(sourceProjectId.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -38329,6 +38558,7 @@ class ForecastSnapshotsCompanion extends UpdateCompanion<ForecastSnapshot> {
           ..write('period: $period, ')
           ..write('status: $status, ')
           ..write('submittedAt: $submittedAt, ')
+          ..write('sourceProjectId: $sourceProjectId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -38436,6 +38666,17 @@ class $ForecastLinesTable extends ForecastLines
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _sourceProjectIdMeta = const VerificationMeta(
+    'sourceProjectId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceProjectId = GeneratedColumn<String>(
+    'source_project_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -38470,6 +38711,7 @@ class $ForecastLinesTable extends ForecastLines
     financialYear,
     amountMinor,
     notes,
+    sourceProjectId,
     createdAt,
     updatedAt,
   ];
@@ -38554,6 +38796,15 @@ class $ForecastLinesTable extends ForecastLines
         notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
       );
     }
+    if (data.containsKey('source_project_id')) {
+      context.handle(
+        _sourceProjectIdMeta,
+        sourceProjectId.isAcceptableOrUnknown(
+          data['source_project_id']!,
+          _sourceProjectIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -38607,6 +38858,10 @@ class $ForecastLinesTable extends ForecastLines
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
       ),
+      sourceProjectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_project_id'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -38633,6 +38888,7 @@ class ForecastLine extends DataClass implements Insertable<ForecastLine> {
   final String financialYear;
   final int amountMinor;
   final String? notes;
+  final String? sourceProjectId;
   final DateTime createdAt;
   final DateTime updatedAt;
   const ForecastLine({
@@ -38644,6 +38900,7 @@ class ForecastLine extends DataClass implements Insertable<ForecastLine> {
     required this.financialYear,
     required this.amountMinor,
     this.notes,
+    this.sourceProjectId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -38661,6 +38918,9 @@ class ForecastLine extends DataClass implements Insertable<ForecastLine> {
     map['amount_minor'] = Variable<int>(amountMinor);
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
+    }
+    if (!nullToAbsent || sourceProjectId != null) {
+      map['source_project_id'] = Variable<String>(sourceProjectId);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -38681,6 +38941,9 @@ class ForecastLine extends DataClass implements Insertable<ForecastLine> {
       notes: notes == null && nullToAbsent
           ? const Value.absent()
           : Value(notes),
+      sourceProjectId: sourceProjectId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceProjectId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -38700,6 +38963,7 @@ class ForecastLine extends DataClass implements Insertable<ForecastLine> {
       financialYear: serializer.fromJson<String>(json['financialYear']),
       amountMinor: serializer.fromJson<int>(json['amountMinor']),
       notes: serializer.fromJson<String?>(json['notes']),
+      sourceProjectId: serializer.fromJson<String?>(json['sourceProjectId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -38716,6 +38980,7 @@ class ForecastLine extends DataClass implements Insertable<ForecastLine> {
       'financialYear': serializer.toJson<String>(financialYear),
       'amountMinor': serializer.toJson<int>(amountMinor),
       'notes': serializer.toJson<String?>(notes),
+      'sourceProjectId': serializer.toJson<String?>(sourceProjectId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -38730,6 +38995,7 @@ class ForecastLine extends DataClass implements Insertable<ForecastLine> {
     String? financialYear,
     int? amountMinor,
     Value<String?> notes = const Value.absent(),
+    Value<String?> sourceProjectId = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => ForecastLine(
@@ -38741,6 +39007,9 @@ class ForecastLine extends DataClass implements Insertable<ForecastLine> {
     financialYear: financialYear ?? this.financialYear,
     amountMinor: amountMinor ?? this.amountMinor,
     notes: notes.present ? notes.value : this.notes,
+    sourceProjectId: sourceProjectId.present
+        ? sourceProjectId.value
+        : this.sourceProjectId,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -38764,6 +39033,9 @@ class ForecastLine extends DataClass implements Insertable<ForecastLine> {
           ? data.amountMinor.value
           : this.amountMinor,
       notes: data.notes.present ? data.notes.value : this.notes,
+      sourceProjectId: data.sourceProjectId.present
+          ? data.sourceProjectId.value
+          : this.sourceProjectId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -38780,6 +39052,7 @@ class ForecastLine extends DataClass implements Insertable<ForecastLine> {
           ..write('financialYear: $financialYear, ')
           ..write('amountMinor: $amountMinor, ')
           ..write('notes: $notes, ')
+          ..write('sourceProjectId: $sourceProjectId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -38796,6 +39069,7 @@ class ForecastLine extends DataClass implements Insertable<ForecastLine> {
     financialYear,
     amountMinor,
     notes,
+    sourceProjectId,
     createdAt,
     updatedAt,
   );
@@ -38811,6 +39085,7 @@ class ForecastLine extends DataClass implements Insertable<ForecastLine> {
           other.financialYear == this.financialYear &&
           other.amountMinor == this.amountMinor &&
           other.notes == this.notes &&
+          other.sourceProjectId == this.sourceProjectId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -38824,6 +39099,7 @@ class ForecastLinesCompanion extends UpdateCompanion<ForecastLine> {
   final Value<String> financialYear;
   final Value<int> amountMinor;
   final Value<String?> notes;
+  final Value<String?> sourceProjectId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -38836,6 +39112,7 @@ class ForecastLinesCompanion extends UpdateCompanion<ForecastLine> {
     this.financialYear = const Value.absent(),
     this.amountMinor = const Value.absent(),
     this.notes = const Value.absent(),
+    this.sourceProjectId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -38849,6 +39126,7 @@ class ForecastLinesCompanion extends UpdateCompanion<ForecastLine> {
     required String financialYear,
     required int amountMinor,
     this.notes = const Value.absent(),
+    this.sourceProjectId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -38867,6 +39145,7 @@ class ForecastLinesCompanion extends UpdateCompanion<ForecastLine> {
     Expression<String>? financialYear,
     Expression<int>? amountMinor,
     Expression<String>? notes,
+    Expression<String>? sourceProjectId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -38880,6 +39159,7 @@ class ForecastLinesCompanion extends UpdateCompanion<ForecastLine> {
       if (financialYear != null) 'financial_year': financialYear,
       if (amountMinor != null) 'amount_minor': amountMinor,
       if (notes != null) 'notes': notes,
+      if (sourceProjectId != null) 'source_project_id': sourceProjectId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -38895,6 +39175,7 @@ class ForecastLinesCompanion extends UpdateCompanion<ForecastLine> {
     Value<String>? financialYear,
     Value<int>? amountMinor,
     Value<String?>? notes,
+    Value<String?>? sourceProjectId,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -38908,6 +39189,7 @@ class ForecastLinesCompanion extends UpdateCompanion<ForecastLine> {
       financialYear: financialYear ?? this.financialYear,
       amountMinor: amountMinor ?? this.amountMinor,
       notes: notes ?? this.notes,
+      sourceProjectId: sourceProjectId ?? this.sourceProjectId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -38941,6 +39223,9 @@ class ForecastLinesCompanion extends UpdateCompanion<ForecastLine> {
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
+    if (sourceProjectId.present) {
+      map['source_project_id'] = Variable<String>(sourceProjectId.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -38964,6 +39249,7 @@ class ForecastLinesCompanion extends UpdateCompanion<ForecastLine> {
           ..write('financialYear: $financialYear, ')
           ..write('amountMinor: $amountMinor, ')
           ..write('notes: $notes, ')
+          ..write('sourceProjectId: $sourceProjectId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -39087,6 +39373,17 @@ class $ActualLinesTable extends ActualLines
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _sourceProjectIdMeta = const VerificationMeta(
+    'sourceProjectId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceProjectId = GeneratedColumn<String>(
+    'source_project_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -39123,6 +39420,7 @@ class $ActualLinesTable extends ActualLines
     sourceRef,
     enteredBy,
     notes,
+    sourceProjectId,
     createdAt,
     updatedAt,
   ];
@@ -39214,6 +39512,15 @@ class $ActualLinesTable extends ActualLines
         notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
       );
     }
+    if (data.containsKey('source_project_id')) {
+      context.handle(
+        _sourceProjectIdMeta,
+        sourceProjectId.isAcceptableOrUnknown(
+          data['source_project_id']!,
+          _sourceProjectIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -39275,6 +39582,10 @@ class $ActualLinesTable extends ActualLines
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
       ),
+      sourceProjectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_project_id'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -39303,6 +39614,7 @@ class ActualLine extends DataClass implements Insertable<ActualLine> {
   final String? sourceRef;
   final String? enteredBy;
   final String? notes;
+  final String? sourceProjectId;
   final DateTime createdAt;
   final DateTime updatedAt;
   const ActualLine({
@@ -39316,6 +39628,7 @@ class ActualLine extends DataClass implements Insertable<ActualLine> {
     this.sourceRef,
     this.enteredBy,
     this.notes,
+    this.sourceProjectId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -39339,6 +39652,9 @@ class ActualLine extends DataClass implements Insertable<ActualLine> {
     }
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
+    }
+    if (!nullToAbsent || sourceProjectId != null) {
+      map['source_project_id'] = Variable<String>(sourceProjectId);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -39365,6 +39681,9 @@ class ActualLine extends DataClass implements Insertable<ActualLine> {
       notes: notes == null && nullToAbsent
           ? const Value.absent()
           : Value(notes),
+      sourceProjectId: sourceProjectId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceProjectId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -39386,6 +39705,7 @@ class ActualLine extends DataClass implements Insertable<ActualLine> {
       sourceRef: serializer.fromJson<String?>(json['sourceRef']),
       enteredBy: serializer.fromJson<String?>(json['enteredBy']),
       notes: serializer.fromJson<String?>(json['notes']),
+      sourceProjectId: serializer.fromJson<String?>(json['sourceProjectId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -39404,6 +39724,7 @@ class ActualLine extends DataClass implements Insertable<ActualLine> {
       'sourceRef': serializer.toJson<String?>(sourceRef),
       'enteredBy': serializer.toJson<String?>(enteredBy),
       'notes': serializer.toJson<String?>(notes),
+      'sourceProjectId': serializer.toJson<String?>(sourceProjectId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -39420,6 +39741,7 @@ class ActualLine extends DataClass implements Insertable<ActualLine> {
     Value<String?> sourceRef = const Value.absent(),
     Value<String?> enteredBy = const Value.absent(),
     Value<String?> notes = const Value.absent(),
+    Value<String?> sourceProjectId = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => ActualLine(
@@ -39433,6 +39755,9 @@ class ActualLine extends DataClass implements Insertable<ActualLine> {
     sourceRef: sourceRef.present ? sourceRef.value : this.sourceRef,
     enteredBy: enteredBy.present ? enteredBy.value : this.enteredBy,
     notes: notes.present ? notes.value : this.notes,
+    sourceProjectId: sourceProjectId.present
+        ? sourceProjectId.value
+        : this.sourceProjectId,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -39454,6 +39779,9 @@ class ActualLine extends DataClass implements Insertable<ActualLine> {
       sourceRef: data.sourceRef.present ? data.sourceRef.value : this.sourceRef,
       enteredBy: data.enteredBy.present ? data.enteredBy.value : this.enteredBy,
       notes: data.notes.present ? data.notes.value : this.notes,
+      sourceProjectId: data.sourceProjectId.present
+          ? data.sourceProjectId.value
+          : this.sourceProjectId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -39472,6 +39800,7 @@ class ActualLine extends DataClass implements Insertable<ActualLine> {
           ..write('sourceRef: $sourceRef, ')
           ..write('enteredBy: $enteredBy, ')
           ..write('notes: $notes, ')
+          ..write('sourceProjectId: $sourceProjectId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -39490,6 +39819,7 @@ class ActualLine extends DataClass implements Insertable<ActualLine> {
     sourceRef,
     enteredBy,
     notes,
+    sourceProjectId,
     createdAt,
     updatedAt,
   );
@@ -39507,6 +39837,7 @@ class ActualLine extends DataClass implements Insertable<ActualLine> {
           other.sourceRef == this.sourceRef &&
           other.enteredBy == this.enteredBy &&
           other.notes == this.notes &&
+          other.sourceProjectId == this.sourceProjectId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -39522,6 +39853,7 @@ class ActualLinesCompanion extends UpdateCompanion<ActualLine> {
   final Value<String?> sourceRef;
   final Value<String?> enteredBy;
   final Value<String?> notes;
+  final Value<String?> sourceProjectId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -39536,6 +39868,7 @@ class ActualLinesCompanion extends UpdateCompanion<ActualLine> {
     this.sourceRef = const Value.absent(),
     this.enteredBy = const Value.absent(),
     this.notes = const Value.absent(),
+    this.sourceProjectId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -39551,6 +39884,7 @@ class ActualLinesCompanion extends UpdateCompanion<ActualLine> {
     this.sourceRef = const Value.absent(),
     this.enteredBy = const Value.absent(),
     this.notes = const Value.absent(),
+    this.sourceProjectId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -39570,6 +39904,7 @@ class ActualLinesCompanion extends UpdateCompanion<ActualLine> {
     Expression<String>? sourceRef,
     Expression<String>? enteredBy,
     Expression<String>? notes,
+    Expression<String>? sourceProjectId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -39585,6 +39920,7 @@ class ActualLinesCompanion extends UpdateCompanion<ActualLine> {
       if (sourceRef != null) 'source_ref': sourceRef,
       if (enteredBy != null) 'entered_by': enteredBy,
       if (notes != null) 'notes': notes,
+      if (sourceProjectId != null) 'source_project_id': sourceProjectId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -39602,6 +39938,7 @@ class ActualLinesCompanion extends UpdateCompanion<ActualLine> {
     Value<String?>? sourceRef,
     Value<String?>? enteredBy,
     Value<String?>? notes,
+    Value<String?>? sourceProjectId,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -39617,6 +39954,7 @@ class ActualLinesCompanion extends UpdateCompanion<ActualLine> {
       sourceRef: sourceRef ?? this.sourceRef,
       enteredBy: enteredBy ?? this.enteredBy,
       notes: notes ?? this.notes,
+      sourceProjectId: sourceProjectId ?? this.sourceProjectId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -39656,6 +39994,9 @@ class ActualLinesCompanion extends UpdateCompanion<ActualLine> {
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
+    if (sourceProjectId.present) {
+      map['source_project_id'] = Variable<String>(sourceProjectId.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -39681,6 +40022,7 @@ class ActualLinesCompanion extends UpdateCompanion<ActualLine> {
           ..write('sourceRef: $sourceRef, ')
           ..write('enteredBy: $enteredBy, ')
           ..write('notes: $notes, ')
+          ..write('sourceProjectId: $sourceProjectId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -40249,6 +40591,377 @@ class FinancialAuditLogCompanion
           ..write('newValue: $newValue, ')
           ..write('changedBy: $changedBy, ')
           ..write('changedAt: $changedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $CategoryMergesTable extends CategoryMerges
+    with TableInfo<$CategoryMergesTable, CategoryMerge> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CategoryMergesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES projects (id)',
+    ),
+  );
+  static const VerificationMeta _sourceCategoryIdMeta = const VerificationMeta(
+    'sourceCategoryId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceCategoryId = GeneratedColumn<String>(
+    'source_category_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _targetNameMeta = const VerificationMeta(
+    'targetName',
+  );
+  @override
+  late final GeneratedColumn<String> targetName = GeneratedColumn<String>(
+    'target_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    projectId,
+    sourceCategoryId,
+    targetName,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'category_merges';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CategoryMerge> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_projectIdMeta);
+    }
+    if (data.containsKey('source_category_id')) {
+      context.handle(
+        _sourceCategoryIdMeta,
+        sourceCategoryId.isAcceptableOrUnknown(
+          data['source_category_id']!,
+          _sourceCategoryIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceCategoryIdMeta);
+    }
+    if (data.containsKey('target_name')) {
+      context.handle(
+        _targetNameMeta,
+        targetName.isAcceptableOrUnknown(data['target_name']!, _targetNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_targetNameMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CategoryMerge map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CategoryMerge(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      )!,
+      sourceCategoryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_category_id'],
+      )!,
+      targetName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}target_name'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $CategoryMergesTable createAlias(String alias) {
+    return $CategoryMergesTable(attachedDatabase, alias);
+  }
+}
+
+class CategoryMerge extends DataClass implements Insertable<CategoryMerge> {
+  final String id;
+  final String projectId;
+  final String sourceCategoryId;
+  final String targetName;
+  final DateTime createdAt;
+  const CategoryMerge({
+    required this.id,
+    required this.projectId,
+    required this.sourceCategoryId,
+    required this.targetName,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['project_id'] = Variable<String>(projectId);
+    map['source_category_id'] = Variable<String>(sourceCategoryId);
+    map['target_name'] = Variable<String>(targetName);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  CategoryMergesCompanion toCompanion(bool nullToAbsent) {
+    return CategoryMergesCompanion(
+      id: Value(id),
+      projectId: Value(projectId),
+      sourceCategoryId: Value(sourceCategoryId),
+      targetName: Value(targetName),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory CategoryMerge.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CategoryMerge(
+      id: serializer.fromJson<String>(json['id']),
+      projectId: serializer.fromJson<String>(json['projectId']),
+      sourceCategoryId: serializer.fromJson<String>(json['sourceCategoryId']),
+      targetName: serializer.fromJson<String>(json['targetName']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'projectId': serializer.toJson<String>(projectId),
+      'sourceCategoryId': serializer.toJson<String>(sourceCategoryId),
+      'targetName': serializer.toJson<String>(targetName),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  CategoryMerge copyWith({
+    String? id,
+    String? projectId,
+    String? sourceCategoryId,
+    String? targetName,
+    DateTime? createdAt,
+  }) => CategoryMerge(
+    id: id ?? this.id,
+    projectId: projectId ?? this.projectId,
+    sourceCategoryId: sourceCategoryId ?? this.sourceCategoryId,
+    targetName: targetName ?? this.targetName,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  CategoryMerge copyWithCompanion(CategoryMergesCompanion data) {
+    return CategoryMerge(
+      id: data.id.present ? data.id.value : this.id,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      sourceCategoryId: data.sourceCategoryId.present
+          ? data.sourceCategoryId.value
+          : this.sourceCategoryId,
+      targetName: data.targetName.present
+          ? data.targetName.value
+          : this.targetName,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CategoryMerge(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('sourceCategoryId: $sourceCategoryId, ')
+          ..write('targetName: $targetName, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, projectId, sourceCategoryId, targetName, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CategoryMerge &&
+          other.id == this.id &&
+          other.projectId == this.projectId &&
+          other.sourceCategoryId == this.sourceCategoryId &&
+          other.targetName == this.targetName &&
+          other.createdAt == this.createdAt);
+}
+
+class CategoryMergesCompanion extends UpdateCompanion<CategoryMerge> {
+  final Value<String> id;
+  final Value<String> projectId;
+  final Value<String> sourceCategoryId;
+  final Value<String> targetName;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const CategoryMergesCompanion({
+    this.id = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.sourceCategoryId = const Value.absent(),
+    this.targetName = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CategoryMergesCompanion.insert({
+    required String id,
+    required String projectId,
+    required String sourceCategoryId,
+    required String targetName,
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       projectId = Value(projectId),
+       sourceCategoryId = Value(sourceCategoryId),
+       targetName = Value(targetName);
+  static Insertable<CategoryMerge> custom({
+    Expression<String>? id,
+    Expression<String>? projectId,
+    Expression<String>? sourceCategoryId,
+    Expression<String>? targetName,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (projectId != null) 'project_id': projectId,
+      if (sourceCategoryId != null) 'source_category_id': sourceCategoryId,
+      if (targetName != null) 'target_name': targetName,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CategoryMergesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? projectId,
+    Value<String>? sourceCategoryId,
+    Value<String>? targetName,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return CategoryMergesCompanion(
+      id: id ?? this.id,
+      projectId: projectId ?? this.projectId,
+      sourceCategoryId: sourceCategoryId ?? this.sourceCategoryId,
+      targetName: targetName ?? this.targetName,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (sourceCategoryId.present) {
+      map['source_category_id'] = Variable<String>(sourceCategoryId.value);
+    }
+    if (targetName.present) {
+      map['target_name'] = Variable<String>(targetName.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CategoryMergesCompanion(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('sourceCategoryId: $sourceCategoryId, ')
+          ..write('targetName: $targetName, ')
+          ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -43616,6 +44329,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ActualLinesTable actualLines = $ActualLinesTable(this);
   late final $FinancialAuditLogTable financialAuditLog =
       $FinancialAuditLogTable(this);
+  late final $CategoryMergesTable categoryMerges = $CategoryMergesTable(this);
   late final $DayPlansTable dayPlans = $DayPlansTable(this);
   late final $DayPlanBlocksTable dayPlanBlocks = $DayPlanBlocksTable(this);
   late final $WeekPlansTable weekPlans = $WeekPlansTable(this);
@@ -43742,6 +44456,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     forecastLines,
     actualLines,
     financialAuditLog,
+    categoryMerges,
     dayPlans,
     dayPlanBlocks,
     weekPlans,
@@ -44805,6 +45520,27 @@ final class $$ProjectsTableReferences
     final cache = $_typedResult.readTableOrNull(
       _financialAuditLogRefsTable($_db),
     );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$CategoryMergesTable, List<CategoryMerge>>
+  _categoryMergesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.categoryMerges,
+    aliasName: $_aliasNameGenerator(
+      db.projects.id,
+      db.categoryMerges.projectId,
+    ),
+  );
+
+  $$CategoryMergesTableProcessedTableManager get categoryMergesRefs {
+    final manager = $$CategoryMergesTableTableManager(
+      $_db,
+      $_db.categoryMerges,
+    ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_categoryMergesRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -46033,6 +46769,31 @@ class $$ProjectsTableFilterComposer
           }) => $$FinancialAuditLogTableFilterComposer(
             $db: $db,
             $table: $db.financialAuditLog,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> categoryMergesRefs(
+    Expression<bool> Function($$CategoryMergesTableFilterComposer f) f,
+  ) {
+    final $$CategoryMergesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.categoryMerges,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CategoryMergesTableFilterComposer(
+            $db: $db,
+            $table: $db.categoryMerges,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -47328,6 +48089,31 @@ class $$ProjectsTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> categoryMergesRefs<T extends Object>(
+    Expression<T> Function($$CategoryMergesTableAnnotationComposer a) f,
+  ) {
+    final $$CategoryMergesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.categoryMerges,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CategoryMergesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.categoryMerges,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$ProjectsTableTableManager
@@ -47391,6 +48177,7 @@ class $$ProjectsTableTableManager
             bool forecastLinesRefs,
             bool actualLinesRefs,
             bool financialAuditLogRefs,
+            bool categoryMergesRefs,
           })
         > {
   $$ProjectsTableTableManager(_$AppDatabase db, $ProjectsTable table)
@@ -47509,6 +48296,7 @@ class $$ProjectsTableTableManager
                 forecastLinesRefs = false,
                 actualLinesRefs = false,
                 financialAuditLogRefs = false,
+                categoryMergesRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -47560,6 +48348,7 @@ class $$ProjectsTableTableManager
                     if (forecastLinesRefs) db.forecastLines,
                     if (actualLinesRefs) db.actualLines,
                     if (financialAuditLogRefs) db.financialAuditLog,
+                    if (categoryMergesRefs) db.categoryMerges,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -48551,6 +49340,27 @@ class $$ProjectsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (categoryMergesRefs)
+                        await $_getPrefetchedData<
+                          Project,
+                          $ProjectsTable,
+                          CategoryMerge
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProjectsTableReferences
+                              ._categoryMergesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).categoryMergesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.projectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -48619,6 +49429,7 @@ typedef $$ProjectsTableProcessedTableManager =
         bool forecastLinesRefs,
         bool actualLinesRefs,
         bool financialAuditLogRefs,
+        bool categoryMergesRefs,
       })
     >;
 typedef $$ProgrammeLinksTableCreateCompanionBuilder =
@@ -73421,6 +74232,7 @@ typedef $$CostCategoriesTableCreateCompanionBuilder =
       required String projectId,
       required String name,
       Value<int> sortOrder,
+      Value<String?> sourceProjectId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -73431,6 +74243,7 @@ typedef $$CostCategoriesTableUpdateCompanionBuilder =
       Value<String> projectId,
       Value<String> name,
       Value<int> sortOrder,
+      Value<String?> sourceProjectId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -73548,6 +74361,11 @@ class $$CostCategoriesTableFilterComposer
 
   ColumnFilters<int> get sortOrder => $composableBuilder(
     column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -73684,6 +74502,11 @@ class $$CostCategoriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -73735,6 +74558,11 @@ class $$CostCategoriesTableAnnotationComposer
 
   GeneratedColumn<int> get sortOrder =>
       $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -73880,6 +74708,7 @@ class $$CostCategoriesTableTableManager
                 Value<String> projectId = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
+                Value<String?> sourceProjectId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -73888,6 +74717,7 @@ class $$CostCategoriesTableTableManager
                 projectId: projectId,
                 name: name,
                 sortOrder: sortOrder,
+                sourceProjectId: sourceProjectId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -73898,6 +74728,7 @@ class $$CostCategoriesTableTableManager
                 required String projectId,
                 required String name,
                 Value<int> sortOrder = const Value.absent(),
+                Value<String?> sourceProjectId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -73906,6 +74737,7 @@ class $$CostCategoriesTableTableManager
                 projectId: projectId,
                 name: name,
                 sortOrder: sortOrder,
+                sourceProjectId: sourceProjectId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -74070,6 +74902,7 @@ typedef $$ProjectBudgetsTableCreateCompanionBuilder =
       Value<String?> fundingSource,
       Value<String?> notes,
       Value<int> varianceToleranceBp,
+      Value<String?> sourceProjectId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -74086,6 +74919,7 @@ typedef $$ProjectBudgetsTableUpdateCompanionBuilder =
       Value<String?> fundingSource,
       Value<String?> notes,
       Value<int> varianceToleranceBp,
+      Value<String?> sourceProjectId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -74191,6 +75025,11 @@ class $$ProjectBudgetsTableFilterComposer
 
   ColumnFilters<int> get varianceToleranceBp => $composableBuilder(
     column: $table.varianceToleranceBp,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -74307,6 +75146,11 @@ class $$ProjectBudgetsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -74382,6 +75226,11 @@ class $$ProjectBudgetsTableAnnotationComposer
 
   GeneratedColumn<int> get varianceToleranceBp => $composableBuilder(
     column: $table.varianceToleranceBp,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
     builder: (column) => column,
   );
 
@@ -74480,6 +75329,7 @@ class $$ProjectBudgetsTableTableManager
                 Value<String?> fundingSource = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<int> varianceToleranceBp = const Value.absent(),
+                Value<String?> sourceProjectId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -74494,6 +75344,7 @@ class $$ProjectBudgetsTableTableManager
                 fundingSource: fundingSource,
                 notes: notes,
                 varianceToleranceBp: varianceToleranceBp,
+                sourceProjectId: sourceProjectId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -74510,6 +75361,7 @@ class $$ProjectBudgetsTableTableManager
                 Value<String?> fundingSource = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<int> varianceToleranceBp = const Value.absent(),
+                Value<String?> sourceProjectId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -74524,6 +75376,7 @@ class $$ProjectBudgetsTableTableManager
                 fundingSource: fundingSource,
                 notes: notes,
                 varianceToleranceBp: varianceToleranceBp,
+                sourceProjectId: sourceProjectId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -74632,6 +75485,7 @@ typedef $$BudgetLinesTableCreateCompanionBuilder =
       required String financialYear,
       required int amountMinor,
       Value<String?> notes,
+      Value<String?> sourceProjectId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -74646,6 +75500,7 @@ typedef $$BudgetLinesTableUpdateCompanionBuilder =
       Value<String> financialYear,
       Value<int> amountMinor,
       Value<String?> notes,
+      Value<String?> sourceProjectId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -74747,6 +75602,11 @@ class $$BudgetLinesTableFilterComposer
 
   ColumnFilters<String> get notes => $composableBuilder(
     column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -74864,6 +75724,11 @@ class $$BudgetLinesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -74973,6 +75838,11 @@ class $$BudgetLinesTableAnnotationComposer
 
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -75090,6 +75960,7 @@ class $$BudgetLinesTableTableManager
                 Value<String> financialYear = const Value.absent(),
                 Value<int> amountMinor = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<String?> sourceProjectId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -75102,6 +75973,7 @@ class $$BudgetLinesTableTableManager
                 financialYear: financialYear,
                 amountMinor: amountMinor,
                 notes: notes,
+                sourceProjectId: sourceProjectId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -75116,6 +75988,7 @@ class $$BudgetLinesTableTableManager
                 required String financialYear,
                 required int amountMinor,
                 Value<String?> notes = const Value.absent(),
+                Value<String?> sourceProjectId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -75128,6 +76001,7 @@ class $$BudgetLinesTableTableManager
                 financialYear: financialYear,
                 amountMinor: amountMinor,
                 notes: notes,
+                sourceProjectId: sourceProjectId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -75243,6 +76117,7 @@ typedef $$ForecastSnapshotsTableCreateCompanionBuilder =
       required String period,
       Value<String> status,
       Value<DateTime?> submittedAt,
+      Value<String?> sourceProjectId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -75254,6 +76129,7 @@ typedef $$ForecastSnapshotsTableUpdateCompanionBuilder =
       Value<String> period,
       Value<String> status,
       Value<DateTime?> submittedAt,
+      Value<String?> sourceProjectId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -75339,6 +76215,11 @@ class $$ForecastSnapshotsTableFilterComposer
 
   ColumnFilters<DateTime> get submittedAt => $composableBuilder(
     column: $table.submittedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -75430,6 +76311,11 @@ class $$ForecastSnapshotsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -75484,6 +76370,11 @@ class $$ForecastSnapshotsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get submittedAt => $composableBuilder(
     column: $table.submittedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
     builder: (column) => column,
   );
 
@@ -75580,6 +76471,7 @@ class $$ForecastSnapshotsTableTableManager
                 Value<String> period = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<DateTime?> submittedAt = const Value.absent(),
+                Value<String?> sourceProjectId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -75589,6 +76481,7 @@ class $$ForecastSnapshotsTableTableManager
                 period: period,
                 status: status,
                 submittedAt: submittedAt,
+                sourceProjectId: sourceProjectId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -75600,6 +76493,7 @@ class $$ForecastSnapshotsTableTableManager
                 required String period,
                 Value<String> status = const Value.absent(),
                 Value<DateTime?> submittedAt = const Value.absent(),
+                Value<String?> sourceProjectId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -75609,6 +76503,7 @@ class $$ForecastSnapshotsTableTableManager
                 period: period,
                 status: status,
                 submittedAt: submittedAt,
+                sourceProjectId: sourceProjectId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -75717,6 +76612,7 @@ typedef $$ForecastLinesTableCreateCompanionBuilder =
       required String financialYear,
       required int amountMinor,
       Value<String?> notes,
+      Value<String?> sourceProjectId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -75731,6 +76627,7 @@ typedef $$ForecastLinesTableUpdateCompanionBuilder =
       Value<String> financialYear,
       Value<int> amountMinor,
       Value<String?> notes,
+      Value<String?> sourceProjectId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -75839,6 +76736,11 @@ class $$ForecastLinesTableFilterComposer
 
   ColumnFilters<String> get notes => $composableBuilder(
     column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -75956,6 +76858,11 @@ class $$ForecastLinesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -76065,6 +76972,11 @@ class $$ForecastLinesTableAnnotationComposer
 
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -76183,6 +77095,7 @@ class $$ForecastLinesTableTableManager
                 Value<String> financialYear = const Value.absent(),
                 Value<int> amountMinor = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<String?> sourceProjectId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -76195,6 +77108,7 @@ class $$ForecastLinesTableTableManager
                 financialYear: financialYear,
                 amountMinor: amountMinor,
                 notes: notes,
+                sourceProjectId: sourceProjectId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -76209,6 +77123,7 @@ class $$ForecastLinesTableTableManager
                 required String financialYear,
                 required int amountMinor,
                 Value<String?> notes = const Value.absent(),
+                Value<String?> sourceProjectId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -76221,6 +77136,7 @@ class $$ForecastLinesTableTableManager
                 financialYear: financialYear,
                 amountMinor: amountMinor,
                 notes: notes,
+                sourceProjectId: sourceProjectId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -76345,6 +77261,7 @@ typedef $$ActualLinesTableCreateCompanionBuilder =
       Value<String?> sourceRef,
       Value<String?> enteredBy,
       Value<String?> notes,
+      Value<String?> sourceProjectId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -76361,6 +77278,7 @@ typedef $$ActualLinesTableUpdateCompanionBuilder =
       Value<String?> sourceRef,
       Value<String?> enteredBy,
       Value<String?> notes,
+      Value<String?> sourceProjectId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -76458,6 +77376,11 @@ class $$ActualLinesTableFilterComposer
 
   ColumnFilters<String> get notes => $composableBuilder(
     column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -76567,6 +77490,11 @@ class $$ActualLinesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -76661,6 +77589,11 @@ class $$ActualLinesTableAnnotationComposer
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
 
+  GeneratedColumn<String> get sourceProjectId => $composableBuilder(
+    column: $table.sourceProjectId,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -76752,6 +77685,7 @@ class $$ActualLinesTableTableManager
                 Value<String?> sourceRef = const Value.absent(),
                 Value<String?> enteredBy = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<String?> sourceProjectId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -76766,6 +77700,7 @@ class $$ActualLinesTableTableManager
                 sourceRef: sourceRef,
                 enteredBy: enteredBy,
                 notes: notes,
+                sourceProjectId: sourceProjectId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -76782,6 +77717,7 @@ class $$ActualLinesTableTableManager
                 Value<String?> sourceRef = const Value.absent(),
                 Value<String?> enteredBy = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<String?> sourceProjectId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -76796,6 +77732,7 @@ class $$ActualLinesTableTableManager
                 sourceRef: sourceRef,
                 enteredBy: enteredBy,
                 notes: notes,
+                sourceProjectId: sourceProjectId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -77291,6 +78228,336 @@ typedef $$FinancialAuditLogTableProcessedTableManager =
       $$FinancialAuditLogTableUpdateCompanionBuilder,
       (FinancialAuditLogData, $$FinancialAuditLogTableReferences),
       FinancialAuditLogData,
+      PrefetchHooks Function({bool projectId})
+    >;
+typedef $$CategoryMergesTableCreateCompanionBuilder =
+    CategoryMergesCompanion Function({
+      required String id,
+      required String projectId,
+      required String sourceCategoryId,
+      required String targetName,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+typedef $$CategoryMergesTableUpdateCompanionBuilder =
+    CategoryMergesCompanion Function({
+      Value<String> id,
+      Value<String> projectId,
+      Value<String> sourceCategoryId,
+      Value<String> targetName,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+final class $$CategoryMergesTableReferences
+    extends BaseReferences<_$AppDatabase, $CategoryMergesTable, CategoryMerge> {
+  $$CategoryMergesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ProjectsTable _projectIdTable(_$AppDatabase db) =>
+      db.projects.createAlias(
+        $_aliasNameGenerator(db.categoryMerges.projectId, db.projects.id),
+      );
+
+  $$ProjectsTableProcessedTableManager get projectId {
+    final $_column = $_itemColumn<String>('project_id')!;
+
+    final manager = $$ProjectsTableTableManager(
+      $_db,
+      $_db.projects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_projectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$CategoryMergesTableFilterComposer
+    extends Composer<_$AppDatabase, $CategoryMergesTable> {
+  $$CategoryMergesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceCategoryId => $composableBuilder(
+    column: $table.sourceCategoryId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get targetName => $composableBuilder(
+    column: $table.targetName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ProjectsTableFilterComposer get projectId {
+    final $$ProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$CategoryMergesTableOrderingComposer
+    extends Composer<_$AppDatabase, $CategoryMergesTable> {
+  $$CategoryMergesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceCategoryId => $composableBuilder(
+    column: $table.sourceCategoryId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get targetName => $composableBuilder(
+    column: $table.targetName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ProjectsTableOrderingComposer get projectId {
+    final $$ProjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$CategoryMergesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CategoryMergesTable> {
+  $$CategoryMergesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get sourceCategoryId => $composableBuilder(
+    column: $table.sourceCategoryId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get targetName => $composableBuilder(
+    column: $table.targetName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$ProjectsTableAnnotationComposer get projectId {
+    final $$ProjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$CategoryMergesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CategoryMergesTable,
+          CategoryMerge,
+          $$CategoryMergesTableFilterComposer,
+          $$CategoryMergesTableOrderingComposer,
+          $$CategoryMergesTableAnnotationComposer,
+          $$CategoryMergesTableCreateCompanionBuilder,
+          $$CategoryMergesTableUpdateCompanionBuilder,
+          (CategoryMerge, $$CategoryMergesTableReferences),
+          CategoryMerge,
+          PrefetchHooks Function({bool projectId})
+        > {
+  $$CategoryMergesTableTableManager(
+    _$AppDatabase db,
+    $CategoryMergesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CategoryMergesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CategoryMergesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CategoryMergesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> projectId = const Value.absent(),
+                Value<String> sourceCategoryId = const Value.absent(),
+                Value<String> targetName = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CategoryMergesCompanion(
+                id: id,
+                projectId: projectId,
+                sourceCategoryId: sourceCategoryId,
+                targetName: targetName,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String projectId,
+                required String sourceCategoryId,
+                required String targetName,
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CategoryMergesCompanion.insert(
+                id: id,
+                projectId: projectId,
+                sourceCategoryId: sourceCategoryId,
+                targetName: targetName,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$CategoryMergesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({projectId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (projectId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.projectId,
+                                referencedTable: $$CategoryMergesTableReferences
+                                    ._projectIdTable(db),
+                                referencedColumn:
+                                    $$CategoryMergesTableReferences
+                                        ._projectIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$CategoryMergesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CategoryMergesTable,
+      CategoryMerge,
+      $$CategoryMergesTableFilterComposer,
+      $$CategoryMergesTableOrderingComposer,
+      $$CategoryMergesTableAnnotationComposer,
+      $$CategoryMergesTableCreateCompanionBuilder,
+      $$CategoryMergesTableUpdateCompanionBuilder,
+      (CategoryMerge, $$CategoryMergesTableReferences),
+      CategoryMerge,
       PrefetchHooks Function({bool projectId})
     >;
 typedef $$DayPlansTableCreateCompanionBuilder =
@@ -79737,6 +81004,8 @@ class $AppDatabaseManager {
       $$ActualLinesTableTableManager(_db, _db.actualLines);
   $$FinancialAuditLogTableTableManager get financialAuditLog =>
       $$FinancialAuditLogTableTableManager(_db, _db.financialAuditLog);
+  $$CategoryMergesTableTableManager get categoryMerges =>
+      $$CategoryMergesTableTableManager(_db, _db.categoryMerges);
   $$DayPlansTableTableManager get dayPlans =>
       $$DayPlansTableTableManager(_db, _db.dayPlans);
   $$DayPlanBlocksTableTableManager get dayPlanBlocks =>
@@ -80365,6 +81634,7 @@ mixin _$FinanceDaoMixin on DatabaseAccessor<AppDatabase> {
   $ActualLinesTable get actualLines => attachedDatabase.actualLines;
   $FinancialAuditLogTable get financialAuditLog =>
       attachedDatabase.financialAuditLog;
+  $CategoryMergesTable get categoryMerges => attachedDatabase.categoryMerges;
   FinanceDaoManager get managers => FinanceDaoManager(this);
 }
 
@@ -80398,6 +81668,11 @@ class FinanceDaoManager {
       $$FinancialAuditLogTableTableManager(
         _db.attachedDatabase,
         _db.financialAuditLog,
+      );
+  $$CategoryMergesTableTableManager get categoryMerges =>
+      $$CategoryMergesTableTableManager(
+        _db.attachedDatabase,
+        _db.categoryMerges,
       );
 }
 

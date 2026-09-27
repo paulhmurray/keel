@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/database/database.dart';
+import '../../../core/finance/programme_rollup.dart';
 import '../../../core/finance/variance.dart';
 import '../../../shared/theme/keel_colors.dart';
 import '../../../shared/utils/money.dart';
@@ -123,6 +124,37 @@ class _PressuresSectionState extends State<PressuresSection> {
             priority: 2,
           ));
         }
+      }
+    }
+
+    // Priority 2: a linked project's submitted forecast beyond ITS
+    // tolerance (programme roll-up over cascaded finance). Quiet on a
+    // plain project — there is nothing cascaded to read.
+    final cascadedBudgets = await db.financeDao.getCascadedBudgets(projectId);
+    if (cascadedBudgets.isNotEmpty) {
+      final rollup = computeProgrammeFinance(
+        categories: await db.financeDao.getCascadedCategories(projectId),
+        budgets: cascadedBudgets,
+        budgetLines: await db.financeDao.getCascadedBudgetLines(projectId),
+        snapshots: await db.financeDao.getCascadedSnapshots(projectId),
+        forecastLines: await db.financeDao.getCascadedForecastLines(projectId),
+        actuals: await db.financeDao.getCascadedActuals(projectId),
+        merges: await db.financeDao.getMerges(projectId),
+      );
+      for (final r in rollup.breaches) {
+        final source = await db.projectDao.getProjectById(r.sourceId);
+        final cur = r.currency ?? rollup.currency ?? 'AUD';
+        all.add(_Pressure(
+          icon: _PressureIcon.finance,
+          title: 'PROJ · ${source?.name ?? 'Linked project'}: forecast '
+              '${Money.formatMinorCompact(r.forecastMinor, cur)} vs budget '
+              '${Money.formatMinorCompact(r.budgetMinor, cur)} '
+              '(${Money.formatBp(r.varianceBp)})',
+          subtitle: 'Linked project forecast beyond its tolerance '
+              '±${Money.formatBp(r.toleranceBp).replaceAll('+', '')}'
+              '${r.latestSnapshot != null ? ' · ${r.latestSnapshot!.period} snapshot' : ''}',
+          priority: 2,
+        ));
       }
     }
 

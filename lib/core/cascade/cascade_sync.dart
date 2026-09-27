@@ -59,6 +59,7 @@ Future<int> reconcileCascade({
   await cascade.pushAllWorkPackages(project.id);
   await cascade.pushAllActivities(project.id);
   await cascade.pushAllPlanDependencies(project.id);
+  await cascade.pushAllFinance(project.id);
   await cascade.pushAllStatusReports(project.id);
   await cascade.pushAllPeople(projectId: project.id, projectName: project.name);
   await cascade.pushAllRoles(project.id);

@@ -579,4 +579,91 @@ void main() {
     expect((await db.programmeGanttDao.getDependencies('prog')).single.sourceProjectId,
         'proj');
   });
+
+  test('upgrade from v64 adds finance cascade markers and category_merges',
+      () async {
+    final dir = await Directory.systemTemp.createTemp('keel_mig_test');
+    addTearDown(() => dir.deleteSync(recursive: true));
+    final path = '${dir.path}/v64.db';
+
+    final raw = sqlite3.open(path);
+    raw.execute('''
+      CREATE TABLE projects (
+        id TEXT NOT NULL PRIMARY KEY,
+        name TEXT NOT NULL,
+        description TEXT,
+        start_date TEXT,
+        status TEXT NOT NULL DEFAULT 'active',
+        kind TEXT NOT NULL DEFAULT 'project',
+        parent_programme_id TEXT
+      );
+    ''');
+    raw.execute('''
+      CREATE TABLE cost_categories (
+        id TEXT NOT NULL PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+        updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+      );
+    ''');
+    raw.execute('''
+      CREATE TABLE project_budgets (
+        id TEXT NOT NULL PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'draft',
+        approved_by TEXT,
+        approved_at INTEGER,
+        currency TEXT NOT NULL DEFAULT 'AUD',
+        funding_source TEXT,
+        notes TEXT,
+        variance_tolerance_bp INTEGER NOT NULL DEFAULT 500,
+        created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+        updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+      );
+    ''');
+    raw.execute('''
+      CREATE TABLE financial_audit_log (
+        id TEXT NOT NULL PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        entity_type TEXT NOT NULL,
+        entity_id TEXT NOT NULL,
+        field TEXT NOT NULL,
+        old_value TEXT,
+        new_value TEXT,
+        changed_by TEXT,
+        changed_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+      );
+    ''');
+    raw.execute("INSERT INTO projects (id, name, kind) VALUES ('prog', 'Prog', 'programme');");
+    raw.execute("INSERT INTO cost_categories (id, project_id, name) VALUES ('c1', 'prog', 'People');");
+    raw.execute("INSERT INTO project_budgets (id, project_id, name, status) VALUES ('b1', 'prog', 'Own', 'approved');");
+    raw.execute('PRAGMA user_version = 64;');
+    raw.dispose();
+
+    final db = AppDatabase.forTesting(NativeDatabase(File(path)));
+    addTearDown(db.close);
+
+    // Existing rows read as native.
+    final cats = await db.financeDao.getCategories('prog');
+    expect(cats.single.sourceProjectId, isNull);
+    expect((await db.financeDao.getApprovedBudget('prog'))!.id, 'b1');
+    // New column is writable and the cascaded getters see it.
+    await db.financeDao.upsertCategoryRaw(const CostCategoriesCompanion(
+      id: Value('cascade:cost_category:x:c9'),
+      projectId: Value('prog'),
+      name: Value('Vendor'),
+      sourceProjectId: Value('x'),
+    ));
+    expect(await db.financeDao.getCategories('prog'), hasLength(1));
+    expect(await db.financeDao.getCascadedCategories('prog'), hasLength(1));
+    // category_merges exists and works.
+    await db.financeDao.mergeCategories(
+        programmeId: 'prog',
+        sourceCategoryIds: const ['cascade:cost_category:x:c9'],
+        targetName: 'Vendors');
+    expect((await db.financeDao.getMerges('prog')).single.targetName, 'Vendors');
+  });
 }

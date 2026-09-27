@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/database/database.dart';
+import '../../core/finance/programme_rollup.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/utils/money.dart';
 
@@ -23,6 +24,10 @@ class FinancialSummaryPanel extends StatelessWidget {
   final int? varianceBp;
   final int? actualsToDateMinor;
 
+  /// Programme roll-up over linked projects (null / empty on a project).
+  final ProgrammeFinance? portfolio;
+  final Map<String, String> projectNames;
+
   const FinancialSummaryPanel({
     super.key,
     required this.approvedBudget,
@@ -32,16 +37,32 @@ class FinancialSummaryPanel extends StatelessWidget {
     this.forecastPeriod,
     this.varianceBp,
     this.actualsToDateMinor,
+    this.portfolio,
+    this.projectNames = const {},
   });
 
   @override
   Widget build(BuildContext context) {
+    final own = _own(context);
+    final port = portfolio;
+    if (port == null || port.isEmpty) return own;
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      _PortfolioBlock(finance: port, projectNames: projectNames),
+      const SizedBox(height: 10),
+      own,
+    ]);
+  }
+
+  Widget _own(BuildContext context) {
     final budget = approvedBudget;
     if (budget == null || totals == null) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 4),
-        child: Text('No approved budget.',
-            style: TextStyle(color: KColors.textMuted, fontSize: 12)),
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Text(
+            portfolio == null || portfolio!.isEmpty
+                ? 'No approved budget.'
+                : 'No programme-level budget of its own.',
+            style: const TextStyle(color: KColors.textMuted, fontSize: 12)),
       );
     }
     final t = totals!;
@@ -217,4 +238,107 @@ class FinancialSummaryPanel extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Portfolio roll-up for a programme: the linked projects' approved
+/// budgets, latest submitted forecasts and actuals, and who is beyond
+/// tolerance.
+class _PortfolioBlock extends StatelessWidget {
+  final ProgrammeFinance finance;
+  final Map<String, String> projectNames;
+  const _PortfolioBlock({required this.finance, required this.projectNames});
+
+  @override
+  Widget build(BuildContext context) {
+    final f = finance;
+    final cur = f.currency ?? 'AUD';
+    final breaches = f.breaches;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: KColors.surface,
+        border: Border.all(color: KColors.border),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Text(
+              'PORTFOLIO · ${f.projects.length} '
+              '${f.projects.length == 1 ? 'PROJECT' : 'PROJECTS'}',
+              style: const TextStyle(
+                  color: KColors.textMuted,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.2)),
+          const Spacer(),
+          Text(
+            breaches.isEmpty
+                ? 'All within tolerance'
+                : '${breaches.length} beyond tolerance',
+            style: TextStyle(
+                color: breaches.isEmpty ? KColors.phosphor : KColors.red,
+                fontSize: 11,
+                fontWeight: FontWeight.w700),
+          ),
+        ]),
+        const SizedBox(height: 8),
+        Row(children: [
+          _stat('Budget', Money.formatMinorCompact(f.budgetMinor, cur)),
+          _stat('Forecast', Money.formatMinorCompact(f.forecastMinor, cur)),
+          _stat('Actuals', Money.formatMinorCompact(f.actualsMinor, cur)),
+          _stat('Variance', Money.formatBp(f.varianceBp),
+              color: f.varianceBp == null
+                  ? KColors.textMuted
+                  : f.varianceBp!.abs() > 500
+                      ? KColors.red
+                      : KColors.text),
+        ]),
+        const SizedBox(height: 10),
+        for (final r in f.projects)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            child: Row(children: [
+              if (r.breach)
+                const Padding(
+                  padding: EdgeInsets.only(right: 4),
+                  child: Icon(Icons.warning_amber_rounded,
+                      size: 12, color: KColors.red),
+                ),
+              Expanded(
+                child: Text(projectNames[r.sourceId] ?? 'Linked project',
+                    style: const TextStyle(color: KColors.text, fontSize: 12),
+                    overflow: TextOverflow.ellipsis),
+              ),
+              Text(
+                '${Money.formatMinorCompact(r.budgetMinor, r.currency ?? cur)}'
+                ' → ${r.forecastMinor == null ? 'no forecast' : Money.formatMinorCompact(r.forecastMinor, r.currency ?? cur)}'
+                '  ${Money.formatBp(r.varianceBp)}',
+                style: TextStyle(
+                    color: r.breach ? KColors.red : KColors.textDim,
+                    fontSize: 11,
+                    fontFamily: 'monospace'),
+              ),
+            ]),
+          ),
+      ]),
+    );
+  }
+
+  Widget _stat(String label, String value, {Color color = KColors.text}) =>
+      Expanded(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label.toUpperCase(),
+              style: const TextStyle(
+                  color: KColors.textMuted,
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.2)),
+          Text(value,
+              style: TextStyle(
+                  color: color,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'monospace')),
+        ]),
+      );
 }

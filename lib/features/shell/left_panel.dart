@@ -575,7 +575,7 @@ class _TopRisksSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<Risk>>(
-      // All risks, ranked by the shared rule (score, SteerCo, due date,
+      // All risks, ranked by the shared rule (score, escalated, due date,
       // review, ref) — the same order the Status page shows.
       stream: db.raidDao.watchRisksForProject(projectId),
       builder: (context, snap) {
