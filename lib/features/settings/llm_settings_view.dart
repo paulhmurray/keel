@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+
+import '../../core/llm/ollama_models.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/llm/ollama_client.dart';
@@ -67,8 +69,9 @@ class _LLMSettingsViewState extends State<LLMSettingsView> {
   bool _dirty = false;
 
   static const _claudeModels = [
-    'claude-opus-4-6',
-    'claude-sonnet-4-6',
+    'claude-sonnet-5',
+    'claude-opus-5',
+    'claude-fable-5-1',
     'claude-haiku-4-5-20251001',
   ];
 
@@ -94,12 +97,8 @@ class _LLMSettingsViewState extends State<LLMSettingsView> {
     'Phi-4',
   ];
 
-  static const _ollamaRecommended = [
-    ('llama3.2:3b', 'Fast, 2 GB, great for most tasks'),
-    ('phi4-mini', 'Microsoft, very efficient, 2.5 GB'),
-    ('gemma3:4b', 'Google, strong reasoning, 3 GB'),
-    ('mistral:7b', 'Balanced quality, 4 GB'),
-    ('llama3.1:8b', 'Most capable free model, 5 GB'),
+  static final _ollamaRecommended = [
+    for (final m in kOllamaModels) (m.id, '${m.description} · ${m.size}'),
   ];
 
   @override
@@ -133,6 +132,13 @@ class _LLMSettingsViewState extends State<LLMSettingsView> {
 
     _ollamaBaseUrlCtrl = TextEditingController(text: s.ollamaBaseUrl);
     _ollamaModel = s.ollamaModel;
+    if (s.llmProvider == LLMProvider.ollama) {
+      // Verify the stored model against the server as soon as the page
+      // opens, rather than waiting for "Check connection".
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _checkOllamaConnection();
+      });
+    }
 
     _watcherEnabled = s.watcherEnabled;
     _watcherDirCtrl = TextEditingController(text: s.watcherDirectory);
@@ -205,15 +211,22 @@ class _LLMSettingsViewState extends State<LLMSettingsView> {
     if (running) {
       final models = await OllamaClient.getAvailableModels(url);
       if (!mounted) return;
+      final picked = OllamaClient.pickInstalledModel(_ollamaModel, models);
+      final healed = picked != null && picked != _ollamaModel;
       setState(() {
         _ollamaStatus = _OllamaStatus.connected;
         _ollamaModels = models;
-        // If the current model is not in the list, pick the first available
-        if (_ollamaModels.isNotEmpty && !_ollamaModels.contains(_ollamaModel)) {
-          _ollamaModel = _ollamaModels.first;
-          _dirty = true;
-        }
+        if (healed) _ollamaModel = picked;
       });
+      // A configured model that isn't installed (an old default, or one the
+      // user deleted) is repointed at what IS installed and persisted right
+      // away, so the next draft doesn't need a visit to Save.
+      if (healed) {
+        final sp = context.read<SettingsProvider>();
+        if (sp.settings.ollamaModel != picked) {
+          await sp.save(sp.settings.copyWith(ollamaModel: picked));
+        }
+      }
     } else {
       setState(() {
         _ollamaStatus = _OllamaStatus.failed;

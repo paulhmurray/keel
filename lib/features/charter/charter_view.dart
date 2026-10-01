@@ -6,6 +6,10 @@ import 'package:uuid/uuid.dart';
 import '../../core/cascade/cascade_service.dart';
 import '../../core/cascade/cascade_factory.dart';
 import '../../core/database/database.dart';
+import '../../core/llm/charter_assist_prompts.dart';
+import '../../core/llm/context_builder.dart';
+import '../../core/llm/raid_assist_prompts.dart' show RaidAssistPrompt;
+import '../../shared/widgets/ai_assist_button.dart';
 import '../../providers/project_provider.dart';
 import '../../shared/theme/keel_colors.dart';
 import 'charter_export_dialog.dart';
@@ -173,6 +177,36 @@ class _CharterBodyState extends State<_CharterBody> {
     setState(() => _editing = false);
   }
 
+  // ── AI assist ──────────────────────────────────────────────────────────────
+
+  bool get _isProgramme => context.read<ProjectProvider>().isProgramme;
+  String get entity => _isProgramme ? 'programme' : 'project';
+
+  Widget _ai(CharterField field, TextEditingController target, String tooltip) =>
+      AiAssistButton(
+        target: target,
+        tooltip: tooltip,
+        buildPrompt: () => _prompt(field),
+      );
+
+  Future<RaidAssistPrompt> _prompt(CharterField field) async {
+    final ctx =
+        await ContextBuilder(widget.db).buildSystemPrompt(widget.projectId);
+    return charterAssistPrompt(
+      field: field,
+      isProgramme: _isProgramme,
+      vision: _visionCtrl.text,
+      objectives: _objectivesCtrl.text,
+      scopeIn: _scopeInCtrl.text,
+      scopeOut: _scopeOutCtrl.text,
+      deliveryApproach: _deliveryCtrl.text,
+      successCriteria: _successCtrl.text,
+      keyConstraints: _constraintsCtrl.text,
+      assumptions: _assumptionsCtrl.text,
+      projectContext: ctx,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final projectName = widget.projectName;
@@ -247,49 +281,65 @@ class _CharterBodyState extends State<_CharterBody> {
             CharterEditSection(
               label: 'VISION',
               controller: _visionCtrl,
-              hint: 'What does programme success look like in one sentence?',
+              hint: 'What does $entity success look like in one sentence?',
+              trailing: _ai(CharterField.vision, _visionCtrl,
+                  'Draft the vision from the charter and $entity context'),
             ),
             CharterEditSection(
               label: 'OBJECTIVES',
               controller: _objectivesCtrl,
-              hint: 'Measurable outcomes the programme must deliver.',
+              hint: 'Measurable outcomes the $entity must deliver.',
               minLines: 4,
+              trailing: _ai(CharterField.objectives, _objectivesCtrl,
+                  'Draft measurable objectives'),
             ),
             CharterEditSection(
               label: 'SCOPE — IN SCOPE',
               controller: _scopeInCtrl,
-              hint: 'What this programme explicitly covers.',
+              hint: 'What this $entity explicitly covers.',
               minLines: 4,
+              trailing: _ai(CharterField.scopeIn, _scopeInCtrl,
+                  'Draft what is in scope from the plan and context'),
             ),
             CharterEditSection(
               label: 'SCOPE — OUT OF SCOPE',
               controller: _scopeOutCtrl,
-              hint: 'What this programme explicitly does not cover.',
+              hint: 'What this $entity explicitly does not cover.',
               minLines: 3,
+              trailing: _ai(CharterField.scopeOut, _scopeOutCtrl,
+                  'Draft what stakeholders might assume is in, but is not'),
             ),
             CharterEditSection(
               label: 'DELIVERY APPROACH',
               controller: _deliveryCtrl,
-              hint: 'How the programme will be delivered (methodology, phases, team structure).',
+              hint: 'How the $entity will be delivered (methodology, phases, team structure).',
               minLines: 4,
+              trailing: _ai(CharterField.deliveryApproach, _deliveryCtrl,
+                  'Draft the delivery approach from the plan, people and governance'),
             ),
             CharterEditSection(
               label: 'SUCCESS CRITERIA',
               controller: _successCtrl,
               hint: 'How will we know we\'ve succeeded?',
               minLines: 3,
+              trailing: _ai(CharterField.successCriteria, _successCtrl,
+                  'Draft observable success criteria'),
             ),
             CharterEditSection(
               label: 'KEY CONSTRAINTS',
               controller: _constraintsCtrl,
               hint: 'Fixed boundaries (budget, time, regulatory, dependencies).',
               minLines: 3,
+              trailing: _ai(CharterField.keyConstraints, _constraintsCtrl,
+                  'Draft the constraints from the deadline, budget and dependencies'),
             ),
             CharterEditSection(
               label: 'ASSUMPTIONS',
               controller: _assumptionsCtrl,
               hint: 'What we are assuming to be true for planning purposes.',
               minLines: 3,
+              trailing: _ai(CharterField.assumptions, _assumptionsCtrl,
+                  'Draft assumptions in the "we are assuming … because … if false …" shape'),
             ),
           ] else ...[
             CharterSection(

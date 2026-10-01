@@ -666,4 +666,51 @@ void main() {
         targetName: 'Vendors');
     expect((await db.financeDao.getMerges('prog')).single.targetName, 'Vendors');
   });
+
+  test('upgrade from v65 creates the envelope tables', () async {
+    final dir = await Directory.systemTemp.createTemp('keel_mig_test');
+    addTearDown(() => dir.deleteSync(recursive: true));
+    final path = '${dir.path}/v65.db';
+    final raw = sqlite3.open(path);
+    raw.execute('''
+      CREATE TABLE projects (
+        id TEXT NOT NULL PRIMARY KEY,
+        name TEXT NOT NULL,
+        description TEXT,
+        start_date TEXT,
+        status TEXT NOT NULL DEFAULT 'active',
+        kind TEXT NOT NULL DEFAULT 'project',
+        parent_programme_id TEXT
+      );
+    ''');
+    raw.execute('''
+      CREATE TABLE financial_audit_log (
+        id TEXT NOT NULL PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        entity_type TEXT NOT NULL,
+        entity_id TEXT NOT NULL,
+        field TEXT NOT NULL,
+        old_value TEXT,
+        new_value TEXT,
+        changed_by TEXT,
+        changed_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+      );
+    ''');
+    raw.execute("INSERT INTO projects (id, name, kind) VALUES ('prog', 'Prog', 'programme');");
+    raw.execute('PRAGMA user_version = 65;');
+    raw.dispose();
+
+    final db = AppDatabase.forTesting(NativeDatabase(File(path)));
+    addTearDown(db.close);
+    await db.financeDao.upsertFunding(
+        id: 'f', programmeId: 'prog', name: 'BC', amountMinor: 5);
+    await db.financeDao.recordMovement(
+        id: 'm', programmeId: 'prog', kind: 'allocate', amountMinor: 2,
+        linkedProjectId: 'p', movedOn: '2026-09-27');
+    await db.financeDao.setContingencyWarnBp('prog', 1000);
+    expect((await db.financeDao.getFunding('prog')).single.amountMinor, 5);
+    expect((await db.financeDao.getMovements('prog')).single.kind, 'allocate');
+    expect((await db.financeDao.getFinanceSettings('prog'))!.contingencyWarnBp, 1000);
+    expect(await db.financeDao.getReceivedAllocations('prog'), isEmpty);
+  });
 }

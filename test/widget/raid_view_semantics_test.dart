@@ -226,6 +226,8 @@ void main() {
     final handle = tester.ensureSemantics();
     await _pump(tester, db, const HelmView());
     expect(find.text('TODAY'), findsOneWidget);
+    // The project layer sits at the top of the rail on a project.
+    expect(find.textContaining('THIS PROJECT'), findsOneWidget);
     expect(find.text('AC7 Send the brief'), findsOneWidget);
     expect(find.text('R7 Vendor slips'), findsOneWidget);
     expect(find.text('BEHIND'), findsOneWidget);

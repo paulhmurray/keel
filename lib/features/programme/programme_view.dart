@@ -6,9 +6,7 @@ import '../../providers/project_provider.dart';
 import '../../shared/theme/keel_colors.dart';
 import 'overview/programme_pulse_widget.dart';
 import 'overview/per_project_pulse.dart';
-import 'overview/velocity_row.dart';
 import 'overview/pressures_section.dart';
-import 'overview/coverage_row.dart';
 import 'overview/overview_narrative_panel.dart';
 
 class ProgrammeView extends StatelessWidget {
@@ -154,37 +152,13 @@ class _OverviewBody extends StatelessWidget {
                       ),
                       const SizedBox(height: 24),
 
-                      // Section 2 — Velocity
-                      _SectionLabel('VELOCITY  ·  last 7 days'),
-                      const SizedBox(height: 8),
-                      VelocityRow(
-                        projectId: projectId,
-                        db: db,
-                        onTapActions: onNavigateToActions,
-                        onTapDecisions: onNavigateToDecisions,
-                        onTapRisks: onNavigateToRaid,
-                        onTapDependencies: onNavigateToRaid,
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Section 3 — Pressures
+                      // Pressures — what needs the programme manager's hand,
+                      // including finance breaches and low contingency.
                       PressuresSection(
                           projectId: projectId, db: db),
                       const SizedBox(height: 24),
 
-                      // Section 4 — Coverage
-                      _SectionLabel('COVERAGE'),
-                      const SizedBox(height: 8),
-                      CoverageRow(
-                        projectId: projectId,
-                        db: db,
-                        onTapStakeholders: onNavigateToPeople,
-                        onTapTeam: onNavigateToPeople,
-                        onTapPlaybook: onNavigateToPlaybook,
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Section 5 — Narrative
+                      // Narrative
                       OverviewNarrativePanel(
                         projectId: projectId,
                         db: db,

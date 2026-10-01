@@ -133,6 +133,8 @@ class CharterEditSection extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
   final int minLines;
+  /// Sits at the right of the section header — the AI draft button.
+  final Widget? trailing;
 
   const CharterEditSection({
     super.key,
@@ -140,6 +142,7 @@ class CharterEditSection extends StatelessWidget {
     required this.controller,
     this.hint = '',
     this.minLines = 3,
+    this.trailing,
   });
 
   @override
@@ -147,7 +150,10 @@ class CharterEditSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionHeader(label: label),
+        Row(children: [
+          Expanded(child: _SectionHeader(label: label)),
+          ?trailing,
+        ]),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,

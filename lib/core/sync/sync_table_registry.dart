@@ -70,6 +70,10 @@ const Set<String> syncedTables = {
   'actual_lines',
   'financial_audit_log',
   'category_merges',
+  'funding_approvals',
+  'contingency_movements',
+  'programme_finance_settings',
+  'received_allocations',
   // Helm day plans are GLOBAL (one day spans every project) but still
   // ride in every project's sync blob — there is no per-user channel.
   // Import is guarded per-day by updatedAt (DayPlanDao.applyImportedPlan)

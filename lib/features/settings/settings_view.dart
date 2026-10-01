@@ -276,6 +276,9 @@ class _PlanningSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final settingsProvider = context.watch<SettingsProvider>();
     final anchor = settingsProvider.settings.quarterAnchorMonth;
+    final dayStart = settingsProvider.settings.helmDayStartMinute;
+    final dayEnd = settingsProvider.settings.helmDayEndMinute;
+    String hh(int m) => '${(m ~/ 60).toString().padLeft(2, '0')}:00';
 
     return _SettingsSection(
       title: 'Planning (Helm)',
@@ -283,6 +286,39 @@ class _PlanningSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const Text(
+            'The hours the day grid shows. Blocks outside the window still '
+            'appear — the grid stretches to hold them.',
+            style: TextStyle(color: KColors.textDim, fontSize: 12),
+          ),
+          const SizedBox(height: 10),
+          Row(children: [
+            const Text('Day grid from',
+                style: TextStyle(color: KColors.text, fontSize: 13)),
+            const SizedBox(width: 12),
+            DropdownButton<int>(
+              value: dayStart,
+              dropdownColor: KColors.surface2,
+              items: [
+                for (var h = 4; h <= 12; h++)
+                  DropdownMenuItem(value: h * 60, child: Text(hh(h * 60), style: const TextStyle(fontSize: 13))),
+              ],
+              onChanged: (v) => v == null ? null : settingsProvider.setHelmDayWindow(startMinute: v),
+            ),
+            const SizedBox(width: 16),
+            const Text('to', style: TextStyle(color: KColors.text, fontSize: 13)),
+            const SizedBox(width: 12),
+            DropdownButton<int>(
+              value: dayEnd,
+              dropdownColor: KColors.surface2,
+              items: [
+                for (var h = 15; h <= 24; h++)
+                  DropdownMenuItem(value: h * 60, child: Text(hh(h * 60), style: const TextStyle(fontSize: 13))),
+              ],
+              onChanged: (v) => v == null ? null : settingsProvider.setHelmDayWindow(endMinute: v),
+            ),
+          ]),
+          const SizedBox(height: 18),
           const Text(
             'Which month starts Q1 for Helm\'s quarterly planner. '
             'January gives calendar quarters; July matches the '

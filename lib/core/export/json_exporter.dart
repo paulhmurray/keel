@@ -791,6 +791,11 @@ class JsonExporter {
     ];
     final financeAudit = await db.financeDao.getAuditLog(projectId);
     final categoryMerges = await db.financeDao.getMerges(projectId);
+    final fundingApprovals = await db.financeDao.getFunding(projectId);
+    final contingencyMovements = await db.financeDao.getMovements(projectId);
+    final financeSettings = await db.financeDao.getFinanceSettings(projectId);
+    final receivedAllocations =
+        await db.financeDao.getReceivedAllocations(projectId);
     data['finance'] = {
       'cost_categories': costCategories
           .map((c) => {
@@ -891,6 +896,49 @@ class JsonExporter {
                 'source_category_id': m.sourceCategoryId,
                 'target_name': m.targetName,
                 'created_at': m.createdAt.toIso8601String(),
+              })
+          .toList(),
+      // Phase 2 — envelope + contingency ledger + received allocation.
+      'funding_approvals': fundingApprovals
+          .map((f) => {
+                'id': f.id,
+                'name': f.name,
+                'amount_minor': f.amountMinor,
+                'currency': f.currency,
+                'approved_by': f.approvedBy,
+                'approved_on': f.approvedOn,
+                'decision_id': f.decisionId,
+                'notes': f.notes,
+                'created_at': f.createdAt.toIso8601String(),
+                'updated_at': f.updatedAt.toIso8601String(),
+              })
+          .toList(),
+      'contingency_movements': contingencyMovements
+          .map((m) => {
+                'id': m.id,
+                'kind': m.kind,
+                'amount_minor': m.amountMinor,
+                'linked_project_id': m.linkedProjectId,
+                'decision_id': m.decisionId,
+                'reason': m.reason,
+                'moved_on': m.movedOn,
+                'entered_by': m.enteredBy,
+                'created_at': m.createdAt.toIso8601String(),
+              })
+          .toList(),
+      if (financeSettings != null)
+        'settings': {
+          'contingency_warn_bp': financeSettings.contingencyWarnBp,
+        },
+      'received_allocations': receivedAllocations
+          .map((r) => {
+                'id': r.id,
+                'programme_id': r.programmeId,
+                'programme_name': r.programmeName,
+                'amount_minor': r.amountMinor,
+                'currency': r.currency,
+                'history_json': r.historyJson,
+                'updated_at': r.updatedAt.toIso8601String(),
               })
           .toList(),
     };

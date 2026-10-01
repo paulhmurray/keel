@@ -45,9 +45,12 @@ Future<int> reconcileCascade({
   final project = await db.projectDao.getProjectById(projectId);
   if (project == null) return 0;
 
-  // 2a) Programme side: pull everything our linked projects have published.
+  // 2a) Programme side: pull everything our linked projects have published,
+  // and tell each project what it has been allocated.
   if (project.kind == 'programme') {
-    return cascade.pullForProgramme(project.id);
+    final n = await cascade.pullForProgramme(project.id);
+    await cascade.pushAllAllocations(project.id);
+    return n;
   }
 
   // 2b) Project side: replay all cascade-eligible content up the links.
@@ -65,5 +68,7 @@ Future<int> reconcileCascade({
   await cascade.pushAllRoles(project.id);
   await cascade.pushCurrentCharter(
       projectId: project.id, projectName: project.name);
+  // And read back what the programme has allocated to us.
+  await cascade.pullForProject(project.id);
   return 0;
 }

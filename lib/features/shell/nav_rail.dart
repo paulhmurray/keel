@@ -9,12 +9,15 @@ class KeelNavRail extends StatelessWidget {
   // of the rail is identical for V1; per-section divergence happens
   // inside each view based on ProjectProvider.isProgramme.
   final bool isProgramme;
+  // Opens the project-wide find palette (Ctrl+K). Hidden when null.
+  final VoidCallback? onSearch;
 
   const KeelNavRail({
     super.key,
     required this.selectedIndex,
     required this.onDestinationSelected,
     this.isProgramme = false,
+    this.onSearch,
   });
 
   @override
@@ -29,6 +32,12 @@ class KeelNavRail extends StatelessWidget {
               child: Column(
                 children: [
                   const SizedBox(height: 8),
+                  // Find sits first: it reaches everything below, so the
+                  // user never has to know which section holds a thing.
+                  if (onSearch != null) ...[
+                    _SearchNavItem(onTap: onSearch!),
+                    const _NavDivider(),
+                  ],
                   // Helm sits ABOVE the project navigation — it's the
                   // user's global day, not a view of the current project,
                   // so it keeps its place when the project switches.
@@ -37,15 +46,16 @@ class KeelNavRail extends StatelessWidget {
                     onTap: onDestinationSelected,
                   ),
                   const _NavDivider(),
-                  _NavItem(
-                    icon: isProgramme
-                        ? Icons.workspaces_outlined
-                        : Icons.dashboard_outlined,
-                    label: isProgramme ? 'Prog' : 'Proj',
-                    index: 0,
-                    selected: selectedIndex == 0,
-                    onTap: onDestinationSelected,
-                  ),
+                  // A programme keeps its overview; a project's home is
+                  // Helm, so it has no overview item.
+                  if (isProgramme)
+                    _NavItem(
+                      icon: Icons.workspaces_outlined,
+                      label: 'Prog',
+                      index: 0,
+                      selected: selectedIndex == 0,
+                      onTap: onDestinationSelected,
+                    ),
                   _NavItem(icon: Icons.bubble_chart_outlined, label: 'Canvas', index: 1, selected: selectedIndex == 1, onTap: onDestinationSelected),
                   _NavItem(icon: Icons.table_chart_outlined, label: 'Plan', index: 12, selected: selectedIndex == 12, onTap: onDestinationSelected),
                   _NavItem(icon: Icons.monitor_heart_outlined, label: 'Status', index: 13, selected: selectedIndex == 13, onTap: onDestinationSelected),
@@ -174,6 +184,48 @@ class _HelmNavItem extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The find entry: never "selected", because it's a verb, not a place.
+class _SearchNavItem extends StatelessWidget {
+  final VoidCallback onTap;
+  const _SearchNavItem({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    const color = Color(0xFF8a9faf);
+    return Tooltip(
+      message: 'Find anything in this project (Ctrl+K)',
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 64,
+          height: 56,
+          margin: const EdgeInsets.symmetric(vertical: 2),
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: const Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.search, size: 22, color: color),
+              SizedBox(height: 3),
+              Text(
+                'FIND',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: color,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

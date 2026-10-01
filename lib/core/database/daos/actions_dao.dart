@@ -30,15 +30,6 @@ class ActionsDao extends DatabaseAccessor<AppDatabase> with _$ActionsDaoMixin {
         .watch();
   }
 
-  Stream<List<ProjectAction>> watchActionsForOwner(
-      String projectId, String ownerName) {
-    return (select(projectActions)
-          ..where((t) =>
-              t.projectId.equals(projectId) & t.owner.equals(ownerName))
-          ..orderBy([(t) => OrderingTerm.asc(t.dueDate)]))
-        .watch();
-  }
-
   Future<ProjectAction?> getActionById(String id) {
     return (select(projectActions)..where((t) => t.id.equals(id)))
         .getSingleOrNull();

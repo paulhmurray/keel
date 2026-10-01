@@ -1341,6 +1341,88 @@ class CategoryMerges extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+// ---------------------------------------------------------------------------
+// Programme finance, phase 2 — the envelope. Programme-native except
+// ReceivedAllocations, which is the project-side read-only copy.
+// ---------------------------------------------------------------------------
+
+/// Money the programme has been given. Funding, not spend: the sum of
+/// approvals is the envelope everything else is allocated from.
+class FundingApprovals extends Table {
+  TextColumn get id => text().named('id')();
+  TextColumn get projectId => text().references(Projects, #id)(); // programme
+  TextColumn get name => text()();
+  IntColumn get amountMinor => integer()(); // cents — NEVER floats
+  TextColumn get currency => text().withDefault(const Constant('AUD'))();
+  TextColumn get approvedBy => text().nullable()();
+  TextColumn get approvedOn => text().nullable()(); // ISO date
+  TextColumn get decisionId => text().nullable()(); // the authorising decision
+  TextColumn get notes => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// The contingency LEDGER. Each row moves money between the programme's
+/// unallocated funding (the contingency pool) and a linked project.
+/// Balances are derived, never stored:
+///   allocation(project) = Σ allocate + Σ draw − Σ return
+///   contingency balance = Σ funding − Σ allocations
+///   kind: 'allocate' (initial envelope) | 'draw' (from contingency) |
+///         'return' (project gives money back)
+/// A transfer between projects is a return from one and a draw to the
+/// other under the same decision. Draws and returns carry the decision
+/// that authorised them; the UI insists on it.
+class ContingencyMovements extends Table {
+  TextColumn get id => text().named('id')();
+  TextColumn get projectId => text().references(Projects, #id)(); // programme
+  TextColumn get kind => text()();
+  IntColumn get amountMinor => integer()(); // always positive; kind gives the sign
+  TextColumn get linkedProjectId => text()(); // the project it moves to/from
+  TextColumn get decisionId => text().nullable()();
+  TextColumn get reason => text().nullable()();
+  TextColumn get movedOn => text()(); // ISO date
+  TextColumn get enteredBy => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Programme-side finance preferences. One row per programme.
+class ProgrammeFinanceSettings extends Table {
+  TextColumn get projectId => text().references(Projects, #id)();
+  // Contingency balance below this share of total funding raises a
+  // pressure and a status line. 2000 = 20%.
+  IntColumn get contingencyWarnBp =>
+      integer().withDefault(const Constant(2000))();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {projectId};
+}
+
+/// PROJECT-side, read-only: what a linked programme has allocated to this
+/// project, with the movement history behind it. The first programme →
+/// project cascade kind. Keyed by programme so a project inside two
+/// programmes sees both.
+class ReceivedAllocations extends Table {
+  TextColumn get id => text().named('id')(); // cascade:allocation:<programme>:<project>
+  TextColumn get projectId => text().references(Projects, #id)(); // the project
+  TextColumn get programmeId => text()();
+  TextColumn get programmeName => text().nullable()();
+  IntColumn get amountMinor => integer()();
+  TextColumn get currency => text().withDefault(const Constant('AUD'))();
+  // JSON array of {moved_on, kind, amount_minor, decision_ref, reason}.
+  TextColumn get historyJson => text().nullable()();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 /// Append-only audit trail for every financial mutation. Written by
 /// FinanceDao inside the same transaction as the change itself — no
 /// write path can skip it. field='created'/'deleted' mark row-level
@@ -1674,6 +1756,10 @@ class QuarterGoals extends Table {
     ActualLines,
     FinancialAuditLog,
     CategoryMerges,
+    FundingApprovals,
+    ContingencyMovements,
+    ProgrammeFinanceSettings,
+    ReceivedAllocations,
     DayPlans,
     DayPlanBlocks,
     WeekPlans,
@@ -1724,7 +1810,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(QueryExecutor executor) : super(executor);
 
   @override
-  int get schemaVersion => 65;
+  int get schemaVersion => 66;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -2259,6 +2345,14 @@ class AppDatabase extends _$AppDatabase {
             await ensureColumn(forecastLines, forecastLines.sourceProjectId);
             await ensureColumn(actualLines, actualLines.sourceProjectId);
             await ensureTable(categoryMerges);
+          }
+          if (from < 66) {
+            // Programme finance phase 2: funding envelope, contingency
+            // ledger, settings, and the project-side received allocation.
+            await ensureTable(fundingApprovals);
+            await ensureTable(contingencyMovements);
+            await ensureTable(programmeFinanceSettings);
+            await ensureTable(receivedAllocations);
           }
         },
       );

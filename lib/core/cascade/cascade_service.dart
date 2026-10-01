@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 
 import '../database/database.dart';
+import '../finance/contingency_ledger.dart';
 import '../raid/risk_rating.dart';
 import 'cascade_plan_detail.dart';
 
@@ -40,6 +41,9 @@ class CascadeKinds {
   static const budget = 'budget';
   static const forecastSnapshot = 'forecast_snapshot';
   static const actual = 'actual';
+  // Programme → PROJECT (the one downward kind): what the programme has
+  // allocated to this project, with the movement history behind it.
+  static const allocation = 'allocation';
 }
 
 /// How much of a project a link carries. Stored on ProgrammeLinks.
@@ -738,16 +742,120 @@ class CascadeService {
     }
   }
 
+  // ── Allocation (programme → project) ─────────────────────────────────────
+  //
+  // The only kind that flows DOWN. Pushed over the programme's own link
+  // row for that project (same-machine: partnerLocalId names it). Not
+  // gated by share level — it is the programme's statement about the
+  // project, not the project's data.
+
+  Future<void> pushAllocation(String programmeId, String linkedProjectId) async {
+    if (gateway == null) return;
+    final links = (await _activeLinksForEntity(programmeId))
+        .where((l) => l.ownerKind == 'programme' && l.partnerLocalId == linkedProjectId)
+        .toList();
+    if (links.isEmpty) return;
+    final programme = await db.projectDao.getProjectById(programmeId);
+    final ledger = computeLedger(
+      approvals: await db.financeDao.getFunding(programmeId),
+      movements: await db.financeDao.getMovements(programmeId),
+    );
+    final alloc = ledger.forProject(linkedProjectId);
+    final decisions = {
+      for (final d in await db.decisionsDao.getDecisionsForProject(programmeId))
+        d.id: d
+    };
+    final payload = <String, dynamic>{
+      'programme_name': programme?.name,
+      'amount_minor': alloc?.allocatedMinor ?? 0,
+      'currency': ledger.currency ?? 'AUD',
+      'history': [
+        for (final m in alloc?.history ?? const <ContingencyMovement>[])
+          {
+            'moved_on': m.movedOn,
+            'kind': m.kind,
+            'amount_minor': m.amountMinor,
+            if (m.decisionId != null)
+              'decision_ref': decisions[m.decisionId]?.ref ?? m.decisionId,
+            'decision': ?decisions[m.decisionId]?.description,
+            'reason': ?m.reason,
+          },
+      ],
+    };
+    for (final link in links) {
+      try {
+        await gateway!.push(
+          code: link.code,
+          sourceEntityId: programmeId,
+          itemKind: CascadeKinds.allocation,
+          itemId: linkedProjectId,
+          payload: payload,
+        );
+      } catch (_) {}
+    }
+  }
+
+  /// Every linked project's allocation — including projects with no
+  /// movements yet, so a zero allocation still reads as "none" downstream.
+  Future<void> pushAllAllocations(String programmeId) async {
+    if (gateway == null) return;
+    final links = (await _activeLinksForEntity(programmeId))
+        .where((l) => l.ownerKind == 'programme' && l.partnerLocalId != null);
+    for (final l in links) {
+      await pushAllocation(programmeId, l.partnerLocalId!);
+    }
+  }
+
+  /// Project side: read what linked programmes have said about this
+  /// project. Only the downward kinds apply; the project's own records
+  /// on the channel are skipped. Returns the number applied.
+  Future<int> pullForProject(String projectId) async {
+    if (gateway == null) return 0;
+    var applied = 0;
+    for (final link in await _pushLinksForEntity(projectId)) {
+      try {
+        final snap = await gateway!.pull(code: link.code);
+        for (final rec in snap.items) {
+          if (rec.sourceEntityId == projectId) continue;
+          if (rec.itemKind != CascadeKinds.allocation) continue;
+          if (rec.itemId != projectId) continue;
+          await _applyAllocation(projectId, rec);
+          applied++;
+        }
+      } catch (_) {}
+    }
+    return applied;
+  }
+
+  Future<void> _applyAllocation(String projectId, CascadeRecord rec) async {
+    final id = 'cascade:${CascadeKinds.allocation}:${rec.sourceEntityId}:$projectId';
+    if (rec.deleted) {
+      await (db.delete(db.receivedAllocations)..where((t) => t.id.equals(id))).go();
+      return;
+    }
+    final p = rec.payload;
+    await db.financeDao.upsertReceivedAllocationRaw(ReceivedAllocationsCompanion(
+      id: Value(id),
+      projectId: Value(projectId),
+      programmeId: Value(rec.sourceEntityId),
+      programmeName: Value(p['programme_name'] as String?),
+      amountMinor: Value(p['amount_minor'] as int? ?? 0),
+      currency: Value(p['currency'] as String? ?? 'AUD'),
+      historyJson: Value(p['history'] == null ? null : jsonEncode(p['history'])),
+      updatedAt: Value(DateTime.now()),
+    ));
+  }
+
   Map<String, dynamic> _moneyLine(String id, String categoryId,
           String? workstreamId, String financialYear, int amountMinor,
           String? notes) =>
       {
         'id': id,
         'cost_category_id': categoryId,
-        if (workstreamId != null) 'workstream_id': workstreamId,
+        'workstream_id': ?workstreamId,
         'financial_year': financialYear,
         'amount_minor': amountMinor,
-        if (notes != null) 'notes': notes,
+        'notes': ?notes,
       };
 
   Future<void> _pushFinance(String projectId, String kind, String id,

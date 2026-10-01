@@ -3,6 +3,7 @@ import 'package:pdf/widgets.dart' as pw;
 
 import '../database/database.dart';
 import '../raid/raid_conversion_service.dart' show RaidKind;
+import '../people/person_workload.dart';
 import '../raid/raid_lifecycle.dart';
 import '../platform/web_download.dart';
 
@@ -144,6 +145,24 @@ class PdfExporter {
       includeClosed: includeClosed,
     );
     final filename = 'raid_${_slug(projectName)}.pdf';
+    return saveAndOpen(filename, bytes, mimeType: 'application/pdf');
+  }
+
+  /// Everything pinned on one person, as a brief they can be sent.
+  static Future<String> exportPersonBrief({
+    required PersonWorkload workload,
+    required String projectName,
+    String preparedBy = '',
+    bool includeClosed = false,
+  }) async {
+    final bytes = await buildPersonBriefBytes(
+      workload: workload,
+      projectName: projectName,
+      preparedBy: preparedBy,
+      includeClosed: includeClosed,
+    );
+    final filename =
+        'brief_${_slug(workload.person.name)}_${_slug(projectName)}.pdf';
     return saveAndOpen(filename, bytes, mimeType: 'application/pdf');
   }
 
@@ -453,6 +472,179 @@ class PdfExporter {
   }
 
   // ---------------------------------------------------------------------------
+  // Person brief PDF
+  // ---------------------------------------------------------------------------
+
+  /// One section per populated register: open items (overdue first) in
+  /// the body, closed ones only when [includeClosed]. Styled for print:
+  /// light page, grey table headers, no Keel theme colours.
+  static Future<List<int>> buildPersonBriefBytes({
+    required PersonWorkload workload,
+    required String projectName,
+    String preparedBy = '',
+    bool includeClosed = false,
+    DateTime? now,
+  }) async {
+    final doc = pw.Document();
+    final today = (now ?? DateTime.now()).toIso8601String().substring(0, 10);
+    final person = workload.person;
+    final subtitle = [
+      if ((person.role ?? '').trim().isNotEmpty) person.role!.trim(),
+      if ((person.organisation ?? '').trim().isNotEmpty)
+        person.organisation!.trim(),
+    ].join(' - ');
+
+    var openTotal = 0;
+    var overdueTotal = 0;
+    var closedTotal = 0;
+    for (final kind in workload.populatedKinds) {
+      final b = workload.buckets(kind, today);
+      openTotal += b.open.length;
+      overdueTotal += b.overdue.length;
+      closedTotal += b.closed.length;
+    }
+
+    doc.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(36),
+        header: (context) => pw.Container(
+          margin: const pw.EdgeInsets.only(bottom: 12),
+          child: pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(
+                'Items with ${_sanitize(person.name)} - ${_sanitize(projectName)}',
+                style: pw.TextStyle(
+                    fontSize: 16, fontWeight: pw.FontWeight.bold),
+              ),
+              pw.Text(today,
+                  style: const pw.TextStyle(
+                      fontSize: 10, color: PdfColors.grey600)),
+            ],
+          ),
+        ),
+        footer: (context) => pw.Container(
+          margin: const pw.EdgeInsets.only(top: 8),
+          child: pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text(
+                preparedBy.trim().isEmpty
+                    ? 'Prepared from Keel'
+                    : 'Prepared by ${_sanitize(preparedBy.trim())}',
+                style: const pw.TextStyle(
+                    fontSize: 8, color: PdfColors.grey600),
+              ),
+              pw.Text(
+                'Page ${context.pageNumber} of ${context.pagesCount}',
+                style: const pw.TextStyle(
+                    fontSize: 8, color: PdfColors.grey600),
+              ),
+            ],
+          ),
+        ),
+        build: (context) => [
+          if (subtitle.isNotEmpty)
+            pw.Text(_sanitize(subtitle),
+                style: const pw.TextStyle(
+                    fontSize: 10, color: PdfColors.grey700)),
+          pw.SizedBox(height: 4),
+          pw.Text(
+            [
+              '$openTotal open',
+              if (overdueTotal > 0) '$overdueTotal overdue',
+              if (includeClosed) '$closedTotal completed',
+            ].join(' - '),
+            style: const pw.TextStyle(
+                fontSize: 10, color: PdfColors.grey700),
+          ),
+          pw.SizedBox(height: 14),
+          if (workload.isEmpty)
+            _emptyNote('Nothing in this project is assigned to '
+                '${_sanitize(person.name)}.')
+          else
+            for (final kind in workload.populatedKinds)
+              ..._personBriefSection(
+                  kind, workload.buckets(kind, today), includeClosed),
+        ],
+      ),
+    );
+
+    return doc.save();
+  }
+
+  static List<pw.Widget> _personBriefSection(
+    WorkloadKind kind,
+    WorkloadBuckets buckets,
+    bool includeClosed,
+  ) {
+    final rows = [
+      ...buckets.overdue,
+      ...buckets.open,
+      if (includeClosed) ...buckets.closed,
+    ];
+    if (rows.isEmpty) return const [];
+    final hasRef = rows.any((r) => (r.ref ?? '').isNotEmpty);
+    final hasDue = rows.any((r) => r.dueDate != null);
+    final hasQualifier = rows.any((r) => (r.qualifier ?? '').isNotEmpty);
+    final showRole = kind == WorkloadKind.risk &&
+        rows.any((r) => r.role == WorkloadRole.assignee);
+    final countLabel = includeClosed && buckets.closed.isNotEmpty
+        ? '${buckets.activeCount} open, ${buckets.closed.length} completed'
+        : '${buckets.activeCount}';
+    return [
+      _raidSectionHeader('${kind.label} ($countLabel)'),
+      pw.SizedBox(height: 6),
+      pw.TableHelper.fromTextArray(
+        headers: [
+          if (hasRef) 'Ref',
+          'Item',
+          if (hasQualifier) kind.qualifierLabel,
+          if (showRole) 'Role',
+          if (hasDue) 'Due',
+          'Status',
+        ],
+        data: rows
+            .map((r) => [
+                  if (hasRef) r.ref ?? '',
+                  _personBriefCell(r, buckets),
+                  if (hasQualifier) _sanitize(r.qualifier ?? ''),
+                  if (showRole) r.role.label,
+                  if (hasDue) r.dueDate ?? '',
+                  _personBriefStatus(r, buckets),
+                ])
+            .toList(),
+        headerStyle:
+            pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
+        cellStyle: const pw.TextStyle(fontSize: 8),
+        headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
+        cellAlignment: pw.Alignment.topLeft,
+        columnWidths: {
+          if (hasRef) 0: const pw.FixedColumnWidth(36),
+          (hasRef ? 1 : 0): const pw.FlexColumnWidth(4),
+          for (var i = (hasRef ? 2 : 1); i < 6; i++)
+            i: const pw.FixedColumnWidth(64),
+        },
+      ),
+      pw.SizedBox(height: 16),
+    ];
+  }
+
+  static String _personBriefCell(WorkloadItem r, WorkloadBuckets b) {
+    final detail = (r.detail ?? '').trim();
+    if (detail.isEmpty) return _sanitize(r.title);
+    return '${_sanitize(r.title)}\n${_sanitize(detail)}';
+  }
+
+  static String _personBriefStatus(WorkloadItem r, WorkloadBuckets b) {
+    final s = r.status.replaceAll('_', ' ');
+    if (b.overdue.contains(r)) return '$s (OVERDUE)';
+    return s;
+  }
+
+  // ---------------------------------------------------------------------------
   // PDF widget helpers
   // ---------------------------------------------------------------------------
 
@@ -509,18 +701,7 @@ class PdfExporter {
     }
   }
 
-  /// Replace Unicode typographic characters that Helvetica cannot render
-  /// with plain ASCII equivalents.
-  static String _sanitize(String s) => s
-      .replaceAll('\u2014', '--') // em dash
-      .replaceAll('\u2013', '-') // en dash
-      .replaceAll('\u2018', "'") // left single quote
-      .replaceAll('\u2019', "'") // right single quote / apostrophe
-      .replaceAll('\u201C', '"') // left double quote
-      .replaceAll('\u201D', '"') // right double quote
-      .replaceAll('\u2026', '...') // ellipsis
-      .replaceAll('\u2022', '-') // bullet
-      .replaceAll('\u00A0', ' '); // non-breaking space
+  static String _sanitize(String s) => sanitizeForPdf(s);
 
   static String _slug(String s) =>
       s.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '_');
@@ -595,7 +776,7 @@ class PdfExporter {
                 ),
               ),
               pw.SizedBox(width: 12),
-              pw.Text('${summary.trendArrow}  ${summary.trendLabel}',
+              pw.Text(_sanitize('${summary.trendArrow}  ${summary.trendLabel}'),
                   style: const pw.TextStyle(
                       fontSize: 11, color: PdfColors.grey600)),
             ]),
@@ -698,7 +879,7 @@ class PdfExporter {
                   _tableCell(ws.name),
                   pw.Padding(
                     padding: const pw.EdgeInsets.all(4),
-                    child: pw.Text(ws.rag.toUpperCase(),
+                    child: pw.Text(_sanitize(ws.rag.toUpperCase()),
                         style: pw.TextStyle(
                             fontSize: 9,
                             fontWeight: pw.FontWeight.bold,
@@ -849,4 +1030,45 @@ class PdfExporter {
         'green' => const PdfColor.fromInt(0xff0d3325),
         _       => PdfColors.grey100,
       };
+}
+
+/// Replaces characters the PDF's built-in Helvetica cannot draw. Anything
+/// outside Latin-1 renders as a blank box, so the trend arrows, the
+/// ▲ ESCALATED mark and the milestone glyphs used on screen are turned
+/// into words or dropped (their meaning is already carried by the label
+/// beside them). Typographic punctuation maps to ASCII. Public so the
+/// mapping is testable.
+String sanitizeForPdf(String s) {
+  var out = s
+      .replaceAll('\u2014', '--') // em dash
+      .replaceAll('\u2013', '-') // en dash
+      .replaceAll('\u2018', "'") // left single quote
+      .replaceAll('\u2019', "'") // right single quote / apostrophe
+      .replaceAll('\u201C', '"') // left double quote
+      .replaceAll('\u201D', '"') // right double quote
+      .replaceAll('\u2026', '...') // ellipsis
+      .replaceAll('\u2022', '-') // bullet
+      .replaceAll('\u00A0', ' ') // non-breaking space
+      // Trend arrows: the label ("Steady", "Improved") stands alone.
+      .replaceAll('\u2192', '') // →
+      .replaceAll('\u2191', '') // ↑
+      .replaceAll('\u2193', '') // ↓
+      .replaceAll('\u2194', '-') // ↔ (ongoing)
+      // Register marks: "▲ ESCALATED" / "▲ was possible/major" read fine bare.
+      .replaceAll('\u25B2', '') // ▲
+      .replaceAll('\u25BC', '') // ▼
+      // Plan glyphs.
+      .replaceAll('\u25C6', '') // ◆ milestone
+      .replaceAll('\u25C8', '[gate]') // ◈
+      .replaceAll('\u26A0', '[deadline]') // ⚠
+      .replaceAll('\u25D4', '[due]') // ◔
+      .replaceAll('\u25F7', '[due]') // ◷
+      .replaceAll('\u2713', 'yes') // ✓
+      .replaceAll('\u2717', 'no') // ✗
+      .replaceAll('\u00B7', '-') // · (Helvetica has it, but keep plain)
+      .replaceAll('\u20AC', 'EUR '); // € is outside Latin-1
+  // Anything else outside Latin-1 still can't be drawn — drop it rather
+  // than print a box.
+  out = out.replaceAll(RegExp(r'[^\x00-\xFF]'), '');
+  return out.replaceAll(RegExp(r'[ \t]{2,}'), ' ').trim();
 }

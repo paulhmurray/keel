@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/analytics/keel_events.dart';
 import '../../core/cascade/cascade_factory.dart';
 import '../../core/database/database.dart';
+import '../../core/shell/landing.dart';
 import '../../core/sync/links_gateway.dart';
 import '../../core/sync/sync_client.dart';
 import '../../providers/project_provider.dart';
@@ -47,8 +48,12 @@ import '../helm/helm_view.dart';
 import '../charter/charter_migration_notice.dart';
 import '../../core/charter/charter_migration.dart';
 import '../../shared/widgets/update_banner.dart';
+import '../../core/search/project_search.dart';
+import '../context/glossary_form.dart';
+import '../people/person_detail_dialog.dart';
 import 'left_panel.dart';
 import 'nav_rail.dart';
+import 'search_palette.dart';
 import 'claude_panel.dart';
 
 class ShellLayout extends StatefulWidget {
@@ -89,6 +94,11 @@ enum _GanttLayoutMode { normal, expanded, presentation }
 
 class _ShellLayoutState extends State<ShellLayout> {
   int _selectedIndex = 0;
+  // Set once the first project is known: a project opens on Helm, a
+  // programme on its overview. Until then the default index stands.
+  bool _landingResolved = false;
+  // Guards Ctrl+K while the find palette is already up.
+  bool _searchOpen = false;
   bool _leftPanelVisible = true;
   bool _rightPanelVisible = true;
   _GanttLayoutMode _ganttMode = _GanttLayoutMode.normal;
@@ -287,6 +297,12 @@ class _ShellLayoutState extends State<ShellLayout> {
     final id = _projectProvider?.currentProjectId;
     if (id == _lastCascadeProjectId) return;
     _lastCascadeProjectId = id;
+    // Sitting on a home page → follow the new entity to its own home.
+    final project = _projectProvider?.currentProject;
+    if (project != null && isHomePage(_selectedIndex)) {
+      final home = landingIndexFor(isProgramme: project.kind == 'programme');
+      if (home != _selectedIndex) setState(() => _selectedIndex = home);
+    }
     _refreshCascade();
   }
 
@@ -325,7 +341,9 @@ class _ShellLayoutState extends State<ShellLayout> {
         // this entity) regardless of which side we're viewing.
         await sync.replayCascadeForActivation(project.id, db);
       } else if (project.kind == 'programme') {
-        await buildCascadeServiceWith(db, sync).pullForProgramme(project.id);
+        // Cascaded copies are derived data, not local edits.
+        await sync.withoutMarkingChanges(
+            () => buildCascadeServiceWith(db, sync).pullForProgramme(project.id));
       }
       if (mounted) setState(() => _cascadeRefreshSeq++);
     } catch (_) {
@@ -390,7 +408,10 @@ class _ShellLayoutState extends State<ShellLayout> {
 
   _MenuNode _buildRootMenu() {
     return _MenuNode('Navigate to…', {
-      ' ':  _ActionNode('Overview',   () { _selectedIndex = 0; }),
+      ' ':  _ActionNode('Home', () {
+        _selectedIndex = landingIndexFor(
+            isProgramme: context.read<ProjectProvider>().isProgramme);
+      }),
       'h':  _ActionNode('Helm — my day', () { _selectedIndex = 16; }),
       't':  _MenuNode('Canvas', {
         'n': _ActionNode('Quick-capture', () {
@@ -491,6 +512,19 @@ class _ShellLayoutState extends State<ShellLayout> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // First landing: once we know what kind of entity is open.
+    if (!_landingResolved) {
+      final current = context.read<ProjectProvider>().currentProject;
+      if (current != null) {
+        _landingResolved = true;
+        final home = landingIndexFor(isProgramme: current.kind == 'programme');
+        if (home != _selectedIndex) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) setState(() => _selectedIndex = home);
+          });
+        }
+      }
+    }
     if (_tourTriggered) return;
     final projectId = context.read<ProjectProvider>().currentProjectId;
     final settings = context.read<SettingsProvider>();
@@ -701,6 +735,10 @@ class _ShellLayoutState extends State<ShellLayout> {
       setState(() => _selectedIndex = 6);
       return true;
     }
+    if (event.logicalKey == LogicalKeyboardKey.keyK) {
+      _openSearchPalette();
+      return true;
+    }
     if (event.logicalKey == LogicalKeyboardKey.keyC &&
         HardwareKeyboard.instance.isShiftPressed) {
       setState(() => _rightPanelVisible = !_rightPanelVisible);
@@ -766,6 +804,122 @@ class _ShellLayoutState extends State<ShellLayout> {
         settings: settings,
       ),
     );
+  }
+
+  // ── Project-wide find (Ctrl+K) ─────────────────────────────────────────
+  // The palette only finds and returns a hit; what "open" means per kind
+  // lives here so it reuses the sidebar openers below and the shell's
+  // own navigation state.
+
+  Future<void> _openSearchPalette() async {
+    if (_searchOpen) return;
+    final pp = context.read<ProjectProvider>();
+    final projectId = pp.currentProjectId;
+    if (projectId == null) return;
+    final db = context.read<AppDatabase>();
+    _searchOpen = true;
+    SearchHit? hit;
+    try {
+      hit = await showSearchPalette(
+        context,
+        db: db,
+        projectId: projectId,
+        isProgramme: pp.isProgramme,
+      );
+    } finally {
+      _searchOpen = false;
+    }
+    if (!mounted || hit == null) return;
+    _openSearchHit(hit);
+  }
+
+  void _navigateTo(int index) {
+    setState(() {
+      _selectedIndex = index;
+      if (index != 12) _ganttMode = _GanttLayoutMode.normal;
+    });
+    _trackSectionOpened(index);
+  }
+
+  void _openSearchHit(SearchHit hit) {
+    final projectId = context.read<ProjectProvider>().currentProjectId;
+    if (projectId == null) return;
+    final db = context.read<AppDatabase>();
+    switch (hit.kind) {
+      case SearchKind.section:
+        _navigateTo(hit.navIndex);
+      case SearchKind.person:
+        _navigateTo(4);
+        showDialog(
+          context: context,
+          builder: (_) => PersonDetailDialog(
+            person: hit.payload as Person,
+            db: db,
+            projectId: projectId,
+          ),
+        );
+      case SearchKind.risk:
+        _openRiskFromSidebar(hit.payload as Risk);
+      case SearchKind.issue:
+        _openRaidItem(tab: 2, builder: (_) => IssueFormDialog(
+              projectId: projectId,
+              db: db,
+              issue: hit.payload as Issue,
+              startInViewMode: true,
+            ));
+      case SearchKind.assumption:
+        _openRaidItem(tab: 1, builder: (_) => AssumptionFormDialog(
+              projectId: projectId,
+              db: db,
+              assumption: hit.payload as Assumption,
+              startInViewMode: true,
+            ));
+      case SearchKind.dependency:
+        _openRaidItem(tab: 3, builder: (_) => DependencyFormDialog(
+              projectId: projectId,
+              db: db,
+              dependency: hit.payload as ProgramDependency,
+              startInViewMode: true,
+            ));
+      case SearchKind.action:
+        _openActionFromSidebar(hit.payload as ProjectAction);
+      case SearchKind.decision:
+        _openDecisionFromSidebar(hit.payload as Decision);
+      case SearchKind.milestone:
+      case SearchKind.planActivity:
+      case SearchKind.workstream:
+        // No standalone dialog for plan rows — land on the Plan.
+        _navigateTo(12);
+      case SearchKind.glossary:
+        setState(() {
+          _selectedIndex = 7;
+          _contextInitialTab = 2;
+          _contextTriggerNew = false;
+          _contextNavSeq++;
+        });
+        _trackSectionOpened(7);
+        showDialog(
+          context: context,
+          builder: (_) => GlossaryFormDialog(
+            projectId: projectId,
+            db: db,
+            entry: hit.payload as GlossaryEntry,
+          ),
+        );
+    }
+  }
+
+  /// Lands on the RAID register's [tab] and opens [builder] over it, the
+  /// same shape as [_openRiskFromSidebar].
+  void _openRaidItem({required int tab, required WidgetBuilder builder}) {
+    setState(() {
+      _selectedIndex = 2;
+      _raidInitialTab = tab;
+      _raidTriggerNew = false;
+      _raidNavSeq++;
+    });
+    _trackSectionOpened(2);
+    showDialog(context: context, builder: builder);
   }
 
   // ── Sidebar "open this item" actions ──────────────────────────────────
@@ -1027,6 +1181,12 @@ class _ShellLayoutState extends State<ShellLayout> {
   }
 
   Widget _buildView() {
+    // The project overview is gone: a project asked for index 0 (an old
+    // leader binding, a stale index) gets Helm instead.
+    if (_selectedIndex == 0 &&
+        !context.read<ProjectProvider>().isProgramme) {
+      _selectedIndex = 16;
+    }
     switch (_selectedIndex) {
       case 0:
         return ProgrammeView(
@@ -1221,6 +1381,7 @@ class _ShellLayoutState extends State<ShellLayout> {
                       selectedIndex: _selectedIndex,
                       isProgramme:
                           context.watch<ProjectProvider>().isProgramme,
+                      onSearch: _openSearchPalette,
                       onDestinationSelected: (i) {
                         setState(() {
                           _selectedIndex = i;

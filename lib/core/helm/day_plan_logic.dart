@@ -213,3 +213,22 @@ int goalMetObjectives(
       .where((o) => o.goalId == goalId && isMet(o))
       .length;
 }
+
+
+/// The grid's visible window: the user's preferred hours, widened (to
+/// the hour) to include any block that falls outside them, so a plan
+/// made under a longer day is never hidden by a shorter setting.
+({int start, int end}) effectiveDayWindow({
+  required int start,
+  required int end,
+  required Iterable<({int startMinute, int endMinute})> blocks,
+}) {
+  var s = start;
+  var e = end;
+  for (final b in blocks) {
+    if (b.startMinute < s) s = (b.startMinute ~/ 60) * 60;
+    if (b.endMinute > e) e = ((b.endMinute + 59) ~/ 60) * 60;
+  }
+  if (e <= s) e = s + 60;
+  return (start: s.clamp(0, 23 * 60), end: e.clamp(60, 24 * 60));
+}

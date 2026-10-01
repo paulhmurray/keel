@@ -69,6 +69,10 @@ class BudgetTotals {
   ActualLines,
   FinancialAuditLog,
   CategoryMerges,
+  FundingApprovals,
+  ContingencyMovements,
+  ProgrammeFinanceSettings,
+  ReceivedAllocations,
 ])
 class FinanceDao extends DatabaseAccessor<AppDatabase>
     with _$FinanceDaoMixin {
@@ -296,6 +300,222 @@ class FinanceDao extends DatabaseAccessor<AppDatabase>
 
   Future<void> upsertMergeRaw(CategoryMergesCompanion entry) {
     return into(categoryMerges).insertOnConflictUpdate(entry);
+  }
+
+  // ── Funding envelope (programme-native, phase 2) ─────────────────────
+
+  Stream<List<FundingApproval>> watchFunding(String programmeId) {
+    return (select(fundingApprovals)
+          ..where((t) => t.projectId.equals(programmeId))
+          ..orderBy([(t) => OrderingTerm.asc(t.approvedOn), (t) => OrderingTerm.asc(t.createdAt)]))
+        .watch();
+  }
+
+  Future<List<FundingApproval>> getFunding(String programmeId) {
+    return (select(fundingApprovals)
+          ..where((t) => t.projectId.equals(programmeId))
+          ..orderBy([(t) => OrderingTerm.asc(t.approvedOn), (t) => OrderingTerm.asc(t.createdAt)]))
+        .get();
+  }
+
+  Future<void> upsertFunding({
+    required String id,
+    required String programmeId,
+    required String name,
+    required int amountMinor,
+    String currency = 'AUD',
+    String? approvedBy,
+    String? approvedOn,
+    String? decisionId,
+    String? notes,
+    String? changedBy,
+  }) {
+    return transaction(() async {
+      final existing = await (select(fundingApprovals)..where((t) => t.id.equals(id)))
+          .getSingleOrNull();
+      await into(fundingApprovals).insertOnConflictUpdate(FundingApprovalsCompanion(
+        id: Value(id),
+        projectId: Value(programmeId),
+        name: Value(name),
+        amountMinor: Value(amountMinor),
+        currency: Value(currency),
+        approvedBy: Value(approvedBy),
+        approvedOn: Value(approvedOn),
+        decisionId: Value(decisionId),
+        notes: Value(notes),
+        updatedAt: Value(DateTime.now()),
+      ));
+      await _audit(
+        projectId: programmeId,
+        entityType: 'FundingApproval',
+        entityId: id,
+        field: existing == null ? 'created' : 'amountMinor',
+        oldValue: existing == null ? null : '${existing.amountMinor}',
+        newValue: '$amountMinor',
+        changedBy: changedBy,
+      );
+    });
+  }
+
+  Future<void> deleteFunding(String id, {String? changedBy}) {
+    return transaction(() async {
+      final row = await (select(fundingApprovals)..where((t) => t.id.equals(id)))
+          .getSingleOrNull();
+      if (row == null) return;
+      await (delete(fundingApprovals)..where((t) => t.id.equals(id))).go();
+      await _audit(
+        projectId: row.projectId,
+        entityType: 'FundingApproval',
+        entityId: id,
+        field: 'deleted',
+        oldValue: '${row.amountMinor}',
+        changedBy: changedBy,
+      );
+    });
+  }
+
+  // ── Contingency ledger ──────────────────────────────────────────────
+
+  Stream<List<ContingencyMovement>> watchMovements(String programmeId) {
+    return (select(contingencyMovements)
+          ..where((t) => t.projectId.equals(programmeId))
+          ..orderBy([(t) => OrderingTerm.asc(t.movedOn), (t) => OrderingTerm.asc(t.createdAt)]))
+        .watch();
+  }
+
+  Future<List<ContingencyMovement>> getMovements(String programmeId) {
+    return (select(contingencyMovements)
+          ..where((t) => t.projectId.equals(programmeId))
+          ..orderBy([(t) => OrderingTerm.asc(t.movedOn), (t) => OrderingTerm.asc(t.createdAt)]))
+        .get();
+  }
+
+  Future<List<ContingencyMovement>> getMovementsForDecision(String decisionId) {
+    return (select(contingencyMovements)
+          ..where((t) => t.decisionId.equals(decisionId))
+          ..orderBy([(t) => OrderingTerm.asc(t.movedOn)]))
+        .get();
+  }
+
+  /// Records one movement. Draws and returns must carry the decision that
+  /// authorised them — that is the whole point of managing contingency in
+  /// the open. Amounts are positive; the kind gives the direction.
+  Future<void> recordMovement({
+    required String id,
+    required String programmeId,
+    required String kind,
+    required int amountMinor,
+    required String linkedProjectId,
+    String? decisionId,
+    String? reason,
+    required String movedOn,
+    String? changedBy,
+  }) {
+    if (amountMinor <= 0) {
+      throw ArgumentError('A movement must be a positive amount');
+    }
+    if (kind != 'allocate' && kind != 'draw' && kind != 'return') {
+      throw ArgumentError('Unknown movement kind: $kind');
+    }
+    if (kind != 'allocate' && (decisionId == null || decisionId.isEmpty)) {
+      throw StateError('A $kind needs the decision that authorised it');
+    }
+    return transaction(() async {
+      await into(contingencyMovements).insert(ContingencyMovementsCompanion.insert(
+        id: id,
+        projectId: programmeId,
+        kind: kind,
+        amountMinor: amountMinor,
+        linkedProjectId: linkedProjectId,
+        decisionId: Value(decisionId),
+        reason: Value(reason),
+        movedOn: movedOn,
+        enteredBy: Value(changedBy),
+      ));
+      await _audit(
+        projectId: programmeId,
+        entityType: 'ContingencyMovement',
+        entityId: id,
+        field: 'created',
+        newValue: '$kind $amountMinor → $linkedProjectId'
+            '${decisionId == null ? '' : ' ($decisionId)'}',
+        changedBy: changedBy,
+      );
+    });
+  }
+
+  Future<void> deleteMovement(String id, {String? changedBy}) {
+    return transaction(() async {
+      final row = await (select(contingencyMovements)..where((t) => t.id.equals(id)))
+          .getSingleOrNull();
+      if (row == null) return;
+      await (delete(contingencyMovements)..where((t) => t.id.equals(id))).go();
+      await _audit(
+        projectId: row.projectId,
+        entityType: 'ContingencyMovement',
+        entityId: id,
+        field: 'deleted',
+        oldValue: '${row.kind} ${row.amountMinor} → ${row.linkedProjectId}',
+        changedBy: changedBy,
+      );
+    });
+  }
+
+  Future<ProgrammeFinanceSetting?> getFinanceSettings(String programmeId) {
+    return (select(programmeFinanceSettings)
+          ..where((t) => t.projectId.equals(programmeId)))
+        .getSingleOrNull();
+  }
+
+  Future<void> setContingencyWarnBp(String programmeId, int bp, {String? changedBy}) {
+    return transaction(() async {
+      final cur = await getFinanceSettings(programmeId);
+      await into(programmeFinanceSettings).insertOnConflictUpdate(
+          ProgrammeFinanceSettingsCompanion(
+        projectId: Value(programmeId),
+        contingencyWarnBp: Value(bp),
+        updatedAt: Value(DateTime.now()),
+      ));
+      await _audit(
+        projectId: programmeId,
+        entityType: 'ProgrammeFinanceSettings',
+        entityId: programmeId,
+        field: 'contingencyWarnBp',
+        oldValue: cur == null ? null : '${cur.contingencyWarnBp}',
+        newValue: '$bp',
+        changedBy: changedBy,
+      );
+    });
+  }
+
+  // ── Received allocations (project-side copies) ───────────────────────
+
+  Stream<List<ReceivedAllocation>> watchReceivedAllocations(String projectId) {
+    return (select(receivedAllocations)
+          ..where((t) => t.projectId.equals(projectId)))
+        .watch();
+  }
+
+  Future<List<ReceivedAllocation>> getReceivedAllocations(String projectId) {
+    return (select(receivedAllocations)
+          ..where((t) => t.projectId.equals(projectId)))
+        .get();
+  }
+
+  Future<void> upsertReceivedAllocationRaw(ReceivedAllocationsCompanion entry) {
+    return into(receivedAllocations).insertOnConflictUpdate(entry);
+  }
+
+  Future<void> upsertFundingRaw(FundingApprovalsCompanion entry) {
+    return into(fundingApprovals).insertOnConflictUpdate(entry);
+  }
+
+  Future<void> upsertMovementRaw(ContingencyMovementsCompanion entry) {
+    return into(contingencyMovements).insertOnConflictUpdate(entry);
+  }
+
+  Future<void> upsertFinanceSettingsRaw(ProgrammeFinanceSettingsCompanion entry) {
+    return into(programmeFinanceSettings).insertOnConflictUpdate(entry);
   }
 
   /// Seeds the default categories if the project has none. Idempotent.

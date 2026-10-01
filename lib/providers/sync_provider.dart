@@ -45,6 +45,11 @@ class SyncProvider extends ChangeNotifier {
   final Map<String, DateTime> _lastSyncByProject = {};
   final Map<String, DateTime> _lastChangeByProject = {};
   bool _importing = false; // suppresses markLocalChange during pull
+  // Depth of [withoutMarkingChanges] scopes. Cascade reconciles write
+  // derived rows (channel records, cascaded copies, received allocations)
+  // on every launch, switch and sync; those are not the user's edits and
+  // must not re-light "Sync needed" the moment a sync completes.
+  int _quietDepth = 0;
 
   // Persisted settings (loaded/saved by caller via SettingsProvider)
   String serverUrl = 'https://sync.keel-app.dev';
@@ -88,11 +93,27 @@ class SyncProvider extends ChangeNotifier {
   /// being viewed). No-op during pull import and when no project is in
   /// context.
   void markLocalChange(String? projectId) {
-    if (_importing) return; // don't flag pull-imported data as a local change
+    // Pull-imported data and cascade-derived writes are not local edits.
+    if (_importing || _quietDepth > 0) return;
     if (projectId == null) return;
     _lastChangeByProject[projectId] = DateTime.now();
     notifyListeners();
     _saveTimestamps();
+  }
+
+  /// Runs [op] with local-change tracking suspended. Use for writes that
+  /// are derived from data already synced or rebuilt from the cascade
+  /// channel, so they never count as pending edits.
+  Future<T> withoutMarkingChanges<T>(Future<T> Function() op) async {
+    _quietDepth++;
+    try {
+      return await op();
+    } finally {
+      // Table-update notifications arrive asynchronously after the write;
+      // hold the scope open briefly so the trailing ones are swallowed too.
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+      _quietDepth--;
+    }
   }
 
   /// Serialises an id→timestamp map to a JSON string for SharedPreferences.
@@ -396,13 +417,13 @@ class SyncProvider extends ChangeNotifier {
       ),
     );
     try {
-      await reconcileCascade(
-        db: db,
-        cascade: cascade,
-        projectId: projectId,
-        linksGateway: SyncLinksGateway(client: client, accessToken: token),
-        remoteUserId: _userId,
-      );
+      await withoutMarkingChanges(() => reconcileCascade(
+            db: db,
+            cascade: cascade,
+            projectId: projectId,
+            linksGateway: SyncLinksGateway(client: client, accessToken: token),
+            remoteUserId: _userId,
+          ));
     } catch (_) {
       // Best-effort — canonical data lives locally; next sync retries.
     }
@@ -455,6 +476,12 @@ class SyncProvider extends ChangeNotifier {
             : SyncCascadeGateway(client: _getClient(), accessToken: token),
       ),
     );
+    await withoutMarkingChanges(() => _replayCascadeForActivation(
+        ownerEntityId, db, cascade));
+  }
+
+  Future<void> _replayCascadeForActivation(
+      String ownerEntityId, AppDatabase db, CascadeService cascade) async {
     // Heal half-formed same-machine pairs first, otherwise the project
     // side has no row to push over and the programme silently starves.
     try {

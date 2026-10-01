@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+
+import '../../core/llm/ollama_models.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
@@ -14,6 +16,8 @@ import '../../shared/theme/keel_colors.dart';
 // Recommended models catalogue
 // ---------------------------------------------------------------------------
 
+/// The catalogue lives in core/llm/ollama_models.dart; the wizard marks
+/// the entry that fits this machine as recommended.
 class _OllamaModel {
   final String id;
   final String label;
@@ -30,39 +34,16 @@ class _OllamaModel {
   });
 }
 
-const _kModels = [
-  _OllamaModel(
-    id: 'llama3.2:3b',
-    label: 'Llama 3.2 3B',
-    description: 'Fast · Great for most tasks',
-    size: '2 GB',
-    recommended: true,
-  ),
-  _OllamaModel(
-    id: 'phi4-mini',
-    label: 'Phi-4 Mini',
-    description: 'Microsoft · Very efficient',
-    size: '2.5 GB',
-  ),
-  _OllamaModel(
-    id: 'gemma3:4b',
-    label: 'Gemma 3 4B',
-    description: 'Google · Strong reasoning',
-    size: '3 GB',
-  ),
-  _OllamaModel(
-    id: 'mistral:7b',
-    label: 'Mistral 7B',
-    description: 'Balanced quality',
-    size: '4 GB',
-  ),
-  _OllamaModel(
-    id: 'llama3.1:8b',
-    label: 'Llama 3.1 8B',
-    description: 'Most capable free model',
-    size: '5 GB',
-  ),
-];
+List<_OllamaModel> _catalogue(String recommendedId) => [
+      for (final m in kOllamaModels)
+        _OllamaModel(
+          id: m.id,
+          label: m.label,
+          description: m.description,
+          size: m.size,
+          recommended: m.id == recommendedId,
+        ),
+    ];
 
 // ---------------------------------------------------------------------------
 // Wizard entry point
@@ -104,7 +85,9 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
   http.Client? _httpClient;
 
   // Model selection
-  String _selectedModelId = 'llama3.2:3b';
+  String _selectedModelId = 'qwen3:8b';
+  // What this machine can run, from nvidia-smi when present.
+  String _recommendedId = 'qwen3:8b';
   final _customCtrl = TextEditingController();
   bool _useCustom = false;
 
@@ -122,13 +105,32 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
   // Local install paths
   // ---------------------------------------------------------------------------
 
-  String get _localBinDir {
+  /// Where Keel's private Ollama lives. The Linux archive is laid out as
+  /// bin/ollama + lib/ollama/* (llama-server and the GGML/CUDA runners) and
+  /// the binary refuses to run without the lib directory beside it, so the
+  /// whole archive is extracted here, not just the executable.
+  String get _localInstallRoot {
     final home = Platform.environment['HOME'] ??
         Platform.environment['USERPROFILE'] ?? '';
     if (Platform.isWindows) {
-      return '${Platform.environment['LOCALAPPDATA']}\\Keel\\bin';
+      return '${Platform.environment['LOCALAPPDATA']}\\Keel';
     }
-    return '$home/.local/share/keel/bin';
+    return '$home/.local/share/keel';
+  }
+
+  String get _localBinDir => Platform.isWindows
+      ? '$_localInstallRoot\\bin'
+      : '$_localInstallRoot/bin';
+
+  /// True when an earlier Keel copied only bin/ollama out of the archive:
+  /// the server starts and lists models, but every chat fails with
+  /// "llama-server binary not found" (HTTP 500).
+  Future<bool> _localInstallIncomplete() async {
+    if (!Platform.isLinux) return false;
+    if (!await File(_localOllamaExe).exists()) return false;
+    final lib = Directory('$_localInstallRoot/lib/ollama');
+    if (!await lib.exists()) return true;
+    return !await lib.list().any((e) => e.path.endsWith('llama-server'));
   }
 
   String get _localOllamaExe {
@@ -160,6 +162,7 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
 
   Future<void> _detect() async {
     setState(() => _step = _WizardStep.detecting);
+    await _probeHardware();
 
     // 1. Check system PATH
     try {
@@ -174,9 +177,14 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
       }
     } catch (_) {}
 
-    // 2. Check our own local install
+    // 2. Check our own local install — a binary-only copy from an older
+    //    Keel is re-downloaded so the runners land beside it.
     final localExe = File(_localOllamaExe);
     if (await localExe.exists()) {
+      if (await _localInstallIncomplete()) {
+        _downloadBinary(repair: true);
+        return;
+      }
       _ollamaExe = _localOllamaExe;
       await _checkRunningAndProceed();
       return;
@@ -184,6 +192,44 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
 
     // 3. Not found anywhere — silently download the binary
     _downloadBinary();
+  }
+
+  /// Reads GPU memory (nvidia-smi) and system RAM (Linux /proc/meminfo)
+  /// to preselect the largest catalogue model this machine runs well.
+  /// Silent when neither is readable — the default is then the 8B.
+  Future<void> _probeHardware() async {
+    int? vram;
+    int? ram;
+    try {
+      final r = await Process.run('nvidia-smi',
+          ['--query-gpu=memory.total', '--format=csv,noheader,nounits']);
+      if (r.exitCode == 0) {
+        vram = int.tryParse(r.stdout.toString().trim().split('\n').first.trim());
+      }
+    } catch (_) {}
+    try {
+      if (Platform.isLinux) {
+        final mem = await File('/proc/meminfo').readAsString();
+        final m = RegExp(r'MemTotal:\s+(\d+) kB').firstMatch(mem);
+        if (m != null) ram = int.parse(m.group(1)!) ~/ 1024;
+      }
+    } catch (_) {}
+    _recommendedId = recommendedOllamaModel(vramMiB: vram, systemRamMiB: ram);
+    _selectedModelId = _recommendedId;
+  }
+
+  /// Stops an `ollama serve` started from Keel's private binary (never a
+  /// system-wide one), so a fresh extraction is what runs next.
+  Future<void> _stopLocalServer() async {
+    if (Platform.isWindows) return;
+    if (!await OllamaClient.isRunning(_baseUrl)) return;
+    try {
+      await Process.run('pkill', ['-f', '^$_localOllamaExe serve']);
+      for (var i = 0; i < 10; i++) {
+        await Future.delayed(const Duration(milliseconds: 300));
+        if (!await OllamaClient.isRunning(_baseUrl)) break;
+      }
+    } catch (_) {}
   }
 
   Future<void> _checkRunningAndProceed() async {
@@ -198,12 +244,14 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
   // Step 2: Silent binary download — no sudo, no shell scripts
   // ---------------------------------------------------------------------------
 
-  Future<void> _downloadBinary() async {
+  Future<void> _downloadBinary({bool repair = false}) async {
     setState(() {
       _step = _WizardStep.settingUp;
       _setupProgress = 0;
       _setupFailed = false;
-      _setupStatus = 'Preparing download...';
+      _setupStatus = repair
+          ? 'Repairing the AI engine (fetching its runners)...'
+          : 'Preparing download...';
     });
 
     Directory? tmpDir;
@@ -279,19 +327,25 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
       if (mounted) setState(() => _setupStatus = 'Extracting...');
 
       if (archiveType == 'tar.zst') {
-        // Extract bin/ollama from the archive into tmpDir
+        // Extract the whole archive (bin/ + lib/ollama/) over the install
+        // root. Stop a server already running from the old binary first so
+        // the new one is what serves.
+        await _stopLocalServer();
         final result = await Process.run('tar', [
-          '--zstd', '-xf', tmpFile.path, '-C', tmpDir!.path, 'bin/ollama',
+          '--zstd', '-xf', tmpFile.path, '-C', _localInstallRoot,
         ]);
         if (result.exitCode != 0) throw 'Extraction failed: ${result.stderr}';
-        final extracted = File('${tmpDir.path}/bin/ollama');
-        if (!await extracted.exists()) throw 'Binary not found in archive';
-        await extracted.copy(_localOllamaExe);
+        if (!await File(_localOllamaExe).exists()) {
+          throw 'Binary not found in archive';
+        }
+        if (await _localInstallIncomplete()) {
+          throw 'Archive did not contain the AI engine runners (lib/ollama)';
+        }
         await Process.run('chmod', ['+x', _localOllamaExe]);
         _ollamaExe = _localOllamaExe;
       } else if (archiveType == 'zip') {
         // macOS: unzip then locate the ollama CLI binary
-        await Process.run('unzip', ['-o', tmpFile.path, '-d', tmpDir!.path]);
+        await Process.run('unzip', ['-o', tmpFile.path, '-d', tmpDir.path]);
         final binary = await _findBinaryInDir(tmpDir, 'ollama');
         if (binary == null) throw 'Could not find ollama binary in zip';
         await binary.copy(_localOllamaExe);
@@ -791,7 +845,7 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
           const SizedBox(height: 16),
 
           // Model list
-          ..._kModels.map((m) {
+          ..._catalogue(_recommendedId).map((m) {
             final isInstalled = _installedModels.any(
                 (installed) => installed.startsWith(m.id.split(':').first));
             final isSelected = !_useCustom && _selectedModelId == m.id;
@@ -1231,25 +1285,6 @@ class _ModelOption extends StatelessWidget {
 // Standalone model pull button (used in LLM settings view)
 // ---------------------------------------------------------------------------
 
-/// Resolves the ollama binary path: system PATH first, then Keel's local install.
-Future<String> resolveOllamaExe() async {
-  try {
-    final r = await Process.run(
-      Platform.isWindows ? 'where' : 'which',
-      ['ollama'],
-    );
-    if (r.exitCode == 0) return 'ollama';
-  } catch (_) {}
-
-  final home = Platform.environment['HOME'] ??
-      Platform.environment['USERPROFILE'] ?? '';
-  final local = Platform.isWindows
-      ? '${Platform.environment['LOCALAPPDATA']}\\Keel\\bin\\ollama.exe'
-      : '$home/.local/share/keel/bin/ollama';
-
-  if (await File(local).exists()) return local;
-  return 'ollama'; // fallback — will fail gracefully if not found
-}
 
 class OllamaModelPullButton extends StatefulWidget {
   final String modelId;
@@ -1289,7 +1324,7 @@ class _OllamaModelPullButtonState extends State<OllamaModelPullButton> {
     });
 
     try {
-      final exe = await resolveOllamaExe();
+      final exe = await OllamaClient.resolveOllamaExe();
 
       // Ensure service is running
       final running = await OllamaClient.isRunning(widget.baseUrl);

@@ -65,6 +65,12 @@ class AppSettings {
   // the new boundaries.
   final int quarterAnchorMonth;
 
+  // Helm day grid window, minutes from midnight. Default 07:00–20:00.
+  // Blocks outside the window still show — the grid stretches to hold
+  // them — so shrinking the window never hides a plan.
+  final int helmDayStartMinute;
+  final int helmDayEndMinute;
+
   // Onboarding
   final bool hasSeenThreeViewTour;
   final bool hasSeenCharterMigrationNotice;
@@ -79,7 +85,7 @@ class AppSettings {
   const AppSettings({
     this.llmProvider = LLMProvider.claudeApi,
     this.claudeApiKey = '',
-    this.claudeModel = 'claude-opus-4-5',
+    this.claudeModel = 'claude-sonnet-5',
     this.openAiApiKey = '',
     this.openAiModel = 'gpt-4o',
     this.grokApiKey = '',
@@ -90,7 +96,7 @@ class AppSettings {
     this.azureApiKey = '',
     this.azureModel = 'gpt-4o',
     this.ollamaBaseUrl = 'http://localhost:11434',
-    this.ollamaModel = 'llama3.2:3b',
+    this.ollamaModel = 'qwen3:8b',
     this.watcherEnabled = false,
     this.watcherDirectory = '',
     this.syncServerUrl = 'https://sync.keel-app.dev',
@@ -101,6 +107,8 @@ class AppSettings {
     this.journalVimMode = false,
     this.vimEscapeSequence = '',
     this.quarterAnchorMonth = 1,
+    this.helmDayStartMinute = 7 * 60,
+    this.helmDayEndMinute = 20 * 60,
     this.hasSeenThreeViewTour = false,
     this.hasSeenCharterMigrationNotice = false,
     this.analyticsEnabled = false,
@@ -149,6 +157,8 @@ class AppSettings {
     bool? journalVimMode,
     String? vimEscapeSequence,
     int? quarterAnchorMonth,
+    int? helmDayStartMinute,
+    int? helmDayEndMinute,
     bool? hasSeenThreeViewTour,
     bool? hasSeenCharterMigrationNotice,
     bool? analyticsEnabled,
@@ -180,6 +190,8 @@ class AppSettings {
       journalVimMode: journalVimMode ?? this.journalVimMode,
       vimEscapeSequence: vimEscapeSequence ?? this.vimEscapeSequence,
       quarterAnchorMonth: quarterAnchorMonth ?? this.quarterAnchorMonth,
+      helmDayStartMinute: helmDayStartMinute ?? this.helmDayStartMinute,
+      helmDayEndMinute: helmDayEndMinute ?? this.helmDayEndMinute,
       hasSeenThreeViewTour: hasSeenThreeViewTour ?? this.hasSeenThreeViewTour,
       hasSeenCharterMigrationNotice: hasSeenCharterMigrationNotice ?? this.hasSeenCharterMigrationNotice,
       analyticsEnabled: analyticsEnabled ?? this.analyticsEnabled,
@@ -214,6 +226,8 @@ class AppSettings {
         'journalVimMode': journalVimMode,
         'vimEscapeSequence': vimEscapeSequence,
         'quarterAnchorMonth': quarterAnchorMonth,
+        'helmDayStartMinute': helmDayStartMinute,
+        'helmDayEndMinute': helmDayEndMinute,
         'hasSeenThreeViewTour': hasSeenThreeViewTour,
         'hasSeenCharterMigrationNotice': hasSeenCharterMigrationNotice,
         'analyticsEnabled': analyticsEnabled,
@@ -230,7 +244,7 @@ class AppSettings {
     return AppSettings(
       llmProvider: provider,
       claudeApiKey: json['claudeApiKey'] as String? ?? '',
-      claudeModel: json['claudeModel'] as String? ?? 'claude-opus-4-5',
+      claudeModel: json['claudeModel'] as String? ?? 'claude-sonnet-5',
       openAiApiKey: json['openAiApiKey'] as String? ?? '',
       openAiModel: json['openAiModel'] as String? ?? 'gpt-4o',
       grokApiKey: json['grokApiKey'] as String? ?? '',
@@ -242,7 +256,7 @@ class AppSettings {
       azureModel: json['azureModel'] as String? ?? 'gpt-4o',
       ollamaBaseUrl:
           json['ollamaBaseUrl'] as String? ?? 'http://localhost:11434',
-      ollamaModel: json['ollamaModel'] as String? ?? 'llama3.2:3b',
+      ollamaModel: json['ollamaModel'] as String? ?? 'qwen3:8b',
       watcherEnabled: json['watcherEnabled'] as bool? ?? false,
       watcherDirectory: json['watcherDirectory'] as String? ?? '',
       syncServerUrl:
@@ -254,6 +268,8 @@ class AppSettings {
       journalVimMode: json['journalVimMode'] as bool? ?? false,
       vimEscapeSequence: json['vimEscapeSequence'] as String? ?? '',
       quarterAnchorMonth: json['quarterAnchorMonth'] as int? ?? 1,
+      helmDayStartMinute: json['helmDayStartMinute'] as int? ?? 7 * 60,
+      helmDayEndMinute: json['helmDayEndMinute'] as int? ?? 20 * 60,
       hasSeenThreeViewTour: json['hasSeenThreeViewTour'] as bool? ?? false,
       hasSeenCharterMigrationNotice: json['hasSeenCharterMigrationNotice'] as bool? ?? false,
       analyticsEnabled: json['analyticsEnabled'] as bool? ?? false,
@@ -312,7 +328,20 @@ class SettingsProvider extends ChangeNotifier {
 
     // Warm up Ollama in the background if it's the configured provider
     if (!kIsWeb && _settings.llmProvider == LLMProvider.ollama) {
-      OllamaClient.ensureRunning(_settings.ollamaBaseUrl);
+      _warmOllama();
+    }
+  }
+
+  /// Starts Ollama and repoints the stored model at one that is actually
+  /// installed (an old default, or a model the user removed, would
+  /// otherwise sit in the chat panel's label until the next draft).
+  Future<void> _warmOllama() async {
+    final url = _settings.ollamaBaseUrl;
+    if (!await OllamaClient.ensureRunning(url)) return;
+    final installed = await OllamaClient.getAvailableModels(url);
+    final picked = OllamaClient.pickInstalledModel(_settings.ollamaModel, installed);
+    if (picked != null && picked != _settings.ollamaModel) {
+      await save(_settings.copyWith(ollamaModel: picked));
     }
   }
 
@@ -360,6 +389,15 @@ class SettingsProvider extends ChangeNotifier {
 
   Future<void> setQuarterAnchorMonth(int month) async {
     await save(_settings.copyWith(quarterAnchorMonth: month.clamp(1, 12)));
+  }
+
+  /// Helm's day grid window. Whole hours; end must be after start.
+  Future<void> setHelmDayWindow({int? startMinute, int? endMinute}) async {
+    var start = (startMinute ?? _settings.helmDayStartMinute).clamp(0, 23 * 60);
+    var end = (endMinute ?? _settings.helmDayEndMinute).clamp(60, 24 * 60);
+    if (end <= start) end = start + 60;
+    await save(_settings.copyWith(
+        helmDayStartMinute: start, helmDayEndMinute: end));
   }
 
   Future<void> markThreeViewTourSeen() async {

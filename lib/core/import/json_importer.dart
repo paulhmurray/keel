@@ -1054,6 +1054,53 @@ class JsonImporter {
           targetName: Value(mm['target_name'] as String? ?? ''),
         ));
       }
+      for (final f in (financeData['funding_approvals'] as List? ?? [])) {
+        final fm = f as Map<String, dynamic>;
+        await db.financeDao.upsertFundingRaw(FundingApprovalsCompanion(
+          id: Value(fm['id'] as String),
+          projectId: Value(projectId),
+          name: Value(fm['name'] as String? ?? ''),
+          amountMinor: Value(fm['amount_minor'] as int? ?? 0),
+          currency: Value(fm['currency'] as String? ?? 'AUD'),
+          approvedBy: Value(fm['approved_by'] as String?),
+          approvedOn: Value(fm['approved_on'] as String?),
+          decisionId: Value(fm['decision_id'] as String?),
+          notes: Value(fm['notes'] as String?),
+        ));
+      }
+      for (final m in (financeData['contingency_movements'] as List? ?? [])) {
+        final mm = m as Map<String, dynamic>;
+        await db.financeDao.upsertMovementRaw(ContingencyMovementsCompanion(
+          id: Value(mm['id'] as String),
+          projectId: Value(projectId),
+          kind: Value(mm['kind'] as String? ?? 'allocate'),
+          amountMinor: Value(mm['amount_minor'] as int? ?? 0),
+          linkedProjectId: Value(mm['linked_project_id'] as String? ?? ''),
+          decisionId: Value(mm['decision_id'] as String?),
+          reason: Value(mm['reason'] as String?),
+          movedOn: Value(mm['moved_on'] as String? ?? ''),
+          enteredBy: Value(mm['entered_by'] as String?),
+        ));
+      }
+      final settings = financeData['settings'] as Map<String, dynamic>?;
+      if (settings != null) {
+        await db.financeDao.upsertFinanceSettingsRaw(ProgrammeFinanceSettingsCompanion(
+          projectId: Value(projectId),
+          contingencyWarnBp: Value(settings['contingency_warn_bp'] as int? ?? 2000),
+        ));
+      }
+      for (final r in (financeData['received_allocations'] as List? ?? [])) {
+        final rm = r as Map<String, dynamic>;
+        await db.financeDao.upsertReceivedAllocationRaw(ReceivedAllocationsCompanion(
+          id: Value(rm['id'] as String),
+          projectId: Value(projectId),
+          programmeId: Value(rm['programme_id'] as String? ?? ''),
+          programmeName: Value(rm['programme_name'] as String?),
+          amountMinor: Value(rm['amount_minor'] as int? ?? 0),
+          currency: Value(rm['currency'] as String? ?? 'AUD'),
+          historyJson: Value(rm['history_json'] as String?),
+        ));
+      }
       for (final a in (financeData['audit_log'] as List? ?? [])) {
         final am = a as Map<String, dynamic>;
         await db.financeDao.upsertAuditRaw(FinancialAuditLogCompanion(
@@ -1348,6 +1395,17 @@ class JsonImporter {
     await (db.delete(db.costCategories)..where((t) => t.projectId.equals(id)))
         .go();
     await (db.delete(db.categoryMerges)..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.fundingApprovals)..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.contingencyMovements)
+          ..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.programmeFinanceSettings)
+          ..where((t) => t.projectId.equals(id)))
+        .go();
+    await (db.delete(db.receivedAllocations)
+          ..where((t) => t.projectId.equals(id)))
         .go();
     await (db.delete(db.financialAuditLog)
           ..where((t) => t.projectId.equals(id)))

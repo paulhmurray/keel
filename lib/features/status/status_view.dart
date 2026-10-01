@@ -13,6 +13,7 @@ import '../../shared/theme/keel_colors.dart';
 import 'financial_summary_panel.dart';
 import 'referenced_items_panel.dart';
 import '../../core/finance/programme_rollup.dart';
+import '../../core/finance/contingency_ledger.dart';
 import 'pending_decisions_panel.dart';
 import '../../core/playbook/current_stage.dart';
 import '../../core/status/status_snapshot_decoder.dart';
@@ -70,6 +71,8 @@ class _StatusContentState extends State<_StatusContent> {
   int? _actualsToDateMinor;
   ProgrammeFinance? _portfolio;
   Map<String, String> _portfolioNames = {};
+  ContingencyLedger? _contingency;
+  int _contingencyWarnBp = 2000;
 
   String get _projectId => widget.project.id;
 
@@ -243,12 +246,27 @@ class _StatusContentState extends State<_StatusContent> {
         }
       }
 
+      // Programme envelope — funding and the contingency ledger.
+      final funding = await db.financeDao.getFunding(_projectId);
+      ContingencyLedger? contingency;
+      var warnBp = 2000;
+      if (funding.isNotEmpty) {
+        contingency = computeLedger(
+            approvals: funding,
+            movements: await db.financeDao.getMovements(_projectId));
+        warnBp = (await db.financeDao.getFinanceSettings(_projectId))
+                ?.contingencyWarnBp ??
+            2000;
+      }
+
       if (!mounted) return;
       setState(() {
         _approvedBudget = approvedBudget;
         _budgetTotals = budgetTotals;
         _portfolio = portfolio;
         _portfolioNames = portfolioNames;
+        _contingency = contingency;
+        _contingencyWarnBp = warnBp;
         _forecastTotalMinor = forecastTotal;
         _forecastPeriod = forecastPeriod;
         _varianceBp = varianceBp;
@@ -454,6 +472,8 @@ class _StatusContentState extends State<_StatusContent> {
                   actualsToDateMinor: _actualsToDateMinor,
                   portfolio:          _portfolio,
                   projectNames:       _portfolioNames,
+                  contingency:        _contingency,
+                  contingencyWarnBp:  _contingencyWarnBp,
                 ),
                 const SizedBox(height: 20),
 

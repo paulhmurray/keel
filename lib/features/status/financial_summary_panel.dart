@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/database/database.dart';
+import '../../core/finance/contingency_ledger.dart';
 import '../../core/finance/programme_rollup.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/utils/money.dart';
@@ -27,6 +28,8 @@ class FinancialSummaryPanel extends StatelessWidget {
   /// Programme roll-up over linked projects (null / empty on a project).
   final ProgrammeFinance? portfolio;
   final Map<String, String> projectNames;
+  final ContingencyLedger? contingency;
+  final int contingencyWarnBp;
 
   const FinancialSummaryPanel({
     super.key,
@@ -39,16 +42,26 @@ class FinancialSummaryPanel extends StatelessWidget {
     this.actualsToDateMinor,
     this.portfolio,
     this.projectNames = const {},
+    this.contingency,
+    this.contingencyWarnBp = 2000,
   });
 
   @override
   Widget build(BuildContext context) {
     final own = _own(context);
     final port = portfolio;
-    if (port == null || port.isEmpty) return own;
+    final led = contingency;
+    final hasLedger = led != null && !led.isEmpty;
+    if ((port == null || port.isEmpty) && !hasLedger) return own;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      _PortfolioBlock(finance: port, projectNames: projectNames),
-      const SizedBox(height: 10),
+      if (hasLedger) ...[
+        _ContingencyLine(ledger: led, warnBp: contingencyWarnBp),
+        const SizedBox(height: 10),
+      ],
+      if (port != null && !port.isEmpty) ...[
+        _PortfolioBlock(finance: port, projectNames: projectNames),
+        const SizedBox(height: 10),
+      ],
       own,
     ]);
   }
@@ -341,4 +354,61 @@ class _PortfolioBlock extends StatelessWidget {
                   fontFamily: 'monospace')),
         ]),
       );
+}
+
+/// Funding, allocated, and the contingency balance against its threshold.
+class _ContingencyLine extends StatelessWidget {
+  final ContingencyLedger ledger;
+  final int warnBp;
+  const _ContingencyLine({required this.ledger, required this.warnBp});
+
+  @override
+  Widget build(BuildContext context) {
+    final l = ledger;
+    final cur = l.currency ?? 'AUD';
+    final warn = l.belowThreshold(warnBp);
+    final colour = warn ? KColors.red : KColors.phosphor;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: KColors.surface,
+        border: Border.all(color: warn ? colour.withValues(alpha: 0.6) : KColors.border),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Row(children: [
+        Expanded(
+          child: Text.rich(TextSpan(children: [
+            const TextSpan(
+                text: 'CONTINGENCY  ',
+                style: TextStyle(
+                    color: KColors.textMuted,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2)),
+            TextSpan(
+                text: '${Money.formatMinorCompact(l.balanceMinor, cur)} of '
+                    '${Money.formatMinorCompact(l.fundingMinor, cur)} funding'
+                    '${l.balanceBp == null ? '' : ' (${Money.formatBp(l.balanceBp).replaceAll('+', '')})'}',
+                style: TextStyle(
+                    color: colour,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'monospace')),
+            TextSpan(
+                text: '  ·  ${Money.formatMinorCompact(l.drawnMinor, cur)} drawn'
+                    '${l.returnedMinor > 0 ? ', ${Money.formatMinorCompact(l.returnedMinor, cur)} returned' : ''}',
+                style: const TextStyle(color: KColors.textDim, fontSize: 11)),
+          ])),
+        ),
+        if (warn)
+          Text(
+            l.balanceMinor < 0
+                ? 'OVER-ALLOCATED'
+                : 'BELOW ${Money.formatBp(warnBp).replaceAll('+', '')}',
+            style: const TextStyle(
+                color: KColors.red, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.6),
+          ),
+      ]),
+    );
+  }
 }

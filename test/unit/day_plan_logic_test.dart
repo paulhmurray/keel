@@ -152,4 +152,27 @@ void main() {
     expect(formatMinute(360), '06:00');
     expect(formatMinute(1005), '16:45');
   });
+  _dayWindowTests();
+}
+
+// ── Day window ───────────────────────────────────────────────────────────
+
+void _dayWindowTests() {
+  test('effectiveDayWindow keeps the preference when blocks fit inside it', () {
+    final w = effectiveDayWindow(
+        start: 7 * 60, end: 20 * 60, blocks: [(startMinute: 9 * 60, endMinute: 10 * 60)]);
+    expect((w.start, w.end), (7 * 60, 20 * 60));
+  });
+  test('effectiveDayWindow widens to the hour around early or late blocks', () {
+    final w = effectiveDayWindow(start: 7 * 60, end: 20 * 60, blocks: [
+      (startMinute: 6 * 60 + 30, endMinute: 7 * 60),
+      (startMinute: 20 * 60, endMinute: 21 * 60 + 15),
+    ]);
+    expect(w.start, 6 * 60);
+    expect(w.end, 22 * 60);
+  });
+  test('effectiveDayWindow never collapses', () {
+    final w = effectiveDayWindow(start: 8 * 60, end: 8 * 60, blocks: const []);
+    expect(w.end, 9 * 60);
+  });
 }

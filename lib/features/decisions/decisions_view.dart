@@ -20,6 +20,7 @@ import '../programme/overdue_cascade_panel.dart';
 import 'decision_form.dart';
 import '../raid/dependency_slack_chip.dart';
 import '../../shared/widgets/closed_toggle.dart';
+import '../finance/contingency_movement_dialog.dart';
 import '../../core/programme/source_filter.dart';
 import '../../shared/widgets/source_filter_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -400,6 +401,15 @@ class _DecisionCard extends StatelessWidget {
                           if (fresh != null && context.mounted) {
                             await _cascadeFor(context, db).pushDecision(fresh);
                           }
+                              } else if (val == 'contingency') {
+                                await showDialog(
+                                  context: context,
+                                  builder: (_) => ContingencyMovementDialog(
+                                    db: db,
+                                    programmeId: projectId,
+                                    decisionId: decision.id,
+                                  ),
+                                );
                               } else if (val == 'delete') {
                                 if (context.mounted) {
                                   await _cascadeFor(context, db)
@@ -428,6 +438,11 @@ class _DecisionCard extends StatelessWidget {
                                 const PopupMenuItem(
                                     value: 'unescalate',
                                     child: Text('Stop sharing')),
+                              if (context.read<ProjectProvider>().isProgramme &&
+                                  decision.sourceProjectId == null)
+                                const PopupMenuItem(
+                                    value: 'contingency',
+                                    child: Text('Record contingency movement…')),
                               const PopupMenuItem(
                                   value: 'delete',
                                   child: Text('Delete')),

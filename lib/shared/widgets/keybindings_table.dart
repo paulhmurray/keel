@@ -40,6 +40,8 @@ class KeybindingsTable extends StatelessWidget {
     ('  → Journal › Quick capture', 'SPC j q'),
     ('  → Playbook', 'SPC P'),
     // --- Global shortcuts ---
+    ('Find anything in this project', 'Ctrl+k'),
+    ('  → Move / open / close', '↑↓ / Enter / Esc'),
     ('Journal quick note (overlay)', 'Ctrl+j'),
     ('Journal split view (toggle)', 'Ctrl+Alt+j'),
     ('Open Journal (history)', 'Ctrl+Shift+j'),

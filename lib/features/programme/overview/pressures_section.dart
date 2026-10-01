@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/database/database.dart';
+import '../../../core/finance/contingency_ledger.dart';
 import '../../../core/finance/programme_rollup.dart';
 import '../../../core/finance/variance.dart';
 import '../../../shared/theme/keel_colors.dart';
@@ -153,6 +154,29 @@ class _PressuresSectionState extends State<PressuresSection> {
           subtitle: 'Linked project forecast beyond its tolerance '
               '±${Money.formatBp(r.toleranceBp).replaceAll('+', '')}'
               '${r.latestSnapshot != null ? ' · ${r.latestSnapshot!.period} snapshot' : ''}',
+          priority: 2,
+        ));
+      }
+    }
+
+    // Priority 2: contingency running low (programme envelope).
+    final funding = await db.financeDao.getFunding(projectId);
+    if (funding.isNotEmpty) {
+      final ledger = computeLedger(
+          approvals: funding,
+          movements: await db.financeDao.getMovements(projectId));
+      final warnBp =
+          (await db.financeDao.getFinanceSettings(projectId))?.contingencyWarnBp ?? 2000;
+      if (ledger.belowThreshold(warnBp)) {
+        final cur = ledger.currency ?? 'AUD';
+        all.add(_Pressure(
+          icon: _PressureIcon.finance,
+          title: ledger.balanceMinor < 0
+              ? 'Over-allocated by ${Money.formatMinorCompact(-ledger.balanceMinor, cur)}'
+              : 'Contingency ${Money.formatMinorCompact(ledger.balanceMinor, cur)} '
+                  '(${Money.formatBp(ledger.balanceBp).replaceAll('+', '')} of funding)',
+          subtitle: 'Below the ${Money.formatBp(warnBp).replaceAll('+', '')} threshold '
+              '· ${Money.formatMinorCompact(ledger.drawnMinor, cur)} drawn to date',
           priority: 2,
         ));
       }

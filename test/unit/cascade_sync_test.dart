@@ -233,8 +233,10 @@ void main() {
       expect(risks, hasLength(1));
       expect(risks.single.id, 'cascade:risk:proj:r-9');
       expect(risks.single.sourceProjectId, 'proj');
-      // No outgoing pushes — a programme only consumes on reconcile.
-      expect(gw.pushes, isEmpty);
+      // The only thing a programme sends is each project's allocation
+      // (the downward kind); it never re-pushes what it consumed.
+      expect(gw.pushes.where((p) => p.itemKind != CascadeKinds.allocation),
+          isEmpty);
     });
   });
 

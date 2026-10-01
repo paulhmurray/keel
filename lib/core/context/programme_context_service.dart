@@ -2,6 +2,7 @@ import '../../shared/utils/money.dart';
 import '../raid/risk_rating.dart';
 import '../database/database.dart';
 import '../playbook/current_stage.dart';
+import '../finance/contingency_ledger.dart';
 import '../finance/programme_rollup.dart';
 import '../finance/variance.dart';
 import '../status/status_calculator.dart' show StatusCalculator, Rag;
@@ -176,6 +177,25 @@ class ProgrammeContextService {
             '${r.forecastMinor == null ? 'no forecast submitted' : 'forecast ${Money.formatMinorCompact(r.forecastMinor, c)} (${Money.formatBp(r.varianceBp)}${r.breach ? ', BEYOND tolerance' : ''})'}'
             ', actuals ${Money.formatMinorCompact(r.actualsMinor, c)}');
       }
+    }
+
+    final funding = await db.financeDao.getFunding(projectId);
+    if (funding.isNotEmpty) {
+      final l = computeLedger(
+          approvals: funding,
+          movements: await db.financeDao.getMovements(projectId));
+      final warnBp = (await db.financeDao.getFinanceSettings(projectId))
+              ?.contingencyWarnBp ??
+          2000;
+      final cur = l.currency ?? 'AUD';
+      portfolioLines.add(
+          'Envelope: funding ${Money.formatMinorCompact(l.fundingMinor, cur)}, '
+          'allocated ${Money.formatMinorCompact(l.allocatedMinor, cur)}, '
+          'contingency balance ${Money.formatMinorCompact(l.balanceMinor, cur)} '
+          '(${Money.formatBp(l.balanceBp).replaceAll('+', '')} of funding'
+          '${l.belowThreshold(warnBp) ? ', BELOW the ${Money.formatBp(warnBp).replaceAll('+', '')} threshold' : ''}); '
+          '${Money.formatMinorCompact(l.drawnMinor, cur)} drawn, '
+          '${Money.formatMinorCompact(l.returnedMinor, cur)} returned');
     }
 
     return ProgrammeContext(

@@ -40968,6 +40968,2112 @@ class CategoryMergesCompanion extends UpdateCompanion<CategoryMerge> {
   }
 }
 
+class $FundingApprovalsTable extends FundingApprovals
+    with TableInfo<$FundingApprovalsTable, FundingApproval> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FundingApprovalsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES projects (id)',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _amountMinorMeta = const VerificationMeta(
+    'amountMinor',
+  );
+  @override
+  late final GeneratedColumn<int> amountMinor = GeneratedColumn<int>(
+    'amount_minor',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _currencyMeta = const VerificationMeta(
+    'currency',
+  );
+  @override
+  late final GeneratedColumn<String> currency = GeneratedColumn<String>(
+    'currency',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('AUD'),
+  );
+  static const VerificationMeta _approvedByMeta = const VerificationMeta(
+    'approvedBy',
+  );
+  @override
+  late final GeneratedColumn<String> approvedBy = GeneratedColumn<String>(
+    'approved_by',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _approvedOnMeta = const VerificationMeta(
+    'approvedOn',
+  );
+  @override
+  late final GeneratedColumn<String> approvedOn = GeneratedColumn<String>(
+    'approved_on',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _decisionIdMeta = const VerificationMeta(
+    'decisionId',
+  );
+  @override
+  late final GeneratedColumn<String> decisionId = GeneratedColumn<String>(
+    'decision_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    projectId,
+    name,
+    amountMinor,
+    currency,
+    approvedBy,
+    approvedOn,
+    decisionId,
+    notes,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'funding_approvals';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<FundingApproval> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_projectIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('amount_minor')) {
+      context.handle(
+        _amountMinorMeta,
+        amountMinor.isAcceptableOrUnknown(
+          data['amount_minor']!,
+          _amountMinorMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_amountMinorMeta);
+    }
+    if (data.containsKey('currency')) {
+      context.handle(
+        _currencyMeta,
+        currency.isAcceptableOrUnknown(data['currency']!, _currencyMeta),
+      );
+    }
+    if (data.containsKey('approved_by')) {
+      context.handle(
+        _approvedByMeta,
+        approvedBy.isAcceptableOrUnknown(data['approved_by']!, _approvedByMeta),
+      );
+    }
+    if (data.containsKey('approved_on')) {
+      context.handle(
+        _approvedOnMeta,
+        approvedOn.isAcceptableOrUnknown(data['approved_on']!, _approvedOnMeta),
+      );
+    }
+    if (data.containsKey('decision_id')) {
+      context.handle(
+        _decisionIdMeta,
+        decisionId.isAcceptableOrUnknown(data['decision_id']!, _decisionIdMeta),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  FundingApproval map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return FundingApproval(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      amountMinor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}amount_minor'],
+      )!,
+      currency: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}currency'],
+      )!,
+      approvedBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}approved_by'],
+      ),
+      approvedOn: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}approved_on'],
+      ),
+      decisionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}decision_id'],
+      ),
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $FundingApprovalsTable createAlias(String alias) {
+    return $FundingApprovalsTable(attachedDatabase, alias);
+  }
+}
+
+class FundingApproval extends DataClass implements Insertable<FundingApproval> {
+  final String id;
+  final String projectId;
+  final String name;
+  final int amountMinor;
+  final String currency;
+  final String? approvedBy;
+  final String? approvedOn;
+  final String? decisionId;
+  final String? notes;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const FundingApproval({
+    required this.id,
+    required this.projectId,
+    required this.name,
+    required this.amountMinor,
+    required this.currency,
+    this.approvedBy,
+    this.approvedOn,
+    this.decisionId,
+    this.notes,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['project_id'] = Variable<String>(projectId);
+    map['name'] = Variable<String>(name);
+    map['amount_minor'] = Variable<int>(amountMinor);
+    map['currency'] = Variable<String>(currency);
+    if (!nullToAbsent || approvedBy != null) {
+      map['approved_by'] = Variable<String>(approvedBy);
+    }
+    if (!nullToAbsent || approvedOn != null) {
+      map['approved_on'] = Variable<String>(approvedOn);
+    }
+    if (!nullToAbsent || decisionId != null) {
+      map['decision_id'] = Variable<String>(decisionId);
+    }
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  FundingApprovalsCompanion toCompanion(bool nullToAbsent) {
+    return FundingApprovalsCompanion(
+      id: Value(id),
+      projectId: Value(projectId),
+      name: Value(name),
+      amountMinor: Value(amountMinor),
+      currency: Value(currency),
+      approvedBy: approvedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(approvedBy),
+      approvedOn: approvedOn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(approvedOn),
+      decisionId: decisionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(decisionId),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory FundingApproval.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return FundingApproval(
+      id: serializer.fromJson<String>(json['id']),
+      projectId: serializer.fromJson<String>(json['projectId']),
+      name: serializer.fromJson<String>(json['name']),
+      amountMinor: serializer.fromJson<int>(json['amountMinor']),
+      currency: serializer.fromJson<String>(json['currency']),
+      approvedBy: serializer.fromJson<String?>(json['approvedBy']),
+      approvedOn: serializer.fromJson<String?>(json['approvedOn']),
+      decisionId: serializer.fromJson<String?>(json['decisionId']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'projectId': serializer.toJson<String>(projectId),
+      'name': serializer.toJson<String>(name),
+      'amountMinor': serializer.toJson<int>(amountMinor),
+      'currency': serializer.toJson<String>(currency),
+      'approvedBy': serializer.toJson<String?>(approvedBy),
+      'approvedOn': serializer.toJson<String?>(approvedOn),
+      'decisionId': serializer.toJson<String?>(decisionId),
+      'notes': serializer.toJson<String?>(notes),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  FundingApproval copyWith({
+    String? id,
+    String? projectId,
+    String? name,
+    int? amountMinor,
+    String? currency,
+    Value<String?> approvedBy = const Value.absent(),
+    Value<String?> approvedOn = const Value.absent(),
+    Value<String?> decisionId = const Value.absent(),
+    Value<String?> notes = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => FundingApproval(
+    id: id ?? this.id,
+    projectId: projectId ?? this.projectId,
+    name: name ?? this.name,
+    amountMinor: amountMinor ?? this.amountMinor,
+    currency: currency ?? this.currency,
+    approvedBy: approvedBy.present ? approvedBy.value : this.approvedBy,
+    approvedOn: approvedOn.present ? approvedOn.value : this.approvedOn,
+    decisionId: decisionId.present ? decisionId.value : this.decisionId,
+    notes: notes.present ? notes.value : this.notes,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  FundingApproval copyWithCompanion(FundingApprovalsCompanion data) {
+    return FundingApproval(
+      id: data.id.present ? data.id.value : this.id,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      name: data.name.present ? data.name.value : this.name,
+      amountMinor: data.amountMinor.present
+          ? data.amountMinor.value
+          : this.amountMinor,
+      currency: data.currency.present ? data.currency.value : this.currency,
+      approvedBy: data.approvedBy.present
+          ? data.approvedBy.value
+          : this.approvedBy,
+      approvedOn: data.approvedOn.present
+          ? data.approvedOn.value
+          : this.approvedOn,
+      decisionId: data.decisionId.present
+          ? data.decisionId.value
+          : this.decisionId,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FundingApproval(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('name: $name, ')
+          ..write('amountMinor: $amountMinor, ')
+          ..write('currency: $currency, ')
+          ..write('approvedBy: $approvedBy, ')
+          ..write('approvedOn: $approvedOn, ')
+          ..write('decisionId: $decisionId, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    projectId,
+    name,
+    amountMinor,
+    currency,
+    approvedBy,
+    approvedOn,
+    decisionId,
+    notes,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is FundingApproval &&
+          other.id == this.id &&
+          other.projectId == this.projectId &&
+          other.name == this.name &&
+          other.amountMinor == this.amountMinor &&
+          other.currency == this.currency &&
+          other.approvedBy == this.approvedBy &&
+          other.approvedOn == this.approvedOn &&
+          other.decisionId == this.decisionId &&
+          other.notes == this.notes &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class FundingApprovalsCompanion extends UpdateCompanion<FundingApproval> {
+  final Value<String> id;
+  final Value<String> projectId;
+  final Value<String> name;
+  final Value<int> amountMinor;
+  final Value<String> currency;
+  final Value<String?> approvedBy;
+  final Value<String?> approvedOn;
+  final Value<String?> decisionId;
+  final Value<String?> notes;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const FundingApprovalsCompanion({
+    this.id = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.amountMinor = const Value.absent(),
+    this.currency = const Value.absent(),
+    this.approvedBy = const Value.absent(),
+    this.approvedOn = const Value.absent(),
+    this.decisionId = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  FundingApprovalsCompanion.insert({
+    required String id,
+    required String projectId,
+    required String name,
+    required int amountMinor,
+    this.currency = const Value.absent(),
+    this.approvedBy = const Value.absent(),
+    this.approvedOn = const Value.absent(),
+    this.decisionId = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       projectId = Value(projectId),
+       name = Value(name),
+       amountMinor = Value(amountMinor);
+  static Insertable<FundingApproval> custom({
+    Expression<String>? id,
+    Expression<String>? projectId,
+    Expression<String>? name,
+    Expression<int>? amountMinor,
+    Expression<String>? currency,
+    Expression<String>? approvedBy,
+    Expression<String>? approvedOn,
+    Expression<String>? decisionId,
+    Expression<String>? notes,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (projectId != null) 'project_id': projectId,
+      if (name != null) 'name': name,
+      if (amountMinor != null) 'amount_minor': amountMinor,
+      if (currency != null) 'currency': currency,
+      if (approvedBy != null) 'approved_by': approvedBy,
+      if (approvedOn != null) 'approved_on': approvedOn,
+      if (decisionId != null) 'decision_id': decisionId,
+      if (notes != null) 'notes': notes,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  FundingApprovalsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? projectId,
+    Value<String>? name,
+    Value<int>? amountMinor,
+    Value<String>? currency,
+    Value<String?>? approvedBy,
+    Value<String?>? approvedOn,
+    Value<String?>? decisionId,
+    Value<String?>? notes,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return FundingApprovalsCompanion(
+      id: id ?? this.id,
+      projectId: projectId ?? this.projectId,
+      name: name ?? this.name,
+      amountMinor: amountMinor ?? this.amountMinor,
+      currency: currency ?? this.currency,
+      approvedBy: approvedBy ?? this.approvedBy,
+      approvedOn: approvedOn ?? this.approvedOn,
+      decisionId: decisionId ?? this.decisionId,
+      notes: notes ?? this.notes,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (amountMinor.present) {
+      map['amount_minor'] = Variable<int>(amountMinor.value);
+    }
+    if (currency.present) {
+      map['currency'] = Variable<String>(currency.value);
+    }
+    if (approvedBy.present) {
+      map['approved_by'] = Variable<String>(approvedBy.value);
+    }
+    if (approvedOn.present) {
+      map['approved_on'] = Variable<String>(approvedOn.value);
+    }
+    if (decisionId.present) {
+      map['decision_id'] = Variable<String>(decisionId.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FundingApprovalsCompanion(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('name: $name, ')
+          ..write('amountMinor: $amountMinor, ')
+          ..write('currency: $currency, ')
+          ..write('approvedBy: $approvedBy, ')
+          ..write('approvedOn: $approvedOn, ')
+          ..write('decisionId: $decisionId, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ContingencyMovementsTable extends ContingencyMovements
+    with TableInfo<$ContingencyMovementsTable, ContingencyMovement> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ContingencyMovementsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES projects (id)',
+    ),
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _amountMinorMeta = const VerificationMeta(
+    'amountMinor',
+  );
+  @override
+  late final GeneratedColumn<int> amountMinor = GeneratedColumn<int>(
+    'amount_minor',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _linkedProjectIdMeta = const VerificationMeta(
+    'linkedProjectId',
+  );
+  @override
+  late final GeneratedColumn<String> linkedProjectId = GeneratedColumn<String>(
+    'linked_project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _decisionIdMeta = const VerificationMeta(
+    'decisionId',
+  );
+  @override
+  late final GeneratedColumn<String> decisionId = GeneratedColumn<String>(
+    'decision_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _reasonMeta = const VerificationMeta('reason');
+  @override
+  late final GeneratedColumn<String> reason = GeneratedColumn<String>(
+    'reason',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _movedOnMeta = const VerificationMeta(
+    'movedOn',
+  );
+  @override
+  late final GeneratedColumn<String> movedOn = GeneratedColumn<String>(
+    'moved_on',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _enteredByMeta = const VerificationMeta(
+    'enteredBy',
+  );
+  @override
+  late final GeneratedColumn<String> enteredBy = GeneratedColumn<String>(
+    'entered_by',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    projectId,
+    kind,
+    amountMinor,
+    linkedProjectId,
+    decisionId,
+    reason,
+    movedOn,
+    enteredBy,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'contingency_movements';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ContingencyMovement> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_projectIdMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('amount_minor')) {
+      context.handle(
+        _amountMinorMeta,
+        amountMinor.isAcceptableOrUnknown(
+          data['amount_minor']!,
+          _amountMinorMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_amountMinorMeta);
+    }
+    if (data.containsKey('linked_project_id')) {
+      context.handle(
+        _linkedProjectIdMeta,
+        linkedProjectId.isAcceptableOrUnknown(
+          data['linked_project_id']!,
+          _linkedProjectIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_linkedProjectIdMeta);
+    }
+    if (data.containsKey('decision_id')) {
+      context.handle(
+        _decisionIdMeta,
+        decisionId.isAcceptableOrUnknown(data['decision_id']!, _decisionIdMeta),
+      );
+    }
+    if (data.containsKey('reason')) {
+      context.handle(
+        _reasonMeta,
+        reason.isAcceptableOrUnknown(data['reason']!, _reasonMeta),
+      );
+    }
+    if (data.containsKey('moved_on')) {
+      context.handle(
+        _movedOnMeta,
+        movedOn.isAcceptableOrUnknown(data['moved_on']!, _movedOnMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_movedOnMeta);
+    }
+    if (data.containsKey('entered_by')) {
+      context.handle(
+        _enteredByMeta,
+        enteredBy.isAcceptableOrUnknown(data['entered_by']!, _enteredByMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ContingencyMovement map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ContingencyMovement(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      amountMinor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}amount_minor'],
+      )!,
+      linkedProjectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}linked_project_id'],
+      )!,
+      decisionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}decision_id'],
+      ),
+      reason: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reason'],
+      ),
+      movedOn: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}moved_on'],
+      )!,
+      enteredBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entered_by'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ContingencyMovementsTable createAlias(String alias) {
+    return $ContingencyMovementsTable(attachedDatabase, alias);
+  }
+}
+
+class ContingencyMovement extends DataClass
+    implements Insertable<ContingencyMovement> {
+  final String id;
+  final String projectId;
+  final String kind;
+  final int amountMinor;
+  final String linkedProjectId;
+  final String? decisionId;
+  final String? reason;
+  final String movedOn;
+  final String? enteredBy;
+  final DateTime createdAt;
+  const ContingencyMovement({
+    required this.id,
+    required this.projectId,
+    required this.kind,
+    required this.amountMinor,
+    required this.linkedProjectId,
+    this.decisionId,
+    this.reason,
+    required this.movedOn,
+    this.enteredBy,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['project_id'] = Variable<String>(projectId);
+    map['kind'] = Variable<String>(kind);
+    map['amount_minor'] = Variable<int>(amountMinor);
+    map['linked_project_id'] = Variable<String>(linkedProjectId);
+    if (!nullToAbsent || decisionId != null) {
+      map['decision_id'] = Variable<String>(decisionId);
+    }
+    if (!nullToAbsent || reason != null) {
+      map['reason'] = Variable<String>(reason);
+    }
+    map['moved_on'] = Variable<String>(movedOn);
+    if (!nullToAbsent || enteredBy != null) {
+      map['entered_by'] = Variable<String>(enteredBy);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  ContingencyMovementsCompanion toCompanion(bool nullToAbsent) {
+    return ContingencyMovementsCompanion(
+      id: Value(id),
+      projectId: Value(projectId),
+      kind: Value(kind),
+      amountMinor: Value(amountMinor),
+      linkedProjectId: Value(linkedProjectId),
+      decisionId: decisionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(decisionId),
+      reason: reason == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reason),
+      movedOn: Value(movedOn),
+      enteredBy: enteredBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(enteredBy),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory ContingencyMovement.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ContingencyMovement(
+      id: serializer.fromJson<String>(json['id']),
+      projectId: serializer.fromJson<String>(json['projectId']),
+      kind: serializer.fromJson<String>(json['kind']),
+      amountMinor: serializer.fromJson<int>(json['amountMinor']),
+      linkedProjectId: serializer.fromJson<String>(json['linkedProjectId']),
+      decisionId: serializer.fromJson<String?>(json['decisionId']),
+      reason: serializer.fromJson<String?>(json['reason']),
+      movedOn: serializer.fromJson<String>(json['movedOn']),
+      enteredBy: serializer.fromJson<String?>(json['enteredBy']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'projectId': serializer.toJson<String>(projectId),
+      'kind': serializer.toJson<String>(kind),
+      'amountMinor': serializer.toJson<int>(amountMinor),
+      'linkedProjectId': serializer.toJson<String>(linkedProjectId),
+      'decisionId': serializer.toJson<String?>(decisionId),
+      'reason': serializer.toJson<String?>(reason),
+      'movedOn': serializer.toJson<String>(movedOn),
+      'enteredBy': serializer.toJson<String?>(enteredBy),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  ContingencyMovement copyWith({
+    String? id,
+    String? projectId,
+    String? kind,
+    int? amountMinor,
+    String? linkedProjectId,
+    Value<String?> decisionId = const Value.absent(),
+    Value<String?> reason = const Value.absent(),
+    String? movedOn,
+    Value<String?> enteredBy = const Value.absent(),
+    DateTime? createdAt,
+  }) => ContingencyMovement(
+    id: id ?? this.id,
+    projectId: projectId ?? this.projectId,
+    kind: kind ?? this.kind,
+    amountMinor: amountMinor ?? this.amountMinor,
+    linkedProjectId: linkedProjectId ?? this.linkedProjectId,
+    decisionId: decisionId.present ? decisionId.value : this.decisionId,
+    reason: reason.present ? reason.value : this.reason,
+    movedOn: movedOn ?? this.movedOn,
+    enteredBy: enteredBy.present ? enteredBy.value : this.enteredBy,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  ContingencyMovement copyWithCompanion(ContingencyMovementsCompanion data) {
+    return ContingencyMovement(
+      id: data.id.present ? data.id.value : this.id,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      amountMinor: data.amountMinor.present
+          ? data.amountMinor.value
+          : this.amountMinor,
+      linkedProjectId: data.linkedProjectId.present
+          ? data.linkedProjectId.value
+          : this.linkedProjectId,
+      decisionId: data.decisionId.present
+          ? data.decisionId.value
+          : this.decisionId,
+      reason: data.reason.present ? data.reason.value : this.reason,
+      movedOn: data.movedOn.present ? data.movedOn.value : this.movedOn,
+      enteredBy: data.enteredBy.present ? data.enteredBy.value : this.enteredBy,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ContingencyMovement(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('kind: $kind, ')
+          ..write('amountMinor: $amountMinor, ')
+          ..write('linkedProjectId: $linkedProjectId, ')
+          ..write('decisionId: $decisionId, ')
+          ..write('reason: $reason, ')
+          ..write('movedOn: $movedOn, ')
+          ..write('enteredBy: $enteredBy, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    projectId,
+    kind,
+    amountMinor,
+    linkedProjectId,
+    decisionId,
+    reason,
+    movedOn,
+    enteredBy,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ContingencyMovement &&
+          other.id == this.id &&
+          other.projectId == this.projectId &&
+          other.kind == this.kind &&
+          other.amountMinor == this.amountMinor &&
+          other.linkedProjectId == this.linkedProjectId &&
+          other.decisionId == this.decisionId &&
+          other.reason == this.reason &&
+          other.movedOn == this.movedOn &&
+          other.enteredBy == this.enteredBy &&
+          other.createdAt == this.createdAt);
+}
+
+class ContingencyMovementsCompanion
+    extends UpdateCompanion<ContingencyMovement> {
+  final Value<String> id;
+  final Value<String> projectId;
+  final Value<String> kind;
+  final Value<int> amountMinor;
+  final Value<String> linkedProjectId;
+  final Value<String?> decisionId;
+  final Value<String?> reason;
+  final Value<String> movedOn;
+  final Value<String?> enteredBy;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const ContingencyMovementsCompanion({
+    this.id = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.amountMinor = const Value.absent(),
+    this.linkedProjectId = const Value.absent(),
+    this.decisionId = const Value.absent(),
+    this.reason = const Value.absent(),
+    this.movedOn = const Value.absent(),
+    this.enteredBy = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ContingencyMovementsCompanion.insert({
+    required String id,
+    required String projectId,
+    required String kind,
+    required int amountMinor,
+    required String linkedProjectId,
+    this.decisionId = const Value.absent(),
+    this.reason = const Value.absent(),
+    required String movedOn,
+    this.enteredBy = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       projectId = Value(projectId),
+       kind = Value(kind),
+       amountMinor = Value(amountMinor),
+       linkedProjectId = Value(linkedProjectId),
+       movedOn = Value(movedOn);
+  static Insertable<ContingencyMovement> custom({
+    Expression<String>? id,
+    Expression<String>? projectId,
+    Expression<String>? kind,
+    Expression<int>? amountMinor,
+    Expression<String>? linkedProjectId,
+    Expression<String>? decisionId,
+    Expression<String>? reason,
+    Expression<String>? movedOn,
+    Expression<String>? enteredBy,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (projectId != null) 'project_id': projectId,
+      if (kind != null) 'kind': kind,
+      if (amountMinor != null) 'amount_minor': amountMinor,
+      if (linkedProjectId != null) 'linked_project_id': linkedProjectId,
+      if (decisionId != null) 'decision_id': decisionId,
+      if (reason != null) 'reason': reason,
+      if (movedOn != null) 'moved_on': movedOn,
+      if (enteredBy != null) 'entered_by': enteredBy,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ContingencyMovementsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? projectId,
+    Value<String>? kind,
+    Value<int>? amountMinor,
+    Value<String>? linkedProjectId,
+    Value<String?>? decisionId,
+    Value<String?>? reason,
+    Value<String>? movedOn,
+    Value<String?>? enteredBy,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return ContingencyMovementsCompanion(
+      id: id ?? this.id,
+      projectId: projectId ?? this.projectId,
+      kind: kind ?? this.kind,
+      amountMinor: amountMinor ?? this.amountMinor,
+      linkedProjectId: linkedProjectId ?? this.linkedProjectId,
+      decisionId: decisionId ?? this.decisionId,
+      reason: reason ?? this.reason,
+      movedOn: movedOn ?? this.movedOn,
+      enteredBy: enteredBy ?? this.enteredBy,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (amountMinor.present) {
+      map['amount_minor'] = Variable<int>(amountMinor.value);
+    }
+    if (linkedProjectId.present) {
+      map['linked_project_id'] = Variable<String>(linkedProjectId.value);
+    }
+    if (decisionId.present) {
+      map['decision_id'] = Variable<String>(decisionId.value);
+    }
+    if (reason.present) {
+      map['reason'] = Variable<String>(reason.value);
+    }
+    if (movedOn.present) {
+      map['moved_on'] = Variable<String>(movedOn.value);
+    }
+    if (enteredBy.present) {
+      map['entered_by'] = Variable<String>(enteredBy.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ContingencyMovementsCompanion(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('kind: $kind, ')
+          ..write('amountMinor: $amountMinor, ')
+          ..write('linkedProjectId: $linkedProjectId, ')
+          ..write('decisionId: $decisionId, ')
+          ..write('reason: $reason, ')
+          ..write('movedOn: $movedOn, ')
+          ..write('enteredBy: $enteredBy, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ProgrammeFinanceSettingsTable extends ProgrammeFinanceSettings
+    with TableInfo<$ProgrammeFinanceSettingsTable, ProgrammeFinanceSetting> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ProgrammeFinanceSettingsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES projects (id)',
+    ),
+  );
+  static const VerificationMeta _contingencyWarnBpMeta = const VerificationMeta(
+    'contingencyWarnBp',
+  );
+  @override
+  late final GeneratedColumn<int> contingencyWarnBp = GeneratedColumn<int>(
+    'contingency_warn_bp',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(2000),
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    projectId,
+    contingencyWarnBp,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'programme_finance_settings';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ProgrammeFinanceSetting> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_projectIdMeta);
+    }
+    if (data.containsKey('contingency_warn_bp')) {
+      context.handle(
+        _contingencyWarnBpMeta,
+        contingencyWarnBp.isAcceptableOrUnknown(
+          data['contingency_warn_bp']!,
+          _contingencyWarnBpMeta,
+        ),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {projectId};
+  @override
+  ProgrammeFinanceSetting map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ProgrammeFinanceSetting(
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      )!,
+      contingencyWarnBp: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}contingency_warn_bp'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ProgrammeFinanceSettingsTable createAlias(String alias) {
+    return $ProgrammeFinanceSettingsTable(attachedDatabase, alias);
+  }
+}
+
+class ProgrammeFinanceSetting extends DataClass
+    implements Insertable<ProgrammeFinanceSetting> {
+  final String projectId;
+  final int contingencyWarnBp;
+  final DateTime updatedAt;
+  const ProgrammeFinanceSetting({
+    required this.projectId,
+    required this.contingencyWarnBp,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['project_id'] = Variable<String>(projectId);
+    map['contingency_warn_bp'] = Variable<int>(contingencyWarnBp);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  ProgrammeFinanceSettingsCompanion toCompanion(bool nullToAbsent) {
+    return ProgrammeFinanceSettingsCompanion(
+      projectId: Value(projectId),
+      contingencyWarnBp: Value(contingencyWarnBp),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory ProgrammeFinanceSetting.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ProgrammeFinanceSetting(
+      projectId: serializer.fromJson<String>(json['projectId']),
+      contingencyWarnBp: serializer.fromJson<int>(json['contingencyWarnBp']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'projectId': serializer.toJson<String>(projectId),
+      'contingencyWarnBp': serializer.toJson<int>(contingencyWarnBp),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  ProgrammeFinanceSetting copyWith({
+    String? projectId,
+    int? contingencyWarnBp,
+    DateTime? updatedAt,
+  }) => ProgrammeFinanceSetting(
+    projectId: projectId ?? this.projectId,
+    contingencyWarnBp: contingencyWarnBp ?? this.contingencyWarnBp,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  ProgrammeFinanceSetting copyWithCompanion(
+    ProgrammeFinanceSettingsCompanion data,
+  ) {
+    return ProgrammeFinanceSetting(
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      contingencyWarnBp: data.contingencyWarnBp.present
+          ? data.contingencyWarnBp.value
+          : this.contingencyWarnBp,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProgrammeFinanceSetting(')
+          ..write('projectId: $projectId, ')
+          ..write('contingencyWarnBp: $contingencyWarnBp, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(projectId, contingencyWarnBp, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ProgrammeFinanceSetting &&
+          other.projectId == this.projectId &&
+          other.contingencyWarnBp == this.contingencyWarnBp &&
+          other.updatedAt == this.updatedAt);
+}
+
+class ProgrammeFinanceSettingsCompanion
+    extends UpdateCompanion<ProgrammeFinanceSetting> {
+  final Value<String> projectId;
+  final Value<int> contingencyWarnBp;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const ProgrammeFinanceSettingsCompanion({
+    this.projectId = const Value.absent(),
+    this.contingencyWarnBp = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ProgrammeFinanceSettingsCompanion.insert({
+    required String projectId,
+    this.contingencyWarnBp = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : projectId = Value(projectId);
+  static Insertable<ProgrammeFinanceSetting> custom({
+    Expression<String>? projectId,
+    Expression<int>? contingencyWarnBp,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (projectId != null) 'project_id': projectId,
+      if (contingencyWarnBp != null) 'contingency_warn_bp': contingencyWarnBp,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ProgrammeFinanceSettingsCompanion copyWith({
+    Value<String>? projectId,
+    Value<int>? contingencyWarnBp,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return ProgrammeFinanceSettingsCompanion(
+      projectId: projectId ?? this.projectId,
+      contingencyWarnBp: contingencyWarnBp ?? this.contingencyWarnBp,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (contingencyWarnBp.present) {
+      map['contingency_warn_bp'] = Variable<int>(contingencyWarnBp.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProgrammeFinanceSettingsCompanion(')
+          ..write('projectId: $projectId, ')
+          ..write('contingencyWarnBp: $contingencyWarnBp, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ReceivedAllocationsTable extends ReceivedAllocations
+    with TableInfo<$ReceivedAllocationsTable, ReceivedAllocation> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ReceivedAllocationsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES projects (id)',
+    ),
+  );
+  static const VerificationMeta _programmeIdMeta = const VerificationMeta(
+    'programmeId',
+  );
+  @override
+  late final GeneratedColumn<String> programmeId = GeneratedColumn<String>(
+    'programme_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _programmeNameMeta = const VerificationMeta(
+    'programmeName',
+  );
+  @override
+  late final GeneratedColumn<String> programmeName = GeneratedColumn<String>(
+    'programme_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _amountMinorMeta = const VerificationMeta(
+    'amountMinor',
+  );
+  @override
+  late final GeneratedColumn<int> amountMinor = GeneratedColumn<int>(
+    'amount_minor',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _currencyMeta = const VerificationMeta(
+    'currency',
+  );
+  @override
+  late final GeneratedColumn<String> currency = GeneratedColumn<String>(
+    'currency',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('AUD'),
+  );
+  static const VerificationMeta _historyJsonMeta = const VerificationMeta(
+    'historyJson',
+  );
+  @override
+  late final GeneratedColumn<String> historyJson = GeneratedColumn<String>(
+    'history_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    projectId,
+    programmeId,
+    programmeName,
+    amountMinor,
+    currency,
+    historyJson,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'received_allocations';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ReceivedAllocation> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_projectIdMeta);
+    }
+    if (data.containsKey('programme_id')) {
+      context.handle(
+        _programmeIdMeta,
+        programmeId.isAcceptableOrUnknown(
+          data['programme_id']!,
+          _programmeIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_programmeIdMeta);
+    }
+    if (data.containsKey('programme_name')) {
+      context.handle(
+        _programmeNameMeta,
+        programmeName.isAcceptableOrUnknown(
+          data['programme_name']!,
+          _programmeNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('amount_minor')) {
+      context.handle(
+        _amountMinorMeta,
+        amountMinor.isAcceptableOrUnknown(
+          data['amount_minor']!,
+          _amountMinorMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_amountMinorMeta);
+    }
+    if (data.containsKey('currency')) {
+      context.handle(
+        _currencyMeta,
+        currency.isAcceptableOrUnknown(data['currency']!, _currencyMeta),
+      );
+    }
+    if (data.containsKey('history_json')) {
+      context.handle(
+        _historyJsonMeta,
+        historyJson.isAcceptableOrUnknown(
+          data['history_json']!,
+          _historyJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ReceivedAllocation map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ReceivedAllocation(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      )!,
+      programmeId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}programme_id'],
+      )!,
+      programmeName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}programme_name'],
+      ),
+      amountMinor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}amount_minor'],
+      )!,
+      currency: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}currency'],
+      )!,
+      historyJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}history_json'],
+      ),
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ReceivedAllocationsTable createAlias(String alias) {
+    return $ReceivedAllocationsTable(attachedDatabase, alias);
+  }
+}
+
+class ReceivedAllocation extends DataClass
+    implements Insertable<ReceivedAllocation> {
+  final String id;
+  final String projectId;
+  final String programmeId;
+  final String? programmeName;
+  final int amountMinor;
+  final String currency;
+  final String? historyJson;
+  final DateTime updatedAt;
+  const ReceivedAllocation({
+    required this.id,
+    required this.projectId,
+    required this.programmeId,
+    this.programmeName,
+    required this.amountMinor,
+    required this.currency,
+    this.historyJson,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['project_id'] = Variable<String>(projectId);
+    map['programme_id'] = Variable<String>(programmeId);
+    if (!nullToAbsent || programmeName != null) {
+      map['programme_name'] = Variable<String>(programmeName);
+    }
+    map['amount_minor'] = Variable<int>(amountMinor);
+    map['currency'] = Variable<String>(currency);
+    if (!nullToAbsent || historyJson != null) {
+      map['history_json'] = Variable<String>(historyJson);
+    }
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  ReceivedAllocationsCompanion toCompanion(bool nullToAbsent) {
+    return ReceivedAllocationsCompanion(
+      id: Value(id),
+      projectId: Value(projectId),
+      programmeId: Value(programmeId),
+      programmeName: programmeName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(programmeName),
+      amountMinor: Value(amountMinor),
+      currency: Value(currency),
+      historyJson: historyJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(historyJson),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory ReceivedAllocation.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ReceivedAllocation(
+      id: serializer.fromJson<String>(json['id']),
+      projectId: serializer.fromJson<String>(json['projectId']),
+      programmeId: serializer.fromJson<String>(json['programmeId']),
+      programmeName: serializer.fromJson<String?>(json['programmeName']),
+      amountMinor: serializer.fromJson<int>(json['amountMinor']),
+      currency: serializer.fromJson<String>(json['currency']),
+      historyJson: serializer.fromJson<String?>(json['historyJson']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'projectId': serializer.toJson<String>(projectId),
+      'programmeId': serializer.toJson<String>(programmeId),
+      'programmeName': serializer.toJson<String?>(programmeName),
+      'amountMinor': serializer.toJson<int>(amountMinor),
+      'currency': serializer.toJson<String>(currency),
+      'historyJson': serializer.toJson<String?>(historyJson),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  ReceivedAllocation copyWith({
+    String? id,
+    String? projectId,
+    String? programmeId,
+    Value<String?> programmeName = const Value.absent(),
+    int? amountMinor,
+    String? currency,
+    Value<String?> historyJson = const Value.absent(),
+    DateTime? updatedAt,
+  }) => ReceivedAllocation(
+    id: id ?? this.id,
+    projectId: projectId ?? this.projectId,
+    programmeId: programmeId ?? this.programmeId,
+    programmeName: programmeName.present
+        ? programmeName.value
+        : this.programmeName,
+    amountMinor: amountMinor ?? this.amountMinor,
+    currency: currency ?? this.currency,
+    historyJson: historyJson.present ? historyJson.value : this.historyJson,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  ReceivedAllocation copyWithCompanion(ReceivedAllocationsCompanion data) {
+    return ReceivedAllocation(
+      id: data.id.present ? data.id.value : this.id,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      programmeId: data.programmeId.present
+          ? data.programmeId.value
+          : this.programmeId,
+      programmeName: data.programmeName.present
+          ? data.programmeName.value
+          : this.programmeName,
+      amountMinor: data.amountMinor.present
+          ? data.amountMinor.value
+          : this.amountMinor,
+      currency: data.currency.present ? data.currency.value : this.currency,
+      historyJson: data.historyJson.present
+          ? data.historyJson.value
+          : this.historyJson,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ReceivedAllocation(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('programmeId: $programmeId, ')
+          ..write('programmeName: $programmeName, ')
+          ..write('amountMinor: $amountMinor, ')
+          ..write('currency: $currency, ')
+          ..write('historyJson: $historyJson, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    projectId,
+    programmeId,
+    programmeName,
+    amountMinor,
+    currency,
+    historyJson,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ReceivedAllocation &&
+          other.id == this.id &&
+          other.projectId == this.projectId &&
+          other.programmeId == this.programmeId &&
+          other.programmeName == this.programmeName &&
+          other.amountMinor == this.amountMinor &&
+          other.currency == this.currency &&
+          other.historyJson == this.historyJson &&
+          other.updatedAt == this.updatedAt);
+}
+
+class ReceivedAllocationsCompanion extends UpdateCompanion<ReceivedAllocation> {
+  final Value<String> id;
+  final Value<String> projectId;
+  final Value<String> programmeId;
+  final Value<String?> programmeName;
+  final Value<int> amountMinor;
+  final Value<String> currency;
+  final Value<String?> historyJson;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const ReceivedAllocationsCompanion({
+    this.id = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.programmeId = const Value.absent(),
+    this.programmeName = const Value.absent(),
+    this.amountMinor = const Value.absent(),
+    this.currency = const Value.absent(),
+    this.historyJson = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ReceivedAllocationsCompanion.insert({
+    required String id,
+    required String projectId,
+    required String programmeId,
+    this.programmeName = const Value.absent(),
+    required int amountMinor,
+    this.currency = const Value.absent(),
+    this.historyJson = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       projectId = Value(projectId),
+       programmeId = Value(programmeId),
+       amountMinor = Value(amountMinor);
+  static Insertable<ReceivedAllocation> custom({
+    Expression<String>? id,
+    Expression<String>? projectId,
+    Expression<String>? programmeId,
+    Expression<String>? programmeName,
+    Expression<int>? amountMinor,
+    Expression<String>? currency,
+    Expression<String>? historyJson,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (projectId != null) 'project_id': projectId,
+      if (programmeId != null) 'programme_id': programmeId,
+      if (programmeName != null) 'programme_name': programmeName,
+      if (amountMinor != null) 'amount_minor': amountMinor,
+      if (currency != null) 'currency': currency,
+      if (historyJson != null) 'history_json': historyJson,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ReceivedAllocationsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? projectId,
+    Value<String>? programmeId,
+    Value<String?>? programmeName,
+    Value<int>? amountMinor,
+    Value<String>? currency,
+    Value<String?>? historyJson,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return ReceivedAllocationsCompanion(
+      id: id ?? this.id,
+      projectId: projectId ?? this.projectId,
+      programmeId: programmeId ?? this.programmeId,
+      programmeName: programmeName ?? this.programmeName,
+      amountMinor: amountMinor ?? this.amountMinor,
+      currency: currency ?? this.currency,
+      historyJson: historyJson ?? this.historyJson,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (programmeId.present) {
+      map['programme_id'] = Variable<String>(programmeId.value);
+    }
+    if (programmeName.present) {
+      map['programme_name'] = Variable<String>(programmeName.value);
+    }
+    if (amountMinor.present) {
+      map['amount_minor'] = Variable<int>(amountMinor.value);
+    }
+    if (currency.present) {
+      map['currency'] = Variable<String>(currency.value);
+    }
+    if (historyJson.present) {
+      map['history_json'] = Variable<String>(historyJson.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ReceivedAllocationsCompanion(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('programmeId: $programmeId, ')
+          ..write('programmeName: $programmeName, ')
+          ..write('amountMinor: $amountMinor, ')
+          ..write('currency: $currency, ')
+          ..write('historyJson: $historyJson, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $DayPlansTable extends DayPlans with TableInfo<$DayPlansTable, DayPlan> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -44330,6 +46436,15 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $FinancialAuditLogTable financialAuditLog =
       $FinancialAuditLogTable(this);
   late final $CategoryMergesTable categoryMerges = $CategoryMergesTable(this);
+  late final $FundingApprovalsTable fundingApprovals = $FundingApprovalsTable(
+    this,
+  );
+  late final $ContingencyMovementsTable contingencyMovements =
+      $ContingencyMovementsTable(this);
+  late final $ProgrammeFinanceSettingsTable programmeFinanceSettings =
+      $ProgrammeFinanceSettingsTable(this);
+  late final $ReceivedAllocationsTable receivedAllocations =
+      $ReceivedAllocationsTable(this);
   late final $DayPlansTable dayPlans = $DayPlansTable(this);
   late final $DayPlanBlocksTable dayPlanBlocks = $DayPlanBlocksTable(this);
   late final $WeekPlansTable weekPlans = $WeekPlansTable(this);
@@ -44457,6 +46572,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     actualLines,
     financialAuditLog,
     categoryMerges,
+    fundingApprovals,
+    contingencyMovements,
+    programmeFinanceSettings,
+    receivedAllocations,
     dayPlans,
     dayPlanBlocks,
     weekPlans,
@@ -45541,6 +47660,112 @@ final class $$ProjectsTableReferences
     ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_categoryMergesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$FundingApprovalsTable, List<FundingApproval>>
+  _fundingApprovalsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.fundingApprovals,
+    aliasName: $_aliasNameGenerator(
+      db.projects.id,
+      db.fundingApprovals.projectId,
+    ),
+  );
+
+  $$FundingApprovalsTableProcessedTableManager get fundingApprovalsRefs {
+    final manager = $$FundingApprovalsTableTableManager(
+      $_db,
+      $_db.fundingApprovals,
+    ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _fundingApprovalsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $ContingencyMovementsTable,
+    List<ContingencyMovement>
+  >
+  _contingencyMovementsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.contingencyMovements,
+        aliasName: $_aliasNameGenerator(
+          db.projects.id,
+          db.contingencyMovements.projectId,
+        ),
+      );
+
+  $$ContingencyMovementsTableProcessedTableManager
+  get contingencyMovementsRefs {
+    final manager = $$ContingencyMovementsTableTableManager(
+      $_db,
+      $_db.contingencyMovements,
+    ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _contingencyMovementsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $ProgrammeFinanceSettingsTable,
+    List<ProgrammeFinanceSetting>
+  >
+  _programmeFinanceSettingsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.programmeFinanceSettings,
+        aliasName: $_aliasNameGenerator(
+          db.projects.id,
+          db.programmeFinanceSettings.projectId,
+        ),
+      );
+
+  $$ProgrammeFinanceSettingsTableProcessedTableManager
+  get programmeFinanceSettingsRefs {
+    final manager = $$ProgrammeFinanceSettingsTableTableManager(
+      $_db,
+      $_db.programmeFinanceSettings,
+    ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _programmeFinanceSettingsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $ReceivedAllocationsTable,
+    List<ReceivedAllocation>
+  >
+  _receivedAllocationsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.receivedAllocations,
+        aliasName: $_aliasNameGenerator(
+          db.projects.id,
+          db.receivedAllocations.projectId,
+        ),
+      );
+
+  $$ReceivedAllocationsTableProcessedTableManager get receivedAllocationsRefs {
+    final manager = $$ReceivedAllocationsTableTableManager(
+      $_db,
+      $_db.receivedAllocations,
+    ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _receivedAllocationsRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -46794,6 +49019,108 @@ class $$ProjectsTableFilterComposer
           }) => $$CategoryMergesTableFilterComposer(
             $db: $db,
             $table: $db.categoryMerges,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> fundingApprovalsRefs(
+    Expression<bool> Function($$FundingApprovalsTableFilterComposer f) f,
+  ) {
+    final $$FundingApprovalsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.fundingApprovals,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FundingApprovalsTableFilterComposer(
+            $db: $db,
+            $table: $db.fundingApprovals,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> contingencyMovementsRefs(
+    Expression<bool> Function($$ContingencyMovementsTableFilterComposer f) f,
+  ) {
+    final $$ContingencyMovementsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.contingencyMovements,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ContingencyMovementsTableFilterComposer(
+            $db: $db,
+            $table: $db.contingencyMovements,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> programmeFinanceSettingsRefs(
+    Expression<bool> Function($$ProgrammeFinanceSettingsTableFilterComposer f)
+    f,
+  ) {
+    final $$ProgrammeFinanceSettingsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.programmeFinanceSettings,
+          getReferencedColumn: (t) => t.projectId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ProgrammeFinanceSettingsTableFilterComposer(
+                $db: $db,
+                $table: $db.programmeFinanceSettings,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<bool> receivedAllocationsRefs(
+    Expression<bool> Function($$ReceivedAllocationsTableFilterComposer f) f,
+  ) {
+    final $$ReceivedAllocationsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.receivedAllocations,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ReceivedAllocationsTableFilterComposer(
+            $db: $db,
+            $table: $db.receivedAllocations,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -48114,6 +50441,110 @@ class $$ProjectsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> fundingApprovalsRefs<T extends Object>(
+    Expression<T> Function($$FundingApprovalsTableAnnotationComposer a) f,
+  ) {
+    final $$FundingApprovalsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.fundingApprovals,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FundingApprovalsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.fundingApprovals,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> contingencyMovementsRefs<T extends Object>(
+    Expression<T> Function($$ContingencyMovementsTableAnnotationComposer a) f,
+  ) {
+    final $$ContingencyMovementsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.contingencyMovements,
+          getReferencedColumn: (t) => t.projectId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ContingencyMovementsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.contingencyMovements,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> programmeFinanceSettingsRefs<T extends Object>(
+    Expression<T> Function($$ProgrammeFinanceSettingsTableAnnotationComposer a)
+    f,
+  ) {
+    final $$ProgrammeFinanceSettingsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.programmeFinanceSettings,
+          getReferencedColumn: (t) => t.projectId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ProgrammeFinanceSettingsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.programmeFinanceSettings,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> receivedAllocationsRefs<T extends Object>(
+    Expression<T> Function($$ReceivedAllocationsTableAnnotationComposer a) f,
+  ) {
+    final $$ReceivedAllocationsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.receivedAllocations,
+          getReferencedColumn: (t) => t.projectId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ReceivedAllocationsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.receivedAllocations,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$ProjectsTableTableManager
@@ -48178,6 +50609,10 @@ class $$ProjectsTableTableManager
             bool actualLinesRefs,
             bool financialAuditLogRefs,
             bool categoryMergesRefs,
+            bool fundingApprovalsRefs,
+            bool contingencyMovementsRefs,
+            bool programmeFinanceSettingsRefs,
+            bool receivedAllocationsRefs,
           })
         > {
   $$ProjectsTableTableManager(_$AppDatabase db, $ProjectsTable table)
@@ -48297,6 +50732,10 @@ class $$ProjectsTableTableManager
                 actualLinesRefs = false,
                 financialAuditLogRefs = false,
                 categoryMergesRefs = false,
+                fundingApprovalsRefs = false,
+                contingencyMovementsRefs = false,
+                programmeFinanceSettingsRefs = false,
+                receivedAllocationsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -48349,6 +50788,11 @@ class $$ProjectsTableTableManager
                     if (actualLinesRefs) db.actualLines,
                     if (financialAuditLogRefs) db.financialAuditLog,
                     if (categoryMergesRefs) db.categoryMerges,
+                    if (fundingApprovalsRefs) db.fundingApprovals,
+                    if (contingencyMovementsRefs) db.contingencyMovements,
+                    if (programmeFinanceSettingsRefs)
+                      db.programmeFinanceSettings,
+                    if (receivedAllocationsRefs) db.receivedAllocations,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -49361,6 +51805,90 @@ class $$ProjectsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (fundingApprovalsRefs)
+                        await $_getPrefetchedData<
+                          Project,
+                          $ProjectsTable,
+                          FundingApproval
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProjectsTableReferences
+                              ._fundingApprovalsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).fundingApprovalsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.projectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (contingencyMovementsRefs)
+                        await $_getPrefetchedData<
+                          Project,
+                          $ProjectsTable,
+                          ContingencyMovement
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProjectsTableReferences
+                              ._contingencyMovementsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).contingencyMovementsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.projectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (programmeFinanceSettingsRefs)
+                        await $_getPrefetchedData<
+                          Project,
+                          $ProjectsTable,
+                          ProgrammeFinanceSetting
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProjectsTableReferences
+                              ._programmeFinanceSettingsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).programmeFinanceSettingsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.projectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (receivedAllocationsRefs)
+                        await $_getPrefetchedData<
+                          Project,
+                          $ProjectsTable,
+                          ReceivedAllocation
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProjectsTableReferences
+                              ._receivedAllocationsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).receivedAllocationsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.projectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -49430,6 +51958,10 @@ typedef $$ProjectsTableProcessedTableManager =
         bool actualLinesRefs,
         bool financialAuditLogRefs,
         bool categoryMergesRefs,
+        bool fundingApprovalsRefs,
+        bool contingencyMovementsRefs,
+        bool programmeFinanceSettingsRefs,
+        bool receivedAllocationsRefs,
       })
     >;
 typedef $$ProgrammeLinksTableCreateCompanionBuilder =
@@ -78560,6 +81092,1606 @@ typedef $$CategoryMergesTableProcessedTableManager =
       CategoryMerge,
       PrefetchHooks Function({bool projectId})
     >;
+typedef $$FundingApprovalsTableCreateCompanionBuilder =
+    FundingApprovalsCompanion Function({
+      required String id,
+      required String projectId,
+      required String name,
+      required int amountMinor,
+      Value<String> currency,
+      Value<String?> approvedBy,
+      Value<String?> approvedOn,
+      Value<String?> decisionId,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$FundingApprovalsTableUpdateCompanionBuilder =
+    FundingApprovalsCompanion Function({
+      Value<String> id,
+      Value<String> projectId,
+      Value<String> name,
+      Value<int> amountMinor,
+      Value<String> currency,
+      Value<String?> approvedBy,
+      Value<String?> approvedOn,
+      Value<String?> decisionId,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$FundingApprovalsTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $FundingApprovalsTable, FundingApproval> {
+  $$FundingApprovalsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ProjectsTable _projectIdTable(_$AppDatabase db) =>
+      db.projects.createAlias(
+        $_aliasNameGenerator(db.fundingApprovals.projectId, db.projects.id),
+      );
+
+  $$ProjectsTableProcessedTableManager get projectId {
+    final $_column = $_itemColumn<String>('project_id')!;
+
+    final manager = $$ProjectsTableTableManager(
+      $_db,
+      $_db.projects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_projectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$FundingApprovalsTableFilterComposer
+    extends Composer<_$AppDatabase, $FundingApprovalsTable> {
+  $$FundingApprovalsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get amountMinor => $composableBuilder(
+    column: $table.amountMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get currency => $composableBuilder(
+    column: $table.currency,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get approvedBy => $composableBuilder(
+    column: $table.approvedBy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get approvedOn => $composableBuilder(
+    column: $table.approvedOn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get decisionId => $composableBuilder(
+    column: $table.decisionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ProjectsTableFilterComposer get projectId {
+    final $$ProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$FundingApprovalsTableOrderingComposer
+    extends Composer<_$AppDatabase, $FundingApprovalsTable> {
+  $$FundingApprovalsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get amountMinor => $composableBuilder(
+    column: $table.amountMinor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get currency => $composableBuilder(
+    column: $table.currency,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get approvedBy => $composableBuilder(
+    column: $table.approvedBy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get approvedOn => $composableBuilder(
+    column: $table.approvedOn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get decisionId => $composableBuilder(
+    column: $table.decisionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ProjectsTableOrderingComposer get projectId {
+    final $$ProjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$FundingApprovalsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $FundingApprovalsTable> {
+  $$FundingApprovalsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<int> get amountMinor => $composableBuilder(
+    column: $table.amountMinor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get currency =>
+      $composableBuilder(column: $table.currency, builder: (column) => column);
+
+  GeneratedColumn<String> get approvedBy => $composableBuilder(
+    column: $table.approvedBy,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get approvedOn => $composableBuilder(
+    column: $table.approvedOn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get decisionId => $composableBuilder(
+    column: $table.decisionId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$ProjectsTableAnnotationComposer get projectId {
+    final $$ProjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$FundingApprovalsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $FundingApprovalsTable,
+          FundingApproval,
+          $$FundingApprovalsTableFilterComposer,
+          $$FundingApprovalsTableOrderingComposer,
+          $$FundingApprovalsTableAnnotationComposer,
+          $$FundingApprovalsTableCreateCompanionBuilder,
+          $$FundingApprovalsTableUpdateCompanionBuilder,
+          (FundingApproval, $$FundingApprovalsTableReferences),
+          FundingApproval,
+          PrefetchHooks Function({bool projectId})
+        > {
+  $$FundingApprovalsTableTableManager(
+    _$AppDatabase db,
+    $FundingApprovalsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FundingApprovalsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$FundingApprovalsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$FundingApprovalsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> projectId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<int> amountMinor = const Value.absent(),
+                Value<String> currency = const Value.absent(),
+                Value<String?> approvedBy = const Value.absent(),
+                Value<String?> approvedOn = const Value.absent(),
+                Value<String?> decisionId = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => FundingApprovalsCompanion(
+                id: id,
+                projectId: projectId,
+                name: name,
+                amountMinor: amountMinor,
+                currency: currency,
+                approvedBy: approvedBy,
+                approvedOn: approvedOn,
+                decisionId: decisionId,
+                notes: notes,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String projectId,
+                required String name,
+                required int amountMinor,
+                Value<String> currency = const Value.absent(),
+                Value<String?> approvedBy = const Value.absent(),
+                Value<String?> approvedOn = const Value.absent(),
+                Value<String?> decisionId = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => FundingApprovalsCompanion.insert(
+                id: id,
+                projectId: projectId,
+                name: name,
+                amountMinor: amountMinor,
+                currency: currency,
+                approvedBy: approvedBy,
+                approvedOn: approvedOn,
+                decisionId: decisionId,
+                notes: notes,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$FundingApprovalsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({projectId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (projectId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.projectId,
+                                referencedTable:
+                                    $$FundingApprovalsTableReferences
+                                        ._projectIdTable(db),
+                                referencedColumn:
+                                    $$FundingApprovalsTableReferences
+                                        ._projectIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$FundingApprovalsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $FundingApprovalsTable,
+      FundingApproval,
+      $$FundingApprovalsTableFilterComposer,
+      $$FundingApprovalsTableOrderingComposer,
+      $$FundingApprovalsTableAnnotationComposer,
+      $$FundingApprovalsTableCreateCompanionBuilder,
+      $$FundingApprovalsTableUpdateCompanionBuilder,
+      (FundingApproval, $$FundingApprovalsTableReferences),
+      FundingApproval,
+      PrefetchHooks Function({bool projectId})
+    >;
+typedef $$ContingencyMovementsTableCreateCompanionBuilder =
+    ContingencyMovementsCompanion Function({
+      required String id,
+      required String projectId,
+      required String kind,
+      required int amountMinor,
+      required String linkedProjectId,
+      Value<String?> decisionId,
+      Value<String?> reason,
+      required String movedOn,
+      Value<String?> enteredBy,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+typedef $$ContingencyMovementsTableUpdateCompanionBuilder =
+    ContingencyMovementsCompanion Function({
+      Value<String> id,
+      Value<String> projectId,
+      Value<String> kind,
+      Value<int> amountMinor,
+      Value<String> linkedProjectId,
+      Value<String?> decisionId,
+      Value<String?> reason,
+      Value<String> movedOn,
+      Value<String?> enteredBy,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+final class $$ContingencyMovementsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ContingencyMovementsTable,
+          ContingencyMovement
+        > {
+  $$ContingencyMovementsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ProjectsTable _projectIdTable(_$AppDatabase db) =>
+      db.projects.createAlias(
+        $_aliasNameGenerator(db.contingencyMovements.projectId, db.projects.id),
+      );
+
+  $$ProjectsTableProcessedTableManager get projectId {
+    final $_column = $_itemColumn<String>('project_id')!;
+
+    final manager = $$ProjectsTableTableManager(
+      $_db,
+      $_db.projects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_projectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ContingencyMovementsTableFilterComposer
+    extends Composer<_$AppDatabase, $ContingencyMovementsTable> {
+  $$ContingencyMovementsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get amountMinor => $composableBuilder(
+    column: $table.amountMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get linkedProjectId => $composableBuilder(
+    column: $table.linkedProjectId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get decisionId => $composableBuilder(
+    column: $table.decisionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get movedOn => $composableBuilder(
+    column: $table.movedOn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get enteredBy => $composableBuilder(
+    column: $table.enteredBy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ProjectsTableFilterComposer get projectId {
+    final $$ProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ContingencyMovementsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ContingencyMovementsTable> {
+  $$ContingencyMovementsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get amountMinor => $composableBuilder(
+    column: $table.amountMinor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get linkedProjectId => $composableBuilder(
+    column: $table.linkedProjectId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get decisionId => $composableBuilder(
+    column: $table.decisionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get movedOn => $composableBuilder(
+    column: $table.movedOn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get enteredBy => $composableBuilder(
+    column: $table.enteredBy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ProjectsTableOrderingComposer get projectId {
+    final $$ProjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ContingencyMovementsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ContingencyMovementsTable> {
+  $$ContingencyMovementsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<int> get amountMinor => $composableBuilder(
+    column: $table.amountMinor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get linkedProjectId => $composableBuilder(
+    column: $table.linkedProjectId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get decisionId => $composableBuilder(
+    column: $table.decisionId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get reason =>
+      $composableBuilder(column: $table.reason, builder: (column) => column);
+
+  GeneratedColumn<String> get movedOn =>
+      $composableBuilder(column: $table.movedOn, builder: (column) => column);
+
+  GeneratedColumn<String> get enteredBy =>
+      $composableBuilder(column: $table.enteredBy, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$ProjectsTableAnnotationComposer get projectId {
+    final $$ProjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ContingencyMovementsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ContingencyMovementsTable,
+          ContingencyMovement,
+          $$ContingencyMovementsTableFilterComposer,
+          $$ContingencyMovementsTableOrderingComposer,
+          $$ContingencyMovementsTableAnnotationComposer,
+          $$ContingencyMovementsTableCreateCompanionBuilder,
+          $$ContingencyMovementsTableUpdateCompanionBuilder,
+          (ContingencyMovement, $$ContingencyMovementsTableReferences),
+          ContingencyMovement,
+          PrefetchHooks Function({bool projectId})
+        > {
+  $$ContingencyMovementsTableTableManager(
+    _$AppDatabase db,
+    $ContingencyMovementsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ContingencyMovementsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ContingencyMovementsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ContingencyMovementsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> projectId = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<int> amountMinor = const Value.absent(),
+                Value<String> linkedProjectId = const Value.absent(),
+                Value<String?> decisionId = const Value.absent(),
+                Value<String?> reason = const Value.absent(),
+                Value<String> movedOn = const Value.absent(),
+                Value<String?> enteredBy = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ContingencyMovementsCompanion(
+                id: id,
+                projectId: projectId,
+                kind: kind,
+                amountMinor: amountMinor,
+                linkedProjectId: linkedProjectId,
+                decisionId: decisionId,
+                reason: reason,
+                movedOn: movedOn,
+                enteredBy: enteredBy,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String projectId,
+                required String kind,
+                required int amountMinor,
+                required String linkedProjectId,
+                Value<String?> decisionId = const Value.absent(),
+                Value<String?> reason = const Value.absent(),
+                required String movedOn,
+                Value<String?> enteredBy = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ContingencyMovementsCompanion.insert(
+                id: id,
+                projectId: projectId,
+                kind: kind,
+                amountMinor: amountMinor,
+                linkedProjectId: linkedProjectId,
+                decisionId: decisionId,
+                reason: reason,
+                movedOn: movedOn,
+                enteredBy: enteredBy,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ContingencyMovementsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({projectId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (projectId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.projectId,
+                                referencedTable:
+                                    $$ContingencyMovementsTableReferences
+                                        ._projectIdTable(db),
+                                referencedColumn:
+                                    $$ContingencyMovementsTableReferences
+                                        ._projectIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ContingencyMovementsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ContingencyMovementsTable,
+      ContingencyMovement,
+      $$ContingencyMovementsTableFilterComposer,
+      $$ContingencyMovementsTableOrderingComposer,
+      $$ContingencyMovementsTableAnnotationComposer,
+      $$ContingencyMovementsTableCreateCompanionBuilder,
+      $$ContingencyMovementsTableUpdateCompanionBuilder,
+      (ContingencyMovement, $$ContingencyMovementsTableReferences),
+      ContingencyMovement,
+      PrefetchHooks Function({bool projectId})
+    >;
+typedef $$ProgrammeFinanceSettingsTableCreateCompanionBuilder =
+    ProgrammeFinanceSettingsCompanion Function({
+      required String projectId,
+      Value<int> contingencyWarnBp,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$ProgrammeFinanceSettingsTableUpdateCompanionBuilder =
+    ProgrammeFinanceSettingsCompanion Function({
+      Value<String> projectId,
+      Value<int> contingencyWarnBp,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$ProgrammeFinanceSettingsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ProgrammeFinanceSettingsTable,
+          ProgrammeFinanceSetting
+        > {
+  $$ProgrammeFinanceSettingsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ProjectsTable _projectIdTable(_$AppDatabase db) =>
+      db.projects.createAlias(
+        $_aliasNameGenerator(
+          db.programmeFinanceSettings.projectId,
+          db.projects.id,
+        ),
+      );
+
+  $$ProjectsTableProcessedTableManager get projectId {
+    final $_column = $_itemColumn<String>('project_id')!;
+
+    final manager = $$ProjectsTableTableManager(
+      $_db,
+      $_db.projects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_projectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ProgrammeFinanceSettingsTableFilterComposer
+    extends Composer<_$AppDatabase, $ProgrammeFinanceSettingsTable> {
+  $$ProgrammeFinanceSettingsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get contingencyWarnBp => $composableBuilder(
+    column: $table.contingencyWarnBp,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ProjectsTableFilterComposer get projectId {
+    final $$ProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ProgrammeFinanceSettingsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ProgrammeFinanceSettingsTable> {
+  $$ProgrammeFinanceSettingsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get contingencyWarnBp => $composableBuilder(
+    column: $table.contingencyWarnBp,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ProjectsTableOrderingComposer get projectId {
+    final $$ProjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ProgrammeFinanceSettingsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ProgrammeFinanceSettingsTable> {
+  $$ProgrammeFinanceSettingsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get contingencyWarnBp => $composableBuilder(
+    column: $table.contingencyWarnBp,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$ProjectsTableAnnotationComposer get projectId {
+    final $$ProjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ProgrammeFinanceSettingsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ProgrammeFinanceSettingsTable,
+          ProgrammeFinanceSetting,
+          $$ProgrammeFinanceSettingsTableFilterComposer,
+          $$ProgrammeFinanceSettingsTableOrderingComposer,
+          $$ProgrammeFinanceSettingsTableAnnotationComposer,
+          $$ProgrammeFinanceSettingsTableCreateCompanionBuilder,
+          $$ProgrammeFinanceSettingsTableUpdateCompanionBuilder,
+          (ProgrammeFinanceSetting, $$ProgrammeFinanceSettingsTableReferences),
+          ProgrammeFinanceSetting,
+          PrefetchHooks Function({bool projectId})
+        > {
+  $$ProgrammeFinanceSettingsTableTableManager(
+    _$AppDatabase db,
+    $ProgrammeFinanceSettingsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ProgrammeFinanceSettingsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$ProgrammeFinanceSettingsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ProgrammeFinanceSettingsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> projectId = const Value.absent(),
+                Value<int> contingencyWarnBp = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ProgrammeFinanceSettingsCompanion(
+                projectId: projectId,
+                contingencyWarnBp: contingencyWarnBp,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String projectId,
+                Value<int> contingencyWarnBp = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ProgrammeFinanceSettingsCompanion.insert(
+                projectId: projectId,
+                contingencyWarnBp: contingencyWarnBp,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ProgrammeFinanceSettingsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({projectId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (projectId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.projectId,
+                                referencedTable:
+                                    $$ProgrammeFinanceSettingsTableReferences
+                                        ._projectIdTable(db),
+                                referencedColumn:
+                                    $$ProgrammeFinanceSettingsTableReferences
+                                        ._projectIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ProgrammeFinanceSettingsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ProgrammeFinanceSettingsTable,
+      ProgrammeFinanceSetting,
+      $$ProgrammeFinanceSettingsTableFilterComposer,
+      $$ProgrammeFinanceSettingsTableOrderingComposer,
+      $$ProgrammeFinanceSettingsTableAnnotationComposer,
+      $$ProgrammeFinanceSettingsTableCreateCompanionBuilder,
+      $$ProgrammeFinanceSettingsTableUpdateCompanionBuilder,
+      (ProgrammeFinanceSetting, $$ProgrammeFinanceSettingsTableReferences),
+      ProgrammeFinanceSetting,
+      PrefetchHooks Function({bool projectId})
+    >;
+typedef $$ReceivedAllocationsTableCreateCompanionBuilder =
+    ReceivedAllocationsCompanion Function({
+      required String id,
+      required String projectId,
+      required String programmeId,
+      Value<String?> programmeName,
+      required int amountMinor,
+      Value<String> currency,
+      Value<String?> historyJson,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$ReceivedAllocationsTableUpdateCompanionBuilder =
+    ReceivedAllocationsCompanion Function({
+      Value<String> id,
+      Value<String> projectId,
+      Value<String> programmeId,
+      Value<String?> programmeName,
+      Value<int> amountMinor,
+      Value<String> currency,
+      Value<String?> historyJson,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$ReceivedAllocationsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ReceivedAllocationsTable,
+          ReceivedAllocation
+        > {
+  $$ReceivedAllocationsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ProjectsTable _projectIdTable(_$AppDatabase db) =>
+      db.projects.createAlias(
+        $_aliasNameGenerator(db.receivedAllocations.projectId, db.projects.id),
+      );
+
+  $$ProjectsTableProcessedTableManager get projectId {
+    final $_column = $_itemColumn<String>('project_id')!;
+
+    final manager = $$ProjectsTableTableManager(
+      $_db,
+      $_db.projects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_projectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ReceivedAllocationsTableFilterComposer
+    extends Composer<_$AppDatabase, $ReceivedAllocationsTable> {
+  $$ReceivedAllocationsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get programmeId => $composableBuilder(
+    column: $table.programmeId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get programmeName => $composableBuilder(
+    column: $table.programmeName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get amountMinor => $composableBuilder(
+    column: $table.amountMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get currency => $composableBuilder(
+    column: $table.currency,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get historyJson => $composableBuilder(
+    column: $table.historyJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ProjectsTableFilterComposer get projectId {
+    final $$ProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ReceivedAllocationsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ReceivedAllocationsTable> {
+  $$ReceivedAllocationsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get programmeId => $composableBuilder(
+    column: $table.programmeId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get programmeName => $composableBuilder(
+    column: $table.programmeName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get amountMinor => $composableBuilder(
+    column: $table.amountMinor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get currency => $composableBuilder(
+    column: $table.currency,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get historyJson => $composableBuilder(
+    column: $table.historyJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ProjectsTableOrderingComposer get projectId {
+    final $$ProjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ReceivedAllocationsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ReceivedAllocationsTable> {
+  $$ReceivedAllocationsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get programmeId => $composableBuilder(
+    column: $table.programmeId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get programmeName => $composableBuilder(
+    column: $table.programmeName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get amountMinor => $composableBuilder(
+    column: $table.amountMinor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get currency =>
+      $composableBuilder(column: $table.currency, builder: (column) => column);
+
+  GeneratedColumn<String> get historyJson => $composableBuilder(
+    column: $table.historyJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$ProjectsTableAnnotationComposer get projectId {
+    final $$ProjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ReceivedAllocationsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ReceivedAllocationsTable,
+          ReceivedAllocation,
+          $$ReceivedAllocationsTableFilterComposer,
+          $$ReceivedAllocationsTableOrderingComposer,
+          $$ReceivedAllocationsTableAnnotationComposer,
+          $$ReceivedAllocationsTableCreateCompanionBuilder,
+          $$ReceivedAllocationsTableUpdateCompanionBuilder,
+          (ReceivedAllocation, $$ReceivedAllocationsTableReferences),
+          ReceivedAllocation,
+          PrefetchHooks Function({bool projectId})
+        > {
+  $$ReceivedAllocationsTableTableManager(
+    _$AppDatabase db,
+    $ReceivedAllocationsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ReceivedAllocationsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ReceivedAllocationsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ReceivedAllocationsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> projectId = const Value.absent(),
+                Value<String> programmeId = const Value.absent(),
+                Value<String?> programmeName = const Value.absent(),
+                Value<int> amountMinor = const Value.absent(),
+                Value<String> currency = const Value.absent(),
+                Value<String?> historyJson = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ReceivedAllocationsCompanion(
+                id: id,
+                projectId: projectId,
+                programmeId: programmeId,
+                programmeName: programmeName,
+                amountMinor: amountMinor,
+                currency: currency,
+                historyJson: historyJson,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String projectId,
+                required String programmeId,
+                Value<String?> programmeName = const Value.absent(),
+                required int amountMinor,
+                Value<String> currency = const Value.absent(),
+                Value<String?> historyJson = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ReceivedAllocationsCompanion.insert(
+                id: id,
+                projectId: projectId,
+                programmeId: programmeId,
+                programmeName: programmeName,
+                amountMinor: amountMinor,
+                currency: currency,
+                historyJson: historyJson,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ReceivedAllocationsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({projectId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (projectId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.projectId,
+                                referencedTable:
+                                    $$ReceivedAllocationsTableReferences
+                                        ._projectIdTable(db),
+                                referencedColumn:
+                                    $$ReceivedAllocationsTableReferences
+                                        ._projectIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ReceivedAllocationsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ReceivedAllocationsTable,
+      ReceivedAllocation,
+      $$ReceivedAllocationsTableFilterComposer,
+      $$ReceivedAllocationsTableOrderingComposer,
+      $$ReceivedAllocationsTableAnnotationComposer,
+      $$ReceivedAllocationsTableCreateCompanionBuilder,
+      $$ReceivedAllocationsTableUpdateCompanionBuilder,
+      (ReceivedAllocation, $$ReceivedAllocationsTableReferences),
+      ReceivedAllocation,
+      PrefetchHooks Function({bool projectId})
+    >;
 typedef $$DayPlansTableCreateCompanionBuilder =
     DayPlansCompanion Function({
       required String id,
@@ -81006,6 +85138,17 @@ class $AppDatabaseManager {
       $$FinancialAuditLogTableTableManager(_db, _db.financialAuditLog);
   $$CategoryMergesTableTableManager get categoryMerges =>
       $$CategoryMergesTableTableManager(_db, _db.categoryMerges);
+  $$FundingApprovalsTableTableManager get fundingApprovals =>
+      $$FundingApprovalsTableTableManager(_db, _db.fundingApprovals);
+  $$ContingencyMovementsTableTableManager get contingencyMovements =>
+      $$ContingencyMovementsTableTableManager(_db, _db.contingencyMovements);
+  $$ProgrammeFinanceSettingsTableTableManager get programmeFinanceSettings =>
+      $$ProgrammeFinanceSettingsTableTableManager(
+        _db,
+        _db.programmeFinanceSettings,
+      );
+  $$ReceivedAllocationsTableTableManager get receivedAllocations =>
+      $$ReceivedAllocationsTableTableManager(_db, _db.receivedAllocations);
   $$DayPlansTableTableManager get dayPlans =>
       $$DayPlansTableTableManager(_db, _db.dayPlans);
   $$DayPlanBlocksTableTableManager get dayPlanBlocks =>
@@ -81635,6 +85778,14 @@ mixin _$FinanceDaoMixin on DatabaseAccessor<AppDatabase> {
   $FinancialAuditLogTable get financialAuditLog =>
       attachedDatabase.financialAuditLog;
   $CategoryMergesTable get categoryMerges => attachedDatabase.categoryMerges;
+  $FundingApprovalsTable get fundingApprovals =>
+      attachedDatabase.fundingApprovals;
+  $ContingencyMovementsTable get contingencyMovements =>
+      attachedDatabase.contingencyMovements;
+  $ProgrammeFinanceSettingsTable get programmeFinanceSettings =>
+      attachedDatabase.programmeFinanceSettings;
+  $ReceivedAllocationsTable get receivedAllocations =>
+      attachedDatabase.receivedAllocations;
   FinanceDaoManager get managers => FinanceDaoManager(this);
 }
 
@@ -81673,6 +85824,26 @@ class FinanceDaoManager {
       $$CategoryMergesTableTableManager(
         _db.attachedDatabase,
         _db.categoryMerges,
+      );
+  $$FundingApprovalsTableTableManager get fundingApprovals =>
+      $$FundingApprovalsTableTableManager(
+        _db.attachedDatabase,
+        _db.fundingApprovals,
+      );
+  $$ContingencyMovementsTableTableManager get contingencyMovements =>
+      $$ContingencyMovementsTableTableManager(
+        _db.attachedDatabase,
+        _db.contingencyMovements,
+      );
+  $$ProgrammeFinanceSettingsTableTableManager get programmeFinanceSettings =>
+      $$ProgrammeFinanceSettingsTableTableManager(
+        _db.attachedDatabase,
+        _db.programmeFinanceSettings,
+      );
+  $$ReceivedAllocationsTableTableManager get receivedAllocations =>
+      $$ReceivedAllocationsTableTableManager(
+        _db.attachedDatabase,
+        _db.receivedAllocations,
       );
 }
 

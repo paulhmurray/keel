@@ -11,6 +11,8 @@ import 'budget_grid.dart';
 import 'finance_form.dart';
 import 'forecast_tab.dart';
 import 'programme_finance_tab.dart';
+import 'envelope_tab.dart';
+import 'received_allocation_chip.dart';
 
 /// FINANCE — Project Finance v1+v2.
 /// BUDGET: versioned baselines (draft → approved → superseded) in a
@@ -30,7 +32,7 @@ class FinanceView extends StatefulWidget {
 class _FinanceViewState extends State<FinanceView> {
   String? _selectedBudgetId;
   List<TimelineWorkPackage> _workPackages = [];
-  int _tab = 0; // 0 = budget, 1 = forecast, 2 = actuals, 3/4 = programme lenses
+  int _tab = 0; // 0 = budget, 1 = forecast, 2 = actuals, 3/4/5 = programme lenses
 
   /// The project the view is currently initialised for. Seeding and
   /// workstream loading re-run whenever the user switches project WHILE
@@ -150,6 +152,10 @@ class _FinanceViewState extends State<FinanceView> {
                             label: 'BY CATEGORY',
                             selected: _tab == 4,
                             onTap: () => setState(() => _tab = 4)),
+                        _TabChip(
+                            label: 'ENVELOPE',
+                            selected: _tab == 5,
+                            onTap: () => setState(() => _tab = 5)),
                       ],
                     ],
                   ),
@@ -160,6 +166,7 @@ class _FinanceViewState extends State<FinanceView> {
           const SizedBox(height: 16),
           Expanded(
             child: switch (_tab) {
+              5 => EnvelopeTab(db: db, programmeId: projectId),
               3 => ProgrammeFinanceTab(
                   db: db,
                   programmeId: projectId,
@@ -210,6 +217,22 @@ class _FinanceViewState extends State<FinanceView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _header(context, db, projectId, budgets, selected),
+            // What a linked programme has allocated to this project
+            // (nothing shows on a project with no programme).
+            FutureBuilder<int?>(
+              key: ValueKey('alloc-${budgets.where((b) => b.status == 'approved').firstOrNull?.id}'),
+              future: () async {
+                final approved =
+                    budgets.where((b) => b.status == 'approved').firstOrNull;
+                if (approved == null) return null;
+                return (await db.financeDao.getTotals(approved.id)).totalMinor;
+              }(),
+              builder: (context, snap) => Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: ReceivedAllocationChip(
+                    db: db, projectId: projectId, approvedBudgetMinor: snap.data),
+              ),
+            ),
             const SizedBox(height: 12),
             if (selected == null)
               Expanded(child: _emptyState(context, db, projectId))

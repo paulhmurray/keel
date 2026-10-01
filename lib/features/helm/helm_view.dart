@@ -10,7 +10,10 @@ import '../../core/helm/day_plan_logic.dart';
 import '../../shared/utils/date_utils.dart' as du;
 import '../../core/helm/combine_latest.dart';
 import '../../core/helm/planning_horizon.dart';
+import '../../core/helm/project_headline.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/project_provider.dart';
+import '../../core/raid/risk_rating.dart';
 import '../../shared/theme/keel_colors.dart';
 import 'helm_quarter_view.dart';
 import 'helm_week_view.dart';
@@ -115,6 +118,8 @@ class HelmView extends StatefulWidget {
 }
 
 class _HelmViewState extends State<HelmView> {
+  // Planning board under the day grid; folds to a single header line.
+  bool _boardCollapsed = false;
   DateTime _date = DateTime.now();
   Timer? _clock;
   HelmScale _scale = HelmScale.day;
@@ -281,11 +286,16 @@ class _HelmViewState extends State<HelmView> {
                 builder: (context, constraints) {
                   // Hide the planning rail when there isn't room for it.
                   final showRail = constraints.maxWidth >= 560;
+                  // The board needs width for its lanes; below that the
+                  // rail carries the horizon as before.
+                  final showBoard = constraints.maxWidth >= 900;
                   return Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Expanded(
-                        child: plan == null
+                        child: Column(children: [
+                          Expanded(
+                            child: plan == null
                             ? _EmptyDay(
                                 isToday: _isToday,
                                 onChart: () => db.dayPlanDao
@@ -302,24 +312,54 @@ class _HelmViewState extends State<HelmView> {
                                           : parseDayMissions(weekSnap
                                                   .data!.dayMissionsJson)[
                                               _date.weekday - 1];
+                                      final blocks =
+                                          blockSnap.data ?? const <DayPlanBlock>[];
+                                      final prefs = context
+                                          .watch<SettingsProvider>()
+                                          .settings;
+                                      final window = effectiveDayWindow(
+                                        start: prefs.helmDayStartMinute,
+                                        end: prefs.helmDayEndMinute,
+                                        blocks: [
+                                          for (final b in blocks)
+                                            (startMinute: b.startMinute, endMinute: b.endMinute),
+                                        ],
+                                      );
                                       return _TimeGrid(
                                         plan: plan,
-                                        blocks:
-                                            blockSnap.data ?? const [],
+                                        blocks: blocks,
                                         isToday: _isToday,
                                         db: db,
                                         mission: mission,
+                                        dayStart: window.start,
+                                        dayEnd: window.end,
                                       );
                                     },
                                   );
                                 },
                               ),
+                          ),
+                          if (showBoard)
+                            _PlanningBoard(
+                              db: db,
+                              date: _date,
+                              collapsed: _boardCollapsed,
+                              onToggle: () => setState(
+                                  () => _boardCollapsed = !_boardCollapsed),
+                              onOpenAction: widget.onOpenAction,
+                              onOpenRisk: widget.onOpenRisk,
+                              onOpenIssue: widget.onOpenIssue,
+                              onOpenDependency: widget.onOpenDependency,
+                              onOpenDecision: widget.onOpenDecision,
+                            ),
+                        ]),
                       ),
                       if (showRail) ...[
                         Container(width: 1, color: KColors.border),
                         _PlanningRail(
                           db: db,
                           date: _date,
+                          showHorizon: !showBoard,
                           onOpenAction: widget.onOpenAction,
                           onOpenRisk: widget.onOpenRisk,
                           onOpenIssue: widget.onOpenIssue,
@@ -555,12 +595,16 @@ class _TimeGrid extends StatelessWidget {
   final AppDatabase db;
   // The day's one-line mission from the weekly plan, when set.
   final String? mission;
+  final int dayStart;
+  final int dayEnd;
 
   const _TimeGrid({
     required this.plan,
     required this.blocks,
     required this.isToday,
     required this.db,
+    required this.dayStart,
+    required this.dayEnd,
     this.mission,
   });
 
@@ -568,7 +612,7 @@ class _TimeGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final starts = parseRevisionStarts(plan.revisionStartsJson);
     final revisions = plan.currentRevision + 1;
-    final gridHeight = (kHelmDayEnd - kHelmDayStart) /
+    final gridHeight = (dayEnd - dayStart) /
         kHelmSlotMinutes *
         kHelmSlotHeight;
 
@@ -628,7 +672,7 @@ class _TimeGrid extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _TimeAxis(height: gridHeight),
+                  _TimeAxis(height: gridHeight, dayStart: dayStart, dayEnd: dayEnd),
                   for (var r = 0; r < revisions; r++)
                     Padding(
                       padding: const EdgeInsets.only(left: 8),
@@ -642,6 +686,8 @@ class _TimeGrid extends StatelessWidget {
                             .toList(),
                         isToday: isToday,
                         db: db,
+                        dayStart: dayStart,
+                        dayEnd: dayEnd,
                       ),
                     ),
                 ],
@@ -675,8 +721,8 @@ class _TimeGrid extends StatelessWidget {
   Future<void> _reviseFromNow(
       BuildContext context, List<int> starts) async {
     var at = (_nowMinute() ~/ kHelmSlotMinutes) * kHelmSlotMinutes;
-    at = at.clamp(kHelmDayStart, kHelmDayEnd - kHelmSlotMinutes);
-    final lastStart = starts.isEmpty ? kHelmDayStart : starts.last;
+    at = at.clamp(dayStart, dayEnd - kHelmSlotMinutes);
+    final lastStart = starts.isEmpty ? dayStart : starts.last;
     if (at <= lastStart) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content:
@@ -690,7 +736,9 @@ class _TimeGrid extends StatelessWidget {
 
 class _TimeAxis extends StatelessWidget {
   final double height;
-  const _TimeAxis({required this.height});
+  final int dayStart;
+  final int dayEnd;
+  const _TimeAxis({required this.height, required this.dayStart, required this.dayEnd});
 
   @override
   Widget build(BuildContext context) {
@@ -699,9 +747,9 @@ class _TimeAxis extends StatelessWidget {
       height: height + 20,
       child: Stack(
         children: [
-          for (var m = kHelmDayStart; m <= kHelmDayEnd; m += 60)
+          for (var m = dayStart; m <= dayEnd; m += 60)
             Positioned(
-              top: (m - kHelmDayStart) /
+              top: (m - dayStart) /
                       kHelmSlotMinutes *
                       kHelmSlotHeight +
                   14,
@@ -726,6 +774,8 @@ class _RevisionColumn extends StatelessWidget {
   final List<DayPlanBlock> blocks;
   final bool isToday;
   final AppDatabase db;
+  final int dayStart;
+  final int dayEnd;
 
   const _RevisionColumn({
     required this.plan,
@@ -735,19 +785,21 @@ class _RevisionColumn extends StatelessWidget {
     required this.blocks,
     required this.isToday,
     required this.db,
+    required this.dayStart,
+    required this.dayEnd,
   });
 
   /// The minute this column starts governing (rev 0 = start of day).
   int get _columnStart =>
-      revision == 0 ? kHelmDayStart : revisionStarts[revision - 1];
+      revision == 0 ? dayStart : revisionStarts[revision - 1];
 
   @override
   Widget build(BuildContext context) {
-    final gridHeight = (kHelmDayEnd - kHelmDayStart) /
+    final gridHeight = (dayEnd - dayStart) /
         kHelmSlotMinutes *
         kHelmSlotHeight;
     final slotCount =
-        (kHelmDayEnd - kHelmDayStart) ~/ kHelmSlotMinutes;
+        (dayEnd - dayStart) ~/ kHelmSlotMinutes;
     final nowMin = _nowMinute();
 
     return Column(
@@ -785,9 +837,9 @@ class _RevisionColumn extends StatelessWidget {
               // Blocks
               for (final b in blocks) _positionedBlock(context, b),
               // Now line
-              if (isToday && nowMin >= kHelmDayStart && nowMin <= kHelmDayEnd)
+              if (isToday && nowMin >= dayStart && nowMin <= dayEnd)
                 Positioned(
-                  top: (nowMin - kHelmDayStart) /
+                  top: (nowMin - dayStart) /
                       kHelmSlotMinutes *
                       kHelmSlotHeight,
                   left: 0,
@@ -802,7 +854,7 @@ class _RevisionColumn extends StatelessWidget {
   }
 
   Widget _slotCell(BuildContext context, int slotIndex) {
-    final minute = kHelmDayStart + slotIndex * kHelmSlotMinutes;
+    final minute = dayStart + slotIndex * kHelmSlotMinutes;
     final editable = isLatest && minute >= _columnStart;
     final isHour = minute % 60 == 0;
     final cell = Positioned(
@@ -862,6 +914,8 @@ class _RevisionColumn extends StatelessWidget {
     final result = await showDialog<_BlockDialogResult>(
       context: context,
       builder: (_) => _BlockDialog(
+        dayStart: dayStart,
+        dayEnd: dayEnd,
         startMinute: minute,
         endMinute: minute + kHelmSlotMinutes,
       ),
@@ -880,7 +934,7 @@ class _RevisionColumn extends StatelessWidget {
   Widget _positionedBlock(BuildContext context, DayPlanBlock b) {
     final superseded = isBlockSuperseded(b, revisionStarts);
     final top =
-        (b.startMinute - kHelmDayStart) / kHelmSlotMinutes * kHelmSlotHeight;
+        (b.startMinute - dayStart) / kHelmSlotMinutes * kHelmSlotHeight;
     final height = (b.endMinute - b.startMinute) /
         kHelmSlotMinutes *
         kHelmSlotHeight;
@@ -927,6 +981,8 @@ class _RevisionColumn extends StatelessWidget {
     final result = await showDialog<_BlockDialogResult>(
       context: context,
       builder: (_) => _BlockDialog(
+        dayStart: dayStart,
+        dayEnd: dayEnd,
         startMinute: b.startMinute,
         endMinute: b.endMinute,
         label: b.label,
@@ -1063,10 +1119,14 @@ class _BlockDialog extends StatefulWidget {
   final String label;
   final String kind;
   final bool isEdit;
+  final int dayStart;
+  final int dayEnd;
 
   const _BlockDialog({
     required this.startMinute,
     required this.endMinute,
+    required this.dayStart,
+    required this.dayEnd,
     this.label = '',
     this.kind = 'focus',
     this.isEdit = false,
@@ -1152,7 +1212,7 @@ class _BlockDialogState extends State<_BlockDialog> {
                     decoration:
                         const InputDecoration(labelText: 'Start'),
                     items: _timeItems(
-                        kHelmDayStart, kHelmDayEnd - kHelmSlotMinutes),
+                        widget.dayStart, widget.dayEnd - kHelmSlotMinutes),
                     onChanged: (v) => setState(() {
                       _start = v ?? _start;
                       if (_end <= _start) {
@@ -1167,7 +1227,7 @@ class _BlockDialogState extends State<_BlockDialog> {
                     value: _end,
                     decoration: const InputDecoration(labelText: 'End'),
                     items: _timeItems(
-                        kHelmDayStart + kHelmSlotMinutes, kHelmDayEnd),
+                        widget.dayStart + kHelmSlotMinutes, widget.dayEnd),
                     onChanged: (v) => setState(() => _end = v ?? _end),
                   ),
                 ),
@@ -1203,6 +1263,384 @@ class _BlockDialogState extends State<_BlockDialog> {
 // Planning rail — raw material from every project
 // ---------------------------------------------------------------------------
 
+/// Folds the six register streams into one [PlanningHorizon] stream.
+/// Broadcast, because more than one widget reads it (the rail, the
+/// board, and the "this project" layer).
+Stream<PlanningHorizon> horizonStream(DateTime date, List<Stream<Object>> sources) =>
+    combineLatest<Object>(sources)
+        .map((lists) => buildPlanningHorizon(
+              today: date,
+              actions: (lists[0] as List).cast<HelmActionItem>(),
+              decisions: (lists[1] as List).cast<HelmDecisionItem>(),
+              dependencies: (lists[2] as List).cast<HelmDependencyItem>(),
+              risks: (lists[3] as List).cast<HelmRiskItem>(),
+              issues: (lists[4] as List).cast<HelmIssueItem>(),
+              activities: (lists[5] as List).cast<HelmActivityItem>(),
+            ))
+        .asBroadcastStream();
+
+/// Opens the register item behind a horizon row through the shell's
+/// callbacks. Plan activities have no dialog here (they live in Plan).
+Future<void> openPlanningItem(
+  AppDatabase db,
+  PlanningItem it, {
+  void Function(ProjectAction)? onOpenAction,
+  void Function(Risk)? onOpenRisk,
+  void Function(Issue)? onOpenIssue,
+  void Function(ProgramDependency)? onOpenDependency,
+  void Function(Decision)? onOpenDecision,
+}) async {
+  switch (it.kind) {
+    case PlanningKind.action:
+      final a = await db.actionsDao.getActionById(it.id);
+      if (a != null) onOpenAction?.call(a);
+    case PlanningKind.decision:
+      final d = await db.decisionsDao.getDecisionById(it.id);
+      if (d != null) onOpenDecision?.call(d);
+    case PlanningKind.dependency:
+      final d = await db.raidDao.getDependencyById(it.id);
+      if (d != null) onOpenDependency?.call(d);
+    case PlanningKind.riskTreatment:
+    case PlanningKind.riskReview:
+      final r = await db.raidDao.getRiskById(it.id);
+      if (r != null) onOpenRisk?.call(r);
+    case PlanningKind.issue:
+      final i = await db.raidDao.getIssueById(it.id);
+      if (i != null) onOpenIssue?.call(i);
+    case PlanningKind.activityStart:
+    case PlanningKind.activityEnd:
+    case PlanningKind.milestone:
+      break;
+  }
+}
+
+/// A horizon row as a draggable rail card.
+Widget planningItemCard(
+  PlanningItem it,
+  Color bar, {
+  required VoidCallback? onTap,
+  bool showProject = true,
+  bool highlight = false,
+}) {
+  final isAction = it.kind == PlanningKind.action;
+  final dueLabel = du.formatDate(it.dueIso);
+  return _RailItem(
+    label: it.label,
+    detail: showProject
+        ? '${highlight ? '● ' : ''}${it.projectName} · ${it.dateKind} · $dueLabel'
+        : '${it.dateKind} · $dueLabel',
+    barColor: bar,
+    payload: _RailDrag(
+      label: isAction ? it.label : '${it.dateKind}: ${it.label}',
+      kind: isAction ? 'focus' : 'admin',
+      projectId: it.projectId,
+      linkedActionId: it.linkedActionId,
+    ),
+    onTap: onTap,
+  );
+}
+
+/// The planning board: the dated horizon laid out as lanes under the
+/// day grid, so a whole week reads at a glance instead of down a narrow
+/// rail. Lanes: this project (when one is open), behind, today, the rest
+/// of this week, next week. Cards drag onto the grid like rail items.
+class _PlanningBoard extends StatefulWidget {
+  final AppDatabase db;
+  final DateTime date;
+  final bool collapsed;
+  final VoidCallback onToggle;
+  final void Function(ProjectAction)? onOpenAction;
+  final void Function(Risk)? onOpenRisk;
+  final void Function(Issue)? onOpenIssue;
+  final void Function(ProgramDependency)? onOpenDependency;
+  final void Function(Decision)? onOpenDecision;
+
+  const _PlanningBoard({
+    required this.db,
+    required this.date,
+    required this.collapsed,
+    required this.onToggle,
+    this.onOpenAction,
+    this.onOpenRisk,
+    this.onOpenIssue,
+    this.onOpenDependency,
+    this.onOpenDecision,
+  });
+
+  @override
+  State<_PlanningBoard> createState() => _PlanningBoardState();
+}
+
+class _PlanningBoardState extends State<_PlanningBoard> {
+  late Stream<PlanningHorizon> _horizon;
+  late Stream<List<HelmRiskItem>> _risks;
+  late Stream<List<HelmActivityItem>> _activities;
+  String? _dateIso;
+
+  void _ensureStreams() {
+    final iso = isoOf(widget.date);
+    if (_dateIso == iso) return;
+    _dateIso = iso;
+    final dao = widget.db.dayPlanDao;
+    _risks = dao.watchOpenRisksAllProjects();
+    _activities = dao.watchDatedActivitiesAllProjects();
+    _horizon = horizonStream(widget.date, [
+      dao.watchOpenActionsAllProjects(),
+      dao.watchPendingDecisionsAllProjects(),
+      dao.watchOpenDependenciesAllProjects(),
+      _risks,
+      dao.watchOpenIssuesAllProjects(),
+      _activities,
+    ]);
+  }
+
+  Future<void> _open(PlanningItem it) => openPlanningItem(
+        widget.db,
+        it,
+        onOpenAction: widget.onOpenAction,
+        onOpenRisk: widget.onOpenRisk,
+        onOpenIssue: widget.onOpenIssue,
+        onOpenDependency: widget.onOpenDependency,
+        onOpenDecision: widget.onOpenDecision,
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    _ensureStreams();
+    final provider = context.watch<ProjectProvider>();
+    final current = provider.isProgramme ? null : provider.currentProject;
+    return Container(
+      decoration: const BoxDecoration(
+        color: KColors.surface,
+        border: Border(top: BorderSide(color: KColors.border)),
+      ),
+      child: StreamBuilder<PlanningHorizon>(
+        stream: _horizon,
+        builder: (context, snap) => StreamBuilder<List<HelmRiskItem>>(
+          stream: _risks,
+          builder: (context, rSnap) => StreamBuilder<List<HelmActivityItem>>(
+            stream: _activities,
+            builder: (context, aSnap) => _boardBody(context, snap.data,
+                rSnap.data ?? const [], aSnap.data ?? const [], current),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _boardBody(BuildContext context, PlanningHorizon? h,
+      List<HelmRiskItem> risks, List<HelmActivityItem> activities, Project? current) {
+          final total = h == null
+              ? 0
+              : h.overdue.length + h.today.length +
+                  h.restOfWeek.fold<int>(0, (n, d) => n + d.items.length) +
+                  h.nextWeek.length;
+          final header = InkWell(
+            onTap: widget.onToggle,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 12, 8),
+              child: Row(children: [
+                Icon(widget.collapsed ? Icons.chevron_right : Icons.expand_more,
+                    size: 14, color: KColors.textDim),
+                const SizedBox(width: 6),
+                const Text('PLANNING BOARD',
+                    style: TextStyle(
+                        color: KColors.textDim,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.3)),
+                const SizedBox(width: 10),
+                Text(
+                  widget.collapsed
+                      ? '$total dated items this fortnight — click to open'
+                      : 'Everything dated, laid out by when · drag onto the grid to block time · click to open',
+                  style: const TextStyle(color: KColors.textMuted, fontSize: 11),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ]),
+            ),
+          );
+          if (widget.collapsed) return header;
+          if (h == null) {
+            return Column(children: [
+              header,
+              const SizedBox(height: 40, child: Center(child: CircularProgressIndicator(strokeWidth: 1.5))),
+            ]);
+          }
+          // Cards for the open project are marked so they stand out in the
+          // dated lanes; the project lane itself carries the headline
+          // (top risk, next milestone, how much is dated) rather than
+          // repeating those cards.
+          final pid = current?.id;
+          Widget card(PlanningItem it, Color bar) => planningItemCard(it, bar,
+              onTap: () => _open(it), highlight: it.projectId == pid);
+          final lanes = <Widget>[
+            if (current != null)
+              _projectLane(current, h, risks, activities),
+            _BoardLane(
+              title: 'Behind',
+              icon: Icons.warning_amber_rounded,
+              accent: KColors.red,
+              emptyText: 'Nothing overdue.',
+              children: [for (final it in h.overdue) card(it, KColors.red)],
+            ),
+            _BoardLane(
+              title: 'Today',
+              icon: Icons.today_outlined,
+              accent: KColors.amber,
+              emptyText: 'Nothing due today.',
+              children: [for (final it in h.today) card(it, KColors.amber)],
+            ),
+            _BoardLane(
+              title: 'Rest of this week',
+              icon: Icons.view_week_outlined,
+              accent: KColors.phosphor,
+              emptyText: 'Nothing else due this week.',
+              children: [
+                for (final day in h.restOfWeek) ...[
+                  _RailDayHeader(label: planningDayLabel(day.date)),
+                  for (final it in day.items) card(it, KColors.phosphor),
+                ],
+              ],
+            ),
+            _BoardLane(
+              title: 'Next week',
+              icon: Icons.next_week_outlined,
+              accent: KColors.blue,
+              emptyText: 'Nothing dated next week yet.',
+              children: [for (final it in h.nextWeek) card(it, KColors.blue)],
+            ),
+          ];
+          return Column(mainAxisSize: MainAxisSize.min, children: [
+            header,
+            SizedBox(
+              height: 232,
+              child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                for (var i = 0; i < lanes.length; i++) ...[
+                  if (i > 0) Container(width: 1, color: KColors.border.withValues(alpha: 0.6)),
+                  Expanded(child: lanes[i]),
+                ],
+              ]),
+            ),
+          ]);
+  }
+
+  /// The open project's headline: top escalated risk, next milestone, and
+  /// how much of the horizon is its own.
+  Widget _projectLane(Project current, PlanningHorizon h,
+      List<HelmRiskItem> risks, List<HelmActivityItem> activities) {
+    final pid = current.id;
+    final todayIso = isoOf(widget.date);
+    final topRisk = projectTopRisk(risks, pid, today: widget.date);
+    final next = projectNextMilestone(activities, pid, todayIso);
+    final behind = h.overdue.where((i) => i.projectId == pid).length;
+    final today = h.today.where((i) => i.projectId == pid).length;
+    final week = h.restOfWeek.fold<int>(
+        0, (n, d) => n + d.items.where((i) => i.projectId == pid).length);
+    final nextWeek = h.nextWeek.where((i) => i.projectId == pid).length;
+    return _BoardLane(
+      title: 'This project · ${current.name}',
+      icon: Icons.flag_outlined,
+      accent: KColors.amber,
+      emptyText: 'No escalated risk, no upcoming milestone, nothing dated.',
+      children: [
+        if (topRisk != null)
+          _RailItem(
+            label: topRisk.title?.trim().isNotEmpty == true ? topRisk.title! : topRisk.description,
+            detail: '${topRisk.steerco || topRisk.escalatedAt != null ? 'Top escalated risk' : 'Top risk'}'
+                ' · ${ratingSummary(topRisk.likelihood, topRisk.impact)}'
+                '${topRisk.owner != null ? ' · ${topRisk.owner}' : ''}',
+            barColor: KColors.red,
+            payload: _RailDrag(label: 'Risk: ${topRisk.title ?? topRisk.description}', kind: 'admin', projectId: pid),
+            onTap: widget.onOpenRisk == null ? null : () => widget.onOpenRisk!(topRisk),
+          ),
+        if (next != null)
+          _RailItem(
+            label: next.activity.name,
+            detail: 'Next ${milestoneKindLabel(next.activity.activityType)} · '
+                '${du.formatDate(next.activity.startDate ?? next.activity.endDate)}'
+                '${next.wpCode != null ? ' · ${next.wpCode}' : ''}',
+            barColor: KColors.blue,
+            payload: _RailDrag(label: 'Milestone: ${next.activity.name}', kind: 'admin', projectId: pid),
+          ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+          child: Text(
+            [
+              if (behind > 0) '$behind behind',
+              if (today > 0) '$today due today',
+              if (week > 0) '$week later this week',
+              if (nextWeek > 0) '$nextWeek next week',
+              if (behind + today + week + nextWeek == 0) 'nothing dated in the next fortnight',
+            ].join(' · '),
+            style: const TextStyle(color: KColors.textDim, fontSize: 11, height: 1.4),
+          ),
+        ),
+        const Padding(
+          padding: EdgeInsets.fromLTRB(12, 0, 12, 4),
+          child: Text('Its cards are marked ● in the lanes to the right.',
+              style: TextStyle(color: KColors.textMuted, fontSize: 10.5)),
+        ),
+      ],
+    );
+  }
+}
+
+class _BoardLane extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Color accent;
+  final List<Widget> children;
+  final String emptyText;
+  const _BoardLane({
+    required this.title,
+    required this.icon,
+    required this.accent,
+    required this.children,
+    required this.emptyText,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final count = children.whereType<_RailItem>().length;
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(12, 6, 12, 2),
+        child: Row(children: [
+          Icon(icon, size: 12, color: accent),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(title.toUpperCase(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                    color: KColors.textDim,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.2)),
+          ),
+          if (count > 0)
+            Text('$count',
+                style: GoogleFonts.jetBrainsMono(
+                    color: KColors.textMuted, fontSize: 10, fontWeight: FontWeight.w600)),
+        ]),
+      ),
+      Expanded(
+        child: children.isEmpty
+            ? Padding(
+                padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
+                child: Text(emptyText,
+                    style: const TextStyle(color: KColors.textMuted, fontSize: 11)),
+              )
+            : ListView(
+                padding: const EdgeInsets.only(bottom: 8),
+                children: children,
+              ),
+      ),
+    ]);
+  }
+}
+
 class _PlanningRail extends StatefulWidget {
   final AppDatabase db;
   final DateTime date;
@@ -1212,10 +1650,15 @@ class _PlanningRail extends StatefulWidget {
   final void Function(Assumption)? onOpenAssumption;
   final void Function(ProgramDependency)? onOpenDependency;
   final void Function(Decision)? onOpenDecision;
+  /// False when the planning board under the grid shows the dated
+  /// horizon and the "this project" layer, so the rail keeps to the
+  /// week's objectives, carry-over and the undated registers.
+  final bool showHorizon;
 
   const _PlanningRail({
     required this.db,
     required this.date,
+    this.showHorizon = true,
     this.onOpenAction,
     this.onOpenRisk,
     this.onOpenIssue,
@@ -1294,22 +1737,14 @@ class _PlanningRailState extends State<_PlanningRail> {
     _allAssumptions = dao.watchOpenAssumptionsAllProjects();
     _allDependencies = dao.watchOpenDependenciesAllProjects();
     _datedActivities = dao.watchDatedActivitiesAllProjects();
-    _horizon = combineLatest<List<Object>>([
+    _horizon = horizonStream(widget.date, [
       _allActions,
       _pendingDecisions,
       _allDependencies,
       _allRisks,
       _allIssues,
       _datedActivities,
-    ]).map((lists) => buildPlanningHorizon(
-          today: widget.date,
-          actions: lists[0].cast<HelmActionItem>(),
-          decisions: lists[1].cast<HelmDecisionItem>(),
-          dependencies: lists[2].cast<HelmDependencyItem>(),
-          risks: lists[3].cast<HelmRiskItem>(),
-          issues: lists[4].cast<HelmIssueItem>(),
-          activities: lists[5].cast<HelmActivityItem>(),
-        ));
+    ]);
   }
 
   bool _isExpanded(String key) => _expandedSections.contains(key);
@@ -1386,9 +1821,10 @@ class _PlanningRailState extends State<_PlanningRail> {
   // week by day, next week — across every register, so the day and the
   // week are planned from what is coming rather than what slipped.
   List<Widget> _suggestedSections(String yesterdayIso) => [
+        if (widget.showHorizon) _thisProjectSection(),
         _thisWeekSection(),
         _carryOverSection(yesterdayIso),
-        _horizonSections(),
+        if (widget.showHorizon) _horizonSections(),
         _riskSection(
           title: 'Risks needing an owner',
           stream: _unownedRisks,
@@ -1396,6 +1832,103 @@ class _PlanningRailState extends State<_PlanningRail> {
         ),
         _decisionSection(cap: 5),
       ];
+
+  /// The project you have open, at the top of the rail: what is behind,
+  /// due today and coming this week for THIS project, its top escalated
+  /// risk and its next milestone. This is why a project lands on Helm —
+  /// the page answers "what do I do about this project today?" and the
+  /// day plan grows out of the answer. Quiet on a programme (the
+  /// overview does that job) and when nothing is dated.
+  Widget _thisProjectSection() {
+    final provider = context.watch<ProjectProvider>();
+    final current = provider.currentProject;
+    if (current == null || provider.isProgramme) return const SizedBox.shrink();
+    final pid = current.id;
+    final todayIso = isoOf(widget.date);
+    return StreamBuilder<PlanningHorizon>(
+      stream: _horizon,
+      builder: (context, hSnap) => StreamBuilder<List<HelmRiskItem>>(
+        stream: _allRisks,
+        builder: (context, rSnap) => StreamBuilder<List<HelmActivityItem>>(
+          stream: _datedActivities,
+          builder: (context, aSnap) {
+            final h = hSnap.data;
+            final behind = h?.overdue.where((i) => i.projectId == pid).toList() ?? const [];
+            final today = h?.today.where((i) => i.projectId == pid).toList() ?? const [];
+            final week = [
+              for (final d in h?.restOfWeek ?? const <PlanningDay>[])
+                ...d.items.where((i) => i.projectId == pid),
+            ];
+            final nextWeekCount =
+                h?.nextWeek.where((i) => i.projectId == pid).length ?? 0;
+
+            final topRisk = projectTopRisk(rSnap.data ?? const [], pid, today: widget.date);
+            final next = projectNextMilestone(aSnap.data ?? const [], pid, todayIso);
+
+            final total = behind.length + today.length + week.length;
+            if (total == 0 && topRisk == null && next == null) {
+              return const SizedBox.shrink();
+            }
+            final key = 'thisproject';
+            final expanded = _isExpanded(key) || total <= 8;
+            return _RailSection(
+              title: 'This project · ${current.name}',
+              icon: Icons.flag_outlined,
+              count: total == 0 ? null : total,
+              expanded: expanded,
+              onToggle: total <= 8 ? null : () => _toggleSection(key),
+              children: [
+                if (topRisk != null)
+                  _RailItem(
+                    label: topRisk.title?.trim().isNotEmpty == true
+                        ? topRisk.title!
+                        : topRisk.description,
+                    detail: 'Top escalated risk · ${ratingSummary(topRisk.likelihood, topRisk.impact)}'
+                        '${topRisk.owner != null ? ' · ${topRisk.owner}' : ''}',
+                    barColor: KColors.red,
+                    payload: _RailDrag(
+                      label: 'Risk: ${topRisk.title ?? topRisk.description}',
+                      kind: 'admin',
+                      projectId: pid,
+                    ),
+                    onTap: widget.onOpenRisk == null
+                        ? null
+                        : () => widget.onOpenRisk!(topRisk),
+                  ),
+                if (next != null)
+                  _RailItem(
+                    label: next.activity.name,
+                    detail: 'Next ${milestoneKindLabel(next.activity.activityType)}'
+                        ' · ${du.formatDate(next.activity.startDate ?? next.activity.endDate)}'
+                        '${next.wpCode != null ? ' · ${next.wpCode}' : ''}',
+                    barColor: KColors.blue,
+                    payload: _RailDrag(
+                      label: 'Milestone: ${next.activity.name}',
+                      kind: 'admin',
+                      projectId: pid,
+                    ),
+                  ),
+                if (behind.isNotEmpty) const _RailDayHeader(label: 'Behind'),
+                for (final it in behind) _horizonItem(it, KColors.red),
+                if (today.isNotEmpty) const _RailDayHeader(label: 'Today'),
+                for (final it in today) _horizonItem(it, KColors.amber),
+                if (week.isNotEmpty) const _RailDayHeader(label: 'Rest of this week'),
+                for (final it in week) _horizonItem(it, KColors.phosphor),
+                if (nextWeekCount > 0)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(10, 4, 10, 6),
+                    child: Text(
+                      '$nextWeekCount more next week — see the horizon below',
+                      style: const TextStyle(color: KColors.textMuted, fontSize: 10.5),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
 
   Widget _horizonSections() {
     return StreamBuilder<PlanningHorizon>(
@@ -1453,22 +1986,8 @@ class _PlanningRailState extends State<_PlanningRail> {
   /// One dated item: label, then "Project · Date kind · due". Actions
   /// drop as linked focus blocks; everything else drops as an admin
   /// block carrying the item's label, and taps open the item.
-  Widget _horizonItem(PlanningItem it, Color bar) {
-    final isAction = it.kind == PlanningKind.action;
-    final dueLabel = du.formatDate(it.dueIso);
-    return _RailItem(
-      label: it.label,
-      detail: '${it.projectName} · ${it.dateKind} · $dueLabel',
-      barColor: bar,
-      payload: _RailDrag(
-        label: isAction ? it.label : '${it.dateKind}: ${it.label}',
-        kind: isAction ? 'focus' : 'admin',
-        projectId: it.projectId,
-        linkedActionId: it.linkedActionId,
-      ),
-      onTap: () => _openHorizonItem(it),
-    );
-  }
+  Widget _horizonItem(PlanningItem it, Color bar) =>
+      planningItemCard(it, bar, onTap: () => _openHorizonItem(it));
 
   Future<void> _openHorizonItem(PlanningItem it) async {
     switch (it.kind) {

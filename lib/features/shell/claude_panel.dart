@@ -6,6 +6,7 @@ import '../../core/database/database.dart';
 import '../../core/llm/context_builder.dart';
 import '../../core/llm/llm_client_factory.dart';
 import '../../core/llm/ollama_client.dart';
+import '../../core/llm/ollama_models.dart';
 import '../../providers/project_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../shared/theme/keel_colors.dart';
@@ -168,26 +169,20 @@ class _ClaudePanelState extends State<ClaudePanel> {
         if (!running) {
           throw Exception(
             'Could not reach Ollama at ${sp.ollamaBaseUrl}.\n'
-            'Make sure the ollama binary is installed and in your PATH, '
-            'or start it manually with: ollama serve',
+            'Keel tried to start it from your PATH and from its own install '
+            'under ~/.local/share/keel. Open Settings → Local AI Setup to '
+            'repair the install, or start it manually with: ollama serve',
           );
         }
       }
 
-      // For Ollama: auto-correct the model to whatever is actually installed
+      // For Ollama: repoint a configured model that isn't installed at what
+      // is (same rule the client itself applies), persisting the full tag.
       if (sp.llmProvider == LLMProvider.ollama) {
         final installed = await OllamaClient.getAvailableModels(sp.ollamaBaseUrl);
-        if (installed.isNotEmpty) {
-          final configuredBase = sp.ollamaModel.split(':').first;
-          final match = installed.firstWhere(
-            (m) => m.split(':').first == configuredBase,
-            orElse: () => '',
-          );
-          if (match.isEmpty) {
-            // Configured model not installed — silently use the first installed one
-            final firstBase = installed.first.split(':').first;
-            await settings.save(sp.copyWith(ollamaModel: firstBase));
-          }
+        final picked = OllamaClient.pickInstalledModel(sp.ollamaModel, installed);
+        if (picked != null && picked != sp.ollamaModel) {
+          await settings.save(sp.copyWith(ollamaModel: picked));
         }
       }
 
@@ -706,8 +701,7 @@ String _providerLabel(AppSettings s) {
     case LLMProvider.githubModels:   return 'GitHub Models';
     case LLMProvider.azureOpenAi:    return 'Azure OpenAI';
     case LLMProvider.ollama:
-      final base = s.ollamaModel.split(':').first;
-      return base.isEmpty ? 'Ollama' : base;
+      return ollamaModelLabel(s.ollamaModel);
   }
 }
 

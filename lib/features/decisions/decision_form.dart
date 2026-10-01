@@ -5,6 +5,8 @@ import 'package:drift/drift.dart' show Value;
 import '../../core/analytics/keel_events.dart';
 import '../../core/cascade/cascade_factory.dart';
 import '../../core/database/database.dart';
+import '../../core/finance/contingency_ledger.dart';
+import '../../shared/utils/money.dart';
 import '../../core/llm/context_builder.dart';
 import '../../core/llm/raid_assist_prompts.dart';
 import '../../core/raid/dependency_plan_link.dart';
@@ -325,6 +327,37 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
         _ => KColors.textMuted,
       };
 
+  /// Contingency movements this decision authorised (programme side).
+  Widget _movementsSection(Decision d) {
+    return FutureBuilder<(List<ContingencyMovement>, String)>(
+      future: () async {
+        final rows = await widget.db.financeDao.getMovementsForDecision(d.id);
+        final funding = await widget.db.financeDao.getFunding(widget.projectId);
+        return (rows, funding.isEmpty ? 'AUD' : funding.first.currency);
+      }(),
+      builder: (context, snap) {
+        final rows = snap.data?.$1 ?? const <ContingencyMovement>[];
+        final cur = snap.data?.$2 ?? 'AUD';
+        if (rows.isEmpty) return const SizedBox.shrink();
+        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const DetailSectionLabel('Contingency movements'),
+          const SizedBox(height: 6),
+          for (final m in rows)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                '${m.movedOn}  ${movementLabel(m.kind)}  '
+                '${movementSign(m.kind) < 0 ? '−' : '+'}${Money.formatMinorCompact(m.amountMinor, cur)}'
+                '${m.reason != null ? '  ·  ${m.reason}' : ''}',
+                style: const TextStyle(color: KColors.text, fontSize: 12),
+              ),
+            ),
+          const SizedBox(height: 8),
+        ]);
+      },
+    );
+  }
+
   // ── Read view ──────────────────────────────────────────────────────────────
 
   Widget _readView() {
@@ -363,6 +396,7 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
       ],
       right: [
         DetailField('Impact of leaving it open', d.impactStatement),
+        _movementsSection(d),
         const DetailSectionLabel('Timeline'),
         const SizedBox(height: 8),
         _timelineSummary(editable: false),
