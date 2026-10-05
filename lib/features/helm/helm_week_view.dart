@@ -469,8 +469,9 @@ class _DayRow extends StatelessWidget {
                   ),
                 ),
               ),
-              // The rocks the ritual put on this day, with how much of
-              // each has been done here (slots).
+              // The rocks the ritual put on this day: one row each, a
+              // square per allocated slot (filled as blocks get done),
+              // the label, and the count.
               Builder(
                 builder: (_) {
                   final weekday = date.weekday - 1;
@@ -490,37 +491,25 @@ class _DayRow extends StatelessWidget {
                         ),
                   ];
                   if (rocks.isEmpty) return const SizedBox.shrink();
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Wrap(
-                      spacing: 6,
-                      runSpacing: 4,
+                  return Container(
+                    margin: const EdgeInsets.only(top: 8),
+                    padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
+                    decoration: BoxDecoration(
+                      color: KColors.bg.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: KColors.border),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         for (final r in rocks)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: r.done >= r.slots
-                                  ? KColors.phosDim
-                                  : KColors.surface2,
-                              borderRadius: BorderRadius.circular(3),
-                              border: Border.all(
-                                color: r.done >= r.slots
-                                    ? KColors.phosphor
-                                    : KColors.border2,
-                              ),
-                            ),
-                            child: Text(
-                              '${r.o.label} · ${r.done}/${r.slots}',
-                              style: TextStyle(
-                                color: r.done >= r.slots
-                                    ? KColors.phosphor
-                                    : KColors.textDim,
-                                fontSize: 10,
-                              ),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: RockProgressRow(
+                              label: r.o.label,
+                              slots: r.slots,
+                              done: r.done,
+                              dim: isPast && r.done < r.slots,
                             ),
                           ),
                       ],
@@ -1057,6 +1046,74 @@ class _ObjectiveDialogState extends State<_ObjectiveDialog> {
           child: const Text('Cancel'),
         ),
         ElevatedButton(onPressed: _save, child: const Text('Save')),
+      ],
+    );
+  }
+}
+
+/// One big rock on one day: a square per allocated 30-minute slot,
+/// filled as blocks get done, then the label and the count. Shared by
+/// the week cards and the day view so the two read the same.
+class RockProgressRow extends StatelessWidget {
+  final String label;
+  final int slots;
+  final int done;
+  final bool dim;
+  final Widget? trailing;
+
+  const RockProgressRow({
+    super.key,
+    required this.label,
+    required this.slots,
+    required this.done,
+    this.dim = false,
+    this.trailing,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final met = done >= slots;
+    final colour = met ? KColors.phosphor : (dim ? KColors.red : KColors.amber);
+    return Row(
+      children: [
+        for (var i = 0; i < slots; i++)
+          Container(
+            width: 9,
+            height: 9,
+            margin: const EdgeInsets.only(right: 2),
+            decoration: BoxDecoration(
+              color: i < done ? colour : Colors.transparent,
+              border: Border.all(
+                color: colour.withValues(alpha: 0.8),
+                width: 1,
+              ),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: met ? KColors.textDim : KColors.text,
+              fontSize: 12,
+              decoration: met ? TextDecoration.lineThrough : null,
+              decorationColor: KColors.textMuted,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          '$done/$slots',
+          style: GoogleFonts.jetBrainsMono(
+            color: colour,
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        if (trailing != null) ...[const SizedBox(width: 6), trailing!],
       ],
     );
   }

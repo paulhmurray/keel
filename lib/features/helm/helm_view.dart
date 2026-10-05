@@ -841,54 +841,134 @@ class _TimeGrid extends StatelessWidget {
     this.weekday = 0,
   });
 
-  /// "Build adapter 1/3 · Status pack 0/1" — today's rocks and how far
-  /// each has got, in slots, from this day's effective schedule.
-  Widget _rocksLine(List<int> starts) {
+  /// What the week put on this day: one row per rock with its slot
+  /// squares and progress, and a Place button for a rock that has no
+  /// block on the grid yet (the day was charted before the week, or the
+  /// draft block was deleted).
+  Widget _plannedPanel(BuildContext context, List<int> starts) {
     final rocks = [
       for (final o in objectives)
         if ((parseDayAllocations(o.dayAllocationsJson)[weekday] ?? 0) > 0)
           (
-            label: o.label,
+            o: o,
             slots: parseDayAllocations(o.dayAllocationsJson)[weekday]!,
             done: objectiveDoneBlocks(o.id, blocks, {plan.id: starts}),
+            onGrid: effectiveSchedule(
+              blocks,
+              starts,
+            ).any((b) => b.objectiveId == o.id),
           ),
     ];
     if (rocks.isEmpty) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 4,
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
+      decoration: BoxDecoration(
+        color: KColors.surface,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: KColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.view_week_outlined,
+                size: 12,
+                color: KColors.amber,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                isToday ? 'PLANNED FOR TODAY' : 'PLANNED FOR THIS DAY',
+                style: const TextStyle(
+                  color: KColors.textDim,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.6,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${rocks.fold<int>(0, (n, r) => n + r.done)}/'
+                '${rocks.fold<int>(0, (n, r) => n + r.slots)} blocks',
+                style: GoogleFonts.jetBrainsMono(
+                  color: KColors.textMuted,
+                  fontSize: 10,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
           for (final r in rocks)
-            Tooltip(
-              message:
-                  'Allocated ${r.slots} focus block${r.slots == 1 ? '' : 's'} today',
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                decoration: BoxDecoration(
-                  color: r.done >= r.slots ? KColors.phosDim : KColors.surface2,
-                  borderRadius: BorderRadius.circular(3),
-                  border: Border.all(
-                    color: r.done >= r.slots
-                        ? KColors.phosphor
-                        : KColors.border2,
-                  ),
-                ),
-                child: Text(
-                  '${r.label} · ${r.done}/${r.slots}',
-                  style: TextStyle(
-                    color: r.done >= r.slots
-                        ? KColors.phosphor
-                        : KColors.textDim,
-                    fontSize: 11,
-                  ),
-                ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: RockProgressRow(
+                label: r.o.label,
+                slots: r.slots,
+                done: r.done,
+                trailing: r.onGrid
+                    ? null
+                    : Tooltip(
+                        message:
+                            'Not on the grid yet — place '
+                            '${r.slots * kPlanSlotMinutes} minutes in the first free gap',
+                        child: SizedBox(
+                          height: 22,
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                              ),
+                              side: const BorderSide(color: KColors.border2),
+                              visualDensity: VisualDensity.compact,
+                            ),
+                            onPressed: () => _placeRock(r.o, r.slots, starts),
+                            child: const Text(
+                              'Place',
+                              style: TextStyle(
+                                color: KColors.amber,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
               ),
             ),
         ],
       ),
     );
+  }
+
+  Future<void> _placeRock(
+    WeekPlanObjective o,
+    int slots,
+    List<int> starts,
+  ) async {
+    final schedule = effectiveSchedule(blocks, starts);
+    final draft = prefillBlocks(
+      objectives: [o],
+      weekday: weekday,
+      dayStart: dayStart,
+      dayEnd: dayEnd,
+      existing: [
+        for (final b in schedule)
+          (startMinute: b.startMinute, endMinute: b.endMinute),
+      ],
+    );
+    for (final b in draft) {
+      await db.dayPlanDao.insertBlock(
+        planId: plan.id,
+        revision: plan.currentRevision,
+        startMinute: b.startMinute,
+        endMinute: b.endMinute,
+        label: b.label,
+        projectId: b.projectId,
+        linkedActionId: b.linkedActionId,
+        objectiveId: b.objectiveId,
+      );
+    }
   }
 
   @override
@@ -952,7 +1032,7 @@ class _TimeGrid extends StatelessWidget {
             ],
           ),
         ),
-        _rocksLine(starts),
+        _plannedPanel(context, starts),
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),

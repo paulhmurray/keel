@@ -45,14 +45,14 @@ const _kGroupRowH = 26.0;
 
 // ─── WP theme colours ─────────────────────────────────────────────────────────
 Color _wpColor(String theme) => switch (theme) {
-      'wp1'        => const Color(0xFF3B82F6), // blue
-      'wp2'        => const Color(0xFF10B981), // emerald
-      'wp3'        => const Color(0xFF8B5CF6), // purple
-      'wp4'        => const Color(0xFFF59E0B), // amber
-      'mpower'     => const Color(0xFF06B6D4), // cyan
-      'governance' => const Color(0xFF6B7280), // grey
-      _            => const Color(0xFF64748B), // slate default
-    };
+  'wp1' => const Color(0xFF3B82F6), // blue
+  'wp2' => const Color(0xFF10B981), // emerald
+  'wp3' => const Color(0xFF8B5CF6), // purple
+  'wp4' => const Color(0xFFF59E0B), // amber
+  'mpower' => const Color(0xFF06B6D4), // cyan
+  'governance' => const Color(0xFF6B7280), // grey
+  _ => const Color(0xFF64748B), // slate default
+};
 
 const _kThemes = ['wp1', 'wp2', 'wp3', 'wp4', 'mpower', 'governance', 'custom'];
 const _kThemeLabels = {
@@ -65,7 +65,12 @@ const _kThemeLabels = {
   'custom': 'Custom',
 };
 const _kActivityTypes = [
-  'activity', 'milestone', 'hard_deadline', 'dependency_marker', 'ongoing', 'gate',
+  'activity',
+  'milestone',
+  'hard_deadline',
+  'dependency_marker',
+  'ongoing',
+  'gate',
 ];
 const _kActivityTypeLabels = {
   'activity': 'Activity (bar)',
@@ -84,11 +89,25 @@ const _kRagLabels = {
 };
 
 // ─── Keyboard intents ─────────────────────────────────────────────────────────
-class _ZoomInIntent       extends Intent { const _ZoomInIntent(); }
-class _ZoomOutIntent      extends Intent { const _ZoomOutIntent(); }
-class _FitIntent          extends Intent { const _FitIntent(); }
-class _ExpandIntent       extends Intent { const _ExpandIntent(); }
-class _PresentationIntent extends Intent { const _PresentationIntent(); }
+class _ZoomInIntent extends Intent {
+  const _ZoomInIntent();
+}
+
+class _ZoomOutIntent extends Intent {
+  const _ZoomOutIntent();
+}
+
+class _FitIntent extends Intent {
+  const _FitIntent();
+}
+
+class _ExpandIntent extends Intent {
+  const _ExpandIntent();
+}
+
+class _PresentationIntent extends Intent {
+  const _PresentationIntent();
+}
 
 // ─── Row models ───────────────────────────────────────────────────────────────
 sealed class _GRow {
@@ -98,7 +117,8 @@ sealed class _GRow {
 class _WpRow extends _GRow {
   final TimelineWorkPackage wp;
   _WpRow(this.wp);
-  @override double get height => _kWpRowH;
+  @override
+  double get height => _kWpRowH;
 }
 
 class _ActRow extends _GRow {
@@ -109,10 +129,10 @@ class _ActRow extends _GRow {
   // Tasks under this activity (empty for tasks and childless activities).
   // Non-empty makes this a summary row: roll-up bar, no direct drag.
   final List<TimelineActivity> tasks;
-  _ActRow(this.act, this.wp,
-      {this.isTask = false, this.tasks = const []});
+  _ActRow(this.act, this.wp, {this.isTask = false, this.tasks = const []});
   bool get isSummary => tasks.isNotEmpty;
-  @override double get height => _kRowH;
+  @override
+  double get height => _kRowH;
 }
 
 /// One swimlane group in the programme plan: either the native programme
@@ -146,8 +166,9 @@ List<PlanSwimlaneGroup> planSwimlaneGroups(
     groups.add(PlanSwimlaneGroup(sourceProjectId: null, wps: native));
   }
   final keys = byProject.keys.toList()
-    ..sort((a, b) =>
-        nameFor(a).toLowerCase().compareTo(nameFor(b).toLowerCase()));
+    ..sort(
+      (a, b) => nameFor(a).toLowerCase().compareTo(nameFor(b).toLowerCase()),
+    );
   for (final k in keys) {
     groups.add(PlanSwimlaneGroup(sourceProjectId: k, wps: byProject[k]!));
   }
@@ -213,8 +234,12 @@ class ProgrammeGanttView extends StatelessWidget {
   Widget build(BuildContext context) {
     final projectId = context.watch<ProjectProvider>().currentProjectId;
     if (projectId == null) {
-      return const Center(child: Text('No project selected',
-          style: TextStyle(color: KColors.textMuted)));
+      return const Center(
+        child: Text(
+          'No project selected',
+          style: TextStyle(color: KColors.textMuted),
+        ),
+      );
     }
     return _ProgrammeGanttContent(
       key: ValueKey('$projectId:$cascadeRefreshSeq'),
@@ -251,9 +276,9 @@ class _ProgrammeGanttContent extends StatefulWidget {
 class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
   // ── Scroll controllers ───────────────────────────────────────────────────
   final _horizHeader = ScrollController();
-  final _horizBody   = ScrollController();
-  final _vertNames   = ScrollController();
-  final _vertBody    = ScrollController();
+  final _horizBody = ScrollController();
+  final _vertNames = ScrollController();
+  final _vertBody = ScrollController();
   bool _hSync = false;
   bool _vSync = false;
 
@@ -261,21 +286,21 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
   bool _showMilestones = false;
 
   // ── Zoom & column mode ───────────────────────────────────────────────────
-  double _cellW       = _kCellW;
-  bool   _quarterMode = false;
-  double _bodyWidth   = 800;
+  double _cellW = _kCellW;
+  bool _quarterMode = false;
+  double _bodyWidth = 800;
 
   // ── Inline name edit ─────────────────────────────────────────────────────
   String? _editingNameId;
-  final _inlineNameCtrl  = TextEditingController();
+  final _inlineNameCtrl = TextEditingController();
   final _inlineNameFocus = FocusNode();
 
   // ── Drag to move ──────────────────────────────────────────────────────────
   String? _draggingActId;
-  int    _dragOrigStart  = 0;
-  int    _dragOrigEnd    = 0;
-  double _dragAccumPx    = 0;
-  int    _dragMonthDelta = 0;
+  int _dragOrigStart = 0;
+  int _dragOrigEnd = 0;
+  double _dragAccumPx = 0;
+  int _dragMonthDelta = 0;
 
   // ── Dependency arrows ────────────────────────────────────────────────────
   List<TimelineDependency> _deps = [];
@@ -349,10 +374,10 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     final dao = _db.programmeGanttDao;
     final pid = widget.projectId;
 
-    final header        = await dao.getHeader(pid);
-    final wps           = await dao.getWorkPackages(pid);
-    final allActs       = await dao.getActivitiesForProject(pid);
-    final deps          = await dao.getDependencies(pid);
+    final header = await dao.getHeader(pid);
+    final wps = await dao.getWorkPackages(pid);
+    final allActs = await dao.getActivitiesForProject(pid);
+    final deps = await dao.getDependencies(pid);
     final actionSummary = await _db.actionsDao.getLinkedActionSummary(pid);
 
     final actsByWp = <String, List<TimelineActivity>>{};
@@ -374,7 +399,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     // is local). Falls back to a generic label when the source isn't on
     // this machine (cross-machine: name display is a documented follow-up).
     final projectsById = {
-      for (final p in context.read<ProjectProvider>().projects) p.id: p
+      for (final p in context.read<ProjectProvider>().projects) p.id: p,
     };
     String nameFor(String projectId) =>
         projectsById[projectId]?.name ?? 'Linked project';
@@ -391,22 +416,23 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
             ? (projectsById[pid]?.name ?? 'This programme')
             : nameFor(g.sourceProjectId!);
         final collapsed = _collapsedGroups.contains(g.sourceProjectId ?? '');
-        rows.add(_GroupRow(
+        rows.add(
+          _GroupRow(
             label: label,
             sourceProjectId: g.sourceProjectId,
             wpCount: g.wps.length,
-            collapsed: collapsed));
+            collapsed: collapsed,
+          ),
+        );
         if (collapsed) continue;
       }
       for (final wp in g.wps) {
         rows.add(_WpRow(wp));
-        final wpActs =
-            (actsByWp[wp.id] ?? []).cast<TimelineActivity>();
+        final wpActs = (actsByWp[wp.id] ?? []).cast<TimelineActivity>();
         final ids = {for (final a in wpActs) a.id};
         final tasksByParent = <String, List<TimelineActivity>>{};
         for (final a in wpActs) {
-          if (a.parentActivityId != null &&
-              ids.contains(a.parentActivityId)) {
+          if (a.parentActivityId != null && ids.contains(a.parentActivityId)) {
             tasksByParent.putIfAbsent(a.parentActivityId!, () => []).add(a);
           }
         }
@@ -445,14 +471,14 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
 
     if (mounted) {
       setState(() {
-        _header  = header;
-        _wps     = wps;
-        _acts    = actsByWp;
-        _actMap  = actMap;
-        _deps    = deps;
-        _months  = months;
-        _rows          = rows;
-        _loading       = false;
+        _header = header;
+        _wps = wps;
+        _acts = actsByWp;
+        _actMap = actMap;
+        _deps = deps;
+        _months = months;
+        _rows = rows;
+        _loading = false;
         _actionSummary = actionSummary;
         _inheritsVariance = inherits;
       });
@@ -475,21 +501,21 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
   /// Columns for the current mode: each entry has a label + inclusive month range.
   List<({String label, int start, int end})> get _ganttCols {
     if (!_quarterMode) {
-      return List.generate(_months.length, (i) =>
-          (label: _months[i], start: i, end: i));
+      return List.generate(
+        _months.length,
+        (i) => (label: _months[i], start: i, end: i),
+      );
     }
     final qs = <({String label, int start, int end})>[];
     for (int i = 0; i < _months.length; i += 3) {
       final last = min(i + 2, _months.length - 1);
-      final label = last > i
-          ? '${_months[i]}–${_months[last]}'
-          : _months[i];
+      final label = last > i ? '${_months[i]}–${_months[last]}' : _months[i];
       qs.add((label: label, start: i, end: last));
     }
     return qs;
   }
 
-  void _zoomIn()  => setState(() => _cellW = (_cellW * 1.3).clamp(24.0, 200.0));
+  void _zoomIn() => setState(() => _cellW = (_cellW * 1.3).clamp(24.0, 200.0));
   void _zoomOut() => setState(() => _cellW = (_cellW / 1.3).clamp(24.0, 200.0));
   void _fitToScreen() {
     final cols = _ganttCols.length;
@@ -506,7 +532,8 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
       _inlineNameCtrl.text = act.name;
     });
     WidgetsBinding.instance.addPostFrameCallback(
-        (_) => _inlineNameFocus.requestFocus());
+      (_) => _inlineNameFocus.requestFocus(),
+    );
   }
 
   Future<void> _commitInlineName(TimelineActivity act) async {
@@ -532,8 +559,8 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     setState(() {
       _draggingActId = act.id;
       _dragOrigStart = act.startMonth ?? 0;
-      _dragOrigEnd   = act.endMonth ?? (act.startMonth ?? 0);
-      _dragAccumPx   = 0;
+      _dragOrigEnd = act.endMonth ?? (act.startMonth ?? 0);
+      _dragAccumPx = 0;
       _dragMonthDelta = 0;
     });
   }
@@ -547,14 +574,17 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
 
   Future<void> _onDragEnd() async {
     if (_draggingActId == null) return;
-    final id    = _draggingActId!;
+    final id = _draggingActId!;
     final delta = _dragMonthDelta;
-    final maxM  = _months.length - 1;
-    final dur   = _dragOrigEnd - _dragOrigStart;
+    final maxM = _months.length - 1;
+    final dur = _dragOrigEnd - _dragOrigStart;
     final newStart = (_dragOrigStart + delta).clamp(0, maxM);
-    final newEnd   = (newStart + dur).clamp(0, maxM);
+    final newEnd = (newStart + dur).clamp(0, maxM);
     if (delta == 0) {
-      setState(() { _draggingActId = null; _dragMonthDelta = 0; });
+      setState(() {
+        _draggingActId = null;
+        _dragMonthDelta = 0;
+      });
       return;
     }
     // Keep _draggingActId set until the reload completes so the bar continues
@@ -576,10 +606,10 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
       id,
       TimelineActivitiesCompanion(
         startMonth: Value(newStart),
-        endMonth:   Value(newEnd),
-        startDate:  Value(shiftDate(act?.startDate)),
-        endDate:    Value(shiftDate(act?.endDate)),
-        updatedAt:  Value(DateTime.now()),
+        endMonth: Value(newEnd),
+        startDate: Value(shiftDate(act?.startDate)),
+        endDate: Value(shiftDate(act?.endDate)),
+        updatedAt: Value(DateTime.now()),
       ),
     );
     // Dragging a parent moves the whole subtree: its commitment window
@@ -596,16 +626,19 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
         t.id,
         TimelineActivitiesCompanion(
           startMonth: Value(ts),
-          endMonth:   Value(te),
-          startDate:  Value(shiftDate(t.startDate)),
-          endDate:    Value(shiftDate(t.endDate)),
-          updatedAt:  Value(DateTime.now()),
+          endMonth: Value(te),
+          startDate: Value(shiftDate(t.startDate)),
+          endDate: Value(shiftDate(t.endDate)),
+          updatedAt: Value(DateTime.now()),
         ),
       );
     }
     await _load();
     if (!mounted) return;
-    setState(() { _draggingActId = null; _dragMonthDelta = 0; });
+    setState(() {
+      _draggingActId = null;
+      _dragMonthDelta = 0;
+    });
     await _repushWp(_actMap[id]?.workPackageId);
   }
 
@@ -628,8 +661,8 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
   /// for any in-progress drag preview.
   (int?, int?) _effectiveMonths(TimelineActivity act) {
     if (_draggingActId == act.id) {
-      final maxM  = _months.length - 1;
-      final dur   = _dragOrigEnd - _dragOrigStart;
+      final maxM = _months.length - 1;
+      final dur = _dragOrigEnd - _dragOrigStart;
       final s = (_dragOrigStart + _dragMonthDelta).clamp(0, maxM);
       final e = (s + dur).clamp(0, maxM);
       return (s, e);
@@ -648,8 +681,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
   (int, int)? _cascadeWpMonths(TimelineWorkPackage wp) {
     if (_months.isEmpty) return null;
     final maxM = _months.length - 1;
-    (int, int) ordered(int a, int b) =>
-        (a < b ? a : b, a < b ? b : a);
+    (int, int) ordered(int a, int b) => (a < b ? a : b, a < b ? b : a);
 
     final startIso = wp.cascadeStartDate;
     final endIso = wp.cascadeEndDate;
@@ -684,19 +716,24 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: KColors.surface,
-        title: const Text('Set Baseline',
-            style: TextStyle(color: KColors.text, fontSize: 14)),
+        title: const Text(
+          'Set Baseline',
+          style: TextStyle(color: KColors.text, fontSize: 14),
+        ),
         content: const Text(
-            'Snapshot the current plan as the baseline.\n'
-            'Any future changes will show as variance (ghost bars).',
-            style: TextStyle(color: KColors.textDim, fontSize: 13)),
+          'Snapshot the current plan as the baseline.\n'
+          'Any future changes will show as variance (ghost bars).',
+          style: TextStyle(color: KColors.textDim, fontSize: 13),
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Set Baseline')),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Set Baseline'),
+          ),
         ],
       ),
     );
@@ -746,7 +783,9 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     await showDialog(
       context: context,
       builder: (_) => _HeaderSettingsDialog(
-        db: _db, projectId: widget.projectId, header: _header,
+        db: _db,
+        projectId: widget.projectId,
+        header: _header,
       ),
     );
     _load();
@@ -756,7 +795,9 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     await showDialog(
       context: context,
       builder: (_) => _WpFormDialog(
-        db: _db, projectId: widget.projectId, sortOrder: _wps.length,
+        db: _db,
+        projectId: widget.projectId,
+        sortOrder: _wps.length,
       ),
     );
     _load();
@@ -772,8 +813,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     final at = ids.indexOf(targetId);
     if (at == -1) return;
     ids.insert(at, srcId);
-    await _db.programmeGanttDao
-        .reorderWorkPackages(widget.projectId, ids);
+    await _db.programmeGanttDao.reorderWorkPackages(widget.projectId, ids);
     await _load();
   }
 
@@ -781,7 +821,10 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
   /// [targetId]. Both ids MUST belong to the same WP — callers gate this
   /// via the DragTarget's onWillAccept. No-op when src == target.
   Future<void> _moveActivityAbove(
-      String wpId, String srcId, String targetId) async {
+    String wpId,
+    String srcId,
+    String targetId,
+  ) async {
     if (srcId == targetId) return;
     final siblings = (_acts[wpId] ?? const <TimelineActivity>[])
         .map((a) => a.id)
@@ -790,8 +833,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     final at = siblings.indexOf(targetId);
     if (at == -1) return;
     siblings.insert(at, srcId);
-    await _db.programmeGanttDao
-        .reorderActivitiesWithinWp(wpId, siblings);
+    await _db.programmeGanttDao.reorderActivitiesWithinWp(wpId, siblings);
     await _load();
     await _repushWp(wpId);
   }
@@ -800,14 +842,20 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     await showDialog(
       context: context,
       builder: (_) => _WpFormDialog(
-        db: _db, projectId: widget.projectId, wp: wp, sortOrder: wp.sortOrder,
+        db: _db,
+        projectId: widget.projectId,
+        wp: wp,
+        sortOrder: wp.sortOrder,
       ),
     );
     _load();
   }
 
-  Future<void> _openAddActivity(TimelineWorkPackage wp,
-      {int? startMonth, String? parentActivityId}) async {
+  Future<void> _openAddActivity(
+    TimelineWorkPackage wp, {
+    int? startMonth,
+    String? parentActivityId,
+  }) async {
     await showDialog(
       context: context,
       builder: (_) => _ActivityFormDialog(
@@ -826,8 +874,13 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     await _repushWp(wp.id);
   }
 
-  Future<void> _openEditActivity(TimelineActivity act, TimelineWorkPackage wp) async {
-    await showDialog(
+  Future<void> _openEditActivity(
+    TimelineActivity act,
+    TimelineWorkPackage wp,
+  ) async {
+    // The dialog pops with an activity id when the user clicks through a
+    // predecessor or a gated row; that one opens next.
+    final next = await showDialog<String>(
       context: context,
       builder: (_) => _ActivityFormDialog(
         db: _db,
@@ -841,6 +894,14 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     );
     await _load();
     await _repushWp(wp.id);
+    if (next == null || !mounted) return;
+    final target = _actMap[next];
+    if (target == null) return;
+    final targetWp = _wps
+        .where((w) => w.id == target.workPackageId)
+        .firstOrNull;
+    if (targetWp == null) return;
+    await _openEditActivity(target, targetWp);
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────
@@ -865,33 +926,50 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
             const _FitIntent(),
         const SingleActivator(LogicalKeyboardKey.digit0, control: true):
             const _FitIntent(),
-        const SingleActivator(LogicalKeyboardKey.keyE,
-            meta: true, shift: true):   const _ExpandIntent(),
-        const SingleActivator(LogicalKeyboardKey.keyE,
-            control: true, shift: true): const _ExpandIntent(),
-        const SingleActivator(LogicalKeyboardKey.keyF,
-            meta: true, shift: true):   const _PresentationIntent(),
-        const SingleActivator(LogicalKeyboardKey.keyF,
-            control: true, shift: true): const _PresentationIntent(),
-        const SingleActivator(LogicalKeyboardKey.f11): const _PresentationIntent(),
+        const SingleActivator(LogicalKeyboardKey.keyE, meta: true, shift: true):
+            const _ExpandIntent(),
+        const SingleActivator(
+          LogicalKeyboardKey.keyE,
+          control: true,
+          shift: true,
+        ): const _ExpandIntent(),
+        const SingleActivator(LogicalKeyboardKey.keyF, meta: true, shift: true):
+            const _PresentationIntent(),
+        const SingleActivator(
+          LogicalKeyboardKey.keyF,
+          control: true,
+          shift: true,
+        ): const _PresentationIntent(),
+        const SingleActivator(LogicalKeyboardKey.f11):
+            const _PresentationIntent(),
       },
       child: Actions(
         actions: {
-          _ZoomInIntent:  CallbackAction<_ZoomInIntent>(onInvoke: (_) => _zoomIn()),
-          _ZoomOutIntent: CallbackAction<_ZoomOutIntent>(onInvoke: (_) => _zoomOut()),
-          _FitIntent:     CallbackAction<_FitIntent>(onInvoke: (_) => _fitToScreen()),
-          _ExpandIntent:  CallbackAction<_ExpandIntent>(
-              onInvoke: (_) => widget.onToggleExpanded?.call()),
+          _ZoomInIntent: CallbackAction<_ZoomInIntent>(
+            onInvoke: (_) => _zoomIn(),
+          ),
+          _ZoomOutIntent: CallbackAction<_ZoomOutIntent>(
+            onInvoke: (_) => _zoomOut(),
+          ),
+          _FitIntent: CallbackAction<_FitIntent>(
+            onInvoke: (_) => _fitToScreen(),
+          ),
+          _ExpandIntent: CallbackAction<_ExpandIntent>(
+            onInvoke: (_) => widget.onToggleExpanded?.call(),
+          ),
           _PresentationIntent: CallbackAction<_PresentationIntent>(
-              onInvoke: (_) => widget.onTogglePresentation?.call()),
+            onInvoke: (_) => widget.onTogglePresentation?.call(),
+          ),
         },
         child: Focus(
           autofocus: true,
-          child: Column(children: [
-            _buildTopBar(),
-            Expanded(child: _wps.isEmpty
-                ? _buildEmptyState()
-                : _showMilestones
+          child: Column(
+            children: [
+              _buildTopBar(),
+              Expanded(
+                child: _wps.isEmpty
+                    ? _buildEmptyState()
+                    : _showMilestones
                     ? MilestoneTrackerView(
                         wps: _wps,
                         actsByWp: _acts,
@@ -899,8 +977,10 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                         header: _header,
                         onTap: _openEditActivity,
                       )
-                    : _buildGantt()),
-          ]),
+                    : _buildGantt(),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -909,7 +989,8 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
   Widget _buildTopBar() {
     final isProgramme = context.read<ProjectProvider>().isProgramme;
     final planLabel = isProgramme ? 'PROGRAMME PLAN' : 'PROJECT PLAN';
-    final planDesc = 'The delivery schedule. Work packages, activities, '
+    final planDesc =
+        'The delivery schedule. Work packages, activities, '
         'milestones over the ${isProgramme ? 'programme' : 'project'} '
         'lifetime.';
     return Container(
@@ -918,324 +999,423 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: KColors.border)),
       ),
-      child: LayoutBuilder(builder: (ctx, barConstraints) {
-        // Priority shedding: below the threshold the secondary controls
-        // (dependency/critical/baseline/zoom toggles, Configure) fold
-        // into a "⋯" overflow menu instead of relying on the hidden
-        // horizontal scroller — invisible scroll reads as "cut off".
-        final compact = barConstraints.maxWidth < 1150;
-        return Row(children: [
-        // Title block — two lines: label · plan title, description under.
-        // Every text has an ellipsis path so this can never overflow.
-        Flexible(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
+      child: LayoutBuilder(
+        builder: (ctx, barConstraints) {
+          // Priority shedding: below the threshold the secondary controls
+          // (dependency/critical/baseline/zoom toggles, Configure) fold
+          // into a "⋯" overflow menu instead of relying on the hidden
+          // horizontal scroller — invisible scroll reads as "cut off".
+          final compact = barConstraints.maxWidth < 1150;
+          return Row(
             children: [
-              Row(mainAxisSize: MainAxisSize.min, children: [
-                Flexible(
-                  child: Text(planLabel,
+              // Title block — two lines: label · plan title, description under.
+              // Every text has an ellipsis path so this can never overflow.
+              Flexible(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            planLabel,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: KColors.textMuted,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.1,
+                            ),
+                          ),
+                        ),
+                        if (_header?.title != null) ...[
+                          const SizedBox(width: 8),
+                          const Text(
+                            '·',
+                            style: TextStyle(color: KColors.border2),
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              _header!.title!,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: KColors.text,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      planDesc,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                          color: KColors.textMuted, fontSize: 10,
-                          fontWeight: FontWeight.w700, letterSpacing: 0.1)),
+                        color: KColors.textMuted,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
                 ),
-                if (_header?.title != null) ...[
-                  const SizedBox(width: 8),
-                  const Text('·', style: TextStyle(color: KColors.border2)),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: Text(_header!.title!,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            color: KColors.text, fontSize: 13,
-                            fontWeight: FontWeight.w500)),
+              ),
+              const SizedBox(width: 12),
+              // Controls: right-aligned; scroll horizontally when there isn't
+              // room rather than overflowing the bar.
+              Expanded(
+                flex: 3,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    reverse: true,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // View toggle
+                        _ViewToggle(
+                          showMilestones: _showMilestones,
+                          onChanged: (v) => setState(() => _showMilestones = v),
+                        ),
+                        const SizedBox(width: 12),
+                        if (!compact && !_showMilestones) ...[
+                          Tooltip(
+                            message: _showDependencies
+                                ? 'Hide dependency arrows'
+                                : 'Show dependency arrows',
+                            child: GestureDetector(
+                              onTap: () => setState(
+                                () => _showDependencies = !_showDependencies,
+                              ),
+                              child: Container(
+                                width: 28,
+                                height: 28,
+                                decoration: BoxDecoration(
+                                  color: _showDependencies
+                                      ? KColors.amber.withValues(alpha: 0.15)
+                                      : KColors.surface2,
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(
+                                    color: _showDependencies
+                                        ? KColors.amber
+                                        : KColors.border,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.share_outlined,
+                                  size: 13,
+                                  color: _showDependencies
+                                      ? KColors.amber
+                                      : KColors.textMuted,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Tooltip(
+                            message: _criticalPathMode
+                                ? 'Show the full plan'
+                                : 'Critical path mode — fade everything not marked '
+                                      'critical',
+                            child: GestureDetector(
+                              onTap: () => setState(
+                                () => _criticalPathMode = !_criticalPathMode,
+                              ),
+                              child: Container(
+                                width: 28,
+                                height: 28,
+                                decoration: BoxDecoration(
+                                  color: _criticalPathMode
+                                      ? KColors.red.withValues(alpha: 0.15)
+                                      : KColors.surface2,
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(
+                                    color: _criticalPathMode
+                                        ? KColors.red
+                                        : KColors.border,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.route_outlined,
+                                  size: 13,
+                                  color: _criticalPathMode
+                                      ? KColors.red
+                                      : KColors.textMuted,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          // Baseline controls
+                          if (_hasBaseline) ...[
+                            Tooltip(
+                              message: _showBaseline
+                                  ? 'Hide baseline ghost bars'
+                                  : 'Show baseline ghost bars',
+                              child: GestureDetector(
+                                onTap: () => setState(
+                                  () => _showBaseline = !_showBaseline,
+                                ),
+                                child: Container(
+                                  width: 28,
+                                  height: 28,
+                                  decoration: BoxDecoration(
+                                    color: _showBaseline
+                                        ? KColors.phosphor.withValues(
+                                            alpha: 0.15,
+                                          )
+                                        : KColors.surface2,
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(
+                                      color: _showBaseline
+                                          ? KColors.phosphor
+                                          : KColors.border,
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    Icons.compare_arrows_outlined,
+                                    size: 13,
+                                    color: _showBaseline
+                                        ? KColors.phosphor
+                                        : KColors.textMuted,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Tooltip(
+                              message: 'Clear baseline',
+                              child: GestureDetector(
+                                onTap: _clearBaseline,
+                                child: Container(
+                                  width: 28,
+                                  height: 28,
+                                  decoration: BoxDecoration(
+                                    color: KColors.surface2,
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(color: KColors.border),
+                                  ),
+                                  child: const Icon(
+                                    Icons.bookmark_remove_outlined,
+                                    size: 13,
+                                    color: KColors.textMuted,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                          ],
+                          Tooltip(
+                            message: 'Set current plan as baseline',
+                            child: GestureDetector(
+                              onTap: _settingBaseline ? null : _setBaseline,
+                              child: Container(
+                                height: 28,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: KColors.surface2,
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(color: KColors.border),
+                                ),
+                                alignment: Alignment.center,
+                                child: _settingBaseline
+                                    ? const SizedBox(
+                                        width: 10,
+                                        height: 10,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 1.5,
+                                        ),
+                                      )
+                                    : const Text(
+                                        'Baseline',
+                                        style: TextStyle(
+                                          color: KColors.textMuted,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Tooltip(
+                            message:
+                                'Re-plan slipped work: slide not-started activities '
+                                'whose start has passed forward to today and review each move',
+                            child: GestureDetector(
+                              onTap: _openReplan,
+                              child: Container(
+                                height: 28,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: KColors.surface2,
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(color: KColors.border),
+                                ),
+                                alignment: Alignment.center,
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.update,
+                                      size: 13,
+                                      color: KColors.amber,
+                                    ),
+                                    SizedBox(width: 5),
+                                    Text(
+                                      'Re-plan',
+                                      style: TextStyle(
+                                        color: KColors.textMuted,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Tooltip(
+                            message:
+                                'Pull in from the registers: open actions, decisions, '
+                                'dependencies and risks that no plan activity knows about',
+                            child: GestureDetector(
+                              onTap: _openPlanGaps,
+                              child: Container(
+                                height: 28,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: KColors.surface2,
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(color: KColors.border),
+                                ),
+                                alignment: Alignment.center,
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.move_to_inbox_outlined,
+                                      size: 13,
+                                      color: KColors.amber,
+                                    ),
+                                    SizedBox(width: 5),
+                                    Text(
+                                      'Pull in',
+                                      style: TextStyle(
+                                        color: KColors.textMuted,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Tooltip(
+                            message:
+                                'Review my plan: order, gaps and missing milestones, '
+                                'from the plan\'s own arrows and then from the model',
+                            child: GestureDetector(
+                              onTap: _openPlanReview,
+                              child: Container(
+                                height: 28,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: KColors.surface2,
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(color: KColors.border),
+                                ),
+                                alignment: Alignment.center,
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.fact_check_outlined,
+                                      size: 13,
+                                      color: KColors.amber,
+                                    ),
+                                    SizedBox(width: 5),
+                                    Text(
+                                      'Review',
+                                      style: TextStyle(
+                                        color: KColors.textMuted,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          _ZoomControls(
+                            onZoomIn: _zoomIn,
+                            onZoomOut: _zoomOut,
+                            onFit: _fitToScreen,
+                            quarterMode: _quarterMode,
+                            onToggleQuarter: (v) => setState(() {
+                              _quarterMode = v;
+                              _fitToScreen();
+                            }),
+                          ),
+                          const SizedBox(width: 12),
+                        ],
+                        if (compact) ...[
+                          _overflowMenuButton(),
+                          const SizedBox(width: 8),
+                        ] else ...[
+                          TextButton.icon(
+                            onPressed: _openHeaderSettings,
+                            icon: const Icon(Icons.tune_outlined, size: 14),
+                            label: const Text(
+                              'Configure',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        ElevatedButton.icon(
+                          onPressed: _openAddWp,
+                          icon: const Icon(Icons.add, size: 14),
+                          label: const Text(
+                            'Work Package',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // Expand / presentation toggles
+                        _LayoutModeButtons(
+                          isExpanded: widget.isExpanded,
+                          isPresentation: widget.isPresentation,
+                          onToggleExpanded: widget.onToggleExpanded,
+                          onTogglePresentation: widget.onTogglePresentation,
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-              ]),
-              const SizedBox(height: 3),
-              Text(
-                planDesc,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                    color: KColors.textMuted, fontSize: 11),
+                ),
               ),
             ],
-          ),
-        ),
-        const SizedBox(width: 12),
-        // Controls: right-aligned; scroll horizontally when there isn't
-        // room rather than overflowing the bar.
-        Expanded(
-          flex: 3,
-          child: Align(
-            alignment: Alignment.centerRight,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              reverse: true,
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-        // View toggle
-        _ViewToggle(
-          showMilestones: _showMilestones,
-          onChanged: (v) => setState(() => _showMilestones = v),
-        ),
-        const SizedBox(width: 12),
-        if (!compact && !_showMilestones) ...[
-          Tooltip(
-            message: _showDependencies
-                ? 'Hide dependency arrows'
-                : 'Show dependency arrows',
-            child: GestureDetector(
-              onTap: () =>
-                  setState(() => _showDependencies = !_showDependencies),
-              child: Container(
-                width: 28, height: 28,
-                decoration: BoxDecoration(
-                  color: _showDependencies
-                      ? KColors.amber.withValues(alpha: 0.15)
-                      : KColors.surface2,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(
-                      color: _showDependencies
-                          ? KColors.amber
-                          : KColors.border),
-                ),
-                child: Icon(Icons.share_outlined,
-                    size: 13,
-                    color: _showDependencies
-                        ? KColors.amber
-                        : KColors.textMuted),
-              ),
-            ),
-          ),
-          const SizedBox(width: 6),
-          Tooltip(
-            message: _criticalPathMode
-                ? 'Show the full plan'
-                : 'Critical path mode — fade everything not marked '
-                    'critical',
-            child: GestureDetector(
-              onTap: () => setState(
-                  () => _criticalPathMode = !_criticalPathMode),
-              child: Container(
-                width: 28, height: 28,
-                decoration: BoxDecoration(
-                  color: _criticalPathMode
-                      ? KColors.red.withValues(alpha: 0.15)
-                      : KColors.surface2,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(
-                      color: _criticalPathMode
-                          ? KColors.red
-                          : KColors.border),
-                ),
-                child: Icon(Icons.route_outlined,
-                    size: 13,
-                    color: _criticalPathMode
-                        ? KColors.red
-                        : KColors.textMuted),
-              ),
-            ),
-          ),
-          const SizedBox(width: 6),
-          // Baseline controls
-          if (_hasBaseline) ...[
-            Tooltip(
-              message: _showBaseline
-                  ? 'Hide baseline ghost bars'
-                  : 'Show baseline ghost bars',
-              child: GestureDetector(
-                onTap: () =>
-                    setState(() => _showBaseline = !_showBaseline),
-                child: Container(
-                  width: 28, height: 28,
-                  decoration: BoxDecoration(
-                    color: _showBaseline
-                        ? KColors.phosphor.withValues(alpha: 0.15)
-                        : KColors.surface2,
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(
-                        color: _showBaseline
-                            ? KColors.phosphor
-                            : KColors.border),
-                  ),
-                  child: Icon(Icons.compare_arrows_outlined,
-                      size: 13,
-                      color: _showBaseline
-                          ? KColors.phosphor
-                          : KColors.textMuted),
-                ),
-              ),
-            ),
-            Tooltip(
-              message: 'Clear baseline',
-              child: GestureDetector(
-                onTap: _clearBaseline,
-                child: Container(
-                  width: 28, height: 28,
-                  decoration: BoxDecoration(
-                    color: KColors.surface2,
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: KColors.border),
-                  ),
-                  child: const Icon(Icons.bookmark_remove_outlined,
-                      size: 13, color: KColors.textMuted),
-                ),
-              ),
-            ),
-            const SizedBox(width: 6),
-          ],
-          Tooltip(
-            message: 'Set current plan as baseline',
-            child: GestureDetector(
-              onTap: _settingBaseline ? null : _setBaseline,
-              child: Container(
-                height: 28,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(
-                  color: KColors.surface2,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: KColors.border),
-                ),
-                alignment: Alignment.center,
-                child: _settingBaseline
-                    ? const SizedBox(
-                        width: 10, height: 10,
-                        child: CircularProgressIndicator(strokeWidth: 1.5))
-                    : const Text('Baseline',
-                        style: TextStyle(
-                            color: KColors.textMuted,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500)),
-              ),
-            ),
-          ),
-          const SizedBox(width: 6),
-          Tooltip(
-            message: 'Re-plan slipped work: slide not-started activities '
-                'whose start has passed forward to today and review each move',
-            child: GestureDetector(
-              onTap: _openReplan,
-              child: Container(
-                height: 28,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(
-                  color: KColors.surface2,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: KColors.border),
-                ),
-                alignment: Alignment.center,
-                child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(Icons.update, size: 13, color: KColors.amber),
-                  SizedBox(width: 5),
-                  Text('Re-plan',
-                      style: TextStyle(
-                          color: KColors.textMuted,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500)),
-                ]),
-              ),
-            ),
-          ),
-          const SizedBox(width: 6),
-          Tooltip(
-            message: 'Pull in from the registers: open actions, decisions, '
-                'dependencies and risks that no plan activity knows about',
-            child: GestureDetector(
-              onTap: _openPlanGaps,
-              child: Container(
-                height: 28,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(
-                  color: KColors.surface2,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: KColors.border),
-                ),
-                alignment: Alignment.center,
-                child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(Icons.move_to_inbox_outlined, size: 13, color: KColors.amber),
-                  SizedBox(width: 5),
-                  Text('Pull in',
-                      style: TextStyle(
-                          color: KColors.textMuted,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500)),
-                ]),
-              ),
-            ),
-          ),
-          const SizedBox(width: 6),
-          Tooltip(
-            message: 'Review my plan: order, gaps and missing milestones, '
-                'from the plan\'s own arrows and then from the model',
-            child: GestureDetector(
-              onTap: _openPlanReview,
-              child: Container(
-                height: 28,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(
-                  color: KColors.surface2,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: KColors.border),
-                ),
-                alignment: Alignment.center,
-                child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(Icons.fact_check_outlined, size: 13, color: KColors.amber),
-                  SizedBox(width: 5),
-                  Text('Review',
-                      style: TextStyle(
-                          color: KColors.textMuted,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500)),
-                ]),
-              ),
-            ),
-          ),
-          const SizedBox(width: 6),
-          _ZoomControls(
-            onZoomIn: _zoomIn,
-            onZoomOut: _zoomOut,
-            onFit: _fitToScreen,
-            quarterMode: _quarterMode,
-            onToggleQuarter: (v) => setState(() {
-              _quarterMode = v;
-              _fitToScreen();
-            }),
-          ),
-          const SizedBox(width: 12),
-        ],
-        if (compact) ...[
-          _overflowMenuButton(),
-          const SizedBox(width: 8),
-        ] else ...[
-          TextButton.icon(
-            onPressed: _openHeaderSettings,
-            icon: const Icon(Icons.tune_outlined, size: 14),
-            label: const Text('Configure', style: TextStyle(fontSize: 12)),
-          ),
-          const SizedBox(width: 8),
-        ],
-        ElevatedButton.icon(
-          onPressed: _openAddWp,
-          icon: const Icon(Icons.add, size: 14),
-          label: const Text('Work Package', style: TextStyle(fontSize: 12)),
-        ),
-        const SizedBox(width: 8),
-        // Expand / presentation toggles
-        _LayoutModeButtons(
-          isExpanded: widget.isExpanded,
-          isPresentation: widget.isPresentation,
-          onToggleExpanded: widget.onToggleExpanded,
-          onTogglePresentation: widget.onTogglePresentation,
-        ),
-              ]),
-            ),
-          ),
-        ),
-      ]);
-      }),
+          );
+        },
+      ),
     );
   }
 
@@ -1253,11 +1433,13 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
       return PopupMenuItem<VoidCallback>(
         value: onTap,
         height: 36,
-        child: Row(children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 10),
-          Text(label, style: TextStyle(color: color, fontSize: 12)),
-        ]),
+        child: Row(
+          children: [
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 10),
+            Text(label, style: TextStyle(color: color, fontSize: 12)),
+          ],
+        ),
       );
     }
 
@@ -1273,8 +1455,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                 ? 'Hide dependency arrows'
                 : 'Show dependency arrows',
             active: _showDependencies,
-            onTap: () =>
-                setState(() => _showDependencies = !_showDependencies),
+            onTap: () => setState(() => _showDependencies = !_showDependencies),
           ),
           item(
             icon: Icons.route_outlined,
@@ -1283,8 +1464,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                 : 'Critical path mode',
             active: _criticalPathMode,
             activeColor: KColors.red,
-            onTap: () =>
-                setState(() => _criticalPathMode = !_criticalPathMode),
+            onTap: () => setState(() => _criticalPathMode = !_criticalPathMode),
           ),
           if (_hasBaseline) ...[
             item(
@@ -1333,16 +1513,8 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
               _fitToScreen();
             }),
           ),
-          item(
-            icon: Icons.zoom_in,
-            label: 'Zoom in',
-            onTap: _zoomIn,
-          ),
-          item(
-            icon: Icons.zoom_out,
-            label: 'Zoom out',
-            onTap: _zoomOut,
-          ),
+          item(icon: Icons.zoom_in, label: 'Zoom in', onTap: _zoomIn),
+          item(icon: Icons.zoom_out, label: 'Zoom out', onTap: _zoomOut),
           item(
             icon: Icons.fit_screen_outlined,
             label: 'Fit to screen',
@@ -1363,203 +1535,260 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
           borderRadius: BorderRadius.circular(4),
           border: Border.all(color: KColors.border),
         ),
-        child: const Icon(Icons.more_horiz,
-            size: 15, color: KColors.textMuted),
+        child: const Icon(Icons.more_horiz, size: 15, color: KColors.textMuted),
       ),
     );
   }
 
   Widget _buildEmptyState() {
     return Center(
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        const Icon(Icons.table_chart_outlined, size: 48, color: KColors.textMuted),
-        const SizedBox(height: 16),
-        const Text('No work packages yet',
-            style: TextStyle(color: KColors.text, fontSize: 15, fontWeight: FontWeight.w500)),
-        const SizedBox(height: 6),
-        const Text(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.table_chart_outlined,
+            size: 48,
+            color: KColors.textMuted,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'No work packages yet',
+            style: TextStyle(
+              color: KColors.text,
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
             'Add a work package to start building the programme Gantt.',
-            style: TextStyle(color: KColors.textDim, fontSize: 12)),
-        const SizedBox(height: 20),
-        ElevatedButton.icon(
-          onPressed: _openAddWp,
-          icon: const Icon(Icons.add, size: 14),
-          label: const Text('Add Work Package'),
-        ),
-        const SizedBox(height: 10),
-        TextButton.icon(
-          onPressed: _openHeaderSettings,
-          icon: const Icon(Icons.tune_outlined, size: 14),
-          label: const Text('Configure months / header',
-              style: TextStyle(fontSize: 12)),
-        ),
-      ]),
+            style: TextStyle(color: KColors.textDim, fontSize: 12),
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            onPressed: _openAddWp,
+            icon: const Icon(Icons.add, size: 14),
+            label: const Text('Add Work Package'),
+          ),
+          const SizedBox(height: 10),
+          TextButton.icon(
+            onPressed: _openHeaderSettings,
+            icon: const Icon(Icons.tune_outlined, size: 14),
+            label: const Text(
+              'Configure months / header',
+              style: TextStyle(fontSize: 12),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildGantt() {
-    final cols      = _ganttCols;
+    final cols = _ganttCols;
     final totalCellW = cols.length * _cellW;
 
-    return LayoutBuilder(builder: (ctx, constraints) {
-      // Capture available width for fit-to-screen
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final w = constraints.maxWidth - _kNameW;
-        if (w != _bodyWidth) _bodyWidth = w;
-      });
+    return LayoutBuilder(
+      builder: (ctx, constraints) {
+        // Capture available width for fit-to-screen
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final w = constraints.maxWidth - _kNameW;
+          if (w != _bodyWidth) _bodyWidth = w;
+        });
 
-      return Column(children: [
-        // ── Sticky month/quarter header row ──────────────────────────────
-        SizedBox(
-          height: _kHeaderH,
-          child: Row(children: [
-            // Corner cell
-            Container(
-              width: _kNameW, height: _kHeaderH,
-              decoration: const BoxDecoration(
-                color: KColors.surface2,
-                border: Border(
-                  right: BorderSide(color: KColors.border),
-                  bottom: BorderSide(color: KColors.border),
-                ),
-              ),
-              alignment: Alignment.centerLeft,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: const Row(children: [
-                Expanded(
-                  child: Text('WORK PACKAGE / ACTIVITY',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                          color: KColors.textMuted, fontSize: 10,
-                          fontWeight: FontWeight.w700, letterSpacing: 0.1)),
-                ),
-                SizedBox(
-                  width: _kStatusW,
-                  child: Text('STATUS',
-                      style: TextStyle(
-                          color: KColors.textMuted, fontSize: 10,
-                          fontWeight: FontWeight.w700, letterSpacing: 0.1)),
-                ),
-              ]),
-            ),
-            // Column header cells
-            Expanded(child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              controller: _horizHeader,
-              physics: const NeverScrollableScrollPhysics(),
+        return Column(
+          children: [
+            // ── Sticky month/quarter header row ──────────────────────────────
+            SizedBox(
+              height: _kHeaderH,
               child: Row(
-                children: List.generate(cols.length,
-                    (i) => _buildColumnHeader(cols[i])),
+                children: [
+                  // Corner cell
+                  Container(
+                    width: _kNameW,
+                    height: _kHeaderH,
+                    decoration: const BoxDecoration(
+                      color: KColors.surface2,
+                      border: Border(
+                        right: BorderSide(color: KColors.border),
+                        bottom: BorderSide(color: KColors.border),
+                      ),
+                    ),
+                    alignment: Alignment.centerLeft,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: const Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'WORK PACKAGE / ACTIVITY',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: KColors.textMuted,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.1,
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: _kStatusW,
+                          child: Text(
+                            'STATUS',
+                            style: TextStyle(
+                              color: KColors.textMuted,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.1,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Column header cells
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      controller: _horizHeader,
+                      physics: const NeverScrollableScrollPhysics(),
+                      child: Row(
+                        children: List.generate(
+                          cols.length,
+                          (i) => _buildColumnHeader(cols[i]),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            )),
-          ]),
-        ),
-
-        // ── Body: frozen name column + scrollable cell grid ───────────────
-        Expanded(child: Row(children: [
-          // Frozen name column
-          SizedBox(
-            width: _kNameW,
-            child: ListView.builder(
-              controller: _vertNames,
-              itemCount: _rows.length,
-              itemBuilder: (ctx2, i) =>
-                  _fadeNonCritical(_rows[i], _buildNameCell(_rows[i])),
             ),
-          ),
-          // Scrollable cell area + dependency overlay
-          Expanded(
-            child: Stack(children: [
-              Listener(
-                onPointerSignal: (event) {
-                  if (event is PointerScrollEvent) {
-                    final dx = event.scrollDelta.dx;
-                    final dy = event.scrollDelta.dy;
-                    // Trackpads pan sideways natively (dx); mouse wheels
-                    // only emit dy, so Shift+wheel maps to horizontal —
-                    // otherwise a mouse has no way to reach later months.
-                    final horizontalIntent = dx.abs() > dy.abs()
-                        ? dx
-                        : (HardwareKeyboard.instance.isShiftPressed
-                            ? dy
-                            : 0.0);
-                    if (horizontalIntent != 0 && _horizBody.hasClients) {
-                      try {
-                        _horizBody.jumpTo(
-                          (_horizBody.offset + horizontalIntent)
-                              .clamp(0.0, _horizBody.position.maxScrollExtent),
-                        );
-                      } catch (_) {}
-                    }
-                  }
-                },
-                // Always-visible horizontal scrollbar — the grid is
-                // almost always wider than the viewport, and without a
-                // visible thumb a mouse user can't tell it pans at all.
-                child: Scrollbar(
-                  controller: _horizBody,
-                  thumbVisibility: true,
-                  child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  controller: _horizBody,
-                  child: SizedBox(
-                    width: totalCellW,
+
+            // ── Body: frozen name column + scrollable cell grid ───────────────
+            Expanded(
+              child: Row(
+                children: [
+                  // Frozen name column
+                  SizedBox(
+                    width: _kNameW,
                     child: ListView.builder(
-                      controller: _vertBody,
+                      controller: _vertNames,
                       itemCount: _rows.length,
-                      itemBuilder: (ctx2, i) => _fadeNonCritical(
-                          _rows[i], _buildCellRow(_rows[i], cols)),
+                      itemBuilder: (ctx2, i) =>
+                          _fadeNonCritical(_rows[i], _buildNameCell(_rows[i])),
                     ),
                   ),
+                  // Scrollable cell area + dependency overlay
+                  Expanded(
+                    child: Stack(
+                      children: [
+                        Listener(
+                          onPointerSignal: (event) {
+                            if (event is PointerScrollEvent) {
+                              final dx = event.scrollDelta.dx;
+                              final dy = event.scrollDelta.dy;
+                              // Trackpads pan sideways natively (dx); mouse wheels
+                              // only emit dy, so Shift+wheel maps to horizontal —
+                              // otherwise a mouse has no way to reach later months.
+                              final horizontalIntent = dx.abs() > dy.abs()
+                                  ? dx
+                                  : (HardwareKeyboard.instance.isShiftPressed
+                                        ? dy
+                                        : 0.0);
+                              if (horizontalIntent != 0 &&
+                                  _horizBody.hasClients) {
+                                try {
+                                  _horizBody.jumpTo(
+                                    (_horizBody.offset + horizontalIntent)
+                                        .clamp(
+                                          0.0,
+                                          _horizBody.position.maxScrollExtent,
+                                        ),
+                                  );
+                                } catch (_) {}
+                              }
+                            }
+                          },
+                          // Always-visible horizontal scrollbar — the grid is
+                          // almost always wider than the viewport, and without a
+                          // visible thumb a mouse user can't tell it pans at all.
+                          child: Scrollbar(
+                            controller: _horizBody,
+                            thumbVisibility: true,
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              controller: _horizBody,
+                              child: SizedBox(
+                                width: totalCellW,
+                                child: ListView.builder(
+                                  controller: _vertBody,
+                                  itemCount: _rows.length,
+                                  itemBuilder: (ctx2, i) => _fadeNonCritical(
+                                    _rows[i],
+                                    _buildCellRow(_rows[i], cols),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Dependency arrows overlay. ClipRect is load-bearing:
+                        // the painter positions arrows with scroll offsets, so a
+                        // scrolled-away endpoint yields coordinates outside the
+                        // grid — without the clip those strokes paint over the
+                        // column header and app chrome above.
+                        if (_showDependencies && _deps.isNotEmpty)
+                          IgnorePointer(
+                            child: ClipRect(
+                              child: AnimatedBuilder(
+                                animation: Listenable.merge([
+                                  _horizBody,
+                                  _vertBody,
+                                ]),
+                                builder: (_, __) => CustomPaint(
+                                  painter: _DependencyPainter(
+                                    rows: _rows,
+                                    // Critical-path mode: only arrows between
+                                    // critical activities stay at full strength.
+                                    deps: _criticalPathMode
+                                        ? _deps
+                                              .where(
+                                                (d) =>
+                                                    (_actMap[d.fromActivityId]
+                                                            ?.isCritical ??
+                                                        false) &&
+                                                    (_actMap[d.toActivityId]
+                                                            ?.isCritical ??
+                                                        false),
+                                              )
+                                              .toList()
+                                        : _deps,
+                                    actMap: _actMap,
+                                    scrollX: _horizBody.hasClients
+                                        ? _horizBody.offset
+                                        : 0,
+                                    scrollY: _vertBody.hasClients
+                                        ? _vertBody.offset
+                                        : 0,
+                                    cellW: _cellW,
+                                    quarterMode: _quarterMode,
+                                    hoveredActivityId: _hoveredActivityId,
+                                  ),
+                                  child: const SizedBox.expand(),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
-                ),
+                ],
               ),
-              // Dependency arrows overlay. ClipRect is load-bearing:
-              // the painter positions arrows with scroll offsets, so a
-              // scrolled-away endpoint yields coordinates outside the
-              // grid — without the clip those strokes paint over the
-              // column header and app chrome above.
-              if (_showDependencies && _deps.isNotEmpty)
-                IgnorePointer(
-                  child: ClipRect(
-                    child: AnimatedBuilder(
-                    animation: Listenable.merge([_horizBody, _vertBody]),
-                    builder: (_, __) => CustomPaint(
-                      painter: _DependencyPainter(
-                        rows:        _rows,
-                        // Critical-path mode: only arrows between
-                        // critical activities stay at full strength.
-                        deps: _criticalPathMode
-                            ? _deps
-                                .where((d) =>
-                                    (_actMap[d.fromActivityId]
-                                            ?.isCritical ??
-                                        false) &&
-                                    (_actMap[d.toActivityId]
-                                            ?.isCritical ??
-                                        false))
-                                .toList()
-                            : _deps,
-                        actMap:      _actMap,
-                        scrollX:     _horizBody.hasClients
-                            ? _horizBody.offset : 0,
-                        scrollY:     _vertBody.hasClients
-                            ? _vertBody.offset : 0,
-                        cellW:       _cellW,
-                        quarterMode: _quarterMode,
-                        hoveredActivityId: _hoveredActivityId,
-                      ),
-                      child: const SizedBox.expand(),
-                      ),
-                    ),
-                  ),
-                ),
-            ]),
-          ),
-        ])),
-      ]);
-    });
+            ),
+          ],
+        );
+      },
+    );
   }
 
   // ── Row: name column ──────────────────────────────────────────────────────
@@ -1576,39 +1805,51 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
           _load();
         },
         child: Container(
-        height: _kGroupRowH,
-        padding: const EdgeInsets.only(left: 8, right: 8),
-        decoration: const BoxDecoration(
-          color: KColors.surface2,
-          border: Border(
-            bottom: BorderSide(color: KColors.border),
-            top: BorderSide(color: KColors.border),
-          ),
-        ),
-        child: Row(children: [
-          Icon(row.collapsed ? Icons.chevron_right : Icons.expand_more,
-              size: 13, color: KColors.textDim),
-          const SizedBox(width: 2),
-          Icon(isCascaded ? Icons.link : Icons.workspaces_outlined,
-              size: 12, color: KColors.textDim),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text(
-              row.label.toUpperCase(),
-              style: const TextStyle(
-                  color: KColors.textDim,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.5),
-              overflow: TextOverflow.ellipsis,
+          height: _kGroupRowH,
+          padding: const EdgeInsets.only(left: 8, right: 8),
+          decoration: const BoxDecoration(
+            color: KColors.surface2,
+            border: Border(
+              bottom: BorderSide(color: KColors.border),
+              top: BorderSide(color: KColors.border),
             ),
           ),
-          Text('${row.wpCount}',
-              style: const TextStyle(
+          child: Row(
+            children: [
+              Icon(
+                row.collapsed ? Icons.chevron_right : Icons.expand_more,
+                size: 13,
+                color: KColors.textDim,
+              ),
+              const SizedBox(width: 2),
+              Icon(
+                isCascaded ? Icons.link : Icons.workspaces_outlined,
+                size: 12,
+                color: KColors.textDim,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  row.label.toUpperCase(),
+                  style: const TextStyle(
+                    color: KColors.textDim,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Text(
+                '${row.wpCount}',
+                style: const TextStyle(
                   color: KColors.textMuted,
                   fontSize: 10,
-                  fontWeight: FontWeight.w600)),
-        ]),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -1636,43 +1877,48 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
               ),
             ),
             padding: const EdgeInsets.only(left: 4, right: 6),
-            child: Row(children: [
-              if (isCascaded)
-                // Reserve the same width as the drag handle would
-                // occupy so cascaded + native rows stay aligned.
-                const SizedBox(width: 16)
-              else
-                _DragHandle(
-                  payload: payload,
-                  feedbackLabel: row.wp.shortCode != null
-                      ? '${row.wp.shortCode} — ${row.wp.name}'
-                      : row.wp.name,
-                  colour: c,
+            child: Row(
+              children: [
+                if (isCascaded)
+                  // Reserve the same width as the drag handle would
+                  // occupy so cascaded + native rows stay aligned.
+                  const SizedBox(width: 16)
+                else
+                  _DragHandle(
+                    payload: payload,
+                    feedbackLabel: row.wp.shortCode != null
+                        ? '${row.wp.shortCode} — ${row.wp.name}'
+                        : row.wp.name,
+                    colour: c,
+                  ),
+                Expanded(
+                  child: Text(
+                    row.wp.shortCode != null
+                        ? '${row.wp.shortCode} — ${row.wp.name}'
+                        : row.wp.name,
+                    style: TextStyle(
+                      color: c,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-              Expanded(
-                child: Text(
-                  row.wp.shortCode != null
-                      ? '${row.wp.shortCode} — ${row.wp.name}'
-                      : row.wp.name,
-                  style: TextStyle(
-                      color: c, fontSize: 11, fontWeight: FontWeight.w700),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              if (isCascaded) ...[
-                _CascadedFromTag(sourceProjectId: row.wp.sourceProjectId!),
+                if (isCascaded) ...[
+                  _CascadedFromTag(sourceProjectId: row.wp.sourceProjectId!),
+                  const SizedBox(width: 4),
+                ],
+                _RagDot(row.wp.ragStatus),
                 const SizedBox(width: 4),
+                if (!isCascaded)
+                  _RowIconButton(
+                    icon: Icons.add_circle_outline,
+                    tooltip: 'Add activity',
+                    color: c,
+                    onTap: () => _openAddActivity(row.wp),
+                  ),
               ],
-              _RagDot(row.wp.ragStatus),
-              const SizedBox(width: 4),
-              if (!isCascaded)
-                _RowIconButton(
-                  icon: Icons.add_circle_outline,
-                  tooltip: 'Add activity',
-                  color: c,
-                  onTap: () => _openAddActivity(row.wp),
-                ),
-            ]),
+            ),
           ),
         ),
       );
@@ -1682,12 +1928,12 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     final act = row.act;
     final c = _wpColor(row.wp.colourTheme);
     final typeIcon = switch (act.activityType) {
-      'milestone'          => '◆',
-      'hard_deadline'      => '⚠',
-      'gate'               => '◈',
-      'ongoing'            => '↔',
-      'dependency_marker'  => '→',
-      _                    => null,
+      'milestone' => '◆',
+      'hard_deadline' => '⚠',
+      'gate' => '◈',
+      'ongoing' => '↔',
+      'dependency_marker' => '→',
+      _ => null,
     };
 
     final isEditing = _editingNameId == act.id;
@@ -1710,8 +1956,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
           p.kind == payload.kind &&
           p.parentWpId == payload.parentWpId &&
           p.id != act.id,
-      onAccept: (p) =>
-          _moveActivityAbove(row.wp.id, p.id, act.id),
+      onAccept: (p) => _moveActivityAbove(row.wp.id, p.id, act.id),
       child: MouseRegion(
         onEnter: (_) {
           if (_hoveredActivityId != act.id) {
@@ -1724,179 +1969,206 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
           }
         },
         child: Container(
-      height: _kRowH,
-      clipBehavior: Clip.hardEdge,
-      decoration: BoxDecoration(
-        color: KColors.surface,
-        border: Border(
-          bottom: BorderSide(color: KColors.border.withValues(alpha: 0.4)),
-        ),
-      ),
-      child: Row(children: [
-        // Drag handle in the indent gutter — keeps the visual indent
-        // intact (handle replaces what was a SizedBox of similar width)
-        // while making the row reorderable.
-        if (isCascaded)
-          const SizedBox(width: 14)
-        else
-          _DragHandle(
-            payload: payload,
-            feedbackLabel: act.name,
-            colour: c,
-            // Activity rows are denser so a slightly smaller hit area is
-            // fine; the gutter is only 14 px wide.
-            width: 14,
-          ),
-        // WBS indent: tasks sit one level deeper than activities.
-        if (row.isTask) const SizedBox(width: 14),
-        Container(width: 2, height: 14, color: c.withValues(alpha: 0.4)),
-        const SizedBox(width: 6),
-        // Collapse chevron for activities with tasks.
-        if (row.isSummary)
-          InkWell(
-            onTap: () => setState(() {
-              if (!_collapsedTasks.remove(act.id)) {
-                _collapsedTasks.add(act.id);
-              }
-              _load();
-            }),
-            child: Icon(
-              _collapsedTasks.contains(act.id)
-                  ? Icons.chevron_right
-                  : Icons.expand_more,
-              size: 13,
-              color: KColors.textDim,
+          height: _kRowH,
+          clipBehavior: Clip.hardEdge,
+          decoration: BoxDecoration(
+            color: KColors.surface,
+            border: Border(
+              bottom: BorderSide(color: KColors.border.withValues(alpha: 0.4)),
             ),
           ),
-        if (typeIcon != null) ...[
-          Text(typeIcon,
-              style: TextStyle(color: c.withValues(alpha: 0.8), fontSize: 10)),
-          const SizedBox(width: 4),
-        ],
-        // Name — inline edit or text
-        Expanded(
-          child: isEditing
-              ? KeyboardListener(
-                  focusNode: FocusNode(),
-                  onKeyEvent: (e) {
-                    if (e is KeyDownEvent &&
-                        e.logicalKey == LogicalKeyboardKey.escape) {
-                      _cancelInlineEdit();
+          child: Row(
+            children: [
+              // Drag handle in the indent gutter — keeps the visual indent
+              // intact (handle replaces what was a SizedBox of similar width)
+              // while making the row reorderable.
+              if (isCascaded)
+                const SizedBox(width: 14)
+              else
+                _DragHandle(
+                  payload: payload,
+                  feedbackLabel: act.name,
+                  colour: c,
+                  // Activity rows are denser so a slightly smaller hit area is
+                  // fine; the gutter is only 14 px wide.
+                  width: 14,
+                ),
+              // WBS indent: tasks sit one level deeper than activities.
+              if (row.isTask) const SizedBox(width: 14),
+              Container(width: 2, height: 14, color: c.withValues(alpha: 0.4)),
+              const SizedBox(width: 6),
+              // Collapse chevron for activities with tasks.
+              if (row.isSummary)
+                InkWell(
+                  onTap: () => setState(() {
+                    if (!_collapsedTasks.remove(act.id)) {
+                      _collapsedTasks.add(act.id);
                     }
-                  },
-                  child: TextField(
-                    controller: _inlineNameCtrl,
-                    focusNode: _inlineNameFocus,
-                    style: const TextStyle(color: KColors.text, fontSize: 11),
-                    decoration: const InputDecoration(
-                      isDense: true,
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                      border: OutlineInputBorder(),
-                    ),
-                    onSubmitted: (_) => _commitInlineName(act),
-                    onEditingComplete: () => _commitInlineName(act),
+                    _load();
+                  }),
+                  child: Icon(
+                    _collapsedTasks.contains(act.id)
+                        ? Icons.chevron_right
+                        : Icons.expand_more,
+                    size: 13,
+                    color: KColors.textDim,
                   ),
-                )
-              : GestureDetector(
-                  onTap: isCascaded ? null : () => _startInlineEdit(act),
-                  onDoubleTap:
-                      isCascaded ? null : () => _openEditActivity(act, row.wp),
-                  child: MouseRegion(
-                    cursor: isCascaded
-                        ? SystemMouseCursors.basic
-                        : SystemMouseCursors.text,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                            row.isSummary
-                                ? '${act.name}  ·  ${row.tasks.length}'
-                                : act.name,
-                            style: TextStyle(
-                                color: KColors.text,
-                                fontSize: 11,
-                                fontWeight: row.isSummary
-                                    ? FontWeight.w600
-                                    : FontWeight.w400),
-                            overflow: TextOverflow.ellipsis),
-                        if (act.owner != null && act.owner!.isNotEmpty)
-                          Text(
-                            act.contributors != null
-                                ? '${act.owner!} +${(jsonDecode(act.contributors!) as List).length}'
-                                : act.owner!,
-                            style: const TextStyle(
-                                color: KColors.textDim, fontSize: 9),
-                            overflow: TextOverflow.ellipsis,
+                ),
+              if (typeIcon != null) ...[
+                Text(
+                  typeIcon,
+                  style: TextStyle(
+                    color: c.withValues(alpha: 0.8),
+                    fontSize: 10,
+                  ),
+                ),
+                const SizedBox(width: 4),
+              ],
+              // Name — inline edit or text
+              Expanded(
+                child: isEditing
+                    ? KeyboardListener(
+                        focusNode: FocusNode(),
+                        onKeyEvent: (e) {
+                          if (e is KeyDownEvent &&
+                              e.logicalKey == LogicalKeyboardKey.escape) {
+                            _cancelInlineEdit();
+                          }
+                        },
+                        child: TextField(
+                          controller: _inlineNameCtrl,
+                          focusNode: _inlineNameFocus,
+                          style: const TextStyle(
+                            color: KColors.text,
+                            fontSize: 11,
                           ),
-                      ],
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 2,
+                            ),
+                            border: OutlineInputBorder(),
+                          ),
+                          onSubmitted: (_) => _commitInlineName(act),
+                          onEditingComplete: () => _commitInlineName(act),
+                        ),
+                      )
+                    : GestureDetector(
+                        onTap: isCascaded ? null : () => _startInlineEdit(act),
+                        onDoubleTap: isCascaded
+                            ? null
+                            : () => _openEditActivity(act, row.wp),
+                        child: MouseRegion(
+                          cursor: isCascaded
+                              ? SystemMouseCursors.basic
+                              : SystemMouseCursors.text,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                row.isSummary
+                                    ? '${act.name}  ·  ${row.tasks.length}'
+                                    : act.name,
+                                style: TextStyle(
+                                  color: KColors.text,
+                                  fontSize: 11,
+                                  fontWeight: row.isSummary
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (act.owner != null && act.owner!.isNotEmpty)
+                                Text(
+                                  act.contributors != null
+                                      ? '${act.owner!} +${(jsonDecode(act.contributors!) as List).length}'
+                                      : act.owner!,
+                                  style: const TextStyle(
+                                    color: KColors.textDim,
+                                    fontSize: 9,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+              ),
+              if (act.isCritical)
+                const Padding(
+                  padding: EdgeInsets.only(right: 2),
+                  child: Icon(
+                    Icons.priority_high,
+                    size: 10,
+                    color: KColors.red,
+                  ),
+                ),
+              if (row.isSummary && _tasksBreachWindow(row))
+                const Tooltip(
+                  message:
+                      'Tasks are scheduled outside this activity\'s '
+                      'window — widen the window or move the tasks',
+                  waitDuration: Duration(milliseconds: 350),
+                  child: Padding(
+                    padding: EdgeInsets.only(right: 2),
+                    child: Icon(
+                      Icons.warning_amber_outlined,
+                      size: 11,
+                      color: KColors.red,
                     ),
                   ),
                 ),
-        ),
-        if (act.isCritical)
-          const Padding(
-            padding: EdgeInsets.only(right: 2),
-            child: Icon(Icons.priority_high, size: 10, color: KColors.red),
-          ),
-        if (row.isSummary && _tasksBreachWindow(row))
-          const Tooltip(
-            message: 'Tasks are scheduled outside this activity\'s '
-                'window — widen the window or move the tasks',
-            waitDuration: Duration(milliseconds: 350),
-            child: Padding(
-              padding: EdgeInsets.only(right: 2),
-              child: Icon(Icons.warning_amber_outlined,
-                  size: 11, color: KColors.red),
-            ),
-          ),
-        // Actions badge
-        if (_actionSummary.containsKey(act.id))
-          _ActionsBadge(
-            summary: _actionSummary[act.id]!,
-            onTap: () => _showActionsPopover(context, act),
-          ),
-        // Row actions — real 24px hit targets with hover feedback, kept
-        // clear of the pane edge (the status slot sits between them and
-        // any scrollbar).
-        if (!row.isTask && !isCascaded)
-          _RowIconButton(
-            icon: Icons.add,
-            tooltip: 'Add task under this activity',
-            onTap: () =>
-                _openAddActivity(row.wp, parentActivityId: act.id),
-          ),
-        if (!isCascaded)
-          _RowIconButton(
-            icon: Icons.edit_outlined,
-            tooltip: 'Edit',
-            onTap: () => _openEditActivity(act, row.wp),
-          ),
-        const SizedBox(width: 2),
-        // STATUS column — the chip IS the control: click for the
-        // status menu, no need to open the full edit dialog.
-        SizedBox(
-          width: _kStatusW,
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: IgnorePointer(
-              ignoring: isCascaded,
-              child: _StatusDropdown(
-              status: act.status,
-              onChanged: (s) async {
-                await _db.programmeGanttDao
-                    .setActivityStatus(act.id, s);
-                await _load();
-                await _repushWp(act.workPackageId);
-              },
-            ),
-            ),
+              // Actions badge
+              if (_actionSummary.containsKey(act.id))
+                _ActionsBadge(
+                  summary: _actionSummary[act.id]!,
+                  onTap: () => _showActionsPopover(context, act),
+                ),
+              // Row actions — real 24px hit targets with hover feedback, kept
+              // clear of the pane edge (the status slot sits between them and
+              // any scrollbar).
+              if (!row.isTask && !isCascaded)
+                _RowIconButton(
+                  icon: Icons.add,
+                  tooltip: 'Add task under this activity',
+                  onTap: () =>
+                      _openAddActivity(row.wp, parentActivityId: act.id),
+                ),
+              if (!isCascaded)
+                _RowIconButton(
+                  icon: Icons.edit_outlined,
+                  tooltip: 'Edit',
+                  onTap: () => _openEditActivity(act, row.wp),
+                ),
+              const SizedBox(width: 2),
+              // STATUS column — the chip IS the control: click for the
+              // status menu, no need to open the full edit dialog.
+              SizedBox(
+                width: _kStatusW,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: IgnorePointer(
+                    ignoring: isCascaded,
+                    child: _StatusDropdown(
+                      status: act.status,
+                      onChanged: (s) async {
+                        await _db.programmeGanttDao.setActivityStatus(
+                          act.id,
+                          s,
+                        );
+                        await _load();
+                        await _repushWp(act.workPackageId);
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-      ]),
-    ),
-    ),
+      ),
     );
   }
 
@@ -1946,7 +2218,8 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
 
   Widget _buildColumnHeader(({String label, int start, int end}) col) {
     return Container(
-      width: _cellW, height: _kHeaderH,
+      width: _cellW,
+      height: _kHeaderH,
       decoration: const BoxDecoration(
         color: KColors.surface2,
         border: Border(
@@ -1955,16 +2228,23 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
         ),
       ),
       alignment: Alignment.center,
-      child: Text(col.label,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-              color: KColors.textMuted, fontSize: 10,
-              fontWeight: FontWeight.w600, letterSpacing: 0.1)),
+      child: Text(
+        col.label,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: KColors.textMuted,
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.1,
+        ),
+      ),
     );
   }
 
-  Widget _buildCellRow(_GRow row,
-      List<({String label, int start, int end})> cols) {
+  Widget _buildCellRow(
+    _GRow row,
+    List<({String label, int start, int end})> cols,
+  ) {
     if (row is _GroupRow) {
       // Full-width divider strip aligned to the name-column header.
       return Container(
@@ -1984,16 +2264,16 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
       final c = _wpColor(row.wp.colourTheme);
       // Cascaded WPs have no activities to draw, so the header row itself
       // carries a condensed swimlane bar across the WP's cascaded span.
-      final span =
-          row.wp.sourceProjectId != null ? _cascadeWpMonths(row.wp) : null;
+      final span = row.wp.sourceProjectId != null
+          ? _cascadeWpMonths(row.wp)
+          : null;
       return SizedBox(
         height: _kWpRowH,
         child: Row(
           children: List.generate(cols.length, (ci) {
             final col = cols[ci];
-            final inSpan = span != null &&
-                col.start <= span.$2 &&
-                col.end >= span.$1;
+            final inSpan =
+                span != null && col.start <= span.$2 && col.end >= span.$1;
             final cell = Container(
               width: _cellW,
               height: _kWpRowH,
@@ -2001,7 +2281,8 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                 color: c.withValues(alpha: 0.05),
                 border: Border(
                   right: BorderSide(
-                      color: KColors.border.withValues(alpha: 0.3)),
+                    color: KColors.border.withValues(alpha: 0.3),
+                  ),
                   bottom: const BorderSide(color: KColors.border),
                 ),
               ),
@@ -2033,30 +2314,38 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
       height: _kRowH,
       child: Row(
         children: List.generate(
-            cols.length, (ci) => _buildCell(row, cols[ci], cols, ci)),
+          cols.length,
+          (ci) => _buildCell(row, cols[ci], cols, ci),
+        ),
       ),
     );
   }
 
-  Widget _buildCell(_ActRow row,
-      ({String label, int start, int end}) col,
-      [List<({String label, int start, int end})>? cols, int ci = 0]) {
+  Widget _buildCell(
+    _ActRow row,
+    ({String label, int start, int end}) col, [
+    List<({String label, int start, int end})>? cols,
+    int ci = 0,
+  ]) {
     final act = row.act;
-    final c   = _wpColor(row.wp.colourTheme);
+    final c = _wpColor(row.wp.colourTheme);
 
     final (start, end) = _effectiveMonths(act);
     final isDragging = _draggingActId == act.id;
 
     // Single-point types only render at startMonth
-    final isSingle = act.activityType == 'milestone' ||
+    final isSingle =
+        act.activityType == 'milestone' ||
         act.activityType == 'hard_deadline' ||
         act.activityType == 'gate';
 
     // Activity is "active" in this column if months overlap
     final isActive = isSingle
         ? (start != null && start >= col.start && start <= col.end)
-        : (start != null && end != null &&
-            start <= col.end && end >= col.start);
+        : (start != null &&
+              end != null &&
+              start <= col.end &&
+              end >= col.start);
 
     final isFirst = isActive && start >= col.start;
 
@@ -2082,30 +2371,46 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
       switch (act.activityType) {
         case 'milestone':
           child = Center(
-            child: Text('◆',
-                style: TextStyle(
-                    color: c, fontSize: 15, fontWeight: FontWeight.w700)),
+            child: Text(
+              '◆',
+              style: TextStyle(
+                color: c,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           );
 
         case 'hard_deadline':
           bg = const Color(0x33EF4444);
           child = Center(
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              const Text('⚠',
-                  style: TextStyle(fontSize: 12, color: Color(0xFFEF4444))),
-              if (act.cellLabel != null)
-                Text(act.cellLabel!,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  '⚠',
+                  style: TextStyle(fontSize: 12, color: Color(0xFFEF4444)),
+                ),
+                if (act.cellLabel != null)
+                  Text(
+                    act.cellLabel!,
                     style: const TextStyle(
-                        color: Color(0xFFEF4444), fontSize: 7),
-                    overflow: TextOverflow.ellipsis),
-            ]),
+                      color: Color(0xFFEF4444),
+                      fontSize: 7,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+              ],
+            ),
           );
 
         case 'gate':
           bg = KColors.amberDim.withValues(alpha: 0.8);
           child = Center(
-            child: Text('◈',
-                style: TextStyle(color: KColors.amber, fontSize: 13)),
+            child: Text(
+              '◈',
+              style: TextStyle(color: KColors.amber, fontSize: 13),
+            ),
           );
 
         case 'ongoing':
@@ -2116,11 +2421,16 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
               maxWidth: barLabelWidth(),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 3),
-                child: Text(act.cellLabel ?? act.name,
-                    style: TextStyle(
-                        color: c, fontSize: 8, fontWeight: FontWeight.w500),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1),
+                child: Text(
+                  act.cellLabel ?? act.name,
+                  style: TextStyle(
+                    color: c,
+                    fontSize: 8,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
               ),
             );
           }
@@ -2133,11 +2443,12 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
               maxWidth: barLabelWidth(),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 3),
-                child: Text(act.cellLabel!,
-                    style: const TextStyle(
-                        color: Color(0xFF8B5CF6), fontSize: 8),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1),
+                child: Text(
+                  act.cellLabel!,
+                  style: const TextStyle(color: Color(0xFF8B5CF6), fontSize: 8),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
               ),
             );
           }
@@ -2150,11 +2461,16 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
               maxWidth: barLabelWidth(),
               child: Padding(
                 padding: const EdgeInsets.only(left: 4),
-                child: Text(act.cellLabel ?? act.name,
-                    style: TextStyle(
-                        color: c, fontSize: 8, fontWeight: FontWeight.w600),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1),
+                child: Text(
+                  act.cellLabel ?? act.name,
+                  style: TextStyle(
+                    color: c,
+                    fontSize: 8,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
               ),
             );
           }
@@ -2171,22 +2487,28 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
         child = Tooltip(
           message: 'B — Likely',
           child: Center(
-            child: Text('◇',
-                style: TextStyle(
-                    color: c.withValues(alpha: 0.8),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700)),
+            child: Text(
+              '◇',
+              style: TextStyle(
+                color: c.withValues(alpha: 0.8),
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         );
       } else if (inCol(act.safeMonth)) {
         child = Tooltip(
           message: 'C — Safe',
           child: Center(
-            child: Text('○',
-                style: TextStyle(
-                    color: c.withValues(alpha: 0.5),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700)),
+            child: Text(
+              '○',
+              style: TextStyle(
+                color: c.withValues(alpha: 0.5),
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         );
       }
@@ -2213,10 +2535,12 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
             endFraction: containsHi ? 0.5 : 1.0,
           ),
         );
-        child = Stack(children: [
-          Positioned.fill(child: thread),
-          Positioned.fill(child: child),
-        ]);
+        child = Stack(
+          children: [
+            Positioned.fill(child: thread),
+            Positioned.fill(child: child),
+          ],
+        );
       }
     }
 
@@ -2224,7 +2548,8 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     // varies (a RAID item names why — open the activity to see it);
     // violet dot = variance inherited from a predecessor.
     if (isActive && isFirst) {
-      final ownVariance = act.varianceRaidId != null ||
+      final ownVariance =
+          act.varianceRaidId != null ||
           (act.varianceRaidLinksJson?.isNotEmpty ?? false) ||
           act.likelyMonth != null ||
           act.safeMonth != null;
@@ -2234,30 +2559,32 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
           message: ownVariance
               ? 'Date varies (A/B/C) — open for the linked RAID item'
               : 'Inherits schedule variance from a predecessor',
-          child: Stack(children: [
-            Positioned.fill(child: child),
-            Positioned(
-              top: 2,
-              right: 3,
-              child: Container(
-                width: 5,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: ownVariance
-                      ? KColors.red
-                      : const Color(0xFF8B5CF6),
-                  shape: BoxShape.circle,
+          child: Stack(
+            children: [
+              Positioned.fill(child: child),
+              Positioned(
+                top: 2,
+                right: 3,
+                child: Container(
+                  width: 5,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: ownVariance ? KColors.red : const Color(0xFF8B5CF6),
+                    shape: BoxShape.circle,
+                  ),
                 ),
               ),
-            ),
-          ]),
+            ],
+          ),
         );
       }
     }
 
-    final borderLeft = isFirst && (act.activityType == 'activity' ||
-            act.activityType == 'dependency_marker' ||
-            act.activityType == 'ongoing')
+    final borderLeft =
+        isFirst &&
+            (act.activityType == 'activity' ||
+                act.activityType == 'dependency_marker' ||
+                act.activityType == 'ongoing')
         ? BorderSide(color: c, width: 2)
         : const BorderSide(color: Colors.transparent);
 
@@ -2265,11 +2592,12 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     // on this activity is in progress so the gesture recogniser isn't
     // disposed when the preview shifts the bar off the originating cell.
     // Dragging a summary parent moves its whole subtree.
-    final isDraggable = (isActive || isDragging) &&
+    final isDraggable =
+        (isActive || isDragging) &&
         act.sourceProjectId == null &&
         (act.activityType == 'activity' ||
-         act.activityType == 'ongoing' ||
-         act.activityType == 'dependency_marker');
+            act.activityType == 'ongoing' ||
+            act.activityType == 'dependency_marker');
 
     // Day-accurate insets when the activity carries real dates (skipped
     // mid-drag: the preview moves in month steps).
@@ -2289,14 +2617,17 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     // ── Ghost bar (baseline variance) ──────────────────────────────────────
     // Show when activity has moved from its baseline position.
     Widget? ghostBar;
-    if (_showBaseline && act.isBaseline &&
-        act.baselineStart != null && act.baselineEnd != null) {
+    if (_showBaseline &&
+        act.isBaseline &&
+        act.baselineStart != null &&
+        act.baselineEnd != null) {
       final bs = act.baselineStart!;
       final be = act.baselineEnd!;
-      final movedFrom = bs != (act.startMonth ?? bs) ||
-                        be != (act.endMonth ?? be);
+      final movedFrom =
+          bs != (act.startMonth ?? bs) || be != (act.endMonth ?? be);
       if (movedFrom) {
-        final isBarType = act.activityType == 'activity' ||
+        final isBarType =
+            act.activityType == 'activity' ||
             act.activityType == 'ongoing' ||
             act.activityType == 'dependency_marker';
         final ghostActive = isBarType
@@ -2313,8 +2644,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
               decoration: BoxDecoration(
                 color: c.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(2),
-                border: Border.all(
-                    color: c.withValues(alpha: 0.5), width: 0.5),
+                border: Border.all(color: c.withValues(alpha: 0.5), width: 0.5),
               ),
             ),
           );
@@ -2322,7 +2652,8 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
       }
     }
 
-    final isBarType = act.activityType == 'activity' ||
+    final isBarType =
+        act.activityType == 'activity' ||
         act.activityType == 'ongoing' ||
         act.activityType == 'dependency_marker';
 
@@ -2339,54 +2670,51 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
         if (s != null && (tMin == null || s < tMin)) tMin = s;
         if (e != null && (tMax == null || e > tMax)) tMax = e;
       }
-      final taskOverlapsCol = tMin != null &&
-          tMax != null &&
-          tMin <= col.end &&
-          tMax >= col.start;
+      final taskOverlapsCol =
+          tMin != null && tMax != null && tMin <= col.end && tMax >= col.start;
       final breachHere = taskOverlapsCol && !isActive && !isDragging;
 
-      final summaryChild = Stack(children: [
-        if (isActive)
-          Positioned(
-            left: dateInsets.left,
-            right: dateInsets.right,
-            top: 0,
-            bottom: 0,
-            child: Container(
-              decoration: BoxDecoration(
-                color: bg,
-                border: Border(
-                  top: BorderSide(color: c, width: 2.5),
+      final summaryChild = Stack(
+        children: [
+          if (isActive)
+            Positioned(
+              left: dateInsets.left,
+              right: dateInsets.right,
+              top: 0,
+              bottom: 0,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: bg,
+                  border: Border(top: BorderSide(color: c, width: 2.5)),
+                ),
+                child: child,
+              ),
+            ),
+          if (breachHere)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 2,
+              child: Container(
+                height: 4,
+                margin: const EdgeInsets.symmetric(horizontal: 1),
+                decoration: BoxDecoration(
+                  color: KColors.red.withValues(alpha: 0.75),
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              child: child,
             ),
-          ),
-        if (breachHere)
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 2,
-            child: Container(
-              height: 4,
-              margin: const EdgeInsets.symmetric(horizontal: 1),
-              decoration: BoxDecoration(
-                color: KColors.red.withValues(alpha: 0.75),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-        if (ghostBar != null) ghostBar,
-      ]);
+          if (ghostBar != null) ghostBar,
+        ],
+      );
 
       final summaryCell = Container(
-        width: _cellW, height: _kRowH,
+        width: _cellW,
+        height: _kRowH,
         decoration: BoxDecoration(
           border: Border(
-            right:
-                BorderSide(color: KColors.border.withValues(alpha: 0.3)),
-            bottom:
-                BorderSide(color: KColors.border.withValues(alpha: 0.3)),
+            right: BorderSide(color: KColors.border.withValues(alpha: 0.3)),
+            bottom: BorderSide(color: KColors.border.withValues(alpha: 0.3)),
           ),
         ),
         child: summaryChild,
@@ -2397,8 +2725,8 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
           cursor: SystemMouseCursors.grab,
           child: GestureDetector(
             onTap: act.sourceProjectId != null
-            ? null
-            : () => _openEditActivity(act, row.wp),
+                ? null
+                : () => _openEditActivity(act, row.wp),
             onHorizontalDragStart: (_) => _onDragStart(act),
             onHorizontalDragUpdate: (d) => _onDragUpdate(d.delta.dx),
             onHorizontalDragEnd: (_) => _onDragEnd(),
@@ -2422,7 +2750,8 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     // case approved 24 Nov") is a POINT, not a bar — the day-accurate
     // sliver renders ~2px wide and vanishes. Draw a pin at the right
     // day instead: ◆ with the day number under it.
-    final isPointDate = isActive &&
+    final isPointDate =
+        isActive &&
         isBarType &&
         act.startDate != null &&
         act.endDate == act.startDate;
@@ -2435,72 +2764,88 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
           : c;
       final date = DateTime.tryParse(act.startDate!);
       cellBg = null;
-      cellContent = Stack(clipBehavior: Clip.none, children: [
-        Positioned(
-          left: (dateInsets.left - 8).clamp(0.0, _cellW - 16.0),
-          top: 0,
-          bottom: 0,
-          child: Tooltip(
-            message: date != null
-                ? '${act.name} — ${intl.DateFormat('d MMM yyyy').format(date)}'
-                : act.name,
-            waitDuration: const Duration(milliseconds: 300),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('◆',
+      cellContent = Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(
+            left: (dateInsets.left - 8).clamp(0.0, _cellW - 16.0),
+            top: 0,
+            bottom: 0,
+            child: Tooltip(
+              message: date != null
+                  ? '${act.name} — ${intl.DateFormat('d MMM yyyy').format(date)}'
+                  : act.name,
+              waitDuration: const Duration(milliseconds: 300),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '◆',
                     style: TextStyle(
-                        color: markerColor,
-                        fontSize: 13,
-                        height: 1,
-                        fontWeight: FontWeight.w700)),
-                if (date != null)
-                  Text('${date.day}',
+                      color: markerColor,
+                      fontSize: 13,
+                      height: 1,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  if (date != null)
+                    Text(
+                      '${date.day}',
                       style: TextStyle(
-                          color: markerColor.withValues(alpha: 0.85),
-                          fontSize: 7,
-                          height: 1.2,
-                          fontWeight: FontWeight.w600)),
-              ],
+                        color: markerColor.withValues(alpha: 0.85),
+                        fontSize: 7,
+                        height: 1.2,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
-        ),
-        if (ghostBar != null) ghostBar,
-      ]);
+          if (ghostBar != null) ghostBar,
+        ],
+      );
     } else if (useInsetFill) {
       cellBg = null;
-      cellContent = Stack(children: [
-        Positioned(
-          left: dateInsets.left,
-          right: dateInsets.right,
-          top: 0,
-          bottom: 0,
-          child: Container(
-            decoration: BoxDecoration(color: bg),
-            child: child,
+      cellContent = Stack(
+        children: [
+          Positioned(
+            left: dateInsets.left,
+            right: dateInsets.right,
+            top: 0,
+            bottom: 0,
+            child: Container(
+              decoration: BoxDecoration(color: bg),
+              child: child,
+            ),
           ),
-        ),
-        if (ghostBar != null) ghostBar,
-      ]);
+          if (ghostBar != null) ghostBar,
+        ],
+      );
     } else {
       cellBg = ghostBar != null
           ? null
           : (isDragging && isActive
-              ? (bg ?? KColors.surface).withValues(alpha: 0.5)
-              : bg);
+                ? (bg ?? KColors.surface).withValues(alpha: 0.5)
+                : bg);
       cellContent = ghostBar != null
-          ? Stack(children: [
-              Positioned.fill(child: Container(
-                decoration: BoxDecoration(color: bg),
-                child: child,
-              )),
-              ghostBar,
-            ])
+          ? Stack(
+              children: [
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(color: bg),
+                    child: child,
+                  ),
+                ),
+                ghostBar,
+              ],
+            )
           : child;
     }
 
     final cell = Container(
-      width: _cellW, height: _kRowH,
+      width: _cellW,
+      height: _kRowH,
       decoration: BoxDecoration(
         color: cellBg,
         border: Border(
@@ -2519,8 +2864,8 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
         cursor: SystemMouseCursors.grab,
         child: GestureDetector(
           onTap: act.sourceProjectId != null
-            ? null
-            : () => _openEditActivity(act, row.wp),
+              ? null
+              : () => _openEditActivity(act, row.wp),
           onHorizontalDragStart: (_) => _onDragStart(act),
           onHorizontalDragUpdate: (d) => _onDragUpdate(d.delta.dx),
           onHorizontalDragEnd: (_) => _onDragEnd(),
@@ -2531,8 +2876,8 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
 
     return GestureDetector(
       onTap: act.sourceProjectId != null
-            ? null
-            : () => _openEditActivity(act, row.wp),
+          ? null
+          : () => _openEditActivity(act, row.wp),
       child: cell,
     );
   }
@@ -2566,8 +2911,7 @@ class _DragHandle extends StatelessWidget {
         feedback: Material(
           color: Colors.transparent,
           child: Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color: KColors.surface,
               border: Border.all(color: colour.withValues(alpha: 0.6)),
@@ -2586,8 +2930,11 @@ class _DragHandle extends StatelessWidget {
         child: SizedBox(
           width: width,
           height: _kRowH,
-          child: Icon(Icons.drag_indicator,
-              size: 12, color: KColors.textMuted.withValues(alpha: 0.7)),
+          child: Icon(
+            Icons.drag_indicator,
+            size: 12,
+            color: KColors.textMuted.withValues(alpha: 0.7),
+          ),
         ),
       ),
     );
@@ -2646,9 +2993,9 @@ class _CascadedFromTag extends StatelessWidget {
   Widget build(BuildContext context) {
     final projects = context.watch<ProjectProvider>().projects;
     final source = projects.cast<Project?>().firstWhere(
-          (p) => p?.id == sourceProjectId,
-          orElse: () => null,
-        );
+      (p) => p?.id == sourceProjectId,
+      orElse: () => null,
+    );
     final label = source?.name;
     return Tooltip(
       message: label == null
@@ -2662,14 +3009,17 @@ class _CascadedFromTag extends StatelessWidget {
           border: Border.all(color: KColors.border2, width: 0.5),
           borderRadius: BorderRadius.circular(2),
         ),
-        child: Text(label == null ? 'PROJ' : 'PROJ · $label',
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
-            style: const TextStyle(
-                color: KColors.textMuted,
-                fontSize: 8.5,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.6)),
+        child: Text(
+          label == null ? 'PROJ' : 'PROJ · $label',
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+          style: const TextStyle(
+            color: KColors.textMuted,
+            fontSize: 8.5,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.6,
+          ),
+        ),
       ),
     );
   }
@@ -2684,11 +3034,12 @@ class _RagDot extends StatelessWidget {
     final color = switch (status) {
       'green' => KColors.phosphor,
       'amber' => KColors.amber,
-      'red'   => KColors.red,
-      _       => KColors.textMuted,
+      'red' => KColors.red,
+      _ => KColors.textMuted,
     };
     return Container(
-      width: 6, height: 6,
+      width: 6,
+      height: 6,
       margin: const EdgeInsets.only(right: 4),
       decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
@@ -2704,23 +3055,38 @@ class _DependsOnEditor extends StatelessWidget {
   // control shows the abbreviation; the menu and tooltip teach the rest,
   // because nobody (the author included) reliably remembers FS/SS/FF.
   static const _typeOptions = [
-    ('finish_to_start', 'FS', 'Finish → Start',
-        'Starts after the predecessor finishes (the usual case)'),
-    ('start_to_start', 'SS', 'Start → Start',
-        'Can\'t start until the predecessor has started'),
-    ('finish_to_finish', 'FF', 'Finish → Finish',
-        'Can\'t finish until the predecessor has finished'),
+    (
+      'finish_to_start',
+      'FS',
+      'Finish → Start',
+      'Starts after the predecessor finishes (the usual case)',
+    ),
+    (
+      'start_to_start',
+      'SS',
+      'Start → Start',
+      'Can\'t start until the predecessor has started',
+    ),
+    (
+      'finish_to_finish',
+      'FF',
+      'Finish → Finish',
+      'Can\'t finish until the predecessor has finished',
+    ),
   ];
 
-  final List<({TimelineActivity act, TimelineWorkPackage wp})>
-      allActivities;
+  final List<({TimelineActivity act, TimelineWorkPackage wp})> allActivities;
   final List<DependencySpec> predecessors;
   final ValueChanged<List<DependencySpec>> onChanged;
+
+  /// Opens a predecessor's own dialog (the host closes this one first).
+  final void Function(String activityId)? onOpen;
 
   const _DependsOnEditor({
     required this.allActivities,
     required this.predecessors,
     required this.onChanged,
+    this.onOpen,
   });
 
   void _addPredecessor(BuildContext ctx) async {
@@ -2758,10 +3124,7 @@ class _DependsOnEditor extends StatelessWidget {
     final trimmed = label?.trim();
     if (trimmed == null || trimmed.isEmpty) return;
     if (takenLabels.contains(trimmed.toLowerCase())) return;
-    onChanged([
-      ...predecessors,
-      DependencySpec.external(trimmed),
-    ]);
+    onChanged([...predecessors, DependencySpec.external(trimmed)]);
   }
 
   @override
@@ -2772,19 +3135,23 @@ class _DependsOnEditor extends StatelessWidget {
       children: [
         Row(
           children: [
-            const Text('DEPENDS ON',
-                style: TextStyle(
-                  color: KColors.textMuted,
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.4,
-                )),
+            const Text(
+              'DEPENDS ON',
+              style: TextStyle(
+                color: KColors.textMuted,
+                fontSize: 10.5,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.4,
+              ),
+            ),
             const Spacer(),
             TextButton.icon(
               onPressed: () => _addPredecessor(context),
               icon: const Icon(Icons.add, size: 14),
-              label: const Text('Add predecessor',
-                  style: TextStyle(fontSize: 11)),
+              label: const Text(
+                'Add predecessor',
+                style: TextStyle(fontSize: 11),
+              ),
               style: TextButton.styleFrom(
                 foregroundColor: KColors.amber,
                 padding: const EdgeInsets.symmetric(horizontal: 6),
@@ -2796,8 +3163,7 @@ class _DependsOnEditor extends StatelessWidget {
             TextButton.icon(
               onPressed: () => _addExternal(context),
               icon: const Icon(Icons.language, size: 14),
-              label: const Text('Add external',
-                  style: TextStyle(fontSize: 11)),
+              label: const Text('Add external', style: TextStyle(fontSize: 11)),
               style: TextButton.styleFrom(
                 foregroundColor: KColors.amber,
                 padding: const EdgeInsets.symmetric(horizontal: 6),
@@ -2815,19 +3181,20 @@ class _DependsOnEditor extends StatelessWidget {
               'this plan, or "Add external" for vendor deliveries, '
               'approvals, etc. that live outside the plan.',
               style: TextStyle(
-                  color: KColors.textDim, fontSize: 11, height: 1.4),
+                color: KColors.textDim,
+                fontSize: 11,
+                height: 1.4,
+              ),
             ),
           )
         else
           ...List.generate(predecessors.length, (i) {
             final p = predecessors[i];
             final removeBtn = IconButton(
-              icon: const Icon(Icons.close,
-                  size: 14, color: KColors.textMuted),
+              icon: const Icon(Icons.close, size: 14, color: KColors.textMuted),
               visualDensity: VisualDensity.compact,
               padding: EdgeInsets.zero,
-              constraints:
-                  const BoxConstraints(minWidth: 24, minHeight: 24),
+              constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
               onPressed: () {
                 final next = [...predecessors]..removeAt(i);
                 onChanged(next);
@@ -2839,14 +3206,21 @@ class _DependsOnEditor extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 2),
                 child: Row(
                   children: [
-                    const Icon(Icons.language,
-                        size: 14, color: KColors.textDim),
+                    const Icon(
+                      Icons.language,
+                      size: 14,
+                      color: KColors.textDim,
+                    ),
                     const SizedBox(width: 6),
                     Expanded(
-                      child: Text('EXT · ${p.externalLabel}',
-                          style: const TextStyle(
-                              color: KColors.text, fontSize: 12),
-                          overflow: TextOverflow.ellipsis),
+                      child: Text(
+                        'EXT · ${p.externalLabel}',
+                        style: const TextStyle(
+                          color: KColors.text,
+                          fontSize: 12,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                     removeBtn,
                   ],
@@ -2858,17 +3232,53 @@ class _DependsOnEditor extends StatelessWidget {
             final label = pair == null
                 ? '(missing activity)'
                 : pair.wp.shortCode != null
-                    ? '${pair.wp.shortCode} · ${pair.act.name}'
-                    : '${pair.wp.name} · ${pair.act.name}';
+                ? '${pair.wp.shortCode} · ${pair.act.name}'
+                : '${pair.wp.name} · ${pair.act.name}';
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 2),
               child: Row(
                 children: [
                   Expanded(
-                    child: Text(label,
-                        style: const TextStyle(
-                            color: KColors.text, fontSize: 12),
-                        overflow: TextOverflow.ellipsis),
+                    child: pair == null || onOpen == null
+                        ? Text(
+                            label,
+                            style: const TextStyle(
+                              color: KColors.text,
+                              fontSize: 12,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          )
+                        : Tooltip(
+                            message:
+                                'Open ${pair.act.name} — unsaved '
+                                'changes here are discarded',
+                            child: InkWell(
+                              onTap: () => onOpen!(pair.act.id),
+                              borderRadius: BorderRadius.circular(3),
+                              child: Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      label,
+                                      style: const TextStyle(
+                                        color: KColors.text,
+                                        fontSize: 12,
+                                        decoration: TextDecoration.underline,
+                                        decorationColor: KColors.textMuted,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  const Icon(
+                                    Icons.open_in_new,
+                                    size: 11,
+                                    color: KColors.textMuted,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                   ),
                   const SizedBox(width: 6),
                   // Type control — compact 'FS' chip; the menu and
@@ -2877,8 +3287,7 @@ class _DependsOnEditor extends StatelessWidget {
                   _DepTypeDropdown(
                     // Guard: coerce unknown types into the option set
                     // so a stray value can never break the control.
-                    value: _typeOptions
-                            .any((t) => t.$1 == p.dependencyType)
+                    value: _typeOptions.any((t) => t.$1 == p.dependencyType)
                         ? p.dependencyType
                         : _typeOptions.first.$1,
                     onChanged: (v) {
@@ -2911,8 +3320,9 @@ class _DepTypeDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final current = _DependsOnEditor._typeOptions
-        .firstWhere((t) => t.$1 == value);
+    final current = _DependsOnEditor._typeOptions.firstWhere(
+      (t) => t.$1 == value,
+    );
     return PopupMenuButton<String>(
       tooltip: '${current.$3} — ${current.$4}',
       color: KColors.surface2,
@@ -2927,16 +3337,21 @@ class _DepTypeDropdown extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('${t.$2} — ${t.$3}',
-                    style: TextStyle(
-                        color: t.$1 == value
-                            ? KColors.amber
-                            : KColors.text,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600)),
-                Text(t.$4,
-                    style: const TextStyle(
-                        color: KColors.textMuted, fontSize: 10)),
+                Text(
+                  '${t.$2} — ${t.$3}',
+                  style: TextStyle(
+                    color: t.$1 == value ? KColors.amber : KColors.text,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  t.$4,
+                  style: const TextStyle(
+                    color: KColors.textMuted,
+                    fontSize: 10,
+                  ),
+                ),
               ],
             ),
           ),
@@ -2946,11 +3361,15 @@ class _DepTypeDropdown extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(current.$2,
-                style:
-                    const TextStyle(color: KColors.text, fontSize: 11)),
-            const Icon(Icons.arrow_drop_down,
-                size: 14, color: KColors.textMuted),
+            Text(
+              current.$2,
+              style: const TextStyle(color: KColors.text, fontSize: 11),
+            ),
+            const Icon(
+              Icons.arrow_drop_down,
+              size: 14,
+              color: KColors.textMuted,
+            ),
           ],
         ),
       ),
@@ -2988,8 +3407,10 @@ class _AddExternalDependencyDialogState
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: KColors.surface,
-      title: const Text('External dependency',
-          style: TextStyle(color: KColors.text, fontSize: 14)),
+      title: const Text(
+        'External dependency',
+        style: TextStyle(color: KColors.text, fontSize: 14),
+      ),
       content: SizedBox(
         width: 360,
         child: Column(
@@ -3001,7 +3422,10 @@ class _AddExternalDependencyDialogState
               'the plan — e.g. a vendor delivery, legal sign-off, or '
               'another team\'s milestone.',
               style: TextStyle(
-                  color: KColors.textDim, fontSize: 12, height: 1.4),
+                color: KColors.textDim,
+                fontSize: 12,
+                height: 1.4,
+              ),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -3020,8 +3444,10 @@ class _AddExternalDependencyDialogState
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel',
-              style: TextStyle(color: KColors.textDim, fontSize: 12)),
+          child: const Text(
+            'Cancel',
+            style: TextStyle(color: KColors.textDim, fontSize: 12),
+          ),
         ),
         ElevatedButton(
           onPressed: _submit,
@@ -3047,15 +3473,19 @@ class _DependsOnPicker extends StatelessWidget {
         <String, List<({TimelineActivity act, TimelineWorkPackage wp})>>{};
     final wpOrder = <String>[];
     for (final p in available) {
-      groups.putIfAbsent(p.wp.id, () {
-        wpOrder.add(p.wp.id);
-        return [];
-      }).add(p);
+      groups
+          .putIfAbsent(p.wp.id, () {
+            wpOrder.add(p.wp.id);
+            return [];
+          })
+          .add(p);
     }
     return AlertDialog(
       backgroundColor: KColors.surface,
-      title: const Text('Pick a predecessor',
-          style: TextStyle(color: KColors.text, fontSize: 14)),
+      title: const Text(
+        'Pick a predecessor',
+        style: TextStyle(color: KColors.text, fontSize: 14),
+      ),
       content: SizedBox(
         width: 360,
         height: 360,
@@ -3063,8 +3493,7 @@ class _DependsOnPicker extends StatelessWidget {
           children: [
             for (final wpId in wpOrder) ...[
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                 child: Text(
                   groups[wpId]!.first.wp.shortCode != null
                       ? '${groups[wpId]!.first.wp.shortCode} · ${groups[wpId]!.first.wp.name}'
@@ -3081,9 +3510,10 @@ class _DependsOnPicker extends StatelessWidget {
                 ListTile(
                   dense: true,
                   visualDensity: VisualDensity.compact,
-                  title: Text(pair.act.name,
-                      style: const TextStyle(
-                          color: KColors.text, fontSize: 12)),
+                  title: Text(
+                    pair.act.name,
+                    style: const TextStyle(color: KColors.text, fontSize: 12),
+                  ),
                   onTap: () => Navigator.of(context).pop(pair.act.id),
                 ),
             ],
@@ -3093,8 +3523,7 @@ class _DependsOnPicker extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel',
-              style: TextStyle(color: KColors.textDim)),
+          child: const Text('Cancel', style: TextStyle(color: KColors.textDim)),
         ),
       ],
     );
@@ -3131,11 +3560,11 @@ class _HeaderSettingsDialogState extends State<_HeaderSettingsDialog> {
   void initState() {
     super.initState();
     final h = widget.header;
-    _titleCtrl    = TextEditingController(text: h?.title ?? '');
+    _titleCtrl = TextEditingController(text: h?.title ?? '');
     _subtitleCtrl = TextEditingController(text: h?.subtitle ?? '');
     _deadlineCtrl = TextEditingController(text: h?.hardDeadline ?? '');
     _deadlineDate = h?.hardDeadlineDate;
-    _month0Date   = h?.month0Date;
+    _month0Date = h?.month0Date;
 
     // Derive month count from existing labels
     int monthCount = 12;
@@ -3164,9 +3593,11 @@ class _HeaderSettingsDialogState extends State<_HeaderSettingsDialog> {
     }
     try {
       final base = DateTime.parse(_month0Date!);
-      final fmt  = intl.DateFormat('MMM yy');
+      final fmt = intl.DateFormat('MMM yy');
       return List.generate(
-          count, (i) => fmt.format(DateTime(base.year, base.month + i, 1)));
+        count,
+        (i) => fmt.format(DateTime(base.year, base.month + i, 1)),
+      );
     } catch (_) {
       return List.generate(count, (i) => 'M$i');
     }
@@ -3174,21 +3605,29 @@ class _HeaderSettingsDialogState extends State<_HeaderSettingsDialog> {
 
   Future<void> _save() async {
     setState(() => _saving = true);
-    final labels  = _generateLabels();
-    final now     = DateTime.now();
-    final id      = widget.header?.id ?? const Uuid().v4();
+    final labels = _generateLabels();
+    final now = DateTime.now();
+    final id = widget.header?.id ?? const Uuid().v4();
 
-    await widget.db.programmeGanttDao.upsertHeader(ProgrammeHeadersCompanion(
-      id:           Value(id),
-      projectId:    Value(widget.projectId),
-      title:        Value(_titleCtrl.text.trim().isEmpty ? null : _titleCtrl.text.trim()),
-      subtitle:     Value(_subtitleCtrl.text.trim().isEmpty ? null : _subtitleCtrl.text.trim()),
-      hardDeadline: Value(_deadlineCtrl.text.trim().isEmpty ? null : _deadlineCtrl.text.trim()),
-      hardDeadlineDate: Value(_deadlineDate),
-      month0Date:   Value(_month0Date),
-      monthLabels:  Value(jsonEncode(labels)),
-      updatedAt:    Value(now),
-    ));
+    await widget.db.programmeGanttDao.upsertHeader(
+      ProgrammeHeadersCompanion(
+        id: Value(id),
+        projectId: Value(widget.projectId),
+        title: Value(
+          _titleCtrl.text.trim().isEmpty ? null : _titleCtrl.text.trim(),
+        ),
+        subtitle: Value(
+          _subtitleCtrl.text.trim().isEmpty ? null : _subtitleCtrl.text.trim(),
+        ),
+        hardDeadline: Value(
+          _deadlineCtrl.text.trim().isEmpty ? null : _deadlineCtrl.text.trim(),
+        ),
+        hardDeadlineDate: Value(_deadlineDate),
+        month0Date: Value(_month0Date),
+        monthLabels: Value(jsonEncode(labels)),
+        updatedAt: Value(now),
+      ),
+    );
 
     // Cascaded activities were re-keyed onto the OLD anchor when they
     // arrived; a programme that moves its month-0 must pull again so the
@@ -3208,8 +3647,10 @@ class _HeaderSettingsDialogState extends State<_HeaderSettingsDialog> {
     final preview = _generateLabels();
     return AlertDialog(
       backgroundColor: KColors.surface,
-      title: const Text('Programme Header & Months',
-          style: TextStyle(color: KColors.text, fontSize: 14)),
+      title: const Text(
+        'Programme Header & Months',
+        style: TextStyle(color: KColors.text, fontSize: 14),
+      ),
       content: SizedBox(
         width: 460,
         child: SingleChildScrollView(
@@ -3219,22 +3660,26 @@ class _HeaderSettingsDialogState extends State<_HeaderSettingsDialog> {
               TextFormField(
                 controller: _titleCtrl,
                 decoration: const InputDecoration(
-                    labelText: 'Programme title',
-                    hintText: 'e.g. TAC Digital Toolkit – Integration'),
+                  labelText: 'Programme title',
+                  hintText: 'e.g. TAC Digital Toolkit – Integration',
+                ),
                 style: const TextStyle(color: KColors.text, fontSize: 13),
               ),
               const SizedBox(height: 10),
               TextFormField(
                 controller: _subtitleCtrl,
-                decoration: const InputDecoration(labelText: 'Subtitle (optional)'),
+                decoration: const InputDecoration(
+                  labelText: 'Subtitle (optional)',
+                ),
                 style: const TextStyle(color: KColors.text, fontSize: 13),
               ),
               const SizedBox(height: 10),
               TextFormField(
                 controller: _deadlineCtrl,
                 decoration: const InputDecoration(
-                    labelText: 'Hard deadline statement (optional)',
-                    hintText: 'e.g. Integrations in production by Aug 27'),
+                  labelText: 'Hard deadline statement (optional)',
+                  hintText: 'e.g. Integrations in production by Aug 27',
+                ),
                 style: const TextStyle(color: KColors.text, fontSize: 13),
               ),
               const SizedBox(height: 10),
@@ -3252,34 +3697,41 @@ class _HeaderSettingsDialogState extends State<_HeaderSettingsDialog> {
                 style: TextStyle(color: KColors.textMuted, fontSize: 10),
               ),
               const SizedBox(height: 16),
-              const Text('MONTH COLUMNS',
-                  style: TextStyle(
-                      color: KColors.textMuted, fontSize: 10,
-                      fontWeight: FontWeight.w700, letterSpacing: 0.1)),
+              const Text(
+                'MONTH COLUMNS',
+                style: TextStyle(
+                  color: KColors.textMuted,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.1,
+                ),
+              ),
               const SizedBox(height: 8),
-              Row(children: [
-                Expanded(
-                  child: DatePickerField(
-                    label: 'Month 0 start date',
-                    isoValue: _month0Date,
-                    onChanged: (v) =>
-                        setState(() => _month0Date = v),
+              Row(
+                children: [
+                  Expanded(
+                    child: DatePickerField(
+                      label: 'Month 0 start date',
+                      isoValue: _month0Date,
+                      onChanged: (v) => setState(() => _month0Date = v),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                SizedBox(
-                  width: 90,
-                  child: TextFormField(
-                    controller: _monthCountCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                        labelText: 'Months', isDense: true),
-                    style: const TextStyle(
-                        color: KColors.text, fontSize: 12),
-                    onChanged: (_) => setState(() {}),
+                  const SizedBox(width: 12),
+                  SizedBox(
+                    width: 90,
+                    child: TextFormField(
+                      controller: _monthCountCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Months',
+                        isDense: true,
+                      ),
+                      style: const TextStyle(color: KColors.text, fontSize: 12),
+                      onChanged: (_) => setState(() {}),
+                    ),
                   ),
-                ),
-              ]),
+                ],
+              ),
               const SizedBox(height: 10),
               // Quick presets — programmes commonly run multiple years, so
               // make the long ranges one tap rather than hand-typing.
@@ -3294,28 +3746,31 @@ class _HeaderSettingsDialogState extends State<_HeaderSettingsDialog> {
                     (label: '5 yr', months: 60),
                   ])
                     ActionChip(
-                      label: Text('${preset.label} · ${preset.months}',
-                          style: const TextStyle(fontSize: 11)),
+                      label: Text(
+                        '${preset.label} · ${preset.months}',
+                        style: const TextStyle(fontSize: 11),
+                      ),
                       backgroundColor:
                           _monthCountCtrl.text.trim() == '${preset.months}'
-                              ? KColors.blue.withValues(alpha: 0.18)
-                              : KColors.surface2,
+                          ? KColors.blue.withValues(alpha: 0.18)
+                          : KColors.surface2,
                       side: BorderSide(
-                          color: _monthCountCtrl.text.trim() ==
-                                  '${preset.months}'
-                              ? KColors.blue
-                              : KColors.border),
+                        color: _monthCountCtrl.text.trim() == '${preset.months}'
+                            ? KColors.blue
+                            : KColors.border,
+                      ),
                       onPressed: () => setState(
-                          () => _monthCountCtrl.text = '${preset.months}'),
+                        () => _monthCountCtrl.text = '${preset.months}',
+                      ),
                     ),
                 ],
               ),
               const SizedBox(height: 8),
               Text(
-                  'Spans ${_generateLabels().length} months'
-                  '${preview.isNotEmpty ? ' · ${preview.first} → ${preview.last}' : ''}',
-                  style: const TextStyle(
-                      color: KColors.textDim, fontSize: 11)),
+                'Spans ${_generateLabels().length} months'
+                '${preview.isNotEmpty ? ' · ${preview.first} → ${preview.last}' : ''}',
+                style: const TextStyle(color: KColors.textDim, fontSize: 11),
+              ),
             ],
           ),
         ),
@@ -3323,8 +3778,7 @@ class _HeaderSettingsDialogState extends State<_HeaderSettingsDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel',
-              style: TextStyle(color: KColors.textDim)),
+          child: const Text('Cancel', style: TextStyle(color: KColors.textDim)),
         ),
         ElevatedButton(
           onPressed: _saving ? null : _save,
@@ -3354,13 +3808,13 @@ class _WpFormDialog extends StatefulWidget {
 }
 
 class _WpFormDialogState extends State<_WpFormDialog> {
-  final _formKey    = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameCtrl;
   late TextEditingController _codeCtrl;
   late TextEditingController _descCtrl;
-  String _theme  = 'wp1';
-  String _rag    = 'not_started';
-  bool _saving   = false;
+  String _theme = 'wp1';
+  String _rag = 'not_started';
+  bool _saving = false;
   bool _deleting = false;
 
   bool get _isEdit => widget.wp != null;
@@ -3368,12 +3822,12 @@ class _WpFormDialogState extends State<_WpFormDialog> {
   @override
   void initState() {
     super.initState();
-    final wp   = widget.wp;
-    _nameCtrl  = TextEditingController(text: wp?.name ?? '');
-    _codeCtrl  = TextEditingController(text: wp?.shortCode ?? '');
-    _descCtrl  = TextEditingController(text: wp?.description ?? '');
-    _theme     = wp?.colourTheme ?? 'wp1';
-    _rag       = wp?.ragStatus ?? 'not_started';
+    final wp = widget.wp;
+    _nameCtrl = TextEditingController(text: wp?.name ?? '');
+    _codeCtrl = TextEditingController(text: wp?.shortCode ?? '');
+    _descCtrl = TextEditingController(text: wp?.description ?? '');
+    _theme = wp?.colourTheme ?? 'wp1';
+    _rag = wp?.ragStatus ?? 'not_started';
   }
 
   @override
@@ -3388,27 +3842,32 @@ class _WpFormDialogState extends State<_WpFormDialog> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
     final now = DateTime.now();
-    final id  = widget.wp?.id ?? const Uuid().v4();
+    final id = widget.wp?.id ?? const Uuid().v4();
 
     await widget.db.programmeGanttDao.upsertWorkPackage(
       TimelineWorkPackagesCompanion(
-        id:          Value(id),
-        projectId:   Value(widget.projectId),
-        name:        Value(_nameCtrl.text.trim()),
-        shortCode:   Value(_codeCtrl.text.trim().isEmpty ? null : _codeCtrl.text.trim()),
-        description: Value(_descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim()),
+        id: Value(id),
+        projectId: Value(widget.projectId),
+        name: Value(_nameCtrl.text.trim()),
+        shortCode: Value(
+          _codeCtrl.text.trim().isEmpty ? null : _codeCtrl.text.trim(),
+        ),
+        description: Value(
+          _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
+        ),
         colourTheme: Value(_theme),
-        ragStatus:   Value(_rag),
-        sortOrder:   Value(widget.sortOrder),
-        updatedAt:   Value(now),
+        ragStatus: Value(_rag),
+        sortOrder: Value(widget.sortOrder),
+        updatedAt: Value(now),
       ),
     );
 
     // Best-effort cascade to any active programme links. Service
     // handles "no links / offline / cascaded row" cases internally.
     if (mounted) {
-      final saved = await widget.db.programmeGanttDao
-          .getWorkPackages(widget.projectId);
+      final saved = await widget.db.programmeGanttDao.getWorkPackages(
+        widget.projectId,
+      );
       final wp = saved.firstWhere((w) => w.id == id, orElse: () => saved.first);
       // ignore: use_build_context_synchronously
       await _cascadeFor(context).pushWorkPackage(wp);
@@ -3428,19 +3887,24 @@ class _WpFormDialogState extends State<_WpFormDialog> {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: KColors.surface,
-        title: const Text('Delete Work Package',
-            style: TextStyle(color: KColors.text, fontSize: 14)),
+        title: const Text(
+          'Delete Work Package',
+          style: TextStyle(color: KColors.text, fontSize: 14),
+        ),
         content: Text(
-            'Delete "${widget.wp!.name}" and all its activities? This cannot be undone.',
-            style: const TextStyle(color: KColors.textDim, fontSize: 13)),
+          'Delete "${widget.wp!.name}" and all its activities? This cannot be undone.',
+          style: const TextStyle(color: KColors.textDim, fontSize: 13),
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: KColors.red),
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Delete')),
+            style: ElevatedButton.styleFrom(backgroundColor: KColors.red),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
@@ -3468,8 +3932,10 @@ class _WpFormDialogState extends State<_WpFormDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: KColors.surface,
-      title: Text(_isEdit ? 'Edit Work Package' : 'New Work Package',
-          style: const TextStyle(color: KColors.text, fontSize: 14)),
+      title: Text(
+        _isEdit ? 'Edit Work Package' : 'New Work Package',
+        style: const TextStyle(color: KColors.text, fontSize: 14),
+      ),
       content: SizedBox(
         width: 440,
         child: Form(
@@ -3490,50 +3956,68 @@ class _WpFormDialogState extends State<_WpFormDialog> {
                 TextFormField(
                   controller: _codeCtrl,
                   decoration: const InputDecoration(
-                      labelText: 'Short code (optional)',
-                      hintText: 'e.g. WP1'),
+                    labelText: 'Short code (optional)',
+                    hintText: 'e.g. WP1',
+                  ),
                   style: const TextStyle(color: KColors.text, fontSize: 13),
                 ),
                 const SizedBox(height: 12),
                 // Colour theme
-                const Text('COLOUR THEME',
-                    style: TextStyle(
-                        color: KColors.textMuted, fontSize: 10,
-                        fontWeight: FontWeight.w700, letterSpacing: 0.1)),
+                const Text(
+                  'COLOUR THEME',
+                  style: TextStyle(
+                    color: KColors.textMuted,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.1,
+                  ),
+                ),
                 const SizedBox(height: 6),
                 Wrap(
                   spacing: 6,
                   runSpacing: 6,
                   children: _kThemes.map((t) {
                     final selected = _theme == t;
-                    final c       = _wpColor(t);
+                    final c = _wpColor(t);
                     return GestureDetector(
                       onTap: () => setState(() => _theme = t),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 120),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: selected
                               ? c.withValues(alpha: 0.2)
                               : Colors.transparent,
                           border: Border.all(
-                              color: selected ? c : KColors.border2,
-                              width: selected ? 1.5 : 1),
+                            color: selected ? c : KColors.border2,
+                            width: selected ? 1.5 : 1,
+                          ),
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          Container(
-                            width: 8, height: 8,
-                            decoration:
-                                BoxDecoration(color: c, shape: BoxShape.circle),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(_kThemeLabels[t]!,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: c,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              _kThemeLabels[t]!,
                               style: TextStyle(
-                                  color: selected ? c : KColors.textDim,
-                                  fontSize: 11)),
-                        ]),
+                                color: selected ? c : KColors.textDim,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   }).toList(),
@@ -3542,52 +4026,63 @@ class _WpFormDialogState extends State<_WpFormDialog> {
                 // RAG status
                 DropdownButtonFormField<String>(
                   value: _rag,
-                  decoration:
-                      const InputDecoration(labelText: 'RAG status'),
+                  decoration: const InputDecoration(labelText: 'RAG status'),
                   dropdownColor: KColors.surface2,
                   items: _kRagStatuses
-                      .map((s) => DropdownMenuItem(
-                            value: s,
-                            child: Text(_kRagLabels[s]!,
-                                style: const TextStyle(fontSize: 13)),
-                          ))
+                      .map(
+                        (s) => DropdownMenuItem(
+                          value: s,
+                          child: Text(
+                            _kRagLabels[s]!,
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                        ),
+                      )
                       .toList(),
-                  onChanged: (v) =>
-                      setState(() => _rag = v ?? 'not_started'),
+                  onChanged: (v) => setState(() => _rag = v ?? 'not_started'),
                 ),
                 const SizedBox(height: 10),
                 TextFormField(
                   controller: _descCtrl,
                   maxLines: 2,
                   decoration: const InputDecoration(
-                      labelText: 'Description (optional)', isDense: true),
-                  style: const TextStyle(
-                      color: KColors.text, fontSize: 12),
+                    labelText: 'Description (optional)',
+                    isDense: true,
+                  ),
+                  style: const TextStyle(color: KColors.text, fontSize: 12),
                 ),
                 const SizedBox(height: 16),
-                Row(children: [
-                  if (_isEdit)
+                Row(
+                  children: [
+                    if (_isEdit)
+                      TextButton(
+                        onPressed: _deleting ? null : _delete,
+                        style: TextButton.styleFrom(
+                          foregroundColor: KColors.red,
+                        ),
+                        child: const Text(
+                          'Delete',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    const Spacer(),
                     TextButton(
-                      onPressed: _deleting ? null : _delete,
-                      style: TextButton.styleFrom(
-                          foregroundColor: KColors.red),
-                      child: const Text('Delete',
-                          style: TextStyle(fontSize: 12)),
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(color: KColors.textDim, fontSize: 12),
+                      ),
                     ),
-                  const Spacer(),
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Cancel',
-                        style: TextStyle(
-                            color: KColors.textDim, fontSize: 12)),
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: _saving ? null : _save,
-                    child: Text(_isEdit ? 'Save' : 'Create',
-                        style: const TextStyle(fontSize: 12)),
-                  ),
-                ]),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: _saving ? null : _save,
+                      child: Text(
+                        _isEdit ? 'Save' : 'Create',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -3601,8 +4096,7 @@ class _WpFormDialogState extends State<_WpFormDialog> {
 class _ParentActivityDropdown extends StatelessWidget {
   final String wpId;
   final String? editingId;
-  final List<({TimelineActivity act, TimelineWorkPackage wp})>
-      allActivities;
+  final List<({TimelineActivity act, TimelineWorkPackage wp})> allActivities;
   final String? value;
   final ValueChanged<String?> onChanged;
 
@@ -3617,7 +4111,8 @@ class _ParentActivityDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // An activity that already has tasks can't itself become a task.
-    final editingHasTasks = editingId != null &&
+    final editingHasTasks =
+        editingId != null &&
         allActivities.any((p) => p.act.parentActivityId == editingId);
     if (editingHasTasks) {
       return const Padding(
@@ -3633,10 +4128,12 @@ class _ParentActivityDropdown extends StatelessWidget {
     // Candidates: top-level activities in the same WP (tasks nest one
     // level only). allActivities already excludes the editing row.
     final candidates = allActivities
-        .where((p) =>
-            p.wp.id == wpId &&
-            p.act.parentActivityId == null &&
-            p.act.activityType == 'activity')
+        .where(
+          (p) =>
+              p.wp.id == wpId &&
+              p.act.parentActivityId == null &&
+              p.act.activityType == 'activity',
+        )
         .toList();
     // A stale/foreign selection still shows rather than crashing the
     // dropdown (e.g. parent converted or moved WP).
@@ -3650,18 +4147,21 @@ class _ParentActivityDropdown extends StatelessWidget {
       isExpanded: true,
       decoration: const InputDecoration(
         labelText: 'Parent activity (makes this a task)',
-        contentPadding:
-            EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       ),
       style: const TextStyle(color: KColors.text, fontSize: 14),
       dropdownColor: KColors.surface2,
       items: [
         const DropdownMenuItem<String?>(
-            value: null, child: Text('— none (top-level activity) —')),
-        ...candidates.map((c) => DropdownMenuItem<String?>(
-              value: c.act.id,
-              child: Text(c.act.name, overflow: TextOverflow.ellipsis),
-            )),
+          value: null,
+          child: Text('— none (top-level activity) —'),
+        ),
+        ...candidates.map(
+          (c) => DropdownMenuItem<String?>(
+            value: c.act.id,
+            child: Text(c.act.name, overflow: TextOverflow.ellipsis),
+          ),
+        ),
       ],
       onChanged: onChanged,
     );
@@ -3704,23 +4204,22 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
   late TextEditingController _ownerCtrl;
   late TextEditingController _labelCtrl;
   late TextEditingController _notesCtrl;
-  String   _type       = 'activity';
-  String   _status     = 'not_started';
-  int?     _startMonth;
-  int?     _endMonth;
-  String?  _startDate;
-  String?  _endDate;
-  String?  _parentActivityId;
-  bool     _isCritical = false;
-  bool     _saving     = false;
+  String _type = 'activity';
+  String _status = 'not_started';
+  int? _startMonth;
+  int? _endMonth;
+  String? _startDate;
+  String? _endDate;
+  String? _parentActivityId;
+  bool _isCritical = false;
+  bool _saving = false;
   // Schedule scenarios (A-Anchor = startMonth; these are B and C).
-  int?     _likelyMonth;
-  int?     _safeMonth;
+  int? _likelyMonth;
+  int? _safeMonth;
   // Up to kMaxVarianceLinks RAID items driving the spread; label is
   // resolved lazily for display.
-  final List<({String type, String id, String? label})> _varianceLinks =
-      [];
-  String?  _ownerId;
+  final List<({String type, String id, String? label})> _varianceLinks = [];
+  String? _ownerId;
   List<Person> _persons = [];
   List<_Contributor> _contributors = [];
 
@@ -3736,10 +4235,12 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
   // Mix of internal predecessors (point at another activity) and
   // external ones (free-text label, no upstream activity row).
   List<DependencySpec> _predecessors = [];
+  // Rows this activity gates (internal arrows out), read-only here.
+  List<({TimelineActivity act, TimelineWorkPackage wp, String type})>
+  _successors = const [];
   // All other activities in the project — populated once on form open
   // so the picker has something to enumerate.
-  List<({TimelineActivity act, TimelineWorkPackage wp})> _allActivities =
-      [];
+  List<({TimelineActivity act, TimelineWorkPackage wp})> _allActivities = [];
 
   bool get _isEdit => widget.activity != null;
   bool get _isSinglePoint =>
@@ -3758,11 +4259,11 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
   /// Month choices for B/C: everything for a point, end-onward for an
   /// activity (an earlier finish would be hidden under the bar).
   List<DropdownMenuItem<int?>> get _scenarioItems => [
-        for (final item in _monthItems)
-          if (item.value == null ||
-              scenarioMonthAllowed(_type, item.value!, _scenarioAnchor))
-            item,
-      ];
+    for (final item in _monthItems)
+      if (item.value == null ||
+          scenarioMonthAllowed(_type, item.value!, _scenarioAnchor))
+        item,
+  ];
 
   Future<void> _resolveVarianceLabels() async {
     final dao = widget.db.raidDao;
@@ -3812,19 +4313,18 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
   @override
   void initState() {
     super.initState();
-    final a    = widget.activity;
-    _nameCtrl  = TextEditingController(text: a?.name ?? '');
+    final a = widget.activity;
+    _nameCtrl = TextEditingController(text: a?.name ?? '');
     _ownerCtrl = TextEditingController(text: a?.owner ?? '');
     _labelCtrl = TextEditingController(text: a?.cellLabel ?? '');
     _notesCtrl = TextEditingController(text: a?.notes ?? '');
-    _type       = a?.activityType ?? 'activity';
-    _status     = a?.status ?? 'not_started';
+    _type = a?.activityType ?? 'activity';
+    _status = a?.status ?? 'not_started';
     _startMonth = a?.startMonth ?? widget.initialStartMonth;
-    _endMonth   = a?.endMonth ?? widget.initialEndMonth;
-    _startDate  = a?.startDate;
-    _endDate    = a?.endDate;
-    _parentActivityId =
-        a?.parentActivityId ?? widget.initialParentActivityId;
+    _endMonth = a?.endMonth ?? widget.initialEndMonth;
+    _startDate = a?.startDate;
+    _endDate = a?.endDate;
+    _parentActivityId = a?.parentActivityId ?? widget.initialParentActivityId;
     _isCritical = a?.isCritical ?? false;
     _likelyMonth = a?.likelyMonth;
     _safeMonth = a?.safeMonth;
@@ -3836,16 +4336,18 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
       _varianceLinks.add((type: l.type, id: l.id, label: null));
     }
     if (_varianceLinks.isNotEmpty) _resolveVarianceLabels();
-    _ownerId    = a?.ownerId;
+    _ownerId = a?.ownerId;
     if (a?.contributors != null) {
       final names = jsonDecode(a!.contributors!) as List;
-      final ids   = a.contributorIds != null
+      final ids = a.contributorIds != null
           ? jsonDecode(a.contributorIds!) as List
           : const [];
       _contributors = List.generate(
         names.length,
-        (i) => (name: names[i] as String,
-                 id: i < ids.length ? ids[i] as String? : null),
+        (i) => (
+          name: names[i] as String,
+          id: i < ids.length ? ids[i] as String? : null,
+        ),
       );
     }
     _ownerCtrl.addListener(_resolveOwnerId);
@@ -3856,10 +4358,12 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
   Future<void> _loadDependencies() async {
     // Load all activities + WPs in the project for the picker, and the
     // existing predecessors for this activity (if editing).
-    final acts = await widget.db.programmeGanttDao
-        .getActivitiesForProject(widget.projectId);
-    final wps = await widget.db.programmeGanttDao
-        .getWorkPackages(widget.projectId);
+    final acts = await widget.db.programmeGanttDao.getActivitiesForProject(
+      widget.projectId,
+    );
+    final wps = await widget.db.programmeGanttDao.getWorkPackages(
+      widget.projectId,
+    );
     final wpById = {for (final w in wps) w.id: w};
     final pairs = <({TimelineActivity act, TimelineWorkPackage wp})>[];
     for (final a in acts) {
@@ -3871,19 +4375,34 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
 
     final inbound = widget.activity == null
         ? const <TimelineDependency>[]
-        : await widget.db.programmeGanttDao
-            .getInboundDependenciesFor(widget.activity!.id);
+        : await widget.db.programmeGanttDao.getInboundDependenciesFor(
+            widget.activity!.id,
+          );
+    final outbound = widget.activity == null
+        ? const <TimelineDependency>[]
+        : (await widget.db.programmeGanttDao.getDependencies(
+            widget.projectId,
+          )).where((d) => d.fromActivityId == widget.activity!.id).toList();
+    final pairById = {for (final p in pairs) p.act.id: p};
+    final successors = [
+      for (final d in outbound)
+        if (pairById.containsKey(d.toActivityId))
+          (
+            act: pairById[d.toActivityId]!.act,
+            wp: pairById[d.toActivityId]!.wp,
+            type: d.dependencyType,
+          ),
+    ];
 
     final ownTasks = widget.activity == null
         ? const <TimelineActivity>[]
-        : acts
-            .where((a) => a.parentActivityId == widget.activity!.id)
-            .toList();
+        : acts.where((a) => a.parentActivityId == widget.activity!.id).toList();
 
     if (!mounted) return;
     setState(() {
       _allActivities = pairs;
       _tasks = ownTasks;
+      _successors = successors;
       _predecessors = [
         for (final d in inbound)
           // Type 'external' routes to the external branch even when the
@@ -3891,10 +4410,10 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
           // exporter) — an internal spec with type 'external' would
           // crash the FS/SS/FF dropdown. Saving writes the placeholder
           // back, healing the row.
-          if (d.externalLabel != null ||
-              d.dependencyType == 'external')
+          if (d.externalLabel != null || d.dependencyType == 'external')
             DependencySpec.external(
-                d.externalLabel ?? '(external — label lost in sync)')
+              d.externalLabel ?? '(external — label lost in sync)',
+            )
           else
             DependencySpec.internal(
               fromActivityId: d.fromActivityId,
@@ -3915,7 +4434,9 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
   }
 
   Future<void> _loadPersons() async {
-    final persons = await widget.db.peopleDao.getPersonsForProject(widget.projectId);
+    final persons = await widget.db.peopleDao.getPersonsForProject(
+      widget.projectId,
+    );
     if (mounted) {
       setState(() => _persons = persons);
       _resolveOwnerId();
@@ -3936,8 +4457,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
 
   /// Whether the tasks section applies: bar-type activities that aren't
   /// themselves tasks.
-  bool get _canHaveTasks =>
-      _type == 'activity' && _parentActivityId == null;
+  bool get _canHaveTasks => _type == 'activity' && _parentActivityId == null;
 
   Future<void> _quickAddTask() async {
     final name = _taskQuickAddCtrl.text.trim();
@@ -3959,8 +4479,9 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
   Future<void> _removeTask(TimelineActivity task) async {
     await widget.db.programmeGanttDao.deleteActivity(task.id);
     if (mounted) {
-      await buildCascadeService(context).deleteActivity(
-          projectId: widget.projectId, activityId: task.id);
+      await buildCascadeService(
+        context,
+      ).deleteActivity(projectId: widget.projectId, activityId: task.id);
     }
     await _loadDependencies();
   }
@@ -3969,7 +4490,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
     final now = DateTime.now();
-    final id  = widget.activity?.id ?? const Uuid().v4();
+    final id = widget.activity?.id ?? const Uuid().v4();
 
     // Real dates (when set) are the source of truth — but only for the
     // ends they cover; see resolveMonthSpan for the start-only-date rule.
@@ -3986,49 +4507,60 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
 
     await widget.db.programmeGanttDao.upsertActivity(
       TimelineActivitiesCompanion(
-        id:           Value(id),
+        id: Value(id),
         workPackageId: Value(widget.wp.id),
-        projectId:    Value(widget.projectId),
-        name:         Value(_nameCtrl.text.trim()),
-        owner:        Value(_ownerCtrl.text.trim().isEmpty
-            ? null : _ownerCtrl.text.trim()),
-        ownerId:      Value(_ownerId),
+        projectId: Value(widget.projectId),
+        name: Value(_nameCtrl.text.trim()),
+        owner: Value(
+          _ownerCtrl.text.trim().isEmpty ? null : _ownerCtrl.text.trim(),
+        ),
+        ownerId: Value(_ownerId),
         activityType: Value(_type),
-        status:       Value(_status),
+        status: Value(_status),
         parentActivityId: Value(_parentActivityId),
-        startDate:    Value(_startDate),
-        endDate:      Value(_isSinglePoint ? _startDate : _endDate),
-        startMonth:   Value(startVal),
-        endMonth:     Value(endVal),
-        isCritical:   Value(_isCritical),
-        likelyMonth:  Value(_canHaveScenarios ? _likelyMonth : null),
-        safeMonth:    Value(_canHaveScenarios ? _safeMonth : null),
+        startDate: Value(_startDate),
+        endDate: Value(_isSinglePoint ? _startDate : _endDate),
+        startMonth: Value(startVal),
+        endMonth: Value(endVal),
+        isCritical: Value(_isCritical),
+        likelyMonth: Value(_canHaveScenarios ? _likelyMonth : null),
+        safeMonth: Value(_canHaveScenarios ? _safeMonth : null),
         // Legacy columns mirror the FIRST link for older readers.
         varianceRaidType: Value(
-            _canHaveScenarios && _varianceLinks.isNotEmpty
-                ? _varianceLinks.first.type
-                : null),
+          _canHaveScenarios && _varianceLinks.isNotEmpty
+              ? _varianceLinks.first.type
+              : null,
+        ),
         varianceRaidId: Value(
-            _canHaveScenarios && _varianceLinks.isNotEmpty
-                ? _varianceLinks.first.id
-                : null),
+          _canHaveScenarios && _varianceLinks.isNotEmpty
+              ? _varianceLinks.first.id
+              : null,
+        ),
         varianceRaidLinksJson: Value(
-            _canHaveScenarios && _varianceLinks.isNotEmpty
-                ? encodeVarianceLinks([
-                    for (final l in _varianceLinks)
-                      (type: l.type, id: l.id)
-                  ])
-                : null),
-        cellLabel:    Value(_labelCtrl.text.trim().isEmpty
-            ? null : _labelCtrl.text.trim()),
-        notes:        Value(_notesCtrl.text.trim().isEmpty
-            ? null : _notesCtrl.text.trim()),
-        contributors: Value(_contributors.isEmpty ? null
-            : jsonEncode(_contributors.map((c) => c.name).toList())),
-        contributorIds: Value(_contributors.isEmpty ? null
-            : jsonEncode(_contributors.map((c) => c.id).toList())),
-        sortOrder:    Value(widget.sortOrder),
-        updatedAt:    Value(now),
+          _canHaveScenarios && _varianceLinks.isNotEmpty
+              ? encodeVarianceLinks([
+                  for (final l in _varianceLinks) (type: l.type, id: l.id),
+                ])
+              : null,
+        ),
+        cellLabel: Value(
+          _labelCtrl.text.trim().isEmpty ? null : _labelCtrl.text.trim(),
+        ),
+        notes: Value(
+          _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
+        ),
+        contributors: Value(
+          _contributors.isEmpty
+              ? null
+              : jsonEncode(_contributors.map((c) => c.name).toList()),
+        ),
+        contributorIds: Value(
+          _contributors.isEmpty
+              ? null
+              : jsonEncode(_contributors.map((c) => c.id).toList()),
+        ),
+        sortOrder: Value(widget.sortOrder),
+        updatedAt: Value(now),
       ),
     );
 
@@ -4043,15 +4575,19 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
 
     // Tasks queued during create mode land now that the parent exists.
     for (final name in _pendingTaskNames) {
-      await widget.db.programmeGanttDao
-          .addTask(id: const Uuid().v4(), parentId: id, name: name);
+      await widget.db.programmeGanttDao.addTask(
+        id: const Uuid().v4(),
+        parentId: id,
+        name: name,
+      );
     }
 
     // A parent that never had a window of its own gets seeded from its
     // tasks; an existing window is the PM's commitment and stays put.
     if (_parentActivityId != null) {
-      await widget.db.programmeGanttDao
-          .seedParentSpanFromTasks(_parentActivityId!);
+      await widget.db.programmeGanttDao.seedParentSpanFromTasks(
+        _parentActivityId!,
+      );
     }
 
     if (mounted) Navigator.of(context).pop();
@@ -4062,35 +4598,46 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: KColors.surface,
-        title: const Text('Delete Activity',
-            style: TextStyle(color: KColors.text, fontSize: 14)),
-        content: Text('Delete "${widget.activity!.name}"?',
-            style: const TextStyle(color: KColors.textDim, fontSize: 13)),
+        title: const Text(
+          'Delete Activity',
+          style: TextStyle(color: KColors.text, fontSize: 14),
+        ),
+        content: Text(
+          'Delete "${widget.activity!.name}"?',
+          style: const TextStyle(color: KColors.textDim, fontSize: 13),
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: KColors.red),
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Delete')),
+            style: ElevatedButton.styleFrom(backgroundColor: KColors.red),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
     if (confirm != true || !mounted) return;
     final deletedId = widget.activity!.id;
     // Tasks go with their parent; tombstone them on the channel too.
-    final tasks =
-        await widget.db.programmeGanttDao.getTasksForActivity(deletedId);
+    final tasks = await widget.db.programmeGanttDao.getTasksForActivity(
+      deletedId,
+    );
     await widget.db.programmeGanttDao.deleteActivity(deletedId);
     if (mounted) {
       final cascade = buildCascadeService(context);
       for (final t in tasks) {
         await cascade.deleteActivity(
-            projectId: widget.projectId, activityId: t.id);
+          projectId: widget.projectId,
+          activityId: t.id,
+        );
       }
       await cascade.deleteActivity(
-          projectId: widget.projectId, activityId: deletedId);
+        projectId: widget.projectId,
+        activityId: deletedId,
+      );
     }
     if (mounted) Navigator.of(context).pop();
   }
@@ -4103,10 +4650,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
         ? widget.months
         : List.generate(12, (i) => 'M$i');
     for (int i = 0; i < labels.length; i++) {
-      items.add(DropdownMenuItem(
-        value: i,
-        child: Text('${labels[i]} (M$i)'),
-      ));
+      items.add(DropdownMenuItem(value: i, child: Text('${labels[i]} (M$i)')));
     }
     return items;
   }
@@ -4117,8 +4661,12 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
   bool _twoCol(BuildContext context) =>
       MediaQuery.of(context).size.width >= 1280;
 
-  Widget _formBody(BuildContext context, List<Widget> schedule,
-      List<Widget> details, Widget buttons) {
+  Widget _formBody(
+    BuildContext context,
+    List<Widget> schedule,
+    List<Widget> details,
+    Widget buttons,
+  ) {
     if (!_twoCol(context)) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -4137,14 +4685,18 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: schedule)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: schedule,
+              ),
+            ),
             const SizedBox(width: 28),
             Expanded(
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: details)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: details,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 16),
@@ -4159,17 +4711,30 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
 
     return AlertDialog(
       backgroundColor: KColors.surface,
-      title: Row(children: [
-        Container(width: 3, height: 20, color: c,
-            margin: const EdgeInsets.only(right: 10)),
-        Expanded(
-          child: Text(_isEdit ? 'Edit Activity' : 'Add Activity',
-              style: const TextStyle(color: KColors.text, fontSize: 16)),
-        ),
-        Text(widget.wp.shortCode ?? widget.wp.name,
-            style: TextStyle(color: c, fontSize: 12,
-                fontWeight: FontWeight.w600)),
-      ]),
+      title: Row(
+        children: [
+          Container(
+            width: 3,
+            height: 20,
+            color: c,
+            margin: const EdgeInsets.only(right: 10),
+          ),
+          Expanded(
+            child: Text(
+              _isEdit ? 'Edit Activity' : 'Add Activity',
+              style: const TextStyle(color: KColors.text, fontSize: 16),
+            ),
+          ),
+          Text(
+            widget.wp.shortCode ?? widget.wp.name,
+            style: TextStyle(
+              color: c,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
       // Wide: two columns, everything visible, no scrolling. Narrow:
       // the old single column with the scroll view as fallback.
       content: SizedBox(
@@ -4180,14 +4745,18 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
-            child: _formBody(context, <Widget>[
+            child: _formBody(
+              context,
+              <Widget>[
                 TextFormField(
                   controller: _nameCtrl,
                   autofocus: !_isEdit,
                   decoration: const InputDecoration(
                     labelText: 'Activity name *',
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
                   ),
                   style: const TextStyle(color: KColors.text, fontSize: 14),
                   validator: (v) =>
@@ -4196,255 +4765,325 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                 const SizedBox(height: 12),
                 // Activity type + status share a row to keep the taller
                 // form on one screen.
-                Row(children: [
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: _type,
-                      decoration: const InputDecoration(
-                        labelText: 'Activity type',
-                        contentPadding: EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 10),
-                      ),
-                      style: const TextStyle(
-                          color: KColors.text, fontSize: 14),
-                      dropdownColor: KColors.surface2,
-                      items: _kActivityTypes.map((t) => DropdownMenuItem(
-                            value: t,
-                            child: Text(_kActivityTypeLabels[t]!,
-                                style: const TextStyle(fontSize: 14)),
-                          )).toList(),
-                      onChanged: (v) =>
-                          setState(() => _type = v ?? 'activity'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: _status,
-                      decoration: const InputDecoration(
-                        labelText: 'Status',
-                        contentPadding: EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 10),
-                      ),
-                      style: const TextStyle(
-                          color: KColors.text, fontSize: 14),
-                      dropdownColor: KColors.surface2,
-                      items: milestoneTrackerStatuses
-                          .map((s) => DropdownMenuItem(
-                                value: s,
-                                child: Text(
-                                    milestoneTrackerStatusLabels[s]!,
-                                    style:
-                                        const TextStyle(fontSize: 14)),
-                              ))
-                          .toList(),
-                      onChanged: (v) =>
-                          setState(() => _status = v ?? 'not_started'),
-                    ),
-                  ),
-                ]),
-                const SizedBox(height: 12),
-                // Month range
-                Row(children: [
-                  Expanded(
-                    child: DropdownButtonFormField<int?>(
-                      value: _startMonth,
-                      decoration: InputDecoration(
-                        labelText:
-                            _isSinglePoint ? 'Month' : 'Start month',
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 10),
-                      ),
-                      style: const TextStyle(
-                          color: KColors.text, fontSize: 14),
-                      dropdownColor: KColors.surface2,
-                      items: _monthItems,
-                      onChanged: (v) => setState(() {
-                        _startMonth = v;
-                        // A real date pins the month on save, so the
-                        // date travels with the dropdown instead of
-                        // quietly overriding it.
-                        if (v != null && _startDate != null) {
-                          _startDate = moveDateToMonth(
-                              isoDate: _startDate,
-                              month: v,
-                              month0Date: widget.month0Date);
-                          if (_isSinglePoint) _endDate = _startDate;
-                        }
-                        if (!_isSinglePoint &&
-                            _endMonth != null &&
-                            v != null &&
-                            _endMonth! < v) {
-                          _endMonth = v;
-                          if (_endDate != null) {
-                            _endDate = moveDateToMonth(
-                                isoDate: _endDate,
-                                month: v,
-                                month0Date: widget.month0Date);
-                          }
-                        }
-                      }),
-                    ),
-                  ),
-                  if (!_isSinglePoint) ...[
-                    const SizedBox(width: 12),
+                Row(
+                  children: [
                     Expanded(
-                      child: DropdownButtonFormField<int?>(
-                        value: _endMonth,
+                      child: DropdownButtonFormField<String>(
+                        value: _type,
                         decoration: const InputDecoration(
-                          labelText: 'End month',
+                          labelText: 'Activity type',
                           contentPadding: EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 10),
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
                         ),
                         style: const TextStyle(
-                            color: KColors.text, fontSize: 14),
+                          color: KColors.text,
+                          fontSize: 14,
+                        ),
+                        dropdownColor: KColors.surface2,
+                        items: _kActivityTypes
+                            .map(
+                              (t) => DropdownMenuItem(
+                                value: t,
+                                child: Text(
+                                  _kActivityTypeLabels[t]!,
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (v) =>
+                            setState(() => _type = v ?? 'activity'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: _status,
+                        decoration: const InputDecoration(
+                          labelText: 'Status',
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                        ),
+                        style: const TextStyle(
+                          color: KColors.text,
+                          fontSize: 14,
+                        ),
+                        dropdownColor: KColors.surface2,
+                        items: milestoneTrackerStatuses
+                            .map(
+                              (s) => DropdownMenuItem(
+                                value: s,
+                                child: Text(
+                                  milestoneTrackerStatusLabels[s]!,
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (v) =>
+                            setState(() => _status = v ?? 'not_started'),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                // Month range
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<int?>(
+                        value: _startMonth,
+                        decoration: InputDecoration(
+                          labelText: _isSinglePoint ? 'Month' : 'Start month',
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                        ),
+                        style: const TextStyle(
+                          color: KColors.text,
+                          fontSize: 14,
+                        ),
                         dropdownColor: KColors.surface2,
                         items: _monthItems,
                         onChanged: (v) => setState(() {
-                          _endMonth = v;
-                          if (v != null && _endDate != null) {
-                            _endDate = moveDateToMonth(
+                          _startMonth = v;
+                          // A real date pins the month on save, so the
+                          // date travels with the dropdown instead of
+                          // quietly overriding it.
+                          if (v != null && _startDate != null) {
+                            _startDate = moveDateToMonth(
+                              isoDate: _startDate,
+                              month: v,
+                              month0Date: widget.month0Date,
+                            );
+                            if (_isSinglePoint) _endDate = _startDate;
+                          }
+                          if (!_isSinglePoint &&
+                              _endMonth != null &&
+                              v != null &&
+                              _endMonth! < v) {
+                            _endMonth = v;
+                            if (_endDate != null) {
+                              _endDate = moveDateToMonth(
                                 isoDate: _endDate,
                                 month: v,
-                                month0Date: widget.month0Date);
+                                month0Date: widget.month0Date,
+                              );
+                            }
                           }
                         }),
                       ),
                     ),
+                    if (!_isSinglePoint) ...[
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DropdownButtonFormField<int?>(
+                          value: _endMonth,
+                          decoration: const InputDecoration(
+                            labelText: 'End month',
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                          ),
+                          style: const TextStyle(
+                            color: KColors.text,
+                            fontSize: 14,
+                          ),
+                          dropdownColor: KColors.surface2,
+                          items: _monthItems,
+                          onChanged: (v) => setState(() {
+                            _endMonth = v;
+                            if (v != null && _endDate != null) {
+                              _endDate = moveDateToMonth(
+                                isoDate: _endDate,
+                                month: v,
+                                month0Date: widget.month0Date,
+                              );
+                            }
+                          }),
+                        ),
+                      ),
+                    ],
                   ],
-                ]),
+                ),
                 if (_startDate != null || _endDate != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
                       _isSinglePoint
                           ? 'Dated ${du.formatDate(_startDate)} — the date '
-                              'sets the month; changing the month moves the '
-                              'date with it.'
+                                'sets the month; changing the month moves the '
+                                'date with it.'
                           : 'Dated — the dates set the months; changing a '
-                              'month moves its date with it.',
+                                'month moves its date with it.',
                       style: const TextStyle(
-                          color: KColors.textMuted, fontSize: 10),
+                        color: KColors.textMuted,
+                        fontSize: 10,
+                      ),
                     ),
                   ),
                 // ── Schedule scenarios (A / B / C) ──────────────────────
                 if (_canHaveScenarios) ...[
                   const SizedBox(height: 14),
-                  const Text('SCHEDULE SCENARIOS',
-                      style: TextStyle(
-                          color: KColors.textDim,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.1)),
+                  const Text(
+                    'SCHEDULE SCENARIOS',
+                    style: TextStyle(
+                      color: KColors.textDim,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.1,
+                    ),
+                  ),
                   const SizedBox(height: 6),
                   Padding(
                     padding: const EdgeInsets.only(bottom: 4),
                     child: Text(
                       !scenarioAnchorsOnEnd(_type)
                           ? 'The month above is A — Anchor. Optionally add the '
-                              'B — Likely and C — Safe months, and link the RAID '
-                              'items that drive the spread.'
+                                'B — Likely and C — Safe months, and link the RAID '
+                                'items that drive the spread.'
                           : 'The end month above is A — Anchor. Optionally add '
-                              'the B — Likely and C — Safe finishes, and link the '
-                              'RAID items that drive the spread.',
+                                'the B — Likely and C — Safe finishes, and link the '
+                                'RAID items that drive the spread.',
                       style: const TextStyle(
-                          color: KColors.textMuted,
-                          fontSize: 11,
-                          height: 1.5),
+                        color: KColors.textMuted,
+                        fontSize: 11,
+                        height: 1.5,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Row(children: [
-                    Expanded(
-                      child: DropdownButtonFormField<int?>(
-                        value: _scenarioItems.any((i) => i.value == _likelyMonth)
-                            ? _likelyMonth
-                            : null,
-                        decoration: InputDecoration(
-                          labelText: scenarioLabels(_type).likely,
-                          contentPadding: EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<int?>(
+                          value:
+                              _scenarioItems.any((i) => i.value == _likelyMonth)
+                              ? _likelyMonth
+                              : null,
+                          decoration: InputDecoration(
+                            labelText: scenarioLabels(_type).likely,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                          ),
+                          style: const TextStyle(
+                            color: KColors.text,
+                            fontSize: 14,
+                          ),
+                          dropdownColor: KColors.surface2,
+                          items: _scenarioItems,
+                          onChanged: (v) => setState(() => _likelyMonth = v),
                         ),
-                        style: const TextStyle(
-                            color: KColors.text, fontSize: 14),
-                        dropdownColor: KColors.surface2,
-                        items: _scenarioItems,
-                        onChanged: (v) =>
-                            setState(() => _likelyMonth = v),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: DropdownButtonFormField<int?>(
-                        value: _scenarioItems.any((i) => i.value == _safeMonth)
-                            ? _safeMonth
-                            : null,
-                        decoration: InputDecoration(
-                          labelText: scenarioLabels(_type).safe,
-                          contentPadding: EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 10),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DropdownButtonFormField<int?>(
+                          value:
+                              _scenarioItems.any((i) => i.value == _safeMonth)
+                              ? _safeMonth
+                              : null,
+                          decoration: InputDecoration(
+                            labelText: scenarioLabels(_type).safe,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                          ),
+                          style: const TextStyle(
+                            color: KColors.text,
+                            fontSize: 14,
+                          ),
+                          dropdownColor: KColors.surface2,
+                          items: _scenarioItems,
+                          onChanged: (v) => setState(() => _safeMonth = v),
                         ),
-                        style: const TextStyle(
-                            color: KColors.text, fontSize: 14),
-                        dropdownColor: KColors.surface2,
-                        items: _scenarioItems,
-                        onChanged: (v) => setState(() => _safeMonth = v),
                       ),
-                    ),
-                  ]),
+                    ],
+                  ),
                   const SizedBox(height: 10),
                   for (final link in _varianceLinks)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 4),
-                      child: Row(children: [
-                        const Icon(Icons.shield_outlined,
-                            size: 13, color: KColors.textDim),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            link.label ?? '…',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                color: KColors.text, fontSize: 12),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.shield_outlined,
+                            size: 13,
+                            color: KColors.textDim,
                           ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close,
-                              size: 14, color: KColors.textMuted),
-                          tooltip: 'Unlink',
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                              minWidth: 24, minHeight: 24),
-                          onPressed: () => setState(
-                              () => _varianceLinks.remove(link)),
-                        ),
-                      ]),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              link.label ?? '…',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: KColors.text,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(
+                              Icons.close,
+                              size: 14,
+                              color: KColors.textMuted,
+                            ),
+                            tooltip: 'Unlink',
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(
+                              minWidth: 24,
+                              minHeight: 24,
+                            ),
+                            onPressed: () =>
+                                setState(() => _varianceLinks.remove(link)),
+                          ),
+                        ],
+                      ),
                     ),
-                  Row(children: [
-                    if (_varianceLinks.isEmpty)
-                      const Expanded(
-                        child: Text('No RAID items linked',
+                  Row(
+                    children: [
+                      if (_varianceLinks.isEmpty)
+                        const Expanded(
+                          child: Text(
+                            'No RAID items linked',
                             style: TextStyle(
-                                color: KColors.textMuted, fontSize: 12)),
-                      )
-                    else
-                      const Spacer(),
-                    if (_varianceLinks.length < kMaxVarianceLinks)
-                      TextButton.icon(
-                        onPressed: _pickVarianceRaid,
-                        icon: const Icon(Icons.link, size: 13),
-                        label: Text(
+                              color: KColors.textMuted,
+                              fontSize: 12,
+                            ),
+                          ),
+                        )
+                      else
+                        const Spacer(),
+                      if (_varianceLinks.length < kMaxVarianceLinks)
+                        TextButton.icon(
+                          onPressed: _pickVarianceRaid,
+                          icon: const Icon(Icons.link, size: 13),
+                          label: Text(
                             _varianceLinks.isEmpty
                                 ? 'Link RAID item'
                                 : 'Link another',
-                            style: const TextStyle(fontSize: 12)),
-                      )
-                    else
-                      const Text('Max 5 linked',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        )
+                      else
+                        const Text(
+                          'Max 5 linked',
                           style: TextStyle(
-                              color: KColors.textMuted, fontSize: 11)),
-                  ]),
+                            color: KColors.textMuted,
+                            fontSize: 11,
+                          ),
+                        ),
+                    ],
+                  ),
                   if ((_likelyMonth != null || _safeMonth != null) &&
                       _varianceLinks.isEmpty)
                     const Padding(
@@ -4452,8 +5091,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                       child: Text(
                         'Dates vary — link the RAID items that drive the '
                         'spread so the why travels with the plan.',
-                        style:
-                            TextStyle(color: KColors.amber, fontSize: 11),
+                        style: TextStyle(color: KColors.amber, fontSize: 11),
                       ),
                     ),
                 ],
@@ -4461,125 +5099,157 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                 // Optional real dates — months stay the planning grain;
                 // dates add day-accurate bars and override the month
                 // span when set.
-                Row(children: [
-                  Expanded(
-                    child: DatePickerField(
-                      label: _isSinglePoint
-                          ? 'Exact date (optional)'
-                          : 'Start date (optional)',
-                      isoValue: _startDate,
-                      onChanged: (v) => setState(() => _startDate = v),
-                    ),
-                  ),
-                  if (!_isSinglePoint) ...[
-                    const SizedBox(width: 12),
+                Row(
+                  children: [
                     Expanded(
                       child: DatePickerField(
-                        label: 'End date (optional)',
-                        isoValue: _endDate,
-                        onChanged: (v) => setState(() => _endDate = v),
+                        label: _isSinglePoint
+                            ? 'Exact date (optional)'
+                            : 'Start date (optional)',
+                        isoValue: _startDate,
+                        onChanged: (v) => setState(() => _startDate = v),
                       ),
                     ),
+                    if (!_isSinglePoint) ...[
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DatePickerField(
+                          label: 'End date (optional)',
+                          isoValue: _endDate,
+                          onChanged: (v) => setState(() => _endDate = v),
+                        ),
+                      ),
+                    ],
                   ],
-                ]),
+                ),
                 if (_startDate != null && widget.month0Date == null)
                   const Padding(
                     padding: EdgeInsets.only(top: 4),
                     child: Text(
                       'Set the plan\'s month-0 date (Configure) so dates '
                       'can position the bar day-accurately.',
-                      style:
-                          TextStyle(color: KColors.amber, fontSize: 11),
+                      style: TextStyle(color: KColors.amber, fontSize: 11),
                     ),
                   ),
                 const SizedBox(height: 14),
-            ], <Widget>[
+              ],
+              <Widget>[
                 // WBS parent: nest this row as a task under an activity.
                 _ParentActivityDropdown(
                   wpId: widget.wp.id,
                   editingId: widget.activity?.id,
                   allActivities: _allActivities,
                   value: _parentActivityId,
-                  onChanged: (v) =>
-                      setState(() => _parentActivityId = v),
+                  onChanged: (v) => setState(() => _parentActivityId = v),
                 ),
                 const SizedBox(height: 14),
                 // Tasks — rapid decomposition without leaving the dialog.
                 if (_canHaveTasks) ...[
-                  const Text('TASKS',
-                      style: TextStyle(
-                          color: KColors.textDim,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.1)),
+                  const Text(
+                    'TASKS',
+                    style: TextStyle(
+                      color: KColors.textDim,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.1,
+                    ),
+                  ),
                   const SizedBox(height: 6),
                   if (_isEdit)
                     for (final t in _tasks)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 4),
-                        child: Row(children: [
-                          Container(
-                              width: 2, height: 12,
-                              color: c.withValues(alpha: 0.5)),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(t.name,
-                                style: const TextStyle(
-                                    color: KColors.text, fontSize: 12),
-                                overflow: TextOverflow.ellipsis),
-                          ),
-                          InkWell(
-                            onTap: () => _removeTask(t),
-                            child: const Padding(
-                              padding: EdgeInsets.all(2),
-                              child: Icon(Icons.close,
-                                  size: 12, color: KColors.textMuted),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 2,
+                              height: 12,
+                              color: c.withValues(alpha: 0.5),
                             ),
-                          ),
-                        ]),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                t.name,
+                                style: const TextStyle(
+                                  color: KColors.text,
+                                  fontSize: 12,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            InkWell(
+                              onTap: () => _removeTask(t),
+                              child: const Padding(
+                                padding: EdgeInsets.all(2),
+                                child: Icon(
+                                  Icons.close,
+                                  size: 12,
+                                  color: KColors.textMuted,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       )
                   else
                     for (var i = 0; i < _pendingTaskNames.length; i++)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 4),
-                        child: Row(children: [
-                          Container(
-                              width: 2, height: 12,
-                              color: c.withValues(alpha: 0.5)),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(_pendingTaskNames[i],
-                                style: const TextStyle(
-                                    color: KColors.text, fontSize: 12),
-                                overflow: TextOverflow.ellipsis),
-                          ),
-                          InkWell(
-                            onTap: () => setState(
-                                () => _pendingTaskNames.removeAt(i)),
-                            child: const Padding(
-                              padding: EdgeInsets.all(2),
-                              child: Icon(Icons.close,
-                                  size: 12, color: KColors.textMuted),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 2,
+                              height: 12,
+                              color: c.withValues(alpha: 0.5),
                             ),
-                          ),
-                        ]),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _pendingTaskNames[i],
+                                style: const TextStyle(
+                                  color: KColors.text,
+                                  fontSize: 12,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            InkWell(
+                              onTap: () =>
+                                  setState(() => _pendingTaskNames.removeAt(i)),
+                              child: const Padding(
+                                padding: EdgeInsets.all(2),
+                                child: Icon(
+                                  Icons.close,
+                                  size: 12,
+                                  color: KColors.textMuted,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                   TextField(
                     controller: _taskQuickAddCtrl,
                     focusNode: _taskQuickAddFocus,
-                    style: const TextStyle(
-                        color: KColors.text, fontSize: 12),
+                    style: const TextStyle(color: KColors.text, fontSize: 12),
                     decoration: InputDecoration(
                       hintText: _isEdit
                           ? 'Add task — Enter to save, keep typing for more'
                           : 'Add task — created with the activity',
                       hintStyle: const TextStyle(
-                          color: KColors.textMuted, fontSize: 12),
+                        color: KColors.textMuted,
+                        fontSize: 12,
+                      ),
                       isDense: true,
-                      prefixIcon: const Icon(Icons.add,
-                          size: 14, color: KColors.textDim),
+                      prefixIcon: const Icon(
+                        Icons.add,
+                        size: 14,
+                        color: KColors.textDim,
+                      ),
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 8),
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
                     ),
                     onSubmitted: (_) => _quickAddTask(),
                   ),
@@ -4594,12 +5264,15 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                   db: widget.db,
                   projectId: widget.projectId,
                   onPersonCreated: _loadPersons,
-                  textStyle: const TextStyle(
-                      color: KColors.text, fontSize: 14),
+                  textStyle: const TextStyle(color: KColors.text, fontSize: 14),
                   labelStyle: const TextStyle(
-                      color: KColors.textDim, fontSize: 13),
+                    color: KColors.textDim,
+                    fontSize: 13,
+                  ),
                   contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 14),
+                    horizontal: 12,
+                    vertical: 14,
+                  ),
                 ),
                 const SizedBox(height: 14),
                 _MultiPersonPickerField(
@@ -4618,8 +5291,10 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                   decoration: const InputDecoration(
                     labelText: 'Cell label (optional)',
                     hintText: 'Text shown in Gantt cell',
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                   ),
                   style: const TextStyle(color: KColors.text, fontSize: 14),
                 ),
@@ -4634,18 +5309,25 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                   decoration: const InputDecoration(
                     labelText: 'Notes (optional)',
                     alignLabelWithHint: true,
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
                   ),
                   style: const TextStyle(
-                      color: KColors.text, fontSize: 14, height: 1.4),
+                    color: KColors.text,
+                    fontSize: 14,
+                    height: 1.4,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 CheckboxListTile(
                   value: _isCritical,
                   onChanged: (v) => setState(() => _isCritical = v ?? false),
-                  title: const Text('On critical path',
-                      style: TextStyle(color: KColors.text, fontSize: 12)),
+                  title: const Text(
+                    'On critical path',
+                    style: TextStyle(color: KColors.text, fontSize: 12),
+                  ),
                   controlAffinity: ListTileControlAffinity.leading,
                   contentPadding: EdgeInsets.zero,
                   dense: true,
@@ -4654,32 +5336,106 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                 _DependsOnEditor(
                   allActivities: _allActivities,
                   predecessors: _predecessors,
-                  onChanged: (next) =>
-                      setState(() => _predecessors = next),
+                  onChanged: (next) => setState(() => _predecessors = next),
+                  onOpen: (id) => Navigator.of(context).pop(id),
                 ),
-            ], Row(children: [
+                if (_successors.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  const Text(
+                    'GATES',
+                    style: TextStyle(
+                      color: KColors.textDim,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.1,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  const Text(
+                    'Rows that wait on this one. Open any to see its detail.',
+                    style: TextStyle(color: KColors.textMuted, fontSize: 11),
+                  ),
+                  const SizedBox(height: 4),
+                  for (final sx in _successors)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: Tooltip(
+                        message:
+                            'Open ${sx.act.name} — unsaved changes '
+                            'here are discarded',
+                        child: InkWell(
+                          onTap: () => Navigator.of(context).pop(sx.act.id),
+                          borderRadius: BorderRadius.circular(3),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  sx.wp.shortCode != null
+                                      ? '${sx.wp.shortCode} · ${sx.act.name}'
+                                      : '${sx.wp.name} · ${sx.act.name}',
+                                  style: const TextStyle(
+                                    color: KColors.text,
+                                    fontSize: 12,
+                                    decoration: TextDecoration.underline,
+                                    decorationColor: KColors.textMuted,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                switch (sx.type) {
+                                  'start_to_start' => 'SS',
+                                  'finish_to_finish' => 'FF',
+                                  _ => 'FS',
+                                },
+                                style: const TextStyle(
+                                  color: KColors.textMuted,
+                                  fontSize: 10,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              const Icon(
+                                Icons.open_in_new,
+                                size: 11,
+                                color: KColors.textMuted,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ],
+              Row(
+                children: [
                   if (_isEdit)
                     TextButton(
                       onPressed: _delete,
-                      style: TextButton.styleFrom(
-                          foregroundColor: KColors.red),
-                      child: const Text('Delete',
-                          style: TextStyle(fontSize: 12)),
+                      style: TextButton.styleFrom(foregroundColor: KColors.red),
+                      child: const Text(
+                        'Delete',
+                        style: TextStyle(fontSize: 12),
+                      ),
                     ),
                   const Spacer(),
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Cancel',
-                        style: TextStyle(
-                            color: KColors.textDim, fontSize: 12)),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(color: KColors.textDim, fontSize: 12),
+                    ),
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton(
                     onPressed: _saving ? null : _save,
-                    child: Text(_isEdit ? 'Save' : 'Add',
-                        style: const TextStyle(fontSize: 12)),
+                    child: Text(
+                      _isEdit ? 'Save' : 'Add',
+                      style: const TextStyle(fontSize: 12),
+                    ),
                   ),
-                ]),
+                ],
+              ),
             ),
           ),
         ),
@@ -4698,8 +5454,8 @@ class _ActionsBadge extends StatelessWidget {
 
   Color get _color => switch (summary.urgency) {
     'overdue' => KColors.red,
-    'soon'    => KColors.amber,
-    _         => KColors.phosphor,
+    'soon' => KColors.amber,
+    _ => KColors.phosphor,
   };
 
   @override
@@ -4707,7 +5463,8 @@ class _ActionsBadge extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Tooltip(
-        message: '${summary.count} linked action${summary.count == 1 ? '' : 's'}',
+        message:
+            '${summary.count} linked action${summary.count == 1 ? '' : 's'}',
         child: Container(
           margin: const EdgeInsets.only(right: 4),
           padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
@@ -4721,11 +5478,14 @@ class _ActionsBadge extends StatelessWidget {
             children: [
               Icon(Icons.bolt, size: 9, color: _color),
               const SizedBox(width: 2),
-              Text('${summary.count}',
-                  style: TextStyle(
-                      color: _color,
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700)),
+              Text(
+                '${summary.count}',
+                style: TextStyle(
+                  color: _color,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ],
           ),
         ),
@@ -4764,14 +5524,21 @@ class _ActionsPopoverDialogState extends State<_ActionsPopoverDialog> {
   }
 
   Future<void> _load() async {
-    final actions = await widget.db.actionsDao.getActionsForActivity(widget.activity.id);
-    if (mounted) setState(() { _actions = actions; _loading = false; });
+    final actions = await widget.db.actionsDao.getActionsForActivity(
+      widget.activity.id,
+    );
+    if (mounted)
+      setState(() {
+        _actions = actions;
+        _loading = false;
+      });
   }
 
   Color _statusColor(ProjectAction a) {
     final today = DateTime.now().toIso8601String().substring(0, 10);
     if (a.status == 'closed') return KColors.textMuted;
-    if (a.dueDate != null && a.dueDate!.compareTo(today) < 0) return KColors.red;
+    if (a.dueDate != null && a.dueDate!.compareTo(today) < 0)
+      return KColors.red;
     return KColors.phosphor;
   }
 
@@ -4779,17 +5546,19 @@ class _ActionsPopoverDialogState extends State<_ActionsPopoverDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: KColors.surface,
-      title: Row(children: [
-        const Icon(Icons.bolt, size: 14, color: KColors.amber),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            'Actions – ${widget.activity.name}',
-            style: const TextStyle(color: KColors.text, fontSize: 13),
-            overflow: TextOverflow.ellipsis,
+      title: Row(
+        children: [
+          const Icon(Icons.bolt, size: 14, color: KColors.amber),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Actions – ${widget.activity.name}',
+              style: const TextStyle(color: KColors.text, fontSize: 13),
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-        ),
-      ]),
+        ],
+      ),
       content: SizedBox(
         width: 420,
         child: _loading
@@ -4801,35 +5570,41 @@ class _ActionsPopoverDialogState extends State<_ActionsPopoverDialog> {
                   if (_actions.isEmpty)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 8),
-                      child: Text('No actions linked to this activity yet.',
-                          style: TextStyle(color: KColors.textDim, fontSize: 12)),
+                      child: Text(
+                        'No actions linked to this activity yet.',
+                        style: TextStyle(color: KColors.textDim, fontSize: 12),
+                      ),
                     )
                   else
-                    ..._actions.map((a) => _ActionRow(
-                          action: a,
-                          statusColor: _statusColor(a),
-                          onTap: () async {
-                            await showDialog(
-                              context: context,
-                              builder: (_) => ActionFormDialog(
-                                projectId: widget.projectId,
-                                db: widget.db,
-                                action: a,
-                                startInViewMode: true,
-                              ),
-                            );
-                            await _load();
-                            widget.onActionSaved();
-                          },
-                        )),
+                    ..._actions.map(
+                      (a) => _ActionRow(
+                        action: a,
+                        statusColor: _statusColor(a),
+                        onTap: () async {
+                          await showDialog(
+                            context: context,
+                            builder: (_) => ActionFormDialog(
+                              projectId: widget.projectId,
+                              db: widget.db,
+                              action: a,
+                              startInViewMode: true,
+                            ),
+                          );
+                          await _load();
+                          widget.onActionSaved();
+                        },
+                      ),
+                    ),
                 ],
               ),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Close',
-              style: TextStyle(color: KColors.textDim, fontSize: 12)),
+          child: const Text(
+            'Close',
+            style: TextStyle(color: KColors.textDim, fontSize: 12),
+          ),
         ),
         ElevatedButton.icon(
           icon: const Icon(Icons.add, size: 13),
@@ -4875,20 +5650,25 @@ class _ActionRow extends StatelessWidget {
             Icon(Icons.circle, size: 7, color: statusColor),
             const SizedBox(width: 8),
             Expanded(
-              child: Text(action.description,
-                  style: const TextStyle(color: KColors.text, fontSize: 12),
-                  overflow: TextOverflow.ellipsis),
+              child: Text(
+                action.description,
+                style: const TextStyle(color: KColors.text, fontSize: 12),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
             if (action.owner != null) ...[
               const SizedBox(width: 6),
-              Text(action.owner!,
-                  style: const TextStyle(
-                      color: KColors.textDim, fontSize: 10)),
+              Text(
+                action.owner!,
+                style: const TextStyle(color: KColors.textDim, fontSize: 10),
+              ),
             ],
             if (action.dueDate != null) ...[
               const SizedBox(width: 6),
-              Text(action.dueDate!.substring(5), // MM-DD
-                  style: TextStyle(color: statusColor, fontSize: 10)),
+              Text(
+                action.dueDate!.substring(5), // MM-DD
+                style: TextStyle(color: statusColor, fontSize: 10),
+              ),
             ],
           ],
         ),
@@ -4908,6 +5688,7 @@ class _MultiPersonPickerField extends StatefulWidget {
   final String projectId;
   final VoidCallback onPersonsReloaded;
   final ValueChanged<List<_Contributor>> onChanged;
+
   /// When true, renders with the same roomier proportions as the host
   /// activity dialog (larger header, bigger chips + input). Default
   /// keeps the compact rendering used by every other caller.
@@ -4935,7 +5716,7 @@ class _MultiPersonPickerFieldState extends State<_MultiPersonPickerField> {
   String _myName = '';
 
   static const _kAddSentinel = '\x00__add__';
-  static const _kMeSentinel  = '\x00__me__';
+  static const _kMeSentinel = '\x00__me__';
 
   @override
   void dispose() {
@@ -4947,23 +5728,26 @@ class _MultiPersonPickerFieldState extends State<_MultiPersonPickerField> {
   List<String> _optionsFor(String query, String myName) {
     final q = query.toLowerCase().trim();
     final opts = <String>[];
-    final selectedNames =
-        widget.selected.map((c) => c.name.toLowerCase()).toSet();
+    final selectedNames = widget.selected
+        .map((c) => c.name.toLowerCase())
+        .toSet();
 
     if (myName.isNotEmpty &&
         !selectedNames.contains(myName.toLowerCase()) &&
-        (q.isEmpty ||
-            myName.toLowerCase().contains(q) ||
-            'me'.contains(q))) {
+        (q.isEmpty || myName.toLowerCase().contains(q) || 'me'.contains(q))) {
       opts.add(_kMeSentinel);
     }
 
-    opts.addAll(widget.persons
-        .where((p) =>
-            !selectedNames.contains(p.name.toLowerCase()) &&
-            p.name.toLowerCase().contains(q))
-        .map((p) => p.name)
-        .take(6));
+    opts.addAll(
+      widget.persons
+          .where(
+            (p) =>
+                !selectedNames.contains(p.name.toLowerCase()) &&
+                p.name.toLowerCase().contains(q),
+          )
+          .map((p) => p.name)
+          .take(6),
+    );
 
     if (q.isNotEmpty) opts.add(_kAddSentinel);
     return opts;
@@ -4972,7 +5756,8 @@ class _MultiPersonPickerFieldState extends State<_MultiPersonPickerField> {
   void _add(String name, String? id) {
     if (name.isEmpty) return;
     final already = widget.selected.any(
-        (c) => c.name.toLowerCase() == name.toLowerCase());
+      (c) => c.name.toLowerCase() == name.toLowerCase(),
+    );
     if (!already) {
       widget.onChanged([...widget.selected, (name: name, id: id)]);
     }
@@ -4997,17 +5782,19 @@ class _MultiPersonPickerFieldState extends State<_MultiPersonPickerField> {
     if (result != null && mounted) {
       final id = const Uuid().v4();
       final now = DateTime.now();
-      await widget.db.peopleDao.upsertPerson(PersonsCompanion(
-        id: Value(id),
-        projectId: Value(widget.projectId),
-        name: Value(result.name),
-        role: Value(result.role),
-        organisation: Value(result.organisation),
-        personType: Value(result.personType),
-        isStakeholder: Value(result.isStakeholder),
-        createdAt: Value(now),
-        updatedAt: Value(now),
-      ));
+      await widget.db.peopleDao.upsertPerson(
+        PersonsCompanion(
+          id: Value(id),
+          projectId: Value(widget.projectId),
+          name: Value(result.name),
+          role: Value(result.role),
+          organisation: Value(result.organisation),
+          personType: Value(result.personType),
+          isStakeholder: Value(result.isStakeholder),
+          createdAt: Value(now),
+          updatedAt: Value(now),
+        ),
+      );
       widget.onPersonsReloaded();
       _add(result.name, id);
     }
@@ -5037,12 +5824,15 @@ class _MultiPersonPickerFieldState extends State<_MultiPersonPickerField> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('CONTRIBUTORS',
-            style: TextStyle(
-                color: KColors.textMuted,
-                fontSize: headerSize,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.0)),
+        Text(
+          'CONTRIBUTORS',
+          style: TextStyle(
+            color: KColors.textMuted,
+            fontSize: headerSize,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.0,
+          ),
+        ),
         const SizedBox(height: 6),
         Container(
           decoration: BoxDecoration(
@@ -5050,7 +5840,9 @@ class _MultiPersonPickerFieldState extends State<_MultiPersonPickerField> {
             borderRadius: BorderRadius.circular(4),
           ),
           padding: EdgeInsets.symmetric(
-              horizontal: outerPadH, vertical: outerPadV),
+            horizontal: outerPadH,
+            vertical: outerPadV,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -5061,17 +5853,23 @@ class _MultiPersonPickerFieldState extends State<_MultiPersonPickerField> {
                   runSpacing: 6,
                   children: widget.selected.asMap().entries.map((e) {
                     return Chip(
-                      label: Text(e.value.name,
-                          style: TextStyle(
-                              color: KColors.text, fontSize: chipFont)),
+                      label: Text(
+                        e.value.name,
+                        style: TextStyle(
+                          color: KColors.text,
+                          fontSize: chipFont,
+                        ),
+                      ),
                       backgroundColor: KColors.surface2,
                       side: const BorderSide(color: KColors.border2),
-                      deleteIcon: Icon(Icons.close,
-                          size: chipDeleteSize, color: KColors.textDim),
+                      deleteIcon: Icon(
+                        Icons.close,
+                        size: chipDeleteSize,
+                        color: KColors.textDim,
+                      ),
                       onDeleted: () => _remove(e.key),
                       padding: EdgeInsets.zero,
-                      labelPadding:
-                          EdgeInsets.symmetric(horizontal: chipPadH),
+                      labelPadding: EdgeInsets.symmetric(horizontal: chipPadH),
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       visualDensity: VisualDensity.compact,
                     );
@@ -5091,20 +5889,21 @@ class _MultiPersonPickerFieldState extends State<_MultiPersonPickerField> {
                   if (opt == _kAddSentinel) return _ctrl.text;
                   return opt;
                 },
-                fieldViewBuilder: (ctx, ctrl, fn, onSubmitted) =>
-                    TextField(
+                fieldViewBuilder: (ctx, ctrl, fn, onSubmitted) => TextField(
                   controller: ctrl,
                   focusNode: fn,
-                  style: TextStyle(
-                      color: KColors.text, fontSize: inputFont),
+                  style: TextStyle(color: KColors.text, fontSize: inputFont),
                   decoration: InputDecoration(
                     hintText: 'Add contributor…',
                     hintStyle: TextStyle(
-                        color: KColors.textMuted, fontSize: hintFont),
+                      color: KColors.textMuted,
+                      fontSize: hintFont,
+                    ),
                     border: InputBorder.none,
                     isDense: !widget.larger,
-                    contentPadding:
-                        EdgeInsets.symmetric(vertical: widget.larger ? 8 : 4),
+                    contentPadding: EdgeInsets.symmetric(
+                      vertical: widget.larger ? 8 : 4,
+                    ),
                   ),
                   onSubmitted: (_) {
                     final first = _lastOptions.firstWhere(
@@ -5121,8 +5920,7 @@ class _MultiPersonPickerFieldState extends State<_MultiPersonPickerField> {
                     }
                   },
                 ),
-                optionsViewBuilder: (ctx, onSelected, options) =>
-                    Align(
+                optionsViewBuilder: (ctx, onSelected, options) => Align(
                   alignment: Alignment.topLeft,
                   child: Material(
                     color: KColors.surface2,
@@ -5133,7 +5931,9 @@ class _MultiPersonPickerFieldState extends State<_MultiPersonPickerField> {
                     ),
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(
-                          maxHeight: 200, maxWidth: 260),
+                        maxHeight: 200,
+                        maxWidth: 260,
+                      ),
                       child: ListView(
                         shrinkWrap: true,
                         padding: EdgeInsets.zero,
@@ -5143,13 +5943,17 @@ class _MultiPersonPickerFieldState extends State<_MultiPersonPickerField> {
                               dense: true,
                               visualDensity: VisualDensity.compact,
                               leading: const Icon(
-                                  Icons.person_pin_outlined,
-                                  size: 14,
-                                  color: KColors.phosphor),
-                              title: Text('Me — $_myName',
-                                  style: const TextStyle(
-                                      color: KColors.phosphor,
-                                      fontSize: 12)),
+                                Icons.person_pin_outlined,
+                                size: 14,
+                                color: KColors.phosphor,
+                              ),
+                              title: Text(
+                                'Me — $_myName',
+                                style: const TextStyle(
+                                  color: KColors.phosphor,
+                                  fontSize: 12,
+                                ),
+                              ),
                               onTap: () {
                                 onSelected(opt);
                                 _add(_myName, _idForName(_myName));
@@ -5162,13 +5966,17 @@ class _MultiPersonPickerFieldState extends State<_MultiPersonPickerField> {
                               dense: true,
                               visualDensity: VisualDensity.compact,
                               leading: const Icon(
-                                  Icons.person_add_outlined,
-                                  size: 14,
-                                  color: KColors.phosphor),
-                              title: Text('Add "$q" as new person',
-                                  style: const TextStyle(
-                                      color: KColors.phosphor,
-                                      fontSize: 12)),
+                                Icons.person_add_outlined,
+                                size: 14,
+                                color: KColors.phosphor,
+                              ),
+                              title: Text(
+                                'Add "$q" as new person',
+                                style: const TextStyle(
+                                  color: KColors.phosphor,
+                                  fontSize: 12,
+                                ),
+                              ),
                               onTap: () {
                                 onSelected(opt);
                                 _handleAddNew(q);
@@ -5178,12 +5986,18 @@ class _MultiPersonPickerFieldState extends State<_MultiPersonPickerField> {
                           return ListTile(
                             dense: true,
                             visualDensity: VisualDensity.compact,
-                            leading: const Icon(Icons.person_outline,
-                                size: 14, color: KColors.textDim),
-                            title: Text(opt,
-                                style: const TextStyle(
-                                    color: KColors.text,
-                                    fontSize: 12)),
+                            leading: const Icon(
+                              Icons.person_outline,
+                              size: 14,
+                              color: KColors.textDim,
+                            ),
+                            title: Text(
+                              opt,
+                              style: const TextStyle(
+                                color: KColors.text,
+                                fontSize: 12,
+                              ),
+                            ),
                             onTap: () {
                               onSelected(opt);
                               _add(opt, _idForName(opt));
@@ -5229,11 +6043,7 @@ class _StatusDropdown extends StatelessWidget {
       onSelected: onChanged,
       itemBuilder: (context) => [
         for (final s in milestoneTrackerStatuses)
-          PopupMenuItem<String>(
-            value: s,
-            height: 34,
-            child: statusChip(s),
-          ),
+          PopupMenuItem<String>(value: s, height: 34, child: statusChip(s)),
       ],
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
@@ -5241,8 +6051,11 @@ class _StatusDropdown extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Flexible(child: statusChip(status)),
-            const Icon(Icons.arrow_drop_down,
-                size: 14, color: KColors.textMuted),
+            const Icon(
+              Icons.arrow_drop_down,
+              size: 14,
+              color: KColors.textMuted,
+            ),
           ],
         ),
       ),
@@ -5326,13 +6139,14 @@ class _ScenarioThreadPainter extends CustomPainter {
 }
 
 class _DependencyPainter extends CustomPainter {
-  final List<_GRow>             rows;
+  final List<_GRow> rows;
   final List<TimelineDependency> deps;
   final Map<String, TimelineActivity> actMap;
   final double scrollX;
   final double scrollY;
   final double cellW;
-  final bool   quarterMode;
+  final bool quarterMode;
+
   /// When non-null, arrows on the upstream/downstream chains of this
   /// activity are spotlit; unrelated arrows fade. Computed inside the
   /// painter so the parent doesn't have to redo the BFS on every move.
@@ -5340,11 +6154,11 @@ class _DependencyPainter extends CustomPainter {
 
   // Palette — kept as Paint sources rather than literals so each
   // colour's role in the legend is obvious from one place.
-  static const _normalColor   = Color(0xCC8B5CF6); // muted purple
-  static const _brokenColor   = Color(0xFFEF4444); // red
+  static const _normalColor = Color(0xCC8B5CF6); // muted purple
+  static const _brokenColor = Color(0xFFEF4444); // red
   static const _upstreamColor = Color(0xFF22D3EE); // cyan
   static const _downstreamColor = Color(0xFF34D399); // green
-  static const _dimmedColor   = Color(0x33A0AEC0); // very faded grey
+  static const _dimmedColor = Color(0x33A0AEC0); // very faded grey
 
   _DependencyPainter({
     required this.rows,
@@ -5428,11 +6242,11 @@ class _DependencyPainter extends CustomPainter {
       }
 
       final fromAct = actMap[dep.fromActivityId];
-      final toAct   = actMap[dep.toActivityId];
+      final toAct = actMap[dep.toActivityId];
       if (fromAct == null || toAct == null) continue;
 
       final fromRow = ridx[fromAct.id];
-      final toRow   = ridx[toAct.id];
+      final toRow = ridx[toAct.id];
       if (fromRow == null || toRow == null) continue;
 
       // For non-FS types the anchor point shifts (SS leaves from the
@@ -5456,11 +6270,12 @@ class _DependencyPainter extends CustomPainter {
       final toX = dep.dependencyType == 'finish_to_finish'
           ? _monthRight(toMonth)
           : _monthLeft(toMonth);
-      final toY   = _rowMidY(toRow);
+      final toY = _rowMidY(toRow);
 
       // Skip if entirely off-screen
       if (fromX < -cellW * 2 && toX < -cellW * 2) continue;
-      if (fromX > size.width + cellW * 2 && toX > size.width + cellW * 2) continue;
+      if (fromX > size.width + cellW * 2 && toX > size.width + cellW * 2)
+        continue;
 
       final isBroken = DependencyChains.isBroken(dep, actMap);
       final colour = _colourFor(dep, isBroken, upstream, downstream);
@@ -5475,14 +6290,10 @@ class _DependencyPainter extends CustomPainter {
         ..style = PaintingStyle.fill;
 
       // Bezier with horizontal tangents
-      final dx     = (toX - fromX).abs().clamp(cellW * 0.5, cellW * 2.0);
-      final path   = Path()
+      final dx = (toX - fromX).abs().clamp(cellW * 0.5, cellW * 2.0);
+      final path = Path()
         ..moveTo(fromX, fromY)
-        ..cubicTo(
-          fromX + dx, fromY,
-          toX - dx,   toY,
-          toX,        toY,
-        );
+        ..cubicTo(fromX + dx, fromY, toX - dx, toY, toX, toY);
       canvas.drawPath(path, linePaint);
 
       // Arrowhead at toX, toY
@@ -5520,7 +6331,8 @@ class _DependencyPainter extends CustomPainter {
     // activity OR sits anywhere up the upstream chain of it.
     final inUpstream =
         dep.toActivityId == hovered || upstream.contains(dep.toActivityId);
-    final inDownstream = dep.fromActivityId == hovered ||
+    final inDownstream =
+        dep.fromActivityId == hovered ||
         downstream.contains(dep.fromActivityId);
     if (inUpstream && isBroken) return _brokenColor;
     if (inDownstream && isBroken) return _brokenColor;
@@ -5562,10 +6374,7 @@ class _DependencyPainter extends CustomPainter {
       RRect.fromRectAndRadius(rect, const Radius.circular(2)),
       bg,
     );
-    tp.paint(
-      canvas,
-      Offset(cx - tp.width / 2, cy - tp.height / 2),
-    );
+    tp.paint(canvas, Offset(cx - tp.width / 2, cy - tp.height / 2));
   }
 
   /// Paints a small "EXT: label" chip just to the left of an
@@ -5671,9 +6480,9 @@ class _DependencyPainter extends CustomPainter {
   bool shouldRepaint(_DependencyPainter old) =>
       old.scrollX != scrollX ||
       old.scrollY != scrollY ||
-      old.cellW   != cellW   ||
-      old.deps    != deps    ||
-      old.rows    != rows    ||
+      old.cellW != cellW ||
+      old.deps != deps ||
+      old.rows != rows ||
       old.hoveredActivityId != hoveredActivityId;
 }
 
@@ -5693,61 +6502,68 @@ class _LayoutModeButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      Tooltip(
-        message: isExpanded
-            ? 'Restore normal layout (⌘⇧E)'
-            : 'Expand — hide Claude panel (⌘⇧E)',
-        child: GestureDetector(
-          onTap: onToggleExpanded,
-          child: Container(
-            width: 28, height: 28,
-            decoration: BoxDecoration(
-              color: isExpanded
-                  ? KColors.amber.withValues(alpha: 0.15)
-                  : KColors.surface2,
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(
-                  color: isExpanded ? KColors.amber : KColors.border),
-            ),
-            child: Icon(
-              isExpanded
-                  ? Icons.close_fullscreen_outlined
-                  : Icons.open_in_full_outlined,
-              size: 13,
-              color: isExpanded ? KColors.amber : KColors.textMuted,
-            ),
-          ),
-        ),
-      ),
-      const SizedBox(width: 4),
-      Tooltip(
-        message: isPresentation
-            ? 'Exit presentation mode (F11)'
-            : 'Presentation mode — full screen (F11)',
-        child: GestureDetector(
-          onTap: onTogglePresentation,
-          child: Container(
-            width: 28, height: 28,
-            decoration: BoxDecoration(
-              color: isPresentation
-                  ? KColors.amber.withValues(alpha: 0.15)
-                  : KColors.surface2,
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(
-                  color: isPresentation ? KColors.amber : KColors.border),
-            ),
-            child: Icon(
-              isPresentation
-                  ? Icons.fullscreen_exit_outlined
-                  : Icons.fullscreen_outlined,
-              size: 14,
-              color: isPresentation ? KColors.amber : KColors.textMuted,
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Tooltip(
+          message: isExpanded
+              ? 'Restore normal layout (⌘⇧E)'
+              : 'Expand — hide Claude panel (⌘⇧E)',
+          child: GestureDetector(
+            onTap: onToggleExpanded,
+            child: Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: isExpanded
+                    ? KColors.amber.withValues(alpha: 0.15)
+                    : KColors.surface2,
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(
+                  color: isExpanded ? KColors.amber : KColors.border,
+                ),
+              ),
+              child: Icon(
+                isExpanded
+                    ? Icons.close_fullscreen_outlined
+                    : Icons.open_in_full_outlined,
+                size: 13,
+                color: isExpanded ? KColors.amber : KColors.textMuted,
+              ),
             ),
           ),
         ),
-      ),
-    ]);
+        const SizedBox(width: 4),
+        Tooltip(
+          message: isPresentation
+              ? 'Exit presentation mode (F11)'
+              : 'Presentation mode — full screen (F11)',
+          child: GestureDetector(
+            onTap: onTogglePresentation,
+            child: Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: isPresentation
+                    ? KColors.amber.withValues(alpha: 0.15)
+                    : KColors.surface2,
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(
+                  color: isPresentation ? KColors.amber : KColors.border,
+                ),
+              ),
+              child: Icon(
+                isPresentation
+                    ? Icons.fullscreen_exit_outlined
+                    : Icons.fullscreen_outlined,
+                size: 14,
+                color: isPresentation ? KColors.amber : KColors.textMuted,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -5769,39 +6585,52 @@ class _ZoomControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      // Month / Quarter toggle
-      Container(
-        height: 28,
-        decoration: BoxDecoration(
-          color: KColors.surface2,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: KColors.border),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Month / Quarter toggle
+        Container(
+          height: 28,
+          decoration: BoxDecoration(
+            color: KColors.surface2,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: KColors.border),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _modeTab('M', !quarterMode, () => onToggleQuarter(false)),
+              Container(width: 1, height: 16, color: KColors.border),
+              _modeTab('Q', quarterMode, () => onToggleQuarter(true)),
+            ],
+          ),
         ),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          _modeTab('M', !quarterMode, () => onToggleQuarter(false)),
-          Container(width: 1, height: 16, color: KColors.border),
-          _modeTab('Q', quarterMode, () => onToggleQuarter(true)),
-        ]),
-      ),
-      const SizedBox(width: 6),
-      // Zoom buttons
-      Container(
-        height: 28,
-        decoration: BoxDecoration(
-          color: KColors.surface2,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: KColors.border),
+        const SizedBox(width: 6),
+        // Zoom buttons
+        Container(
+          height: 28,
+          decoration: BoxDecoration(
+            color: KColors.surface2,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: KColors.border),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _iconBtn(Icons.remove, onZoomOut, tooltip: 'Zoom out (⌘-)'),
+              Container(width: 1, height: 16, color: KColors.border),
+              _iconBtn(Icons.add, onZoomIn, tooltip: 'Zoom in (⌘+)'),
+              Container(width: 1, height: 16, color: KColors.border),
+              _iconBtn(
+                Icons.fit_screen_outlined,
+                onFit,
+                tooltip: 'Fit to screen (⌘0)',
+              ),
+            ],
+          ),
         ),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          _iconBtn(Icons.remove, onZoomOut, tooltip: 'Zoom out (⌘-)'),
-          Container(width: 1, height: 16, color: KColors.border),
-          _iconBtn(Icons.add, onZoomIn, tooltip: 'Zoom in (⌘+)'),
-          Container(width: 1, height: 16, color: KColors.border),
-          _iconBtn(Icons.fit_screen_outlined, onFit, tooltip: 'Fit to screen (⌘0)'),
-        ]),
-      ),
-    ]);
+      ],
+    );
   }
 
   Widget _modeTab(String label, bool active, VoidCallback onTap) {
@@ -5811,26 +6640,36 @@ class _ZoomControls extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10),
         height: 28,
         decoration: BoxDecoration(
-          color: active ? KColors.amber.withValues(alpha: 0.15) : Colors.transparent,
+          color: active
+              ? KColors.amber.withValues(alpha: 0.15)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(3),
         ),
         alignment: Alignment.center,
-        child: Text(label,
-            style: TextStyle(
-                fontSize: 11,
-                color: active ? KColors.amber : KColors.textMuted,
-                fontWeight: active ? FontWeight.w700 : FontWeight.w400)),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            color: active ? KColors.amber : KColors.textMuted,
+            fontWeight: active ? FontWeight.w700 : FontWeight.w400,
+          ),
+        ),
       ),
     );
   }
 
-  Widget _iconBtn(IconData icon, VoidCallback onTap, {required String tooltip}) {
+  Widget _iconBtn(
+    IconData icon,
+    VoidCallback onTap, {
+    required String tooltip,
+  }) {
     return Tooltip(
       message: tooltip,
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          width: 28, height: 28,
+          width: 28,
+          height: 28,
           color: Colors.transparent,
           child: Icon(icon, size: 14, color: KColors.textMuted),
         ),
@@ -5855,11 +6694,24 @@ class _ViewToggle extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
         border: Border.all(color: KColors.border),
       ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        _tab(Icons.table_chart_outlined, 'Plan', !showMilestones, () => onChanged(false)),
-        Container(width: 1, height: 16, color: KColors.border),
-        _tab(Icons.flag_outlined, 'Milestones', showMilestones, () => onChanged(true)),
-      ]),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _tab(
+            Icons.table_chart_outlined,
+            'Plan',
+            !showMilestones,
+            () => onChanged(false),
+          ),
+          Container(width: 1, height: 16, color: KColors.border),
+          _tab(
+            Icons.flag_outlined,
+            'Milestones',
+            showMilestones,
+            () => onChanged(true),
+          ),
+        ],
+      ),
     );
   }
 
@@ -5869,19 +6721,29 @@ class _ViewToggle extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
-          color: active ? KColors.amber.withValues(alpha: 0.15) : Colors.transparent,
+          color: active
+              ? KColors.amber.withValues(alpha: 0.15)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(3),
         ),
-        child: Row(children: [
-          Icon(icon, size: 12,
-              color: active ? KColors.amber : KColors.textMuted),
-          const SizedBox(width: 4),
-          Text(label,
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 12,
+              color: active ? KColors.amber : KColors.textMuted,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              label,
               style: TextStyle(
-                  fontSize: 11,
-                  color: active ? KColors.amber : KColors.textMuted,
-                  fontWeight: active ? FontWeight.w600 : FontWeight.w400)),
-        ]),
+                fontSize: 11,
+                color: active ? KColors.amber : KColors.textMuted,
+                fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -5910,8 +6772,7 @@ class _RaidPickerDialog extends StatefulWidget {
 }
 
 class _RaidPickerDialogState extends State<_RaidPickerDialog> {
-  List<({String type, String id, String ref, String description})> _items =
-      [];
+  List<({String type, String id, String ref, String description})> _items = [];
   bool _loading = true;
 
   @override
@@ -5923,25 +6784,40 @@ class _RaidPickerDialogState extends State<_RaidPickerDialog> {
   Future<void> _load() async {
     final dao = widget.db.raidDao;
     final risks = await dao.getRisksForProject(widget.projectId);
-    final assumptions =
-        await dao.getAssumptionsForProject(widget.projectId);
+    final assumptions = await dao.getAssumptionsForProject(widget.projectId);
     final issues = await dao.getIssuesForProject(widget.projectId);
     final deps = await dao.getDependenciesForProject(widget.projectId);
     if (!mounted) return;
     setState(() {
       _items = [
         for (final r in risks.where((r) => r.status != 'closed'))
-          (type: 'risk', id: r.id, ref: r.ref ?? 'Risk',
-              description: r.description),
+          (
+            type: 'risk',
+            id: r.id,
+            ref: r.ref ?? 'Risk',
+            description: r.description,
+          ),
         for (final a in assumptions.where((a) => a.status != 'closed'))
-          (type: 'assumption', id: a.id, ref: a.ref ?? 'Assumption',
-              description: a.description),
+          (
+            type: 'assumption',
+            id: a.id,
+            ref: a.ref ?? 'Assumption',
+            description: a.description,
+          ),
         for (final i in issues.where((i) => i.status != 'closed'))
-          (type: 'issue', id: i.id, ref: i.ref ?? 'Issue',
-              description: i.title ?? i.description),
+          (
+            type: 'issue',
+            id: i.id,
+            ref: i.ref ?? 'Issue',
+            description: i.title ?? i.description,
+          ),
         for (final d in deps.where((d) => d.status != 'closed'))
-          (type: 'dependency', id: d.id, ref: d.ref ?? 'Dep',
-              description: d.description),
+          (
+            type: 'dependency',
+            id: d.id,
+            ref: d.ref ?? 'Dep',
+            description: d.description,
+          ),
       ].where((i) => !widget.excludeIds.contains(i.id)).toList();
       _loading = false;
     });
@@ -5950,10 +6826,8 @@ class _RaidPickerDialogState extends State<_RaidPickerDialog> {
   Future<void> _newRisk() async {
     await showDialog(
       context: context,
-      builder: (_) => RiskFormDialog(
-        projectId: widget.projectId,
-        db: widget.db,
-      ),
+      builder: (_) =>
+          RiskFormDialog(projectId: widget.projectId, db: widget.db),
     );
     await _load(); // the new risk appears in the list — tap to link it
   }
@@ -5961,94 +6835,97 @@ class _RaidPickerDialogState extends State<_RaidPickerDialog> {
   Future<void> _newAssumption() async {
     await showDialog(
       context: context,
-      builder: (_) => AssumptionFormDialog(
-        projectId: widget.projectId,
-        db: widget.db,
-      ),
+      builder: (_) =>
+          AssumptionFormDialog(projectId: widget.projectId, db: widget.db),
     );
     await _load();
   }
 
   Color _typeColor(String type) => switch (type) {
-        'risk' => KColors.amber,
-        'assumption' => KColors.blue,
-        'issue' => KColors.red,
-        _ => const Color(0xFF8B5CF6),
-      };
+    'risk' => KColors.amber,
+    'assumption' => KColors.blue,
+    'issue' => KColors.red,
+    _ => const Color(0xFF8B5CF6),
+  };
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: KColors.surface,
-      title: const Text('Link a RAID item',
-          style: TextStyle(color: KColors.text, fontSize: 14)),
+      title: const Text(
+        'Link a RAID item',
+        style: TextStyle(color: KColors.text, fontSize: 14),
+      ),
       content: SizedBox(
         width: 480,
         height: 420,
         child: _loading
-            ? const Center(
-                child: CircularProgressIndicator(strokeWidth: 1.5))
+            ? const Center(child: CircularProgressIndicator(strokeWidth: 1.5))
             : _items.isEmpty
-                ? const Center(
-                    child: Text(
-                      'No open RAID items yet — create one below.',
-                      style:
-                          TextStyle(color: KColors.textDim, fontSize: 12),
-                    ),
-                  )
-                : ListView(
-                    children: [
-                      for (final item in _items)
-                        InkWell(
-                          onTap: () => Navigator.of(context)
-                              .pop((type: item.type, id: item.id)),
-                          child: Container(
-                            decoration: const BoxDecoration(
-                              border: Border(
-                                  bottom: BorderSide(
-                                      color: KColors.border, width: 1)),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 8),
-                            child: Row(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: _typeColor(item.type)
-                                        .withValues(alpha: 0.15),
-                                    borderRadius:
-                                        BorderRadius.circular(3),
-                                  ),
-                                  child: Text(
-                                    item.ref,
-                                    style: TextStyle(
-                                      color: _typeColor(item.type),
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    item.description,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                        color: KColors.text,
-                                        fontSize: 12),
-                                  ),
-                                ),
-                              ],
-                            ),
+            ? const Center(
+                child: Text(
+                  'No open RAID items yet — create one below.',
+                  style: TextStyle(color: KColors.textDim, fontSize: 12),
+                ),
+              )
+            : ListView(
+                children: [
+                  for (final item in _items)
+                    InkWell(
+                      onTap: () => Navigator.of(
+                        context,
+                      ).pop((type: item.type, id: item.id)),
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(color: KColors.border, width: 1),
                           ),
                         ),
-                    ],
-                  ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 8,
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _typeColor(
+                                  item.type,
+                                ).withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                              child: Text(
+                                item.ref,
+                                style: TextStyle(
+                                  color: _typeColor(item.type),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                item.description,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: KColors.text,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
       ),
       actions: [
         TextButton.icon(
@@ -6059,8 +6936,7 @@ class _RaidPickerDialogState extends State<_RaidPickerDialog> {
         TextButton.icon(
           onPressed: _newAssumption,
           icon: const Icon(Icons.add, size: 13),
-          label: const Text('New assumption',
-              style: TextStyle(fontSize: 12)),
+          label: const Text('New assumption', style: TextStyle(fontSize: 12)),
         ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
