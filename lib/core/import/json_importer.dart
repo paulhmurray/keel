@@ -1185,6 +1185,9 @@ class JsonImporter {
               goalId: Value(om['goal_id'] as String?),
               targetBlocks: Value(om['target_blocks'] as int?),
               done: Value(om['done'] as bool? ?? false),
+              dayAllocationsJson:
+                  Value(om['day_allocations_json'] as String? ?? '{}'),
+              carriedFromId: Value(om['carried_from_id'] as String?),
               createdAt: Value(_parseDt(om['created_at']) ?? DateTime.now()),
               updatedAt: Value(_parseDt(om['updated_at']) ?? DateTime.now()),
             ));
@@ -1198,6 +1201,9 @@ class JsonImporter {
             weekStartDate: Value(pm['week_start_date'] as String),
             dayMissionsJson:
                 Value(pm['day_missions_json'] as String? ?? '{}'),
+            chartedAt: Value(_parseDt(pm['charted_at'])),
+            reviewedAt: Value(_parseDt(pm['reviewed_at'])),
+            reviewNote: Value(pm['review_note'] as String?),
             createdAt: Value(_parseDt(pm['created_at']) ?? DateTime.now()),
             updatedAt: Value(_parseDt(pm['updated_at']) ?? DateTime.now()),
           ),

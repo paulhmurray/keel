@@ -13,7 +13,8 @@ import '../../../core/cascade/cascade_service.dart';
 import '../../../core/cascade/cascade_factory.dart';
 import '../../../core/database/database.dart';
 import '../../../core/plan/variance_links.dart';
-import 'date_precision.dart';
+import '../../../core/plan/date_precision.dart';
+import '../../../core/plan/scenarios.dart';
 import 'dependency_chains.dart';
 import '../../../providers/project_provider.dart';
 import '../../../providers/settings_provider.dart';
@@ -25,6 +26,9 @@ import '../../actions/action_form.dart';
 import '../../raid/risk_form.dart';
 import '../../raid/assumption_form.dart';
 import 'milestone_tracker_view.dart';
+import 'plan_gaps_dialog.dart';
+import 'plan_review_dialog.dart';
+import 'replan_dialog.dart';
 
 // ─── Layout constants ─────────────────────────────────────────────────────────
 // Name pane width includes the STATUS column slot (_kStatusW) at its
@@ -703,6 +707,34 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     if (mounted) setState(() => _settingBaseline = false);
   }
 
+  /// Slides not-started work whose start has passed forward to today,
+  /// pushes the consequences through the arrows, and reviews each move.
+  Future<void> _openReplan() async {
+    final changed = await showDialog<bool>(
+      context: context,
+      builder: (_) => ReplanDialog(db: _db, projectId: widget.projectId),
+    );
+    if (changed == true) _load();
+  }
+
+  /// Graph checks, then the model's view of order and missing steps.
+  Future<void> _openPlanReview() async {
+    final changed = await showDialog<bool>(
+      context: context,
+      builder: (_) => PlanReviewDialog(db: _db, projectId: widget.projectId),
+    );
+    if (changed == true) _load();
+  }
+
+  /// Register items with no plan link, each offered a home on the plan.
+  Future<void> _openPlanGaps() async {
+    final changed = await showDialog<bool>(
+      context: context,
+      builder: (_) => PlanGapsDialog(db: _db, projectId: widget.projectId),
+    );
+    if (changed == true) _load();
+  }
+
   Future<void> _clearBaseline() async {
     await _db.programmeGanttDao.clearBaseline(widget.projectId);
     _load();
@@ -1081,6 +1113,87 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
             ),
           ),
           const SizedBox(width: 6),
+          Tooltip(
+            message: 'Re-plan slipped work: slide not-started activities '
+                'whose start has passed forward to today and review each move',
+            child: GestureDetector(
+              onTap: _openReplan,
+              child: Container(
+                height: 28,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                decoration: BoxDecoration(
+                  color: KColors.surface2,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: KColors.border),
+                ),
+                alignment: Alignment.center,
+                child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.update, size: 13, color: KColors.amber),
+                  SizedBox(width: 5),
+                  Text('Re-plan',
+                      style: TextStyle(
+                          color: KColors.textMuted,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500)),
+                ]),
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Tooltip(
+            message: 'Pull in from the registers: open actions, decisions, '
+                'dependencies and risks that no plan activity knows about',
+            child: GestureDetector(
+              onTap: _openPlanGaps,
+              child: Container(
+                height: 28,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                decoration: BoxDecoration(
+                  color: KColors.surface2,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: KColors.border),
+                ),
+                alignment: Alignment.center,
+                child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.move_to_inbox_outlined, size: 13, color: KColors.amber),
+                  SizedBox(width: 5),
+                  Text('Pull in',
+                      style: TextStyle(
+                          color: KColors.textMuted,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500)),
+                ]),
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Tooltip(
+            message: 'Review my plan: order, gaps and missing milestones, '
+                'from the plan\'s own arrows and then from the model',
+            child: GestureDetector(
+              onTap: _openPlanReview,
+              child: Container(
+                height: 28,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                decoration: BoxDecoration(
+                  color: KColors.surface2,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: KColors.border),
+                ),
+                alignment: Alignment.center,
+                child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.fact_check_outlined, size: 13, color: KColors.amber),
+                  SizedBox(width: 5),
+                  Text('Review',
+                      style: TextStyle(
+                          color: KColors.textMuted,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500)),
+                ]),
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
           _ZoomControls(
             onZoomIn: _zoomIn,
             onZoomOut: _zoomOut,
@@ -1195,6 +1308,21 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
             onTap: () {
               if (!_settingBaseline) _setBaseline();
             },
+          ),
+          item(
+            icon: Icons.update,
+            label: 'Re-plan slipped work',
+            onTap: _openReplan,
+          ),
+          item(
+            icon: Icons.move_to_inbox_outlined,
+            label: 'Pull in from the registers',
+            onTap: _openPlanGaps,
+          ),
+          item(
+            icon: Icons.fact_check_outlined,
+            label: 'Review my plan',
+            onTap: _openPlanReview,
           ),
           item(
             icon: Icons.calendar_view_month_outlined,
@@ -2037,7 +2165,8 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     // The anchor ◆ renders above; B and C echo it as ◇ and ○ in their
     // own months so the possible spread reads directly off the chart.
     bool inCol(int? m) => m != null && m >= col.start && m <= col.end;
-    if (!isActive && isSingle) {
+    final hasScenarios = scenariosApplyTo(act.activityType);
+    if (!isActive && hasScenarios) {
       if (inCol(act.likelyMonth)) {
         child = Tooltip(
           message: 'B — Likely',
@@ -2067,15 +2196,9 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     // reads as one object. It runs UNDER the glyphs, from the centre of
     // the range's first cell to the centre of its last — so consecutive
     // months (Apr → May → Jun) connect too, not just gapped spreads.
-    if (isSingle &&
-        (act.likelyMonth != null || act.safeMonth != null) &&
-        act.startMonth != null) {
-      var lo = act.startMonth!, hi = act.startMonth!;
-      for (final m in [act.likelyMonth, act.safeMonth]) {
-        if (m == null) continue;
-        if (m < lo) lo = m;
-        if (m > hi) hi = m;
-      }
+    final range = hasScenarios ? scenarioRange(act) : null;
+    if (range != null) {
+      final lo = range.lo, hi = range.hi;
       final containsLo = lo >= col.start && lo <= col.end;
       final containsHi = hi >= col.start && hi <= col.end;
       final overlaps = col.start <= hi && col.end >= lo && lo != hi;
@@ -3621,9 +3744,25 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
   bool get _isEdit => widget.activity != null;
   bool get _isSinglePoint =>
       _type == 'milestone' || _type == 'hard_deadline' || _type == 'gate';
-  // Scenario dates apply to milestones and gates. Deliberately NOT
-  // hard_deadline: a hard date is precisely one with no variants.
-  bool get _canHaveScenarios => _type == 'milestone' || _type == 'gate';
+  // Scenario dates apply to points (milestone, gate, dependency marker)
+  // and to activities, where they are alternative finishes. Deliberately
+  // NOT hard_deadline: a hard date is precisely one with no variants.
+  // Rule shared with the painter and the export: core/plan/scenarios.dart.
+  bool get _canHaveScenarios => scenariosApplyTo(_type);
+
+  /// Anchor for the B/C pickers: the month for a point, the end month
+  /// for an activity (dates pin it when both exist).
+  int? get _scenarioAnchor =>
+      scenarioAnchorsOnEnd(_type) ? (_endMonth ?? _startMonth) : _startMonth;
+
+  /// Month choices for B/C: everything for a point, end-onward for an
+  /// activity (an earlier finish would be hidden under the bar).
+  List<DropdownMenuItem<int?>> get _scenarioItems => [
+        for (final item in _monthItems)
+          if (item.value == null ||
+              scenarioMonthAllowed(_type, item.value!, _scenarioAnchor))
+            item,
+      ];
 
   Future<void> _resolveVarianceLabels() async {
     final dao = widget.db.raidDao;
@@ -4198,13 +4337,17 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.1)),
                   const SizedBox(height: 6),
-                  const Padding(
-                    padding: EdgeInsets.only(bottom: 4),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
                     child: Text(
-                      'The month above is A — Anchor. Optionally add the '
-                      'B — Likely and C — Safe months, and link the RAID '
-                      'items that drive the spread.',
-                      style: TextStyle(
+                      !scenarioAnchorsOnEnd(_type)
+                          ? 'The month above is A — Anchor. Optionally add the '
+                              'B — Likely and C — Safe months, and link the RAID '
+                              'items that drive the spread.'
+                          : 'The end month above is A — Anchor. Optionally add '
+                              'the B — Likely and C — Safe finishes, and link the '
+                              'RAID items that drive the spread.',
+                      style: const TextStyle(
                           color: KColors.textMuted,
                           fontSize: 11,
                           height: 1.5),
@@ -4214,16 +4357,18 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                   Row(children: [
                     Expanded(
                       child: DropdownButtonFormField<int?>(
-                        value: _likelyMonth,
-                        decoration: const InputDecoration(
-                          labelText: 'B — Likely (optional)',
+                        value: _scenarioItems.any((i) => i.value == _likelyMonth)
+                            ? _likelyMonth
+                            : null,
+                        decoration: InputDecoration(
+                          labelText: scenarioLabels(_type).likely,
                           contentPadding: EdgeInsets.symmetric(
                               horizontal: 12, vertical: 10),
                         ),
                         style: const TextStyle(
                             color: KColors.text, fontSize: 14),
                         dropdownColor: KColors.surface2,
-                        items: _monthItems,
+                        items: _scenarioItems,
                         onChanged: (v) =>
                             setState(() => _likelyMonth = v),
                       ),
@@ -4231,16 +4376,18 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: DropdownButtonFormField<int?>(
-                        value: _safeMonth,
-                        decoration: const InputDecoration(
-                          labelText: 'C — Safe (optional)',
+                        value: _scenarioItems.any((i) => i.value == _safeMonth)
+                            ? _safeMonth
+                            : null,
+                        decoration: InputDecoration(
+                          labelText: scenarioLabels(_type).safe,
                           contentPadding: EdgeInsets.symmetric(
                               horizontal: 12, vertical: 10),
                         ),
                         style: const TextStyle(
                             color: KColors.text, fontSize: 14),
                         dropdownColor: KColors.surface2,
-                        items: _monthItems,
+                        items: _scenarioItems,
                         onChanged: (v) => setState(() => _safeMonth = v),
                       ),
                     ),

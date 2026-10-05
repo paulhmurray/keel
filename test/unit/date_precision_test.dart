@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:keel/features/timeline/gantt/date_precision.dart';
+import 'package:keel/core/plan/date_precision.dart';
 
 void main() {
   final m0 = DateTime(2026, 6, 1); // Jun 26 = month 0

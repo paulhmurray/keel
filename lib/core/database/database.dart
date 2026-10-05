@@ -1617,6 +1617,14 @@ class WeekPlans extends Table {
   // "6" = Sunday) to a one-line mission for that day.
   TextColumn get dayMissionsJson =>
       text().withDefault(const Constant('{}'))();
+  // When the "Chart this week" ritual was completed — the Monday nudge
+  // is satisfied by this, not by the plan row existing (v67).
+  DateTimeColumn get chartedAt => dateTime().nullable()();
+  // The end-of-week review: when it was done and the one-line lesson.
+  // Global like the week itself, so it lives here rather than in a
+  // project's journal.
+  DateTimeColumn get reviewedAt => dateTime().nullable()();
+  TextColumn get reviewNote => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
@@ -1641,6 +1649,14 @@ class WeekPlanObjectives extends Table {
   IntColumn get targetBlocks => integer().nullable()();
   // Manual completion for objectives without block targets.
   BoolColumn get done => boolean().withDefault(const Constant(false))();
+  // Which days the work is allocated to: JSON object mapping weekday
+  // index ("0" = Monday … "6" = Sunday) to focus slots (30 min each,
+  // the same unit as targetBlocks and done blocks). The morning ritual
+  // pre-places these as draft blocks (v67).
+  TextColumn get dayAllocationsJson =>
+      text().withDefault(const Constant('{}'))();
+  // Set when the objective was carried over from last week's plan.
+  TextColumn get carriedFromId => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
@@ -1810,7 +1826,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(QueryExecutor executor) : super(executor);
 
   @override
-  int get schemaVersion => 66;
+  int get schemaVersion => 67;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -2353,6 +2369,17 @@ class AppDatabase extends _$AppDatabase {
             await ensureTable(contingencyMovements);
             await ensureTable(programmeFinanceSettings);
             await ensureTable(receivedAllocations);
+          }
+          if (from < 67) {
+            // Helm weekly ritual: rocks allocated to days, carry-over
+            // lineage, and the charted/reviewed stamps on the week.
+            await ensureColumn(
+                weekPlanObjectives, weekPlanObjectives.dayAllocationsJson);
+            await ensureColumn(
+                weekPlanObjectives, weekPlanObjectives.carriedFromId);
+            await ensureColumn(weekPlans, weekPlans.chartedAt);
+            await ensureColumn(weekPlans, weekPlans.reviewedAt);
+            await ensureColumn(weekPlans, weekPlans.reviewNote);
           }
         },
       );

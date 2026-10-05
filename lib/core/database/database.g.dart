@@ -44296,6 +44296,39 @@ class $WeekPlansTable extends WeekPlans
     requiredDuringInsert: false,
     defaultValue: const Constant('{}'),
   );
+  static const VerificationMeta _chartedAtMeta = const VerificationMeta(
+    'chartedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> chartedAt = GeneratedColumn<DateTime>(
+    'charted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _reviewedAtMeta = const VerificationMeta(
+    'reviewedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> reviewedAt = GeneratedColumn<DateTime>(
+    'reviewed_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _reviewNoteMeta = const VerificationMeta(
+    'reviewNote',
+  );
+  @override
+  late final GeneratedColumn<String> reviewNote = GeneratedColumn<String>(
+    'review_note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -44325,6 +44358,9 @@ class $WeekPlansTable extends WeekPlans
     id,
     weekStartDate,
     dayMissionsJson,
+    chartedAt,
+    reviewedAt,
+    reviewNote,
     createdAt,
     updatedAt,
   ];
@@ -44365,6 +44401,24 @@ class $WeekPlansTable extends WeekPlans
         ),
       );
     }
+    if (data.containsKey('charted_at')) {
+      context.handle(
+        _chartedAtMeta,
+        chartedAt.isAcceptableOrUnknown(data['charted_at']!, _chartedAtMeta),
+      );
+    }
+    if (data.containsKey('reviewed_at')) {
+      context.handle(
+        _reviewedAtMeta,
+        reviewedAt.isAcceptableOrUnknown(data['reviewed_at']!, _reviewedAtMeta),
+      );
+    }
+    if (data.containsKey('review_note')) {
+      context.handle(
+        _reviewNoteMeta,
+        reviewNote.isAcceptableOrUnknown(data['review_note']!, _reviewNoteMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -44398,6 +44452,18 @@ class $WeekPlansTable extends WeekPlans
         DriftSqlType.string,
         data['${effectivePrefix}day_missions_json'],
       )!,
+      chartedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}charted_at'],
+      ),
+      reviewedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}reviewed_at'],
+      ),
+      reviewNote: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}review_note'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -44419,12 +44485,18 @@ class WeekPlan extends DataClass implements Insertable<WeekPlan> {
   final String id;
   final String weekStartDate;
   final String dayMissionsJson;
+  final DateTime? chartedAt;
+  final DateTime? reviewedAt;
+  final String? reviewNote;
   final DateTime createdAt;
   final DateTime updatedAt;
   const WeekPlan({
     required this.id,
     required this.weekStartDate,
     required this.dayMissionsJson,
+    this.chartedAt,
+    this.reviewedAt,
+    this.reviewNote,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -44434,6 +44506,15 @@ class WeekPlan extends DataClass implements Insertable<WeekPlan> {
     map['id'] = Variable<String>(id);
     map['week_start_date'] = Variable<String>(weekStartDate);
     map['day_missions_json'] = Variable<String>(dayMissionsJson);
+    if (!nullToAbsent || chartedAt != null) {
+      map['charted_at'] = Variable<DateTime>(chartedAt);
+    }
+    if (!nullToAbsent || reviewedAt != null) {
+      map['reviewed_at'] = Variable<DateTime>(reviewedAt);
+    }
+    if (!nullToAbsent || reviewNote != null) {
+      map['review_note'] = Variable<String>(reviewNote);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -44444,6 +44525,15 @@ class WeekPlan extends DataClass implements Insertable<WeekPlan> {
       id: Value(id),
       weekStartDate: Value(weekStartDate),
       dayMissionsJson: Value(dayMissionsJson),
+      chartedAt: chartedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(chartedAt),
+      reviewedAt: reviewedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reviewedAt),
+      reviewNote: reviewNote == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reviewNote),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -44458,6 +44548,9 @@ class WeekPlan extends DataClass implements Insertable<WeekPlan> {
       id: serializer.fromJson<String>(json['id']),
       weekStartDate: serializer.fromJson<String>(json['weekStartDate']),
       dayMissionsJson: serializer.fromJson<String>(json['dayMissionsJson']),
+      chartedAt: serializer.fromJson<DateTime?>(json['chartedAt']),
+      reviewedAt: serializer.fromJson<DateTime?>(json['reviewedAt']),
+      reviewNote: serializer.fromJson<String?>(json['reviewNote']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -44469,6 +44562,9 @@ class WeekPlan extends DataClass implements Insertable<WeekPlan> {
       'id': serializer.toJson<String>(id),
       'weekStartDate': serializer.toJson<String>(weekStartDate),
       'dayMissionsJson': serializer.toJson<String>(dayMissionsJson),
+      'chartedAt': serializer.toJson<DateTime?>(chartedAt),
+      'reviewedAt': serializer.toJson<DateTime?>(reviewedAt),
+      'reviewNote': serializer.toJson<String?>(reviewNote),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -44478,12 +44574,18 @@ class WeekPlan extends DataClass implements Insertable<WeekPlan> {
     String? id,
     String? weekStartDate,
     String? dayMissionsJson,
+    Value<DateTime?> chartedAt = const Value.absent(),
+    Value<DateTime?> reviewedAt = const Value.absent(),
+    Value<String?> reviewNote = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => WeekPlan(
     id: id ?? this.id,
     weekStartDate: weekStartDate ?? this.weekStartDate,
     dayMissionsJson: dayMissionsJson ?? this.dayMissionsJson,
+    chartedAt: chartedAt.present ? chartedAt.value : this.chartedAt,
+    reviewedAt: reviewedAt.present ? reviewedAt.value : this.reviewedAt,
+    reviewNote: reviewNote.present ? reviewNote.value : this.reviewNote,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -44496,6 +44598,13 @@ class WeekPlan extends DataClass implements Insertable<WeekPlan> {
       dayMissionsJson: data.dayMissionsJson.present
           ? data.dayMissionsJson.value
           : this.dayMissionsJson,
+      chartedAt: data.chartedAt.present ? data.chartedAt.value : this.chartedAt,
+      reviewedAt: data.reviewedAt.present
+          ? data.reviewedAt.value
+          : this.reviewedAt,
+      reviewNote: data.reviewNote.present
+          ? data.reviewNote.value
+          : this.reviewNote,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -44507,6 +44616,9 @@ class WeekPlan extends DataClass implements Insertable<WeekPlan> {
           ..write('id: $id, ')
           ..write('weekStartDate: $weekStartDate, ')
           ..write('dayMissionsJson: $dayMissionsJson, ')
+          ..write('chartedAt: $chartedAt, ')
+          ..write('reviewedAt: $reviewedAt, ')
+          ..write('reviewNote: $reviewNote, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -44514,8 +44626,16 @@ class WeekPlan extends DataClass implements Insertable<WeekPlan> {
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, weekStartDate, dayMissionsJson, createdAt, updatedAt);
+  int get hashCode => Object.hash(
+    id,
+    weekStartDate,
+    dayMissionsJson,
+    chartedAt,
+    reviewedAt,
+    reviewNote,
+    createdAt,
+    updatedAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -44523,6 +44643,9 @@ class WeekPlan extends DataClass implements Insertable<WeekPlan> {
           other.id == this.id &&
           other.weekStartDate == this.weekStartDate &&
           other.dayMissionsJson == this.dayMissionsJson &&
+          other.chartedAt == this.chartedAt &&
+          other.reviewedAt == this.reviewedAt &&
+          other.reviewNote == this.reviewNote &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -44531,6 +44654,9 @@ class WeekPlansCompanion extends UpdateCompanion<WeekPlan> {
   final Value<String> id;
   final Value<String> weekStartDate;
   final Value<String> dayMissionsJson;
+  final Value<DateTime?> chartedAt;
+  final Value<DateTime?> reviewedAt;
+  final Value<String?> reviewNote;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -44538,6 +44664,9 @@ class WeekPlansCompanion extends UpdateCompanion<WeekPlan> {
     this.id = const Value.absent(),
     this.weekStartDate = const Value.absent(),
     this.dayMissionsJson = const Value.absent(),
+    this.chartedAt = const Value.absent(),
+    this.reviewedAt = const Value.absent(),
+    this.reviewNote = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -44546,6 +44675,9 @@ class WeekPlansCompanion extends UpdateCompanion<WeekPlan> {
     required String id,
     required String weekStartDate,
     this.dayMissionsJson = const Value.absent(),
+    this.chartedAt = const Value.absent(),
+    this.reviewedAt = const Value.absent(),
+    this.reviewNote = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -44555,6 +44687,9 @@ class WeekPlansCompanion extends UpdateCompanion<WeekPlan> {
     Expression<String>? id,
     Expression<String>? weekStartDate,
     Expression<String>? dayMissionsJson,
+    Expression<DateTime>? chartedAt,
+    Expression<DateTime>? reviewedAt,
+    Expression<String>? reviewNote,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -44563,6 +44698,9 @@ class WeekPlansCompanion extends UpdateCompanion<WeekPlan> {
       if (id != null) 'id': id,
       if (weekStartDate != null) 'week_start_date': weekStartDate,
       if (dayMissionsJson != null) 'day_missions_json': dayMissionsJson,
+      if (chartedAt != null) 'charted_at': chartedAt,
+      if (reviewedAt != null) 'reviewed_at': reviewedAt,
+      if (reviewNote != null) 'review_note': reviewNote,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -44573,6 +44711,9 @@ class WeekPlansCompanion extends UpdateCompanion<WeekPlan> {
     Value<String>? id,
     Value<String>? weekStartDate,
     Value<String>? dayMissionsJson,
+    Value<DateTime?>? chartedAt,
+    Value<DateTime?>? reviewedAt,
+    Value<String?>? reviewNote,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -44581,6 +44722,9 @@ class WeekPlansCompanion extends UpdateCompanion<WeekPlan> {
       id: id ?? this.id,
       weekStartDate: weekStartDate ?? this.weekStartDate,
       dayMissionsJson: dayMissionsJson ?? this.dayMissionsJson,
+      chartedAt: chartedAt ?? this.chartedAt,
+      reviewedAt: reviewedAt ?? this.reviewedAt,
+      reviewNote: reviewNote ?? this.reviewNote,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -44598,6 +44742,15 @@ class WeekPlansCompanion extends UpdateCompanion<WeekPlan> {
     }
     if (dayMissionsJson.present) {
       map['day_missions_json'] = Variable<String>(dayMissionsJson.value);
+    }
+    if (chartedAt.present) {
+      map['charted_at'] = Variable<DateTime>(chartedAt.value);
+    }
+    if (reviewedAt.present) {
+      map['reviewed_at'] = Variable<DateTime>(reviewedAt.value);
+    }
+    if (reviewNote.present) {
+      map['review_note'] = Variable<String>(reviewNote.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
@@ -44617,6 +44770,9 @@ class WeekPlansCompanion extends UpdateCompanion<WeekPlan> {
           ..write('id: $id, ')
           ..write('weekStartDate: $weekStartDate, ')
           ..write('dayMissionsJson: $dayMissionsJson, ')
+          ..write('chartedAt: $chartedAt, ')
+          ..write('reviewedAt: $reviewedAt, ')
+          ..write('reviewNote: $reviewNote, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -44730,6 +44886,29 @@ class $WeekPlanObjectivesTable extends WeekPlanObjectives
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _dayAllocationsJsonMeta =
+      const VerificationMeta('dayAllocationsJson');
+  @override
+  late final GeneratedColumn<String> dayAllocationsJson =
+      GeneratedColumn<String>(
+        'day_allocations_json',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('{}'),
+      );
+  static const VerificationMeta _carriedFromIdMeta = const VerificationMeta(
+    'carriedFromId',
+  );
+  @override
+  late final GeneratedColumn<String> carriedFromId = GeneratedColumn<String>(
+    'carried_from_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -44765,6 +44944,8 @@ class $WeekPlanObjectivesTable extends WeekPlanObjectives
     goalId,
     targetBlocks,
     done,
+    dayAllocationsJson,
+    carriedFromId,
     createdAt,
     updatedAt,
   ];
@@ -44846,6 +45027,24 @@ class $WeekPlanObjectivesTable extends WeekPlanObjectives
         done.isAcceptableOrUnknown(data['done']!, _doneMeta),
       );
     }
+    if (data.containsKey('day_allocations_json')) {
+      context.handle(
+        _dayAllocationsJsonMeta,
+        dayAllocationsJson.isAcceptableOrUnknown(
+          data['day_allocations_json']!,
+          _dayAllocationsJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('carried_from_id')) {
+      context.handle(
+        _carriedFromIdMeta,
+        carriedFromId.isAcceptableOrUnknown(
+          data['carried_from_id']!,
+          _carriedFromIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -44903,6 +45102,14 @@ class $WeekPlanObjectivesTable extends WeekPlanObjectives
         DriftSqlType.bool,
         data['${effectivePrefix}done'],
       )!,
+      dayAllocationsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}day_allocations_json'],
+      )!,
+      carriedFromId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}carried_from_id'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -44931,6 +45138,8 @@ class WeekPlanObjective extends DataClass
   final String? goalId;
   final int? targetBlocks;
   final bool done;
+  final String dayAllocationsJson;
+  final String? carriedFromId;
   final DateTime createdAt;
   final DateTime updatedAt;
   const WeekPlanObjective({
@@ -44943,6 +45152,8 @@ class WeekPlanObjective extends DataClass
     this.goalId,
     this.targetBlocks,
     required this.done,
+    required this.dayAllocationsJson,
+    this.carriedFromId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -44966,6 +45177,10 @@ class WeekPlanObjective extends DataClass
       map['target_blocks'] = Variable<int>(targetBlocks);
     }
     map['done'] = Variable<bool>(done);
+    map['day_allocations_json'] = Variable<String>(dayAllocationsJson);
+    if (!nullToAbsent || carriedFromId != null) {
+      map['carried_from_id'] = Variable<String>(carriedFromId);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -44990,6 +45205,10 @@ class WeekPlanObjective extends DataClass
           ? const Value.absent()
           : Value(targetBlocks),
       done: Value(done),
+      dayAllocationsJson: Value(dayAllocationsJson),
+      carriedFromId: carriedFromId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(carriedFromId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -45010,6 +45229,10 @@ class WeekPlanObjective extends DataClass
       goalId: serializer.fromJson<String?>(json['goalId']),
       targetBlocks: serializer.fromJson<int?>(json['targetBlocks']),
       done: serializer.fromJson<bool>(json['done']),
+      dayAllocationsJson: serializer.fromJson<String>(
+        json['dayAllocationsJson'],
+      ),
+      carriedFromId: serializer.fromJson<String?>(json['carriedFromId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -45027,6 +45250,8 @@ class WeekPlanObjective extends DataClass
       'goalId': serializer.toJson<String?>(goalId),
       'targetBlocks': serializer.toJson<int?>(targetBlocks),
       'done': serializer.toJson<bool>(done),
+      'dayAllocationsJson': serializer.toJson<String>(dayAllocationsJson),
+      'carriedFromId': serializer.toJson<String?>(carriedFromId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -45042,6 +45267,8 @@ class WeekPlanObjective extends DataClass
     Value<String?> goalId = const Value.absent(),
     Value<int?> targetBlocks = const Value.absent(),
     bool? done,
+    String? dayAllocationsJson,
+    Value<String?> carriedFromId = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => WeekPlanObjective(
@@ -45056,6 +45283,10 @@ class WeekPlanObjective extends DataClass
     goalId: goalId.present ? goalId.value : this.goalId,
     targetBlocks: targetBlocks.present ? targetBlocks.value : this.targetBlocks,
     done: done ?? this.done,
+    dayAllocationsJson: dayAllocationsJson ?? this.dayAllocationsJson,
+    carriedFromId: carriedFromId.present
+        ? carriedFromId.value
+        : this.carriedFromId,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -45076,6 +45307,12 @@ class WeekPlanObjective extends DataClass
           ? data.targetBlocks.value
           : this.targetBlocks,
       done: data.done.present ? data.done.value : this.done,
+      dayAllocationsJson: data.dayAllocationsJson.present
+          ? data.dayAllocationsJson.value
+          : this.dayAllocationsJson,
+      carriedFromId: data.carriedFromId.present
+          ? data.carriedFromId.value
+          : this.carriedFromId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -45093,6 +45330,8 @@ class WeekPlanObjective extends DataClass
           ..write('goalId: $goalId, ')
           ..write('targetBlocks: $targetBlocks, ')
           ..write('done: $done, ')
+          ..write('dayAllocationsJson: $dayAllocationsJson, ')
+          ..write('carriedFromId: $carriedFromId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -45110,6 +45349,8 @@ class WeekPlanObjective extends DataClass
     goalId,
     targetBlocks,
     done,
+    dayAllocationsJson,
+    carriedFromId,
     createdAt,
     updatedAt,
   );
@@ -45126,6 +45367,8 @@ class WeekPlanObjective extends DataClass
           other.goalId == this.goalId &&
           other.targetBlocks == this.targetBlocks &&
           other.done == this.done &&
+          other.dayAllocationsJson == this.dayAllocationsJson &&
+          other.carriedFromId == this.carriedFromId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -45140,6 +45383,8 @@ class WeekPlanObjectivesCompanion extends UpdateCompanion<WeekPlanObjective> {
   final Value<String?> goalId;
   final Value<int?> targetBlocks;
   final Value<bool> done;
+  final Value<String> dayAllocationsJson;
+  final Value<String?> carriedFromId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -45153,6 +45398,8 @@ class WeekPlanObjectivesCompanion extends UpdateCompanion<WeekPlanObjective> {
     this.goalId = const Value.absent(),
     this.targetBlocks = const Value.absent(),
     this.done = const Value.absent(),
+    this.dayAllocationsJson = const Value.absent(),
+    this.carriedFromId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -45167,6 +45414,8 @@ class WeekPlanObjectivesCompanion extends UpdateCompanion<WeekPlanObjective> {
     this.goalId = const Value.absent(),
     this.targetBlocks = const Value.absent(),
     this.done = const Value.absent(),
+    this.dayAllocationsJson = const Value.absent(),
+    this.carriedFromId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -45183,6 +45432,8 @@ class WeekPlanObjectivesCompanion extends UpdateCompanion<WeekPlanObjective> {
     Expression<String>? goalId,
     Expression<int>? targetBlocks,
     Expression<bool>? done,
+    Expression<String>? dayAllocationsJson,
+    Expression<String>? carriedFromId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -45197,6 +45448,9 @@ class WeekPlanObjectivesCompanion extends UpdateCompanion<WeekPlanObjective> {
       if (goalId != null) 'goal_id': goalId,
       if (targetBlocks != null) 'target_blocks': targetBlocks,
       if (done != null) 'done': done,
+      if (dayAllocationsJson != null)
+        'day_allocations_json': dayAllocationsJson,
+      if (carriedFromId != null) 'carried_from_id': carriedFromId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -45213,6 +45467,8 @@ class WeekPlanObjectivesCompanion extends UpdateCompanion<WeekPlanObjective> {
     Value<String?>? goalId,
     Value<int?>? targetBlocks,
     Value<bool>? done,
+    Value<String>? dayAllocationsJson,
+    Value<String?>? carriedFromId,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -45227,6 +45483,8 @@ class WeekPlanObjectivesCompanion extends UpdateCompanion<WeekPlanObjective> {
       goalId: goalId ?? this.goalId,
       targetBlocks: targetBlocks ?? this.targetBlocks,
       done: done ?? this.done,
+      dayAllocationsJson: dayAllocationsJson ?? this.dayAllocationsJson,
+      carriedFromId: carriedFromId ?? this.carriedFromId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -45263,6 +45521,12 @@ class WeekPlanObjectivesCompanion extends UpdateCompanion<WeekPlanObjective> {
     if (done.present) {
       map['done'] = Variable<bool>(done.value);
     }
+    if (dayAllocationsJson.present) {
+      map['day_allocations_json'] = Variable<String>(dayAllocationsJson.value);
+    }
+    if (carriedFromId.present) {
+      map['carried_from_id'] = Variable<String>(carriedFromId.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -45287,6 +45551,8 @@ class WeekPlanObjectivesCompanion extends UpdateCompanion<WeekPlanObjective> {
           ..write('goalId: $goalId, ')
           ..write('targetBlocks: $targetBlocks, ')
           ..write('done: $done, ')
+          ..write('dayAllocationsJson: $dayAllocationsJson, ')
+          ..write('carriedFromId: $carriedFromId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -83503,6 +83769,9 @@ typedef $$WeekPlansTableCreateCompanionBuilder =
       required String id,
       required String weekStartDate,
       Value<String> dayMissionsJson,
+      Value<DateTime?> chartedAt,
+      Value<DateTime?> reviewedAt,
+      Value<String?> reviewNote,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -83512,6 +83781,9 @@ typedef $$WeekPlansTableUpdateCompanionBuilder =
       Value<String> id,
       Value<String> weekStartDate,
       Value<String> dayMissionsJson,
+      Value<DateTime?> chartedAt,
+      Value<DateTime?> reviewedAt,
+      Value<String?> reviewNote,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -83567,6 +83839,21 @@ class $$WeekPlansTableFilterComposer
 
   ColumnFilters<String> get dayMissionsJson => $composableBuilder(
     column: $table.dayMissionsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get chartedAt => $composableBuilder(
+    column: $table.chartedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get reviewedAt => $composableBuilder(
+    column: $table.reviewedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reviewNote => $composableBuilder(
+    column: $table.reviewNote,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -83630,6 +83917,21 @@ class $$WeekPlansTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get chartedAt => $composableBuilder(
+    column: $table.chartedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get reviewedAt => $composableBuilder(
+    column: $table.reviewedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reviewNote => $composableBuilder(
+    column: $table.reviewNote,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -83660,6 +83962,19 @@ class $$WeekPlansTableAnnotationComposer
 
   GeneratedColumn<String> get dayMissionsJson => $composableBuilder(
     column: $table.dayMissionsJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get chartedAt =>
+      $composableBuilder(column: $table.chartedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get reviewedAt => $composableBuilder(
+    column: $table.reviewedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get reviewNote => $composableBuilder(
+    column: $table.reviewNote,
     builder: (column) => column,
   );
 
@@ -83727,6 +84042,9 @@ class $$WeekPlansTableTableManager
                 Value<String> id = const Value.absent(),
                 Value<String> weekStartDate = const Value.absent(),
                 Value<String> dayMissionsJson = const Value.absent(),
+                Value<DateTime?> chartedAt = const Value.absent(),
+                Value<DateTime?> reviewedAt = const Value.absent(),
+                Value<String?> reviewNote = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -83734,6 +84052,9 @@ class $$WeekPlansTableTableManager
                 id: id,
                 weekStartDate: weekStartDate,
                 dayMissionsJson: dayMissionsJson,
+                chartedAt: chartedAt,
+                reviewedAt: reviewedAt,
+                reviewNote: reviewNote,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -83743,6 +84064,9 @@ class $$WeekPlansTableTableManager
                 required String id,
                 required String weekStartDate,
                 Value<String> dayMissionsJson = const Value.absent(),
+                Value<DateTime?> chartedAt = const Value.absent(),
+                Value<DateTime?> reviewedAt = const Value.absent(),
+                Value<String?> reviewNote = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -83750,6 +84074,9 @@ class $$WeekPlansTableTableManager
                 id: id,
                 weekStartDate: weekStartDate,
                 dayMissionsJson: dayMissionsJson,
+                chartedAt: chartedAt,
+                reviewedAt: reviewedAt,
+                reviewNote: reviewNote,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -83823,6 +84150,8 @@ typedef $$WeekPlanObjectivesTableCreateCompanionBuilder =
       Value<String?> goalId,
       Value<int?> targetBlocks,
       Value<bool> done,
+      Value<String> dayAllocationsJson,
+      Value<String?> carriedFromId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -83838,6 +84167,8 @@ typedef $$WeekPlanObjectivesTableUpdateCompanionBuilder =
       Value<String?> goalId,
       Value<int?> targetBlocks,
       Value<bool> done,
+      Value<String> dayAllocationsJson,
+      Value<String?> carriedFromId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -83925,6 +84256,16 @@ class $$WeekPlanObjectivesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get dayAllocationsJson => $composableBuilder(
+    column: $table.dayAllocationsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get carriedFromId => $composableBuilder(
+    column: $table.carriedFromId,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnFilters(column),
@@ -84008,6 +84349,16 @@ class $$WeekPlanObjectivesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get dayAllocationsJson => $composableBuilder(
+    column: $table.dayAllocationsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get carriedFromId => $composableBuilder(
+    column: $table.carriedFromId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -84078,6 +84429,16 @@ class $$WeekPlanObjectivesTableAnnotationComposer
 
   GeneratedColumn<bool> get done =>
       $composableBuilder(column: $table.done, builder: (column) => column);
+
+  GeneratedColumn<String> get dayAllocationsJson => $composableBuilder(
+    column: $table.dayAllocationsJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get carriedFromId => $composableBuilder(
+    column: $table.carriedFromId,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -84151,6 +84512,8 @@ class $$WeekPlanObjectivesTableTableManager
                 Value<String?> goalId = const Value.absent(),
                 Value<int?> targetBlocks = const Value.absent(),
                 Value<bool> done = const Value.absent(),
+                Value<String> dayAllocationsJson = const Value.absent(),
+                Value<String?> carriedFromId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -84164,6 +84527,8 @@ class $$WeekPlanObjectivesTableTableManager
                 goalId: goalId,
                 targetBlocks: targetBlocks,
                 done: done,
+                dayAllocationsJson: dayAllocationsJson,
+                carriedFromId: carriedFromId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -84179,6 +84544,8 @@ class $$WeekPlanObjectivesTableTableManager
                 Value<String?> goalId = const Value.absent(),
                 Value<int?> targetBlocks = const Value.absent(),
                 Value<bool> done = const Value.absent(),
+                Value<String> dayAllocationsJson = const Value.absent(),
+                Value<String?> carriedFromId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -84192,6 +84559,8 @@ class $$WeekPlanObjectivesTableTableManager
                 goalId: goalId,
                 targetBlocks: targetBlocks,
                 done: done,
+                dayAllocationsJson: dayAllocationsJson,
+                carriedFromId: carriedFromId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,

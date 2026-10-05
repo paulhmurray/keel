@@ -6,6 +6,7 @@ import '../raid/raid_conversion_service.dart' show RaidKind;
 import '../raid/raid_lifecycle.dart';
 import '../raid/risk_rating.dart';
 import '../raid/planview_risk_sheet.dart';
+import '../plan/scenarios.dart';
 import '../plan/variance_links.dart';
 import '../platform/web_download.dart';
 import 'excel_palette.dart';
@@ -364,19 +365,22 @@ class ProgrammeWorkbookExporter {
                   allBorders: true,
                   halign: HorizontalAlign.Center,
                 ));
-          } else if (isSingle && mi == act.likelyMonth) {
+          } else if (scenariosApplyTo(act.activityType) &&
+              mi == act.likelyMonth) {
             // Scenario ghosts: B — Likely (◇) and C — Safe (○) echo the
             // anchor ◆ so the spread reads directly off the grid.
             _setCell(sheet, row, _kFirstMonthCol + mi, '◇',
                 style: _style(
                     fgHex: kXlInkDim, fontSize: 10, allBorders: true,
                     halign: HorizontalAlign.Center));
-          } else if (isSingle && mi == act.safeMonth) {
+          } else if (scenariosApplyTo(act.activityType) &&
+              mi == act.safeMonth) {
             _setCell(sheet, row, _kFirstMonthCol + mi, '○',
                 style: _style(
                     fgHex: kXlInkDim, fontSize: 9, allBorders: true,
                     halign: HorizontalAlign.Center));
-          } else if (isSingle && _inScenarioGap(act, mi)) {
+          } else if (scenariosApplyTo(act.activityType) &&
+              _inScenarioGap(act, mi)) {
             // Dotted thread joining ◆ → ◇ → ○, mirroring the app.
             _setCell(sheet, row, _kFirstMonthCol + mi, '┄',
                 style: _style(
@@ -432,20 +436,12 @@ class ProgrammeWorkbookExporter {
   }
 
   /// Whether month [mi] lies strictly between the scenario extremes of a
-  /// single-point activity — the cell gets the dotted thread.
+  /// row (anchor is the month for a point, the end for an activity) —
+  /// the cell gets the dotted thread.
   static bool _inScenarioGap(TimelineActivity act, int mi) {
-    final anchor = act.startMonth;
-    if (anchor == null ||
-        (act.likelyMonth == null && act.safeMonth == null)) {
-      return false;
-    }
-    var lo = anchor, hi = anchor;
-    for (final m in [act.likelyMonth, act.safeMonth]) {
-      if (m == null) continue;
-      if (m < lo) lo = m;
-      if (m > hi) hi = m;
-    }
-    return mi > lo && mi < hi;
+    final range = scenarioRange(act);
+    if (range == null) return false;
+    return mi > range.lo && mi < range.hi;
   }
 
   /// (text, bgHex, fgHex) for an active gantt cell. Bars are PURE COLOUR

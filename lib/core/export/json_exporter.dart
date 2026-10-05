@@ -981,6 +981,9 @@ class JsonExporter {
                 'id': p.id,
                 'week_start_date': p.weekStartDate,
                 'day_missions_json': p.dayMissionsJson,
+                'charted_at': p.chartedAt?.toIso8601String(),
+                'reviewed_at': p.reviewedAt?.toIso8601String(),
+                'review_note': p.reviewNote,
                 'created_at': p.createdAt.toIso8601String(),
                 'updated_at': p.updatedAt.toIso8601String(),
               })
@@ -996,6 +999,8 @@ class JsonExporter {
                 'goal_id': o.goalId,
                 'target_blocks': o.targetBlocks,
                 'done': o.done,
+                'day_allocations_json': o.dayAllocationsJson,
+                'carried_from_id': o.carriedFromId,
                 'created_at': o.createdAt.toIso8601String(),
                 'updated_at': o.updatedAt.toIso8601String(),
               })

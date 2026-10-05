@@ -15,8 +15,10 @@ import '../../providers/settings_provider.dart';
 import '../../providers/project_provider.dart';
 import '../../core/raid/risk_rating.dart';
 import '../../shared/theme/keel_colors.dart';
+import '../../core/helm/week_ritual.dart';
 import 'helm_quarter_view.dart';
 import 'helm_week_view.dart';
+import 'week_ritual_dialog.dart';
 
 /// The three planning wavelengths. Day allocates hours, week allocates
 /// intent, quarter allocates direction — never an hour grid above day.
@@ -51,22 +53,23 @@ const List<(String, String)> kBlockKinds = [
 ];
 
 Color blockKindColor(String kind) => switch (kind) {
-      'meeting' => KColors.blue,
-      'admin' => KColors.amber,
-      'break' => KColors.textMuted,
-      'home' => KColors.violet,
-      _ => KColors.phosphor,
-    };
+  'meeting' => KColors.blue,
+  'admin' => KColors.amber,
+  'break' => KColors.textMuted,
+  'home' => KColors.violet,
+  _ => KColors.phosphor,
+};
 
 Color blockKindDimColor(String kind) => switch (kind) {
-      'meeting' => KColors.blueDim,
-      'admin' => KColors.amberDim,
-      'break' => KColors.surface2,
-      'home' => KColors.violetDim,
-      _ => KColors.phosDim,
-    };
+  'meeting' => KColors.blueDim,
+  'admin' => KColors.amberDim,
+  'break' => KColors.surface2,
+  'home' => KColors.violetDim,
+  _ => KColors.phosDim,
+};
 
-String _isoDate(DateTime d) => '${d.year.toString().padLeft(4, '0')}-'
+String _isoDate(DateTime d) =>
+    '${d.year.toString().padLeft(4, '0')}-'
     '${d.month.toString().padLeft(2, '0')}-'
     '${d.day.toString().padLeft(2, '0')}';
 
@@ -132,9 +135,13 @@ class _HelmViewState extends State<HelmView> {
   String? _planStreamDate;
   Stream<List<DayPlanBlock>>? _blocksStream;
   String? _blocksStreamPlanId;
-  // This week's plan — feeds the day view its mission line.
+  // This week's plan — feeds the day view its mission line and rocks.
   Stream<WeekPlan?>? _weekPlanStream;
   String? _weekPlanMondayIso;
+  Stream<List<WeekPlanObjective>>? _weekObjectivesStream;
+  String? _weekObjectivesPlanId;
+  // The Monday/Friday nudge, once dismissed, stays quiet for the session.
+  bool _nudgeDismissed = false;
 
   bool get _isToday => _isoDate(_date) == _isoDate(DateTime.now());
 
@@ -142,8 +149,7 @@ class _HelmViewState extends State<HelmView> {
   void initState() {
     super.initState();
     // Minute tick keeps the now-line and NOW highlight honest.
-    _clock = Timer.periodic(
-        const Duration(minutes: 1), (_) => setState(() {}));
+    _clock = Timer.periodic(const Duration(minutes: 1), (_) => setState(() {}));
   }
 
   @override
@@ -162,8 +168,7 @@ class _HelmViewState extends State<HelmView> {
     return _planStream!;
   }
 
-  Stream<List<DayPlanBlock>> _blocksStreamFor(
-      AppDatabase db, String planId) {
+  Stream<List<DayPlanBlock>> _blocksStreamFor(AppDatabase db, String planId) {
     if (_blocksStreamPlanId != planId) {
       _blocksStreamPlanId = planId;
       _blocksStream = db.dayPlanDao.watchBlocksForPlan(planId);
@@ -176,8 +181,153 @@ class _HelmViewState extends State<HelmView> {
     if (_weekPlanMondayIso != mondayIso) {
       _weekPlanMondayIso = mondayIso;
       _weekPlanStream = db.weekPlanDao.watchPlanForWeek(mondayIso);
+      _weekObjectivesPlanId = null;
+      _weekObjectivesStream = null;
     }
     return _weekPlanStream!;
+  }
+
+  Stream<List<WeekPlanObjective>> _weekObjectivesFor(
+    AppDatabase db,
+    String planId,
+  ) {
+    if (_weekObjectivesPlanId != planId) {
+      _weekObjectivesPlanId = planId;
+      _weekObjectivesStream = db.weekPlanDao.watchObjectivesForPlan(planId);
+    }
+    return _weekObjectivesStream!;
+  }
+
+  /// Starts a day: creates its plan and, when the week has rocks on
+  /// this weekday, pre-places them as draft focus blocks in revision 0.
+  /// An existing plan is never touched.
+  Future<void> _chartDay(AppDatabase db, String dateIso) async {
+    final existing = await db.dayPlanDao.getPlanForDate(dateIso);
+    if (existing != null) return;
+    final plan = await db.dayPlanDao.getOrCreatePlanForDate(dateIso);
+    final week = await db.weekPlanDao.getPlanForWeek(_isoDate(mondayOf(_date)));
+    if (week == null || !mounted) return;
+    final objectives = await db.weekPlanDao.getObjectivesForPlan(week.id);
+    if (!mounted) return;
+    final prefs = context.read<SettingsProvider>().settings;
+    final drafts = prefillBlocks(
+      objectives: objectives,
+      weekday: _date.weekday - 1,
+      dayStart: prefs.helmDayStartMinute,
+      dayEnd: prefs.helmDayEndMinute,
+    );
+    for (final b in drafts) {
+      await db.dayPlanDao.insertBlock(
+        planId: plan.id,
+        revision: 0,
+        startMinute: b.startMinute,
+        endMinute: b.endMinute,
+        label: b.label,
+        projectId: b.projectId,
+        linkedActionId: b.linkedActionId,
+        objectiveId: b.objectiveId,
+      );
+    }
+  }
+
+  /// The Monday and Friday nudges for the current week. Quiet on other
+  /// days of the week once the plan exists, and after a dismiss.
+  Widget _weekNudge(AppDatabase db) {
+    if (_nudgeDismissed || !_isToday) return const SizedBox.shrink();
+    return StreamBuilder<WeekPlan?>(
+      stream: _weekPlanStreamFor(db),
+      builder: (context, planSnap) {
+        if (planSnap.connectionState == ConnectionState.waiting) {
+          return const SizedBox.shrink();
+        }
+        final plan = planSnap.data;
+        Widget banner(
+          String text,
+          String action, {
+          bool forNextWeek = false,
+        }) => Container(
+          margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: KColors.amber.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: KColors.amber.withValues(alpha: 0.5)),
+          ),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.view_week_outlined,
+                size: 14,
+                color: KColors.amber,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  text,
+                  style: const TextStyle(color: KColors.text, fontSize: 12),
+                ),
+              ),
+              TextButton(
+                onPressed: () => showWeekRitual(
+                  context,
+                  db: db,
+                  // The Friday ritual looks back at THIS week and charts
+                  // the next, so it runs for next Monday.
+                  date: forNextWeek
+                      ? _date.add(const Duration(days: 7))
+                      : _date,
+                ),
+                child: Text(
+                  action,
+                  style: const TextStyle(color: KColors.amber, fontSize: 12),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(
+                  Icons.close,
+                  size: 14,
+                  color: KColors.textMuted,
+                ),
+                tooltip: 'Not now',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                onPressed: () => setState(() => _nudgeDismissed = true),
+              ),
+            ],
+          ),
+        );
+        if (plan == null) {
+          return banner(
+            _date.weekday == DateTime.monday
+                ? 'It\'s Monday. Chart the week before the day.'
+                : 'This week has no plan yet. The day is easier with one.',
+            'Chart the week',
+          );
+        }
+        return StreamBuilder<List<WeekPlanObjective>>(
+          stream: _weekObjectivesFor(db, plan.id),
+          builder: (context, objSnap) {
+            final objectives = objSnap.data ?? const <WeekPlanObjective>[];
+            if (weekNeedsCharting(plan, objectives)) {
+              return banner(
+                _date.weekday == DateTime.monday
+                    ? 'It\'s Monday. Chart the week before the day.'
+                    : 'This week has no rocks yet. The day is easier with some.',
+                'Chart the week',
+              );
+            }
+            if (weekNeedsReview(plan, objectives, _date)) {
+              return banner(
+                'The week is ending. Review it and chart the next.',
+                'Review and chart',
+                forNextWeek: true,
+              );
+            }
+            return const SizedBox.shrink();
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -185,8 +335,10 @@ class _HelmViewState extends State<HelmView> {
     final db = context.read<AppDatabase>();
     final dateIso = _isoDate(_date);
 
-    final anchorMonth =
-        context.watch<SettingsProvider>().settings.quarterAnchorMonth;
+    final anchorMonth = context
+        .watch<SettingsProvider>()
+        .settings
+        .quarterAnchorMonth;
 
     void navigate(int direction) {
       setState(() {
@@ -204,8 +356,8 @@ class _HelmViewState extends State<HelmView> {
 
     final isCurrent = switch (_scale) {
       HelmScale.day => _isToday,
-      HelmScale.week => _isoDate(mondayOf(_date)) ==
-          _isoDate(mondayOf(DateTime.now())),
+      HelmScale.week =>
+        _isoDate(mondayOf(_date)) == _isoDate(mondayOf(DateTime.now())),
       HelmScale.quarter =>
         quarterStartOf(_date, anchorMonth) ==
             quarterStartOf(DateTime.now(), anchorMonth),
@@ -253,128 +405,170 @@ class _HelmViewState extends State<HelmView> {
           onScale: (s) => setState(() => _scale = s),
         ),
         if (_scale == HelmScale.quarter)
-          scaledBody(HelmQuarterView(
-            db: db,
-            date: _date,
-            anchorMonth: anchorMonth,
-            onOpenWeek: (monday) => setState(() {
-              _date = monday;
-              _scale = HelmScale.week;
-            }),
-          ))
+          scaledBody(
+            HelmQuarterView(
+              db: db,
+              date: _date,
+              anchorMonth: anchorMonth,
+              onOpenWeek: (monday) => setState(() {
+                _date = monday;
+                _scale = HelmScale.week;
+              }),
+            ),
+          )
         else if (_scale == HelmScale.week)
-          scaledBody(HelmWeekView(
-            db: db,
-            date: _date,
-            anchorMonth: anchorMonth,
-            onOpenDay: (day) => setState(() {
-              _date = day;
-              _scale = HelmScale.day;
-            }),
-          ))
+          scaledBody(
+            HelmWeekView(
+              db: db,
+              date: _date,
+              anchorMonth: anchorMonth,
+              onOpenDay: (day) => setState(() {
+                _date = day;
+                _scale = HelmScale.day;
+              }),
+            ),
+          )
         else
-        Expanded(
-          child: StreamBuilder<DayPlan?>(
-            stream: _planStreamFor(db, dateIso),
-            builder: (context, planSnap) {
-              if (planSnap.connectionState == ConnectionState.waiting) {
-                return const Center(
-                    child: CircularProgressIndicator(strokeWidth: 1.5));
-              }
-              final plan = planSnap.data;
-              return LayoutBuilder(
-                builder: (context, constraints) {
-                  // Hide the planning rail when there isn't room for it.
-                  final showRail = constraints.maxWidth >= 560;
-                  // The board needs width for its lanes; below that the
-                  // rail carries the horizon as before.
-                  final showBoard = constraints.maxWidth >= 900;
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Expanded(
-                        child: Column(children: [
-                          Expanded(
-                            child: plan == null
-                            ? _EmptyDay(
-                                isToday: _isToday,
-                                onChart: () => db.dayPlanDao
-                                    .getOrCreatePlanForDate(dateIso),
-                              )
-                            : StreamBuilder<List<DayPlanBlock>>(
-                                stream: _blocksStreamFor(db, plan.id),
-                                builder: (context, blockSnap) {
-                                  return StreamBuilder<WeekPlan?>(
-                                    stream: _weekPlanStreamFor(db),
-                                    builder: (context, weekSnap) {
-                                      final mission = weekSnap.data == null
-                                          ? null
-                                          : parseDayMissions(weekSnap
-                                                  .data!.dayMissionsJson)[
-                                              _date.weekday - 1];
-                                      final blocks =
-                                          blockSnap.data ?? const <DayPlanBlock>[];
-                                      final prefs = context
-                                          .watch<SettingsProvider>()
-                                          .settings;
-                                      final window = effectiveDayWindow(
-                                        start: prefs.helmDayStartMinute,
-                                        end: prefs.helmDayEndMinute,
-                                        blocks: [
-                                          for (final b in blocks)
-                                            (startMinute: b.startMinute, endMinute: b.endMinute),
-                                        ],
-                                      );
-                                      return _TimeGrid(
-                                        plan: plan,
-                                        blocks: blocks,
-                                        isToday: _isToday,
-                                        db: db,
-                                        mission: mission,
-                                        dayStart: window.start,
-                                        dayEnd: window.end,
-                                      );
-                                    },
-                                  );
-                                },
-                              ),
-                          ),
-                          if (showBoard)
-                            _PlanningBoard(
-                              db: db,
-                              date: _date,
-                              collapsed: _boardCollapsed,
-                              onToggle: () => setState(
-                                  () => _boardCollapsed = !_boardCollapsed),
-                              onOpenAction: widget.onOpenAction,
-                              onOpenRisk: widget.onOpenRisk,
-                              onOpenIssue: widget.onOpenIssue,
-                              onOpenDependency: widget.onOpenDependency,
-                              onOpenDecision: widget.onOpenDecision,
-                            ),
-                        ]),
-                      ),
-                      if (showRail) ...[
-                        Container(width: 1, color: KColors.border),
-                        _PlanningRail(
-                          db: db,
-                          date: _date,
-                          showHorizon: !showBoard,
-                          onOpenAction: widget.onOpenAction,
-                          onOpenRisk: widget.onOpenRisk,
-                          onOpenIssue: widget.onOpenIssue,
-                          onOpenAssumption: widget.onOpenAssumption,
-                          onOpenDependency: widget.onOpenDependency,
-                          onOpenDecision: widget.onOpenDecision,
-                        ),
-                      ],
-                    ],
+          Expanded(
+            child: StreamBuilder<DayPlan?>(
+              stream: _planStreamFor(db, dateIso),
+              builder: (context, planSnap) {
+                if (planSnap.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(strokeWidth: 1.5),
                   );
-                },
-              );
-            },
+                }
+                final plan = planSnap.data;
+                return LayoutBuilder(
+                  builder: (context, constraints) {
+                    // Hide the planning rail when there isn't room for it.
+                    final showRail = constraints.maxWidth >= 560;
+                    // The board needs width for its lanes; below that the
+                    // rail carries the horizon as before.
+                    final showBoard = constraints.maxWidth >= 900;
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            children: [
+                              _weekNudge(db),
+                              Expanded(
+                                child: plan == null
+                                    ? _EmptyDay(
+                                        isToday: _isToday,
+                                        onChart: () => _chartDay(db, dateIso),
+                                      )
+                                    : StreamBuilder<List<DayPlanBlock>>(
+                                        stream: _blocksStreamFor(db, plan.id),
+                                        builder: (context, blockSnap) {
+                                          return StreamBuilder<WeekPlan?>(
+                                            stream: _weekPlanStreamFor(db),
+                                            builder: (context, weekSnap) {
+                                              final mission =
+                                                  weekSnap.data == null
+                                                  ? null
+                                                  : parseDayMissions(
+                                                      weekSnap
+                                                          .data!
+                                                          .dayMissionsJson,
+                                                    )[_date.weekday - 1];
+                                              final blocks =
+                                                  blockSnap.data ??
+                                                  const <DayPlanBlock>[];
+                                              final prefs = context
+                                                  .watch<SettingsProvider>()
+                                                  .settings;
+                                              final window = effectiveDayWindow(
+                                                start: prefs.helmDayStartMinute,
+                                                end: prefs.helmDayEndMinute,
+                                                blocks: [
+                                                  for (final b in blocks)
+                                                    (
+                                                      startMinute:
+                                                          b.startMinute,
+                                                      endMinute: b.endMinute,
+                                                    ),
+                                                ],
+                                              );
+                                              final week = weekSnap.data;
+                                              if (week == null) {
+                                                return _TimeGrid(
+                                                  plan: plan,
+                                                  blocks: blocks,
+                                                  isToday: _isToday,
+                                                  db: db,
+                                                  mission: mission,
+                                                  dayStart: window.start,
+                                                  dayEnd: window.end,
+                                                );
+                                              }
+                                              return StreamBuilder<
+                                                List<WeekPlanObjective>
+                                              >(
+                                                stream: _weekObjectivesFor(
+                                                  db,
+                                                  week.id,
+                                                ),
+                                                builder: (context, objSnap) {
+                                                  return _TimeGrid(
+                                                    plan: plan,
+                                                    blocks: blocks,
+                                                    isToday: _isToday,
+                                                    db: db,
+                                                    mission: mission,
+                                                    objectives:
+                                                        objSnap.data ??
+                                                        const [],
+                                                    weekday: _date.weekday - 1,
+                                                    dayStart: window.start,
+                                                    dayEnd: window.end,
+                                                  );
+                                                },
+                                              );
+                                            },
+                                          );
+                                        },
+                                      ),
+                              ),
+                              if (showBoard)
+                                _PlanningBoard(
+                                  db: db,
+                                  date: _date,
+                                  collapsed: _boardCollapsed,
+                                  onToggle: () => setState(
+                                    () => _boardCollapsed = !_boardCollapsed,
+                                  ),
+                                  onOpenAction: widget.onOpenAction,
+                                  onOpenRisk: widget.onOpenRisk,
+                                  onOpenIssue: widget.onOpenIssue,
+                                  onOpenDependency: widget.onOpenDependency,
+                                  onOpenDecision: widget.onOpenDecision,
+                                ),
+                            ],
+                          ),
+                        ),
+                        if (showRail) ...[
+                          Container(width: 1, color: KColors.border),
+                          _PlanningRail(
+                            db: db,
+                            date: _date,
+                            showHorizon: !showBoard,
+                            onOpenAction: widget.onOpenAction,
+                            onOpenRisk: widget.onOpenRisk,
+                            onOpenIssue: widget.onOpenIssue,
+                            onOpenAssumption: widget.onOpenAssumption,
+                            onOpenDependency: widget.onOpenDependency,
+                            onOpenDecision: widget.onOpenDecision,
+                          ),
+                        ],
+                      ],
+                    );
+                  },
+                );
+              },
+            ),
           ),
-        ),
       ],
     );
   }
@@ -404,12 +598,27 @@ class _HelmHeader extends StatelessWidget {
   });
 
   static const _weekdays = [
-    'Monday', 'Tuesday', 'Wednesday', 'Thursday',
-    'Friday', 'Saturday', 'Sunday',
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
   ];
   static const _months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
 
   @override
@@ -430,14 +639,17 @@ class _HelmHeader extends StatelessWidget {
           final compactDate = constraints.maxWidth < 760;
           final monday = mondayOf(date);
           final label = switch (scale) {
-            HelmScale.quarter =>
-              quarterLabel(quarterStartOf(date, anchorMonth), anchorMonth),
+            HelmScale.quarter => quarterLabel(
+              quarterStartOf(date, anchorMonth),
+              anchorMonth,
+            ),
             HelmScale.week =>
               'Week of ${monday.day} ${_months[monday.month - 1]} ${monday.year}',
-            HelmScale.day => compactDate
-                ? '${date.day} ${_months[date.month - 1]} ${date.year}'
-                : '${_weekdays[date.weekday - 1]} ${date.day} '
-                    '${_months[date.month - 1]} ${date.year}',
+            HelmScale.day =>
+              compactDate
+                  ? '${date.day} ${_months[date.month - 1]} ${date.year}'
+                  : '${_weekdays[date.weekday - 1]} ${date.day} '
+                        '${_months[date.month - 1]} ${date.year}',
           };
           return Row(
             children: [
@@ -465,8 +677,11 @@ class _HelmHeader extends StatelessWidget {
               ],
               const SizedBox(width: 12),
               IconButton(
-                icon: const Icon(Icons.chevron_left,
-                    size: 18, color: KColors.textDim),
+                icon: const Icon(
+                  Icons.chevron_left,
+                  size: 18,
+                  color: KColors.textDim,
+                ),
                 onPressed: onPrev,
                 tooltip: switch (scale) {
                   HelmScale.day => 'Previous day',
@@ -487,8 +702,11 @@ class _HelmHeader extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.chevron_right,
-                    size: 18, color: KColors.textDim),
+                icon: const Icon(
+                  Icons.chevron_right,
+                  size: 18,
+                  color: KColors.textDim,
+                ),
                 onPressed: onNext,
                 tooltip: switch (scale) {
                   HelmScale.day => 'Next day',
@@ -500,13 +718,13 @@ class _HelmHeader extends StatelessWidget {
                 TextButton(
                   onPressed: onToday,
                   child: Text(
-                      switch (scale) {
-                        HelmScale.day => 'Today',
-                        HelmScale.week => 'This week',
-                        HelmScale.quarter => 'This quarter',
-                      },
-                      style: const TextStyle(
-                          color: KColors.amber, fontSize: 12)),
+                    switch (scale) {
+                      HelmScale.day => 'Today',
+                      HelmScale.week => 'This week',
+                      HelmScale.quarter => 'This quarter',
+                    },
+                    style: const TextStyle(color: KColors.amber, fontSize: 12),
+                  ),
                 ),
               const Spacer(),
               if (showLegend)
@@ -520,9 +738,13 @@ class _HelmHeader extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 4),
-                  Text(label,
-                      style: const TextStyle(
-                          color: KColors.textDim, fontSize: 11)),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      color: KColors.textDim,
+                      fontSize: 11,
+                    ),
+                  ),
                   const SizedBox(width: 12),
                 ],
             ],
@@ -549,8 +771,11 @@ class _EmptyDay extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.explore_outlined,
-              size: 48, color: KColors.textMuted),
+          const Icon(
+            Icons.explore_outlined,
+            size: 48,
+            color: KColors.textMuted,
+          ),
           const SizedBox(height: 16),
           Text(
             isToday ? 'Chart your day' : 'No plan for this day',
@@ -569,7 +794,10 @@ class _EmptyDay extends StatelessWidget {
               'remainder in a new column and keep the original as the record.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                  color: KColors.textDim, fontSize: 12, height: 1.5),
+                color: KColors.textDim,
+                fontSize: 12,
+                height: 1.5,
+              ),
             ),
           ),
           const SizedBox(height: 20),
@@ -595,6 +823,9 @@ class _TimeGrid extends StatelessWidget {
   final AppDatabase db;
   // The day's one-line mission from the weekly plan, when set.
   final String? mission;
+  // The week's rocks, so the header can show what is allocated today.
+  final List<WeekPlanObjective> objectives;
+  final int weekday;
   final int dayStart;
   final int dayEnd;
 
@@ -606,15 +837,65 @@ class _TimeGrid extends StatelessWidget {
     required this.dayStart,
     required this.dayEnd,
     this.mission,
+    this.objectives = const [],
+    this.weekday = 0,
   });
+
+  /// "Build adapter 1/3 · Status pack 0/1" — today's rocks and how far
+  /// each has got, in slots, from this day's effective schedule.
+  Widget _rocksLine(List<int> starts) {
+    final rocks = [
+      for (final o in objectives)
+        if ((parseDayAllocations(o.dayAllocationsJson)[weekday] ?? 0) > 0)
+          (
+            label: o.label,
+            slots: parseDayAllocations(o.dayAllocationsJson)[weekday]!,
+            done: objectiveDoneBlocks(o.id, blocks, {plan.id: starts}),
+          ),
+    ];
+    if (rocks.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 4,
+        children: [
+          for (final r in rocks)
+            Tooltip(
+              message:
+                  'Allocated ${r.slots} focus block${r.slots == 1 ? '' : 's'} today',
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: r.done >= r.slots ? KColors.phosDim : KColors.surface2,
+                  borderRadius: BorderRadius.circular(3),
+                  border: Border.all(
+                    color: r.done >= r.slots
+                        ? KColors.phosphor
+                        : KColors.border2,
+                  ),
+                ),
+                child: Text(
+                  '${r.label} · ${r.done}/${r.slots}',
+                  style: TextStyle(
+                    color: r.done >= r.slots
+                        ? KColors.phosphor
+                        : KColors.textDim,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final starts = parseRevisionStarts(plan.revisionStartsJson);
     final revisions = plan.currentRevision + 1;
-    final gridHeight = (dayEnd - dayStart) /
-        kHelmSlotMinutes *
-        kHelmSlotHeight;
+    final gridHeight = (dayEnd - dayStart) / kHelmSlotMinutes * kHelmSlotHeight;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -633,9 +914,10 @@ class _TimeGrid extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                        color: KColors.text,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600),
+                      color: KColors.text,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 14),
@@ -649,21 +931,28 @@ class _TimeGrid extends StatelessWidget {
                       'new column — the original plan stays as the record.',
                   child: OutlinedButton.icon(
                     onPressed: () => _reviseFromNow(context, starts),
-                    icon: const Icon(Icons.alt_route,
-                        size: 14, color: KColors.amber),
-                    label: const Text('Revise from now',
-                        style:
-                            TextStyle(color: KColors.amber, fontSize: 12)),
+                    icon: const Icon(
+                      Icons.alt_route,
+                      size: 14,
+                      color: KColors.amber,
+                    ),
+                    label: const Text(
+                      'Revise from now',
+                      style: TextStyle(color: KColors.amber, fontSize: 12),
+                    ),
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: KColors.amber, width: 1),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                     ),
                   ),
                 ),
             ],
           ),
         ),
+        _rocksLine(starts),
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -672,7 +961,11 @@ class _TimeGrid extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _TimeAxis(height: gridHeight, dayStart: dayStart, dayEnd: dayEnd),
+                  _TimeAxis(
+                    height: gridHeight,
+                    dayStart: dayStart,
+                    dayEnd: dayEnd,
+                  ),
                   for (var r = 0; r < revisions; r++)
                     Padding(
                       padding: const EdgeInsets.only(left: 8),
@@ -681,9 +974,7 @@ class _TimeGrid extends StatelessWidget {
                         revision: r,
                         isLatest: r == plan.currentRevision,
                         revisionStarts: starts,
-                        blocks: blocks
-                            .where((b) => b.revision == r)
-                            .toList(),
+                        blocks: blocks.where((b) => b.revision == r).toList(),
                         isToday: isToday,
                         db: db,
                         dayStart: dayStart,
@@ -707,27 +998,28 @@ class _TimeGrid extends StatelessWidget {
     final meetingMinutes = schedule
         .where((b) => b.kind == 'meeting')
         .fold<int>(0, (sum, b) => sum + (b.endMinute - b.startMinute));
-    String fmt(int m) =>
-        m % 60 == 0 ? '${m ~/ 60}h' : '${m ~/ 60}h${m % 60}m';
+    String fmt(int m) => m % 60 == 0 ? '${m ~/ 60}h' : '${m ~/ 60}h${m % 60}m';
     return Text(
       'Focus ${fmt(focusMinutes)} · Meetings ${fmt(meetingMinutes)}',
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: GoogleFonts.jetBrainsMono(
-          color: KColors.textDim, fontSize: 12),
+      style: GoogleFonts.jetBrainsMono(color: KColors.textDim, fontSize: 12),
     );
   }
 
-  Future<void> _reviseFromNow(
-      BuildContext context, List<int> starts) async {
+  Future<void> _reviseFromNow(BuildContext context, List<int> starts) async {
     var at = (_nowMinute() ~/ kHelmSlotMinutes) * kHelmSlotMinutes;
     at = at.clamp(dayStart, dayEnd - kHelmSlotMinutes);
     final lastStart = starts.isEmpty ? dayStart : starts.last;
     if (at <= lastStart) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content:
-              Text('Already revised from this point — adjust the latest '
-                  'column instead.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Already revised from this point — adjust the latest '
+            'column instead.',
+          ),
+        ),
+      );
       return;
     }
     await db.dayPlanDao.startRevision(plan.id, at);
@@ -738,7 +1030,11 @@ class _TimeAxis extends StatelessWidget {
   final double height;
   final int dayStart;
   final int dayEnd;
-  const _TimeAxis({required this.height, required this.dayStart, required this.dayEnd});
+  const _TimeAxis({
+    required this.height,
+    required this.dayStart,
+    required this.dayEnd,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -749,15 +1045,14 @@ class _TimeAxis extends StatelessWidget {
         children: [
           for (var m = dayStart; m <= dayEnd; m += 60)
             Positioned(
-              top: (m - dayStart) /
-                      kHelmSlotMinutes *
-                      kHelmSlotHeight +
-                  14,
+              top: (m - dayStart) / kHelmSlotMinutes * kHelmSlotHeight + 14,
               right: 6,
               child: Text(
                 formatMinute(m),
                 style: GoogleFonts.jetBrainsMono(
-                    color: KColors.textMuted, fontSize: 10),
+                  color: KColors.textMuted,
+                  fontSize: 10,
+                ),
               ),
             ),
         ],
@@ -795,11 +1090,8 @@ class _RevisionColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gridHeight = (dayEnd - dayStart) /
-        kHelmSlotMinutes *
-        kHelmSlotHeight;
-    final slotCount =
-        (dayEnd - dayStart) ~/ kHelmSlotMinutes;
+    final gridHeight = (dayEnd - dayStart) / kHelmSlotMinutes * kHelmSlotHeight;
+    final slotCount = (dayEnd - dayStart) ~/ kHelmSlotMinutes;
     final nowMin = _nowMinute();
 
     return Column(
@@ -824,7 +1116,8 @@ class _RevisionColumn extends StatelessWidget {
           height: gridHeight,
           decoration: BoxDecoration(
             border: Border.all(
-                color: isLatest ? KColors.border2 : KColors.border),
+              color: isLatest ? KColors.border2 : KColors.border,
+            ),
             borderRadius: BorderRadius.circular(4),
             color: isLatest ? KColors.surface : KColors.bg,
           ),
@@ -832,16 +1125,13 @@ class _RevisionColumn extends StatelessWidget {
             children: [
               // Slot lattice — drop targets + tap-to-create on the
               // latest column, from its governing start onward.
-              for (var s = 0; s < slotCount; s++)
-                _slotCell(context, s),
+              for (var s = 0; s < slotCount; s++) _slotCell(context, s),
               // Blocks
               for (final b in blocks) _positionedBlock(context, b),
               // Now line
               if (isToday && nowMin >= dayStart && nowMin <= dayEnd)
                 Positioned(
-                  top: (nowMin - dayStart) /
-                      kHelmSlotMinutes *
-                      kHelmSlotHeight,
+                  top: (nowMin - dayStart) / kHelmSlotMinutes * kHelmSlotHeight,
                   left: 0,
                   right: 0,
                   child: Container(height: 1.5, color: KColors.red),
@@ -864,8 +1154,7 @@ class _RevisionColumn extends StatelessWidget {
       height: kHelmSlotHeight,
       child: DragTarget<Object>(
         onWillAcceptWithDetails: (d) =>
-            editable &&
-            (d.data is _RailDrag || d.data is DayPlanBlock),
+            editable && (d.data is _RailDrag || d.data is DayPlanBlock),
         onAcceptWithDetails: (d) => _dropOnSlot(d.data, minute),
         builder: (context, candidates, _) {
           return InkWell(
@@ -875,8 +1164,8 @@ class _RevisionColumn extends StatelessWidget {
                 color: candidates.isNotEmpty
                     ? KColors.amber.withValues(alpha: 0.15)
                     : (editable
-                        ? Colors.transparent
-                        : KColors.bg.withValues(alpha: 0.4)),
+                          ? Colors.transparent
+                          : KColors.bg.withValues(alpha: 0.4)),
                 border: Border(
                   top: BorderSide(
                     color: isHour ? KColors.border2 : KColors.border,
@@ -933,11 +1222,9 @@ class _RevisionColumn extends StatelessWidget {
 
   Widget _positionedBlock(BuildContext context, DayPlanBlock b) {
     final superseded = isBlockSuperseded(b, revisionStarts);
-    final top =
-        (b.startMinute - dayStart) / kHelmSlotMinutes * kHelmSlotHeight;
-    final height = (b.endMinute - b.startMinute) /
-        kHelmSlotMinutes *
-        kHelmSlotHeight;
+    final top = (b.startMinute - dayStart) / kHelmSlotMinutes * kHelmSlotHeight;
+    final height =
+        (b.endMinute - b.startMinute) / kHelmSlotMinutes * kHelmSlotHeight;
 
     final card = _BlockCard(
       block: b,
@@ -1037,10 +1324,11 @@ class _BlockCard extends StatelessWidget {
               : blockKindDimColor(block.kind),
           border: Border(
             left: BorderSide(
-                color: superseded
-                    ? KColors.textMuted.withValues(alpha: 0.4)
-                    : color,
-                width: 2),
+              color: superseded
+                  ? KColors.textMuted.withValues(alpha: 0.4)
+                  : color,
+              width: 2,
+            ),
           ),
           borderRadius: BorderRadius.circular(3),
         ),
@@ -1158,23 +1446,27 @@ class _BlockDialogState extends State<_BlockDialog> {
   }
 
   List<DropdownMenuItem<int>> _timeItems(int from, int to) => [
-        for (var m = from; m <= to; m += kHelmSlotMinutes)
-          DropdownMenuItem(
-            value: m,
-            child: Text(formatMinute(m),
-                style: GoogleFonts.jetBrainsMono(fontSize: 12)),
-          ),
-      ];
+    for (var m = from; m <= to; m += kHelmSlotMinutes)
+      DropdownMenuItem(
+        value: m,
+        child: Text(
+          formatMinute(m),
+          style: GoogleFonts.jetBrainsMono(fontSize: 12),
+        ),
+      ),
+  ];
 
   void _save() {
     final label = _labelCtrl.text.trim();
     if (label.isEmpty || _end <= _start) return;
-    Navigator.of(context).pop(_BlockDialogResult(
-      label: label,
-      kind: _kind,
-      startMinute: _start,
-      endMinute: _end,
-    ));
+    Navigator.of(context).pop(
+      _BlockDialogResult(
+        label: label,
+        kind: _kind,
+        startMinute: _start,
+        endMinute: _end,
+      ),
+    );
   }
 
   @override
@@ -1190,7 +1482,8 @@ class _BlockDialogState extends State<_BlockDialog> {
               controller: _labelCtrl,
               autofocus: true,
               decoration: const InputDecoration(
-                  labelText: 'What are you doing?'),
+                labelText: 'What are you doing?',
+              ),
               onSubmitted: (_) => _save(),
             ),
             const SizedBox(height: 12),
@@ -1209,10 +1502,11 @@ class _BlockDialogState extends State<_BlockDialog> {
                 Expanded(
                   child: DropdownButtonFormField<int>(
                     value: _start,
-                    decoration:
-                        const InputDecoration(labelText: 'Start'),
+                    decoration: const InputDecoration(labelText: 'Start'),
                     items: _timeItems(
-                        widget.dayStart, widget.dayEnd - kHelmSlotMinutes),
+                      widget.dayStart,
+                      widget.dayEnd - kHelmSlotMinutes,
+                    ),
                     onChanged: (v) => setState(() {
                       _start = v ?? _start;
                       if (_end <= _start) {
@@ -1227,7 +1521,9 @@ class _BlockDialogState extends State<_BlockDialog> {
                     value: _end,
                     decoration: const InputDecoration(labelText: 'End'),
                     items: _timeItems(
-                        widget.dayStart + kHelmSlotMinutes, widget.dayEnd),
+                      widget.dayStart + kHelmSlotMinutes,
+                      widget.dayEnd,
+                    ),
                     onChanged: (v) => setState(() => _end = v ?? _end),
                   ),
                 ),
@@ -1240,14 +1536,15 @@ class _BlockDialogState extends State<_BlockDialog> {
         if (widget.isEdit)
           TextButton(
             onPressed: () => Navigator.of(context).pop(
-                const _BlockDialogResult(
-                    label: '',
-                    kind: '',
-                    startMinute: 0,
-                    endMinute: 0,
-                    deleted: true)),
-            child:
-                const Text('Delete', style: TextStyle(color: KColors.red)),
+              const _BlockDialogResult(
+                label: '',
+                kind: '',
+                startMinute: 0,
+                endMinute: 0,
+                deleted: true,
+              ),
+            ),
+            child: const Text('Delete', style: TextStyle(color: KColors.red)),
           ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
@@ -1266,18 +1563,22 @@ class _BlockDialogState extends State<_BlockDialog> {
 /// Folds the six register streams into one [PlanningHorizon] stream.
 /// Broadcast, because more than one widget reads it (the rail, the
 /// board, and the "this project" layer).
-Stream<PlanningHorizon> horizonStream(DateTime date, List<Stream<Object>> sources) =>
-    combineLatest<Object>(sources)
-        .map((lists) => buildPlanningHorizon(
-              today: date,
-              actions: (lists[0] as List).cast<HelmActionItem>(),
-              decisions: (lists[1] as List).cast<HelmDecisionItem>(),
-              dependencies: (lists[2] as List).cast<HelmDependencyItem>(),
-              risks: (lists[3] as List).cast<HelmRiskItem>(),
-              issues: (lists[4] as List).cast<HelmIssueItem>(),
-              activities: (lists[5] as List).cast<HelmActivityItem>(),
-            ))
-        .asBroadcastStream();
+Stream<PlanningHorizon> horizonStream(
+  DateTime date,
+  List<Stream<Object>> sources,
+) => combineLatest<Object>(sources)
+    .map(
+      (lists) => buildPlanningHorizon(
+        today: date,
+        actions: (lists[0] as List).cast<HelmActionItem>(),
+        decisions: (lists[1] as List).cast<HelmDecisionItem>(),
+        dependencies: (lists[2] as List).cast<HelmDependencyItem>(),
+        risks: (lists[3] as List).cast<HelmRiskItem>(),
+        issues: (lists[4] as List).cast<HelmIssueItem>(),
+        activities: (lists[5] as List).cast<HelmActivityItem>(),
+      ),
+    )
+    .asBroadcastStream();
 
 /// Opens the register item behind a horizon row through the shell's
 /// callbacks. Plan activities have no dialog here (they live in Plan).
@@ -1395,14 +1696,14 @@ class _PlanningBoardState extends State<_PlanningBoard> {
   }
 
   Future<void> _open(PlanningItem it) => openPlanningItem(
-        widget.db,
-        it,
-        onOpenAction: widget.onOpenAction,
-        onOpenRisk: widget.onOpenRisk,
-        onOpenIssue: widget.onOpenIssue,
-        onOpenDependency: widget.onOpenDependency,
-        onOpenDecision: widget.onOpenDecision,
-      );
+    widget.db,
+    it,
+    onOpenAction: widget.onOpenAction,
+    onOpenRisk: widget.onOpenRisk,
+    onOpenIssue: widget.onOpenIssue,
+    onOpenDependency: widget.onOpenDependency,
+    onOpenDecision: widget.onOpenDecision,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -1420,115 +1721,156 @@ class _PlanningBoardState extends State<_PlanningBoard> {
           stream: _risks,
           builder: (context, rSnap) => StreamBuilder<List<HelmActivityItem>>(
             stream: _activities,
-            builder: (context, aSnap) => _boardBody(context, snap.data,
-                rSnap.data ?? const [], aSnap.data ?? const [], current),
+            builder: (context, aSnap) => _boardBody(
+              context,
+              snap.data,
+              rSnap.data ?? const [],
+              aSnap.data ?? const [],
+              current,
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _boardBody(BuildContext context, PlanningHorizon? h,
-      List<HelmRiskItem> risks, List<HelmActivityItem> activities, Project? current) {
-          final total = h == null
-              ? 0
-              : h.overdue.length + h.today.length +
-                  h.restOfWeek.fold<int>(0, (n, d) => n + d.items.length) +
-                  h.nextWeek.length;
-          final header = InkWell(
-            onTap: widget.onToggle,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 12, 8),
-              child: Row(children: [
-                Icon(widget.collapsed ? Icons.chevron_right : Icons.expand_more,
-                    size: 14, color: KColors.textDim),
-                const SizedBox(width: 6),
-                const Text('PLANNING BOARD',
-                    style: TextStyle(
-                        color: KColors.textDim,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.3)),
-                const SizedBox(width: 10),
-                Text(
-                  widget.collapsed
-                      ? '$total dated items this fortnight — click to open'
-                      : 'Everything dated, laid out by when · drag onto the grid to block time · click to open',
-                  style: const TextStyle(color: KColors.textMuted, fontSize: 11),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ]),
+  Widget _boardBody(
+    BuildContext context,
+    PlanningHorizon? h,
+    List<HelmRiskItem> risks,
+    List<HelmActivityItem> activities,
+    Project? current,
+  ) {
+    final total = h == null
+        ? 0
+        : h.overdue.length +
+              h.today.length +
+              h.restOfWeek.fold<int>(0, (n, d) => n + d.items.length) +
+              h.nextWeek.length;
+    final header = InkWell(
+      onTap: widget.onToggle,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 12, 8),
+        child: Row(
+          children: [
+            Icon(
+              widget.collapsed ? Icons.chevron_right : Icons.expand_more,
+              size: 14,
+              color: KColors.textDim,
             ),
-          );
-          if (widget.collapsed) return header;
-          if (h == null) {
-            return Column(children: [
-              header,
-              const SizedBox(height: 40, child: Center(child: CircularProgressIndicator(strokeWidth: 1.5))),
-            ]);
-          }
-          // Cards for the open project are marked so they stand out in the
-          // dated lanes; the project lane itself carries the headline
-          // (top risk, next milestone, how much is dated) rather than
-          // repeating those cards.
-          final pid = current?.id;
-          Widget card(PlanningItem it, Color bar) => planningItemCard(it, bar,
-              onTap: () => _open(it), highlight: it.projectId == pid);
-          final lanes = <Widget>[
-            if (current != null)
-              _projectLane(current, h, risks, activities),
-            _BoardLane(
-              title: 'Behind',
-              icon: Icons.warning_amber_rounded,
-              accent: KColors.red,
-              emptyText: 'Nothing overdue.',
-              children: [for (final it in h.overdue) card(it, KColors.red)],
+            const SizedBox(width: 6),
+            const Text(
+              'PLANNING BOARD',
+              style: TextStyle(
+                color: KColors.textDim,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.3,
+              ),
             ),
-            _BoardLane(
-              title: 'Today',
-              icon: Icons.today_outlined,
-              accent: KColors.amber,
-              emptyText: 'Nothing due today.',
-              children: [for (final it in h.today) card(it, KColors.amber)],
+            const SizedBox(width: 10),
+            Text(
+              widget.collapsed
+                  ? '$total dated items this fortnight — click to open'
+                  : 'Everything dated, laid out by when · drag onto the grid to block time · click to open',
+              style: const TextStyle(color: KColors.textMuted, fontSize: 11),
+              overflow: TextOverflow.ellipsis,
             ),
-            _BoardLane(
-              title: 'Rest of this week',
-              icon: Icons.view_week_outlined,
-              accent: KColors.phosphor,
-              emptyText: 'Nothing else due this week.',
-              children: [
-                for (final day in h.restOfWeek) ...[
-                  _RailDayHeader(label: planningDayLabel(day.date)),
-                  for (final it in day.items) card(it, KColors.phosphor),
-                ],
+          ],
+        ),
+      ),
+    );
+    if (widget.collapsed) return header;
+    if (h == null) {
+      return Column(
+        children: [
+          header,
+          const SizedBox(
+            height: 40,
+            child: Center(child: CircularProgressIndicator(strokeWidth: 1.5)),
+          ),
+        ],
+      );
+    }
+    // Cards for the open project are marked so they stand out in the
+    // dated lanes; the project lane itself carries the headline
+    // (top risk, next milestone, how much is dated) rather than
+    // repeating those cards.
+    final pid = current?.id;
+    Widget card(PlanningItem it, Color bar) => planningItemCard(
+      it,
+      bar,
+      onTap: () => _open(it),
+      highlight: it.projectId == pid,
+    );
+    final lanes = <Widget>[
+      if (current != null) _projectLane(current, h, risks, activities),
+      _BoardLane(
+        title: 'Behind',
+        icon: Icons.warning_amber_rounded,
+        accent: KColors.red,
+        emptyText: 'Nothing overdue.',
+        children: [for (final it in h.overdue) card(it, KColors.red)],
+      ),
+      _BoardLane(
+        title: 'Today',
+        icon: Icons.today_outlined,
+        accent: KColors.amber,
+        emptyText: 'Nothing due today.',
+        children: [for (final it in h.today) card(it, KColors.amber)],
+      ),
+      _BoardLane(
+        title: 'Rest of this week',
+        icon: Icons.view_week_outlined,
+        accent: KColors.phosphor,
+        emptyText: 'Nothing else due this week.',
+        children: [
+          for (final day in h.restOfWeek) ...[
+            _RailDayHeader(label: planningDayLabel(day.date)),
+            for (final it in day.items) card(it, KColors.phosphor),
+          ],
+        ],
+      ),
+      _BoardLane(
+        title: 'Next week',
+        icon: Icons.next_week_outlined,
+        accent: KColors.blue,
+        emptyText: 'Nothing dated next week yet.',
+        children: [for (final it in h.nextWeek) card(it, KColors.blue)],
+      ),
+    ];
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        header,
+        SizedBox(
+          height: 232,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var i = 0; i < lanes.length; i++) ...[
+                if (i > 0)
+                  Container(
+                    width: 1,
+                    color: KColors.border.withValues(alpha: 0.6),
+                  ),
+                Expanded(child: lanes[i]),
               ],
-            ),
-            _BoardLane(
-              title: 'Next week',
-              icon: Icons.next_week_outlined,
-              accent: KColors.blue,
-              emptyText: 'Nothing dated next week yet.',
-              children: [for (final it in h.nextWeek) card(it, KColors.blue)],
-            ),
-          ];
-          return Column(mainAxisSize: MainAxisSize.min, children: [
-            header,
-            SizedBox(
-              height: 232,
-              child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                for (var i = 0; i < lanes.length; i++) ...[
-                  if (i > 0) Container(width: 1, color: KColors.border.withValues(alpha: 0.6)),
-                  Expanded(child: lanes[i]),
-                ],
-              ]),
-            ),
-          ]);
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   /// The open project's headline: top escalated risk, next milestone, and
   /// how much of the horizon is its own.
-  Widget _projectLane(Project current, PlanningHorizon h,
-      List<HelmRiskItem> risks, List<HelmActivityItem> activities) {
+  Widget _projectLane(
+    Project current,
+    PlanningHorizon h,
+    List<HelmRiskItem> risks,
+    List<HelmActivityItem> activities,
+  ) {
     final pid = current.id;
     final todayIso = isoOf(widget.date);
     final topRisk = projectTopRisk(risks, pid, today: widget.date);
@@ -1536,7 +1878,9 @@ class _PlanningBoardState extends State<_PlanningBoard> {
     final behind = h.overdue.where((i) => i.projectId == pid).length;
     final today = h.today.where((i) => i.projectId == pid).length;
     final week = h.restOfWeek.fold<int>(
-        0, (n, d) => n + d.items.where((i) => i.projectId == pid).length);
+      0,
+      (n, d) => n + d.items.where((i) => i.projectId == pid).length,
+    );
     final nextWeek = h.nextWeek.where((i) => i.projectId == pid).length;
     return _BoardLane(
       title: 'This project · ${current.name}',
@@ -1546,22 +1890,36 @@ class _PlanningBoardState extends State<_PlanningBoard> {
       children: [
         if (topRisk != null)
           _RailItem(
-            label: topRisk.title?.trim().isNotEmpty == true ? topRisk.title! : topRisk.description,
-            detail: '${topRisk.steerco || topRisk.escalatedAt != null ? 'Top escalated risk' : 'Top risk'}'
+            label: topRisk.title?.trim().isNotEmpty == true
+                ? topRisk.title!
+                : topRisk.description,
+            detail:
+                '${topRisk.steerco || topRisk.escalatedAt != null ? 'Top escalated risk' : 'Top risk'}'
                 ' · ${ratingSummary(topRisk.likelihood, topRisk.impact)}'
                 '${topRisk.owner != null ? ' · ${topRisk.owner}' : ''}',
             barColor: KColors.red,
-            payload: _RailDrag(label: 'Risk: ${topRisk.title ?? topRisk.description}', kind: 'admin', projectId: pid),
-            onTap: widget.onOpenRisk == null ? null : () => widget.onOpenRisk!(topRisk),
+            payload: _RailDrag(
+              label: 'Risk: ${topRisk.title ?? topRisk.description}',
+              kind: 'admin',
+              projectId: pid,
+            ),
+            onTap: widget.onOpenRisk == null
+                ? null
+                : () => widget.onOpenRisk!(topRisk),
           ),
         if (next != null)
           _RailItem(
             label: next.activity.name,
-            detail: 'Next ${milestoneKindLabel(next.activity.activityType)} · '
+            detail:
+                'Next ${milestoneKindLabel(next.activity.activityType)} · '
                 '${du.formatDate(next.activity.startDate ?? next.activity.endDate)}'
                 '${next.wpCode != null ? ' · ${next.wpCode}' : ''}',
             barColor: KColors.blue,
-            payload: _RailDrag(label: 'Milestone: ${next.activity.name}', kind: 'admin', projectId: pid),
+            payload: _RailDrag(
+              label: 'Milestone: ${next.activity.name}',
+              kind: 'admin',
+              projectId: pid,
+            ),
           ),
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
@@ -1571,15 +1929,22 @@ class _PlanningBoardState extends State<_PlanningBoard> {
               if (today > 0) '$today due today',
               if (week > 0) '$week later this week',
               if (nextWeek > 0) '$nextWeek next week',
-              if (behind + today + week + nextWeek == 0) 'nothing dated in the next fortnight',
+              if (behind + today + week + nextWeek == 0)
+                'nothing dated in the next fortnight',
             ].join(' · '),
-            style: const TextStyle(color: KColors.textDim, fontSize: 11, height: 1.4),
+            style: const TextStyle(
+              color: KColors.textDim,
+              fontSize: 11,
+              height: 1.4,
+            ),
           ),
         ),
         const Padding(
           padding: EdgeInsets.fromLTRB(12, 0, 12, 4),
-          child: Text('Its cards are marked ● in the lanes to the right.',
-              style: TextStyle(color: KColors.textMuted, fontSize: 10.5)),
+          child: Text(
+            'Its cards are marked ● in the lanes to the right.',
+            style: TextStyle(color: KColors.textMuted, fontSize: 10.5),
+          ),
         ),
       ],
     );
@@ -1603,41 +1968,59 @@ class _BoardLane extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final count = children.whereType<_RailItem>().length;
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Padding(
-        padding: const EdgeInsets.fromLTRB(12, 6, 12, 2),
-        child: Row(children: [
-          Icon(icon, size: 12, color: accent),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text(title.toUpperCase(),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 6, 12, 2),
+          child: Row(
+            children: [
+              Icon(icon, size: 12, color: accent),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  title.toUpperCase(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
                     color: KColors.textDim,
                     fontSize: 10.5,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: 0.2)),
-          ),
-          if (count > 0)
-            Text('$count',
-                style: GoogleFonts.jetBrainsMono(
-                    color: KColors.textMuted, fontSize: 10, fontWeight: FontWeight.w600)),
-        ]),
-      ),
-      Expanded(
-        child: children.isEmpty
-            ? Padding(
-                padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
-                child: Text(emptyText,
-                    style: const TextStyle(color: KColors.textMuted, fontSize: 11)),
-              )
-            : ListView(
-                padding: const EdgeInsets.only(bottom: 8),
-                children: children,
+                    letterSpacing: 0.2,
+                  ),
+                ),
               ),
-      ),
-    ]);
+              if (count > 0)
+                Text(
+                  '$count',
+                  style: GoogleFonts.jetBrainsMono(
+                    color: KColors.textMuted,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: children.isEmpty
+              ? Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
+                  child: Text(
+                    emptyText,
+                    style: const TextStyle(
+                      color: KColors.textMuted,
+                      fontSize: 11,
+                    ),
+                  ),
+                )
+              : ListView(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  children: children,
+                ),
+        ),
+      ],
+    );
   }
 }
 
@@ -1650,6 +2033,7 @@ class _PlanningRail extends StatefulWidget {
   final void Function(Assumption)? onOpenAssumption;
   final void Function(ProgramDependency)? onOpenDependency;
   final void Function(Decision)? onOpenDecision;
+
   /// False when the planning board under the grid shows the dated
   /// horizon and the "this project" layer, so the rail keeps to the
   /// week's objectives, carry-over and the undated registers.
@@ -1757,8 +2141,9 @@ class _PlanningRailState extends State<_PlanningRail> {
 
   @override
   Widget build(BuildContext context) {
-    final yesterdayIso =
-        _isoDate(widget.date.subtract(const Duration(days: 1)));
+    final yesterdayIso = _isoDate(
+      widget.date.subtract(const Duration(days: 1)),
+    );
     return Container(
       width: 300,
       color: KColors.surface,
@@ -1809,7 +2194,10 @@ class _PlanningRailState extends State<_PlanningRail> {
                 ],
               ),
             ),
-            if (_browse) ..._browseSections() else ..._suggestedSections(yesterdayIso),
+            if (_browse)
+              ..._browseSections()
+            else
+              ..._suggestedSections(yesterdayIso),
           ],
         ),
       ),
@@ -1821,17 +2209,17 @@ class _PlanningRailState extends State<_PlanningRail> {
   // week by day, next week — across every register, so the day and the
   // week are planned from what is coming rather than what slipped.
   List<Widget> _suggestedSections(String yesterdayIso) => [
-        if (widget.showHorizon) _thisProjectSection(),
-        _thisWeekSection(),
-        _carryOverSection(yesterdayIso),
-        if (widget.showHorizon) _horizonSections(),
-        _riskSection(
-          title: 'Risks needing an owner',
-          stream: _unownedRisks,
-          cap: 5,
-        ),
-        _decisionSection(cap: 5),
-      ];
+    if (widget.showHorizon) _thisProjectSection(),
+    _thisWeekSection(),
+    _carryOverSection(yesterdayIso),
+    if (widget.showHorizon) _horizonSections(),
+    _riskSection(
+      title: 'Risks needing an owner',
+      stream: _unownedRisks,
+      cap: 5,
+    ),
+    _decisionSection(cap: 5),
+  ];
 
   /// The project you have open, at the top of the rail: what is behind,
   /// due today and coming this week for THIS project, its top escalated
@@ -1853,8 +2241,11 @@ class _PlanningRailState extends State<_PlanningRail> {
           stream: _datedActivities,
           builder: (context, aSnap) {
             final h = hSnap.data;
-            final behind = h?.overdue.where((i) => i.projectId == pid).toList() ?? const [];
-            final today = h?.today.where((i) => i.projectId == pid).toList() ?? const [];
+            final behind =
+                h?.overdue.where((i) => i.projectId == pid).toList() ??
+                const [];
+            final today =
+                h?.today.where((i) => i.projectId == pid).toList() ?? const [];
             final week = [
               for (final d in h?.restOfWeek ?? const <PlanningDay>[])
                 ...d.items.where((i) => i.projectId == pid),
@@ -1862,8 +2253,16 @@ class _PlanningRailState extends State<_PlanningRail> {
             final nextWeekCount =
                 h?.nextWeek.where((i) => i.projectId == pid).length ?? 0;
 
-            final topRisk = projectTopRisk(rSnap.data ?? const [], pid, today: widget.date);
-            final next = projectNextMilestone(aSnap.data ?? const [], pid, todayIso);
+            final topRisk = projectTopRisk(
+              rSnap.data ?? const [],
+              pid,
+              today: widget.date,
+            );
+            final next = projectNextMilestone(
+              aSnap.data ?? const [],
+              pid,
+              todayIso,
+            );
 
             final total = behind.length + today.length + week.length;
             if (total == 0 && topRisk == null && next == null) {
@@ -1883,7 +2282,8 @@ class _PlanningRailState extends State<_PlanningRail> {
                     label: topRisk.title?.trim().isNotEmpty == true
                         ? topRisk.title!
                         : topRisk.description,
-                    detail: 'Top escalated risk · ${ratingSummary(topRisk.likelihood, topRisk.impact)}'
+                    detail:
+                        'Top escalated risk · ${ratingSummary(topRisk.likelihood, topRisk.impact)}'
                         '${topRisk.owner != null ? ' · ${topRisk.owner}' : ''}',
                     barColor: KColors.red,
                     payload: _RailDrag(
@@ -1898,7 +2298,8 @@ class _PlanningRailState extends State<_PlanningRail> {
                 if (next != null)
                   _RailItem(
                     label: next.activity.name,
-                    detail: 'Next ${milestoneKindLabel(next.activity.activityType)}'
+                    detail:
+                        'Next ${milestoneKindLabel(next.activity.activityType)}'
                         ' · ${du.formatDate(next.activity.startDate ?? next.activity.endDate)}'
                         '${next.wpCode != null ? ' · ${next.wpCode}' : ''}',
                     barColor: KColors.blue,
@@ -1912,14 +2313,18 @@ class _PlanningRailState extends State<_PlanningRail> {
                 for (final it in behind) _horizonItem(it, KColors.red),
                 if (today.isNotEmpty) const _RailDayHeader(label: 'Today'),
                 for (final it in today) _horizonItem(it, KColors.amber),
-                if (week.isNotEmpty) const _RailDayHeader(label: 'Rest of this week'),
+                if (week.isNotEmpty)
+                  const _RailDayHeader(label: 'Rest of this week'),
                 for (final it in week) _horizonItem(it, KColors.phosphor),
                 if (nextWeekCount > 0)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(10, 4, 10, 6),
                     child: Text(
                       '$nextWeekCount more next week — see the horizon below',
-                      style: const TextStyle(color: KColors.textMuted, fontSize: 10.5),
+                      style: const TextStyle(
+                        color: KColors.textMuted,
+                        fontSize: 10.5,
+                      ),
                     ),
                   ),
               ],
@@ -1936,49 +2341,54 @@ class _PlanningRailState extends State<_PlanningRail> {
       builder: (context, snap) {
         final h = snap.data;
         if (h == null || h.isEmpty) return const SizedBox.shrink();
-        return Column(children: [
-          if (h.today.isNotEmpty)
-            _RailSection(
-              title: 'Today',
-              icon: Icons.today_outlined,
-              children: [for (final it in h.today) _horizonItem(it, KColors.amber)],
-            ),
-          if (h.overdue.isNotEmpty)
-            _RailSection(
-              title: 'Behind',
-              icon: Icons.warning_amber_rounded,
-              count: h.overdue.length,
-              expanded: _isExpanded('behind') || h.overdue.length <= 6,
-              onToggle: h.overdue.length <= 6
-                  ? null
-                  : () => _toggleSection('behind'),
-              children: [
-                for (final it in h.overdue) _horizonItem(it, KColors.red),
-              ],
-            ),
-          if (h.restOfWeek.isNotEmpty)
-            _RailSection(
-              title: 'Rest of this week',
-              icon: Icons.view_week_outlined,
-              children: [
-                for (final day in h.restOfWeek) ...[
-                  _RailDayHeader(label: planningDayLabel(day.date)),
-                  for (final it in day.items) _horizonItem(it, KColors.phosphor),
+        return Column(
+          children: [
+            if (h.today.isNotEmpty)
+              _RailSection(
+                title: 'Today',
+                icon: Icons.today_outlined,
+                children: [
+                  for (final it in h.today) _horizonItem(it, KColors.amber),
                 ],
-              ],
-            ),
-          if (h.nextWeek.isNotEmpty)
-            _RailSection(
-              title: 'Next week',
-              icon: Icons.next_week_outlined,
-              count: h.nextWeek.length,
-              expanded: _isExpanded('nextweek'),
-              onToggle: () => _toggleSection('nextweek'),
-              children: [
-                for (final it in h.nextWeek) _horizonItem(it, KColors.blue),
-              ],
-            ),
-        ]);
+              ),
+            if (h.overdue.isNotEmpty)
+              _RailSection(
+                title: 'Behind',
+                icon: Icons.warning_amber_rounded,
+                count: h.overdue.length,
+                expanded: _isExpanded('behind') || h.overdue.length <= 6,
+                onToggle: h.overdue.length <= 6
+                    ? null
+                    : () => _toggleSection('behind'),
+                children: [
+                  for (final it in h.overdue) _horizonItem(it, KColors.red),
+                ],
+              ),
+            if (h.restOfWeek.isNotEmpty)
+              _RailSection(
+                title: 'Rest of this week',
+                icon: Icons.view_week_outlined,
+                children: [
+                  for (final day in h.restOfWeek) ...[
+                    _RailDayHeader(label: planningDayLabel(day.date)),
+                    for (final it in day.items)
+                      _horizonItem(it, KColors.phosphor),
+                  ],
+                ],
+              ),
+            if (h.nextWeek.isNotEmpty)
+              _RailSection(
+                title: 'Next week',
+                icon: Icons.next_week_outlined,
+                count: h.nextWeek.length,
+                expanded: _isExpanded('nextweek'),
+                onToggle: () => _toggleSection('nextweek'),
+                children: [
+                  for (final it in h.nextWeek) _horizonItem(it, KColors.blue),
+                ],
+              ),
+          ],
+        );
       },
     );
   }
@@ -2016,25 +2426,25 @@ class _PlanningRailState extends State<_PlanningRail> {
   }
 
   List<Widget> _browseSections() => [
-        _actionSection(
-          title: 'Open actions',
-          icon: Icons.check_circle_outline,
-          stream: _allActions,
-          barColor: KColors.phosphor,
-          showCount: true,
-          collapseKey: 'actions',
-        ),
-        _riskSection(
-          title: 'Open risks',
-          stream: _allRisks,
-          showCount: true,
-          collapseKey: 'risks',
-        ),
-        _issueSection(),
-        _assumptionSection(),
-        _dependencySection(),
-        _decisionSection(showCount: true, collapseKey: 'decisions'),
-      ];
+    _actionSection(
+      title: 'Open actions',
+      icon: Icons.check_circle_outline,
+      stream: _allActions,
+      barColor: KColors.phosphor,
+      showCount: true,
+      collapseKey: 'actions',
+    ),
+    _riskSection(
+      title: 'Open risks',
+      stream: _allRisks,
+      showCount: true,
+      collapseKey: 'risks',
+    ),
+    _issueSection(),
+    _assumptionSection(),
+    _dependencySection(),
+    _decisionSection(showCount: true, collapseKey: 'decisions'),
+  ];
 
   /// The week's big rocks, draggable straight onto the grid — a dropped
   /// rock becomes a focus block whose done state counts toward the
@@ -2054,8 +2464,9 @@ class _PlanningRailState extends State<_PlanningRail> {
         if (plan == null) return const SizedBox.shrink();
         if (_weekObjectivesPlanId != plan.id) {
           _weekObjectivesPlanId = plan.id;
-          _weekObjectivesStream =
-              db.weekPlanDao.watchObjectivesForPlan(plan.id);
+          _weekObjectivesStream = db.weekPlanDao.watchObjectivesForPlan(
+            plan.id,
+          );
         }
         return StreamBuilder<List<WeekPlanObjective>>(
           stream: _weekObjectivesStream,
@@ -2115,8 +2526,9 @@ class _PlanningRailState extends State<_PlanningRail> {
             // yesterday's school pickup doesn't roll into today's backlog.
             final unfinished =
                 effectiveSchedule(blockSnap.data ?? const [], starts)
-                    .where((b) =>
-                        !b.done && b.kind != 'break' && b.kind != 'home')
+                    .where(
+                      (b) => !b.done && b.kind != 'break' && b.kind != 'home',
+                    )
                     .toList();
             if (unfinished.isEmpty) return const SizedBox.shrink();
             return _RailSection(
@@ -2138,8 +2550,9 @@ class _PlanningRailState extends State<_PlanningRail> {
                     onTap: b.linkedActionId == null
                         ? null
                         : () async {
-                            final a = await db.actionsDao
-                                .getActionById(b.linkedActionId!);
+                            final a = await db.actionsDao.getActionById(
+                              b.linkedActionId!,
+                            );
                             if (a != null) widget.onOpenAction?.call(a);
                           },
                   ),
@@ -2259,7 +2672,8 @@ class _PlanningRailState extends State<_PlanningRail> {
                 detail: item.projectName,
                 barColor: KColors.red,
                 payload: _RailDrag(
-                  label: 'Issue: '
+                  label:
+                      'Issue: '
                       '${item.issue.title?.isNotEmpty == true ? item.issue.title! : item.issue.description}',
                   kind: 'focus',
                   projectId: item.issue.projectId,
@@ -2389,16 +2803,19 @@ class _RailDayHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(14, 8, 14, 2),
-        color: KColors.surface2,
-        child: Text(label.toUpperCase(),
-            style: const TextStyle(
-                color: KColors.textMuted,
-                fontSize: 9,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.4)),
-      );
+    width: double.infinity,
+    padding: const EdgeInsets.fromLTRB(14, 8, 14, 2),
+    color: KColors.surface2,
+    child: Text(
+      label.toUpperCase(),
+      style: const TextStyle(
+        color: KColors.textMuted,
+        fontSize: 9,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.4,
+      ),
+    ),
+  );
 }
 
 class _RailModeChip extends StatelessWidget {
@@ -2421,8 +2838,7 @@ class _RailModeChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
           color: selected ? KColors.amberDim : KColors.surface2,
-          border: Border.all(
-              color: selected ? KColors.amber : KColors.border2),
+          border: Border.all(color: selected ? KColors.amber : KColors.border2),
           borderRadius: BorderRadius.circular(3),
         ),
         child: Text(
@@ -2551,8 +2967,7 @@ class _RailItem extends StatelessWidget {
                   label,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style:
-                      const TextStyle(color: KColors.text, fontSize: 12),
+                  style: const TextStyle(color: KColors.text, fontSize: 12),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -2560,13 +2975,14 @@ class _RailItem extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                      color: KColors.textMuted, fontSize: 10),
+                    color: KColors.textMuted,
+                    fontSize: 10,
+                  ),
                 ),
               ],
             ),
           ),
-          const Icon(Icons.drag_indicator,
-              size: 14, color: KColors.textMuted),
+          const Icon(Icons.drag_indicator, size: 14, color: KColors.textMuted),
         ],
       ),
     );
@@ -2577,8 +2993,7 @@ class _RailItem extends StatelessWidget {
         color: Colors.transparent,
         child: Container(
           width: 260,
-          padding:
-              const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
             color: KColors.surface2,
             border: Border.all(color: barColor),

@@ -70,6 +70,10 @@ class AppSettings {
   // them — so shrinking the window never hides a plan.
   final int helmDayStartMinute;
   final int helmDayEndMinute;
+  // Focus capacity per working day, in 30-minute slots (8 = four hours
+  // of deep work). The week ritual's day capacity is this less the
+  // meetings already on the day.
+  final int helmFocusSlotsPerDay;
 
   // Onboarding
   final bool hasSeenThreeViewTour;
@@ -109,6 +113,7 @@ class AppSettings {
     this.quarterAnchorMonth = 1,
     this.helmDayStartMinute = 7 * 60,
     this.helmDayEndMinute = 20 * 60,
+    this.helmFocusSlotsPerDay = 8,
     this.hasSeenThreeViewTour = false,
     this.hasSeenCharterMigrationNotice = false,
     this.analyticsEnabled = false,
@@ -159,6 +164,7 @@ class AppSettings {
     int? quarterAnchorMonth,
     int? helmDayStartMinute,
     int? helmDayEndMinute,
+    int? helmFocusSlotsPerDay,
     bool? hasSeenThreeViewTour,
     bool? hasSeenCharterMigrationNotice,
     bool? analyticsEnabled,
@@ -192,6 +198,7 @@ class AppSettings {
       quarterAnchorMonth: quarterAnchorMonth ?? this.quarterAnchorMonth,
       helmDayStartMinute: helmDayStartMinute ?? this.helmDayStartMinute,
       helmDayEndMinute: helmDayEndMinute ?? this.helmDayEndMinute,
+      helmFocusSlotsPerDay: helmFocusSlotsPerDay ?? this.helmFocusSlotsPerDay,
       hasSeenThreeViewTour: hasSeenThreeViewTour ?? this.hasSeenThreeViewTour,
       hasSeenCharterMigrationNotice: hasSeenCharterMigrationNotice ?? this.hasSeenCharterMigrationNotice,
       analyticsEnabled: analyticsEnabled ?? this.analyticsEnabled,
@@ -228,6 +235,7 @@ class AppSettings {
         'quarterAnchorMonth': quarterAnchorMonth,
         'helmDayStartMinute': helmDayStartMinute,
         'helmDayEndMinute': helmDayEndMinute,
+        'helmFocusSlotsPerDay': helmFocusSlotsPerDay,
         'hasSeenThreeViewTour': hasSeenThreeViewTour,
         'hasSeenCharterMigrationNotice': hasSeenCharterMigrationNotice,
         'analyticsEnabled': analyticsEnabled,
@@ -270,6 +278,7 @@ class AppSettings {
       quarterAnchorMonth: json['quarterAnchorMonth'] as int? ?? 1,
       helmDayStartMinute: json['helmDayStartMinute'] as int? ?? 7 * 60,
       helmDayEndMinute: json['helmDayEndMinute'] as int? ?? 20 * 60,
+      helmFocusSlotsPerDay: json['helmFocusSlotsPerDay'] as int? ?? 8,
       hasSeenThreeViewTour: json['hasSeenThreeViewTour'] as bool? ?? false,
       hasSeenCharterMigrationNotice: json['hasSeenCharterMigrationNotice'] as bool? ?? false,
       analyticsEnabled: json['analyticsEnabled'] as bool? ?? false,
@@ -398,6 +407,10 @@ class SettingsProvider extends ChangeNotifier {
     if (end <= start) end = start + 60;
     await save(_settings.copyWith(
         helmDayStartMinute: start, helmDayEndMinute: end));
+  }
+
+  Future<void> setHelmFocusSlotsPerDay(int slots) async {
+    await save(_settings.copyWith(helmFocusSlotsPerDay: slots.clamp(2, 20)));
   }
 
   Future<void> markThreeViewTourSeen() async {

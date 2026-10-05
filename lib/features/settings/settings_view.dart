@@ -320,6 +320,35 @@ class _PlanningSection extends StatelessWidget {
           ]),
           const SizedBox(height: 18),
           const Text(
+            'How much focus work a normal day holds. The week ritual '
+            'allocates big rocks against this, less the meetings already '
+            'on each day, and warns when a day is overcommitted.',
+            style: TextStyle(color: KColors.textDim, fontSize: 12),
+          ),
+          const SizedBox(height: 10),
+          Row(children: [
+            const Text('Focus per working day',
+                style: TextStyle(color: KColors.text, fontSize: 13)),
+            const SizedBox(width: 12),
+            DropdownButton<int>(
+              value: settingsProvider.settings.helmFocusSlotsPerDay,
+              dropdownColor: KColors.surface2,
+              items: [
+                for (var slots = 2; slots <= 16; slots += 2)
+                  DropdownMenuItem(
+                    value: slots,
+                    child: Text(
+                      '${slots ~/ 2} hour${slots == 2 ? '' : 's'} · $slots blocks',
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                  ),
+              ],
+              onChanged: (v) =>
+                  v == null ? null : settingsProvider.setHelmFocusSlotsPerDay(v),
+            ),
+          ]),
+          const SizedBox(height: 18),
+          const Text(
             'Which month starts Q1 for Helm\'s quarterly planner. '
             'January gives calendar quarters; July matches the '
             'Australian financial year. Quarter plans are stored by '

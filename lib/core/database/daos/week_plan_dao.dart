@@ -104,6 +104,8 @@ class WeekPlanDao extends DatabaseAccessor<AppDatabase>
     String? linkedActionId,
     String? goalId,
     int? targetBlocks,
+    String? dayAllocationsJson,
+    String? carriedFromId,
   }) async {
     final id = _uuid.v4();
     await transaction(() async {
@@ -120,10 +122,31 @@ class WeekPlanDao extends DatabaseAccessor<AppDatabase>
         linkedActionId: Value(linkedActionId),
         goalId: Value(goalId),
         targetBlocks: Value(targetBlocks),
+        dayAllocationsJson: Value(dayAllocationsJson ?? '{}'),
+        carriedFromId: Value(carriedFromId),
       ));
       await _touchPlan(planId);
     });
     return id;
+  }
+
+  /// Stamps the week as charted — the ritual's last step.
+  Future<void> markCharted(String planId) async {
+    await (update(weekPlans)..where((t) => t.id.equals(planId)))
+        .write(WeekPlansCompanion(
+      chartedAt: Value(DateTime.now()),
+      updatedAt: Value(DateTime.now()),
+    ));
+  }
+
+  /// Records the end-of-week review on [planId] (last week's plan).
+  Future<void> setReview(String planId, {String? note}) async {
+    await (update(weekPlans)..where((t) => t.id.equals(planId)))
+        .write(WeekPlansCompanion(
+      reviewedAt: Value(DateTime.now()),
+      reviewNote: Value(note == null || note.trim().isEmpty ? null : note.trim()),
+      updatedAt: Value(DateTime.now()),
+    ));
   }
 
   Future<void> updateObjective(
@@ -191,6 +214,34 @@ class WeekPlanDao extends DatabaseAccessor<AppDatabase>
               plan: r.readTable(dayPlans),
             ))
         .toList());
+  }
+
+  /// One-shot versions of the week readout streams, for the ritual.
+  Future<List<DayPlan>> getDayPlansForWeek(String mondayIso, String sundayIso) =>
+      (select(dayPlans)
+            ..where((t) =>
+                t.planDate.isBiggerOrEqualValue(mondayIso) &
+                t.planDate.isSmallerOrEqualValue(sundayIso)))
+          .get();
+
+  Future<List<WeekBlockRow>> getBlocksForWeek(
+      String mondayIso, String sundayIso) async {
+    final q = select(dayPlanBlocks).join([
+      innerJoin(dayPlans, dayPlans.id.equalsExp(dayPlanBlocks.dayPlanId)),
+    ])
+      ..where(dayPlans.planDate.isBiggerOrEqualValue(mondayIso) &
+          dayPlans.planDate.isSmallerOrEqualValue(sundayIso))
+      ..orderBy([
+        OrderingTerm.asc(dayPlans.planDate),
+        OrderingTerm.asc(dayPlanBlocks.startMinute),
+      ]);
+    final rows = await q.get();
+    return rows
+        .map((r) => (
+              block: r.readTable(dayPlanBlocks),
+              plan: r.readTable(dayPlans),
+            ))
+        .toList();
   }
 
   // ── Sync (export/import) ──────────────────────────────────────────────

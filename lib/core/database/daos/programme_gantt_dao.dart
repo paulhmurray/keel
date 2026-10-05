@@ -93,6 +93,38 @@ class ProgrammeGanttDao extends DatabaseAccessor<AppDatabase>
     }
   }
 
+  /// Writes accepted re-plan moves: months, dates, and a history note
+  /// appended to each row's notes. One transaction so a half-applied
+  /// re-plan never reaches the Gantt. Takes plain values so the DAO
+  /// stays independent of the re-plan engine.
+  Future<void> applyReplan(List<ReplanWrite> writes) async {
+    final now = DateTime.now();
+    await transaction(() async {
+      for (final w in writes) {
+        final current = await getActivityById(w.id);
+        if (current == null) continue;
+        final existing = (current.notes ?? '').trim();
+        final note = (w.note ?? '').trim();
+        final merged = note.isEmpty
+            ? current.notes
+            : existing.isEmpty
+                ? note
+                : '$existing\n$note';
+        await patchActivity(
+          w.id,
+          TimelineActivitiesCompanion(
+            startMonth: Value(w.startMonth),
+            endMonth: Value(w.endMonth),
+            startDate: Value(w.startDate),
+            endDate: Value(w.endDate),
+            notes: Value(merged),
+            updatedAt: Value(now),
+          ),
+        );
+      }
+    });
+  }
+
   /// Clears baseline data from all activities in [projectId].
   Future<void> clearBaseline(String projectId) =>
       (update(timelineActivities)
@@ -155,6 +187,43 @@ class ProgrammeGanttDao extends DatabaseAccessor<AppDatabase>
     ));
     await seedParentSpanFromTasks(parentId);
     return id;
+  }
+
+  /// Adds several tasks under [parentId] with explicit spans, in order,
+  /// after any existing siblings. Used by Re-plan's sub-task suggestions,
+  /// which slice the parent's window rather than inherit it whole. One
+  /// transaction; returns the new ids.
+  Future<List<String>> addPlannedTasks(
+    String parentId,
+    List<PlannedTask> tasks,
+  ) async {
+    final parent = await getActivityById(parentId);
+    if (parent == null || tasks.isEmpty) return const [];
+    final siblings = await getTasksForActivity(parentId);
+    final ids = <String>[];
+    final now = DateTime.now();
+    await transaction(() async {
+      var order = siblings.length;
+      for (final t in tasks) {
+        await upsertActivity(TimelineActivitiesCompanion(
+          id: Value(t.id),
+          workPackageId: Value(parent.workPackageId),
+          projectId: Value(parent.projectId),
+          name: Value(t.name),
+          activityType: const Value('activity'),
+          parentActivityId: Value(parentId),
+          startMonth: Value(t.startMonth),
+          endMonth: Value(t.endMonth),
+          startDate: Value(t.startDate),
+          endDate: Value(t.endDate),
+          sortOrder: Value(order++),
+          updatedAt: Value(now),
+        ));
+        ids.add(t.id);
+      }
+    });
+    await seedParentSpanFromTasks(parentId);
+    return ids;
   }
 
   /// Seeds a parent activity's span from its tasks — ONLY when the
@@ -447,4 +516,40 @@ class DependencySpec {
       );
 
   bool get isExternal => externalLabel != null;
+}
+
+/// One row's new span for [ProgrammeGanttDao.applyReplan].
+class ReplanWrite {
+  final String id;
+  final int? startMonth;
+  final int? endMonth;
+  final String? startDate;
+  final String? endDate;
+  final String? note;
+  const ReplanWrite({
+    required this.id,
+    required this.startMonth,
+    required this.endMonth,
+    required this.startDate,
+    required this.endDate,
+    this.note,
+  });
+}
+
+/// One task to create under a parent, for [ProgrammeGanttDao.addPlannedTasks].
+class PlannedTask {
+  final String id;
+  final String name;
+  final int? startMonth;
+  final int? endMonth;
+  final String? startDate;
+  final String? endDate;
+  const PlannedTask({
+    required this.id,
+    required this.name,
+    required this.startMonth,
+    required this.endMonth,
+    this.startDate,
+    this.endDate,
+  });
 }

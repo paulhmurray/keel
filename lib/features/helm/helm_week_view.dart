@@ -5,7 +5,9 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/database/database.dart';
 import '../../core/helm/day_plan_logic.dart';
 import '../../shared/theme/keel_colors.dart';
+import '../../core/helm/week_ritual.dart';
 import 'helm_view.dart' show blockKindColor;
+import 'week_ritual_dialog.dart';
 
 // ---------------------------------------------------------------------------
 // Helm week view — the weekly layer of the planner.
@@ -16,14 +18,25 @@ import 'helm_view.dart' show blockKindColor;
 // Hours belong to the day view's morning ritual, which draws from this.
 // ---------------------------------------------------------------------------
 
-String _isoDate(DateTime d) => '${d.year.toString().padLeft(4, '0')}-'
+String _isoDate(DateTime d) =>
+    '${d.year.toString().padLeft(4, '0')}-'
     '${d.month.toString().padLeft(2, '0')}-'
     '${d.day.toString().padLeft(2, '0')}';
 
 const _weekdayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const _monthNames = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
 ];
 
 /// Drag payload accepted by the objectives panel (mirrors the rail's
@@ -80,12 +93,14 @@ class _HelmWeekViewState extends State<HelmWeekView> {
     _blocksStream = dao.watchBlocksForWeek(mondayIso, sundayIso);
     _objectivesPlanId = null;
     _objectivesStream = null;
-    final quarterIso =
-        _isoDate(quarterStartOf(widget.date, widget.anchorMonth));
+    final quarterIso = _isoDate(
+      quarterStartOf(widget.date, widget.anchorMonth),
+    );
     if (_quarterStartIso != quarterIso) {
       _quarterStartIso = quarterIso;
-      _quarterPlanStream =
-          widget.db.quarterPlanDao.watchPlanForQuarter(quarterIso);
+      _quarterPlanStream = widget.db.quarterPlanDao.watchPlanForQuarter(
+        quarterIso,
+      );
       _goalsPlanId = null;
       _goalsStream = null;
     }
@@ -102,8 +117,7 @@ class _HelmWeekViewState extends State<HelmWeekView> {
   Stream<List<WeekPlanObjective>> _objectivesFor(String planId) {
     if (_objectivesPlanId != planId) {
       _objectivesPlanId = planId;
-      _objectivesStream =
-          widget.db.weekPlanDao.watchObjectivesForPlan(planId);
+      _objectivesStream = widget.db.weekPlanDao.watchObjectivesForPlan(planId);
     }
     return _objectivesStream!;
   }
@@ -116,7 +130,8 @@ class _HelmWeekViewState extends State<HelmWeekView> {
       builder: (context, planSnap) {
         if (planSnap.connectionState == ConnectionState.waiting) {
           return const Center(
-              child: CircularProgressIndicator(strokeWidth: 1.5));
+            child: CircularProgressIndicator(strokeWidth: 1.5),
+          );
         }
         final plan = planSnap.data;
         if (plan == null) return _emptyWeek();
@@ -144,8 +159,11 @@ class _HelmWeekViewState extends State<HelmWeekView> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.view_week_outlined,
-              size: 48, color: KColors.textMuted),
+          const Icon(
+            Icons.view_week_outlined,
+            size: 48,
+            color: KColors.textMuted,
+          ),
           const SizedBox(height: 16),
           Text(
             'Chart this week',
@@ -164,23 +182,29 @@ class _HelmWeekViewState extends State<HelmWeekView> {
               'day view.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                  color: KColors.textDim, fontSize: 12, height: 1.5),
+                color: KColors.textDim,
+                fontSize: 12,
+                height: 1.5,
+              ),
             ),
           ),
           const SizedBox(height: 20),
           ElevatedButton.icon(
-            onPressed: () => widget.db.weekPlanDao
-                .getOrCreatePlanForWeek(_isoDate(_monday)),
+            onPressed: () =>
+                showWeekRitual(context, db: widget.db, date: _monday),
             icon: const Icon(Icons.view_week_outlined, size: 16),
-            label: const Text('Plan this week'),
+            label: const Text('Chart this week'),
           ),
         ],
       ),
     );
   }
 
-  Widget _weekBody(WeekPlan plan, List<DayPlan> dayPlans,
-      List<WeekBlockRow> blockRows) {
+  Widget _weekBody(
+    WeekPlan plan,
+    List<DayPlan> dayPlans,
+    List<WeekBlockRow> blockRows,
+  ) {
     final missions = parseDayMissions(plan.dayMissionsJson);
     final planByDate = {for (final p in dayPlans) p.planDate: p};
     final blocksByDate = <String, List<DayPlanBlock>>{};
@@ -188,90 +212,96 @@ class _HelmWeekViewState extends State<HelmWeekView> {
       blocksByDate.putIfAbsent(r.plan.planDate, () => []).add(r.block);
     }
     final revisionStartsByPlanId = {
-      for (final p in dayPlans)
-        p.id: parseRevisionStarts(p.revisionStartsJson),
+      for (final p in dayPlans) p.id: parseRevisionStarts(p.revisionStartsJson),
     };
     final todayIso = _isoDate(DateTime.now());
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // ── Day list ──────────────────────────────────────────────────
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              for (var i = 0; i < 7; i++)
-                _DayRow(
-                  date: _monday.add(Duration(days: i)),
-                  isToday:
-                      _isoDate(_monday.add(Duration(days: i))) == todayIso,
-                  mission: missions[i],
-                  dayPlan: planByDate[
-                      _isoDate(_monday.add(Duration(days: i)))],
-                  blocks: blocksByDate[
-                          _isoDate(_monday.add(Duration(days: i)))] ??
-                      const [],
-                  onOpen: widget.onOpenDay == null
-                      ? null
-                      : () => widget.onOpenDay!(
-                          _monday.add(Duration(days: i))),
-                  onEditMission: () => _editMission(plan, i, missions[i]),
-                ),
-            ],
-          ),
-        ),
-        Container(width: 1, color: KColors.border),
-        // ── Objectives panel ──────────────────────────────────────────
-        SizedBox(
-          width: 300,
-          child: StreamBuilder<List<WeekPlanObjective>>(
-            stream: _objectivesFor(plan.id),
-            builder: (context, objSnap) {
-              return StreamBuilder<QuarterPlan?>(
-                stream: _quarterPlanStream,
-                builder: (context, qSnap) {
-                  final quarterPlan = qSnap.data;
-                  if (quarterPlan == null) {
-                    return _ObjectivesPanel(
-                      db: widget.db,
-                      plan: plan,
-                      objectives: objSnap.data ?? const [],
-                      blockRows: blockRows,
-                      revisionStartsByPlanId: revisionStartsByPlanId,
-                      quarterGoals: const [],
-                    );
-                  }
-                  return StreamBuilder<List<QuarterGoal>>(
-                    stream: _goalsFor(quarterPlan.id),
-                    builder: (context, goalsSnap) {
-                      return _ObjectivesPanel(
-                        db: widget.db,
-                        plan: plan,
-                        objectives: objSnap.data ?? const [],
-                        blockRows: blockRows,
-                        revisionStartsByPlanId: revisionStartsByPlanId,
-                        quarterGoals: goalsSnap.data ?? const [],
+    return StreamBuilder<List<WeekPlanObjective>>(
+      stream: _objectivesFor(plan.id),
+      builder: (context, objSnap) {
+        final objectives = objSnap.data ?? const <WeekPlanObjective>[];
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // ── Day list ──────────────────────────────────────────────────
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  for (var i = 0; i < 7; i++)
+                    _DayRow(
+                      date: _monday.add(Duration(days: i)),
+                      isToday:
+                          _isoDate(_monday.add(Duration(days: i))) == todayIso,
+                      mission: missions[i],
+                      dayPlan:
+                          planByDate[_isoDate(_monday.add(Duration(days: i)))],
+                      blocks:
+                          blocksByDate[_isoDate(
+                            _monday.add(Duration(days: i)),
+                          )] ??
+                          const [],
+                      objectives: objectives,
+                      onOpen: widget.onOpenDay == null
+                          ? null
+                          : () => widget.onOpenDay!(
+                              _monday.add(Duration(days: i)),
+                            ),
+                      onEditMission: () => _editMission(plan, i, missions[i]),
+                    ),
+                ],
+              ),
+            ),
+            Container(width: 1, color: KColors.border),
+            // ── Objectives panel ──────────────────────────────────────────
+            SizedBox(
+              width: 300,
+              child: Builder(
+                builder: (context) {
+                  return StreamBuilder<QuarterPlan?>(
+                    stream: _quarterPlanStream,
+                    builder: (context, qSnap) {
+                      final quarterPlan = qSnap.data;
+                      if (quarterPlan == null) {
+                        return _ObjectivesPanel(
+                          db: widget.db,
+                          plan: plan,
+                          objectives: objectives,
+                          blockRows: blockRows,
+                          revisionStartsByPlanId: revisionStartsByPlanId,
+                          quarterGoals: const [],
+                        );
+                      }
+                      return StreamBuilder<List<QuarterGoal>>(
+                        stream: _goalsFor(quarterPlan.id),
+                        builder: (context, goalsSnap) {
+                          return _ObjectivesPanel(
+                            db: widget.db,
+                            plan: plan,
+                            objectives: objectives,
+                            blockRows: blockRows,
+                            revisionStartsByPlanId: revisionStartsByPlanId,
+                            quarterGoals: goalsSnap.data ?? const [],
+                          );
+                        },
                       );
                     },
                   );
                 },
-              );
-            },
-          ),
-        ),
-      ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
-  Future<void> _editMission(
-      WeekPlan plan, int weekday, String? current) async {
+  Future<void> _editMission(WeekPlan plan, int weekday, String? current) async {
     final ctrl = TextEditingController(text: current ?? '');
     final result = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(
-            '${_weekdayNames[weekday]} mission'),
+        title: Text('${_weekdayNames[weekday]} mission'),
         content: SizedBox(
           width: 360,
           child: TextField(
@@ -311,6 +341,7 @@ class _DayRow extends StatelessWidget {
   final String? mission;
   final DayPlan? dayPlan;
   final List<DayPlanBlock> blocks;
+  final List<WeekPlanObjective> objectives;
   final VoidCallback? onOpen;
   final VoidCallback onEditMission;
 
@@ -320,6 +351,7 @@ class _DayRow extends StatelessWidget {
     required this.mission,
     required this.dayPlan,
     required this.blocks,
+    this.objectives = const [],
     this.onOpen,
     required this.onEditMission,
   });
@@ -334,15 +366,17 @@ class _DayRow extends StatelessWidget {
         .where((b) => b.kind == 'focus')
         .fold<int>(0, (s, b) => s + (b.endMinute - b.startMinute));
     final isPast = date.isBefore(
-        DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day));
+      DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
+    );
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: isToday ? KColors.surface2 : KColors.surface,
         border: Border.all(
-            color: isToday ? KColors.amber : KColors.border,
-            width: isToday ? 1 : 1),
+          color: isToday ? KColors.amber : KColors.border,
+          width: isToday ? 1 : 1,
+        ),
         borderRadius: BorderRadius.circular(6),
       ),
       child: InkWell(
@@ -369,7 +403,9 @@ class _DayRow extends StatelessWidget {
                   if (isToday) ...[
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 4, vertical: 1),
+                        horizontal: 4,
+                        vertical: 1,
+                      ),
                       decoration: BoxDecoration(
                         color: KColors.amber,
                         borderRadius: BorderRadius.circular(2),
@@ -390,7 +426,9 @@ class _DayRow extends StatelessWidget {
                     Text(
                       'Focus ${focusMinutes ~/ 60}h${focusMinutes % 60 == 0 ? '' : '${focusMinutes % 60}m'}',
                       style: GoogleFonts.jetBrainsMono(
-                          color: KColors.textDim, fontSize: 10),
+                        color: KColors.textDim,
+                        fontSize: 10,
+                      ),
                     ),
                 ],
               ),
@@ -403,11 +441,13 @@ class _DayRow extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 2),
                   child: Row(
                     children: [
-                      Icon(Icons.flag_outlined,
-                          size: 12,
-                          color: mission != null
-                              ? KColors.amber
-                              : KColors.textMuted),
+                      Icon(
+                        Icons.flag_outlined,
+                        size: 12,
+                        color: mission != null
+                            ? KColors.amber
+                            : KColors.textMuted,
+                      ),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
@@ -428,6 +468,65 @@ class _DayRow extends StatelessWidget {
                     ],
                   ),
                 ),
+              ),
+              // The rocks the ritual put on this day, with how much of
+              // each has been done here (slots).
+              Builder(
+                builder: (_) {
+                  final weekday = date.weekday - 1;
+                  final rocks = [
+                    for (final o in objectives)
+                      if ((parseDayAllocations(o.dayAllocationsJson)[weekday] ??
+                              0) >
+                          0)
+                        (
+                          o: o,
+                          slots: parseDayAllocations(
+                            o.dayAllocationsJson,
+                          )[weekday]!,
+                          done: objectiveDoneBlocks(o.id, blocks, {
+                            if (dayPlan != null) dayPlan!.id: starts,
+                          }),
+                        ),
+                  ];
+                  if (rocks.isEmpty) return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: [
+                        for (final r in rocks)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: r.done >= r.slots
+                                  ? KColors.phosDim
+                                  : KColors.surface2,
+                              borderRadius: BorderRadius.circular(3),
+                              border: Border.all(
+                                color: r.done >= r.slots
+                                    ? KColors.phosphor
+                                    : KColors.border2,
+                              ),
+                            ),
+                            child: Text(
+                              '${r.o.label} · ${r.done}/${r.slots}',
+                              style: TextStyle(
+                                color: r.done >= r.slots
+                                    ? KColors.phosphor
+                                    : KColors.textDim,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                },
               ),
               if (schedule.isNotEmpty) ...[
                 const SizedBox(height: 6),
@@ -463,8 +562,9 @@ class _BlockSlivers extends StatelessWidget {
                 height: 8,
                 margin: const EdgeInsets.only(right: 2),
                 decoration: BoxDecoration(
-                  color: blockKindColor(b.kind)
-                      .withValues(alpha: b.done ? 0.45 : 0.9),
+                  color: blockKindColor(
+                    b.kind,
+                  ).withValues(alpha: b.done ? 0.45 : 0.9),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -539,8 +639,7 @@ class _ObjectivesPanel extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(14, 14, 10, 4),
                 child: Row(
                   children: [
-                    const Icon(Icons.flag,
-                        size: 13, color: KColors.amber),
+                    const Icon(Icons.flag, size: 13, color: KColors.amber),
                     const SizedBox(width: 6),
                     const Expanded(
                       child: Text(
@@ -556,8 +655,24 @@ class _ObjectivesPanel extends StatelessWidget {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.add,
-                          size: 16, color: KColors.amber),
+                      icon: const Icon(
+                        Icons.view_week_outlined,
+                        size: 16,
+                        color: KColors.amber,
+                      ),
+                      tooltip: 'Chart this week — the guided ritual',
+                      onPressed: () => showWeekRitual(
+                        context,
+                        db: db,
+                        date: DateTime.parse(plan.weekStartDate),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(
+                        Icons.add,
+                        size: 16,
+                        color: KColors.amber,
+                      ),
                       tooltip: 'Add objective',
                       onPressed: () => _editObjective(context, null),
                     ),
@@ -595,8 +710,7 @@ class _ObjectivesPanel extends StatelessWidget {
                     children: [
                       for (final g in quarterGoals.where((g) => !g.done))
                         Tooltip(
-                          message:
-                              'Add a weekly objective for this goal',
+                          message: 'Add a weekly objective for this goal',
                           child: InkWell(
                             onTap: () => db.weekPlanDao.insertObjective(
                               planId: plan.id,
@@ -608,34 +722,43 @@ class _ObjectivesPanel extends StatelessWidget {
                             borderRadius: BorderRadius.circular(3),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 7, vertical: 3),
+                                horizontal: 7,
+                                vertical: 3,
+                              ),
                               decoration: BoxDecoration(
                                 color: KColors.surface2,
-                                border:
-                                    Border.all(color: KColors.border2),
+                                border: Border.all(color: KColors.border2),
                                 borderRadius: BorderRadius.circular(3),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.landscape,
-                                      size: 10, color: KColors.amber),
+                                  const Icon(
+                                    Icons.landscape,
+                                    size: 10,
+                                    color: KColors.amber,
+                                  ),
                                   const SizedBox(width: 4),
                                   ConstrainedBox(
                                     constraints: const BoxConstraints(
-                                        maxWidth: 200),
+                                      maxWidth: 200,
+                                    ),
                                     child: Text(
                                       g.label,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(
-                                          color: KColors.textDim,
-                                          fontSize: 10),
+                                        color: KColors.textDim,
+                                        fontSize: 10,
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(width: 4),
-                                  const Icon(Icons.add,
-                                      size: 10, color: KColors.amber),
+                                  const Icon(
+                                    Icons.add,
+                                    size: 10,
+                                    color: KColors.amber,
+                                  ),
                                 ],
                               ),
                             ),
@@ -655,7 +778,9 @@ class _ObjectivesPanel extends StatelessWidget {
                             'from a project here.',
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                                color: KColors.textMuted, fontSize: 11),
+                              color: KColors.textMuted,
+                              fontSize: 11,
+                            ),
                           ),
                         ),
                       )
@@ -664,11 +789,13 @@ class _ObjectivesPanel extends StatelessWidget {
                           for (final o in objectives)
                             _ObjectiveRow(
                               objective: o,
-                              doneBlocks: objectiveDoneBlocks(o.id,
-                                  weekBlocks, revisionStartsByPlanId),
+                              doneBlocks: objectiveDoneBlocks(
+                                o.id,
+                                weekBlocks,
+                                revisionStartsByPlanId,
+                              ),
                               onToggleDone: () => db.weekPlanDao
-                                  .setObjectiveDone(
-                                      plan.id, o.id, !o.done),
+                                  .setObjectiveDone(plan.id, o.id, !o.done),
                               onTap: () => _editObjective(context, o),
                             ),
                         ],
@@ -708,7 +835,9 @@ class _ObjectivesPanel extends StatelessWidget {
   }
 
   Future<void> _editObjective(
-      BuildContext context, WeekPlanObjective? existing) async {
+    BuildContext context,
+    WeekPlanObjective? existing,
+  ) async {
     final result = await showDialog<_ObjectiveDialogResult>(
       context: context,
       builder: (_) => _ObjectiveDialog(existing: existing),
@@ -776,8 +905,7 @@ class _ObjectiveRow extends StatelessWidget {
             if (objective.goalId != null) ...[
               const Tooltip(
                 message: 'Linked to a quarterly goal',
-                child: Icon(Icons.landscape,
-                    size: 11, color: KColors.amber),
+                child: Icon(Icons.landscape, size: 11, color: KColors.amber),
               ),
               const SizedBox(width: 4),
             ],
@@ -789,8 +917,9 @@ class _ObjectiveRow extends StatelessWidget {
                 style: TextStyle(
                   color: met ? KColors.textDim : KColors.text,
                   fontSize: 12,
-                  decoration:
-                      objective.done ? TextDecoration.lineThrough : null,
+                  decoration: objective.done
+                      ? TextDecoration.lineThrough
+                      : null,
                   decorationColor: KColors.textMuted,
                 ),
               ),
@@ -798,13 +927,13 @@ class _ObjectiveRow extends StatelessWidget {
             if (target != null) ...[
               const SizedBox(width: 6),
               Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 5, vertical: 1),
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                 decoration: BoxDecoration(
                   color: met ? KColors.phosDim : KColors.surface2,
                   borderRadius: BorderRadius.circular(3),
                   border: Border.all(
-                      color: met ? KColors.phosphor : KColors.border2),
+                    color: met ? KColors.phosphor : KColors.border2,
+                  ),
                 ),
                 child: Text(
                   '$doneBlocks/$target',
@@ -849,8 +978,7 @@ class _ObjectiveDialogState extends State<_ObjectiveDialog> {
   @override
   void initState() {
     super.initState();
-    _labelCtrl =
-        TextEditingController(text: widget.existing?.label ?? '');
+    _labelCtrl = TextEditingController(text: widget.existing?.label ?? '');
     _target = widget.existing?.targetBlocks;
   }
 
@@ -870,16 +998,15 @@ class _ObjectiveDialogState extends State<_ObjectiveDialog> {
   void _save() {
     final label = _labelCtrl.text.trim();
     if (label.isEmpty) return;
-    Navigator.of(context).pop(
-        _ObjectiveDialogResult(label: label, targetBlocks: _target));
+    Navigator.of(
+      context,
+    ).pop(_ObjectiveDialogResult(label: label, targetBlocks: _target));
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.existing == null
-          ? 'New objective'
-          : 'Edit objective'),
+      title: Text(widget.existing == null ? 'New objective' : 'Edit objective'),
       content: SizedBox(
         width: 380,
         child: Column(
@@ -899,19 +1026,18 @@ class _ObjectiveDialogState extends State<_ObjectiveDialog> {
               value: _target,
               decoration: const InputDecoration(
                 labelText: 'Target (30-min blocks this week)',
-                helperText:
-                    'Duration counts — one 90-min block = 3 blocks.',
-                helperStyle:
-                    TextStyle(color: KColors.textMuted, fontSize: 10),
+                helperText: 'Duration counts — one 90-min block = 3 blocks.',
+                helperStyle: TextStyle(color: KColors.textMuted, fontSize: 10),
               ),
               items: [
-                const DropdownMenuItem(
-                    value: null, child: Text('No target')),
+                const DropdownMenuItem(value: null, child: Text('No target')),
                 for (var n = 1; n <= 10; n++)
                   DropdownMenuItem(
-                      value: n,
-                      child: Text(
-                          '$n block${n == 1 ? '' : 's'} (${_slotHours(n)})')),
+                    value: n,
+                    child: Text(
+                      '$n block${n == 1 ? '' : 's'} (${_slotHours(n)})',
+                    ),
+                  ),
               ],
               onChanged: (v) => setState(() => _target = v),
             ),
@@ -921,10 +1047,10 @@ class _ObjectiveDialogState extends State<_ObjectiveDialog> {
       actions: [
         if (widget.existing != null)
           TextButton(
-            onPressed: () => Navigator.of(context).pop(
-                const _ObjectiveDialogResult(label: '', deleted: true)),
-            child:
-                const Text('Delete', style: TextStyle(color: KColors.red)),
+            onPressed: () => Navigator.of(
+              context,
+            ).pop(const _ObjectiveDialogResult(label: '', deleted: true)),
+            child: const Text('Delete', style: TextStyle(color: KColors.red)),
           ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
