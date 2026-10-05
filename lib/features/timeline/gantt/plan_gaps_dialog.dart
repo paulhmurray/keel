@@ -713,6 +713,7 @@ class _PlanGapsDialogState extends State<PlanGapsDialog> {
                         Expanded(
                           flex: 2,
                           child: DropdownButtonFormField<String>(
+                            isExpanded: true,
                             initialValue: p?.isNew ?? false
                                 ? p!.newWorkPackageId
                                 : null,
@@ -727,6 +728,8 @@ class _PlanGapsDialogState extends State<PlanGapsDialog> {
                                   value: w.id,
                                   child: Text(
                                     w.name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(fontSize: 12),
                                   ),
                                 ),
@@ -750,6 +753,7 @@ class _PlanGapsDialogState extends State<PlanGapsDialog> {
                         Expanded(
                           flex: 2,
                           child: DropdownButtonFormField<String>(
+                            isExpanded: true,
                             initialValue: p?.newType ?? 'activity',
                             isDense: true,
                             decoration: const InputDecoration(
