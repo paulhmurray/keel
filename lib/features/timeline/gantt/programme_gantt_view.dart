@@ -1646,18 +1646,41 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                       ],
                     ),
                   ),
-                  // Column header cells
+                  // Column header cells, with the today marker over them
                   Expanded(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      controller: _horizHeader,
-                      physics: const NeverScrollableScrollPhysics(),
-                      child: Row(
-                        children: List.generate(
-                          cols.length,
-                          (i) => _buildColumnHeader(cols[i]),
+                    child: Stack(
+                      children: [
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          controller: _horizHeader,
+                          physics: const NeverScrollableScrollPhysics(),
+                          child: Row(
+                            children: List.generate(
+                              cols.length,
+                              (i) => _buildColumnHeader(cols[i]),
+                            ),
+                          ),
                         ),
-                      ),
+                        if (_todayX != null)
+                          IgnorePointer(
+                            child: ClipRect(
+                              child: AnimatedBuilder(
+                                animation: _horizHeader,
+                                builder: (_, __) => CustomPaint(
+                                  painter: _TodayLinePainter(
+                                    x:
+                                        _todayX! -
+                                        (_horizHeader.hasClients
+                                            ? _horizHeader.offset
+                                            : 0),
+                                    label: 'TODAY',
+                                  ),
+                                  child: const SizedBox.expand(),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 ],
@@ -1779,6 +1802,26 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                               ),
                             ),
                           ),
+                        // Today: a thin red line down the whole grid so
+                        // "where are we" reads without counting columns.
+                        if (_todayX != null)
+                          IgnorePointer(
+                            child: ClipRect(
+                              child: AnimatedBuilder(
+                                animation: _horizBody,
+                                builder: (_, __) => CustomPaint(
+                                  painter: _TodayLinePainter(
+                                    x:
+                                        _todayX! -
+                                        (_horizBody.hasClients
+                                            ? _horizBody.offset
+                                            : 0),
+                                  ),
+                                  child: const SizedBox.expand(),
+                                ),
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -1788,6 +1831,20 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
           ],
         );
       },
+    );
+  }
+
+  /// Today's x within the scrollable cell area, or null when the plan
+  /// has no month-0 anchor or today is outside its columns.
+  double? get _todayX {
+    final m0Iso = _header?.month0Date;
+    final m0 = m0Iso == null ? null : DateTime.tryParse(m0Iso);
+    if (m0 == null) return null;
+    return ganttXForDate(
+      date: DateTime.now(),
+      month0: m0,
+      cols: [for (final c in _ganttCols) (start: c.start, end: c.end)],
+      colWidth: _cellW,
     );
   }
 
@@ -6136,6 +6193,53 @@ class _ScenarioThreadPainter extends CustomPainter {
       old.color != color ||
       old.startFraction != startFraction ||
       old.endFraction != endFraction;
+}
+
+/// A thin red vertical line at [x]; with [label], a small tag at the top
+/// for the header strip. Paints nothing when [x] is off-canvas.
+class _TodayLinePainter extends CustomPainter {
+  final double x;
+  final String? label;
+  _TodayLinePainter({required this.x, this.label});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (x < 0 || x > size.width) return;
+    final paint = Paint()
+      ..color = const Color(0xFFEF4444).withValues(alpha: 0.85)
+      ..strokeWidth = 1.5;
+    canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    if (label == null) return;
+    final tp = TextPainter(
+      text: TextSpan(
+        text: label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 8,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.4,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    final w = tp.width + 8;
+    const h = 13.0;
+    // Keep the tag inside the strip when the line hugs an edge.
+    final left = (x - w / 2).clamp(
+      0.0,
+      (size.width - w).clamp(0.0, double.infinity),
+    );
+    final rect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(left, 2, w, h),
+      const Radius.circular(3),
+    );
+    canvas.drawRRect(rect, Paint()..color = const Color(0xFFEF4444));
+    tp.paint(canvas, Offset(left + 4, 2 + (h - tp.height) / 2));
+  }
+
+  @override
+  bool shouldRepaint(covariant _TodayLinePainter old) =>
+      old.x != x || old.label != label;
 }
 
 class _DependencyPainter extends CustomPainter {

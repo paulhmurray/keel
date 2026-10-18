@@ -2,7 +2,16 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- Keel is a direct-distribution desktop tool: it spawns a local
+	     Ollama server, writes under the user's home directory and
+	     replaces its own bundle when it updates. None of that works
+	     inside the App Sandbox, so it stays off; the hardened runtime
+	     (set at codesign time) is what notarization needs. -->
 	<key>com.apple.security.app-sandbox</key>
+	<false/>
+	<key>com.apple.security.network.client</key>
+	<true/>
+	<key>com.apple.security.network.server</key>
 	<true/>
 </dict>
 </plist>

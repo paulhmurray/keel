@@ -27,9 +27,12 @@ class UpdateService {
   final String? overrideCurrentVersion;
 
   UpdateService({http.Client? httpClient, this.overrideCurrentVersion})
-      : _client = httpClient ?? http.Client();
+    : _client = httpClient ?? http.Client();
 
-  Future<UpdateInfo?> checkForUpdate() async {
+  /// With [force], returns the latest release even when it is not newer
+  /// — the "Reinstall current version" path that proves the updater on
+  /// each platform without waiting for the next release.
+  Future<UpdateInfo?> checkForUpdate({bool force = false}) async {
     try {
       final response = await _client
           .get(Uri.parse(_versionEndpoint))
@@ -47,7 +50,7 @@ class UpdateService {
         currentVersion = info.version;
       }
 
-      if (!_isNewer(latestVersion, currentVersion)) return null;
+      if (!force && !_isNewer(latestVersion, currentVersion)) return null;
 
       final platformKey = _platformKey();
       final urls = data['download_url'] as Map<String, dynamic>;

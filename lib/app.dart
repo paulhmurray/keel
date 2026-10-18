@@ -1,14 +1,19 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'core/database/database.dart';
 import 'core/inbox/watcher_service.dart';
+import 'core/update/self_updater.dart';
 import 'providers/analytics_provider.dart';
 import 'providers/project_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/sync_provider.dart';
 import 'providers/update_provider.dart';
 import 'shared/theme/keel_theme.dart';
+import 'shared/widgets/update_banner.dart';
 import 'features/shell/shell_layout.dart';
 
 class KeelApp extends StatefulWidget {
@@ -25,6 +30,17 @@ class _KeelAppState extends State<KeelApp> {
   void initState() {
     super.initState();
     _database = AppDatabase();
+    // An in-app update parks the previous install beside the new one;
+    // clear it now that the new version is running.
+    if (!kIsWeb) {
+      final exe = Platform.resolvedExecutable;
+      // On a Mac the parked copy sits beside the .app bundle, not beside
+      // the binary inside it.
+      final root = Platform.isMacOS
+          ? (macBundlePath(exe) ?? installRootFor(exe))
+          : installRootFor(exe);
+      sweepOldInstalls(Directory(root));
+    }
   }
 
   @override
@@ -48,8 +64,7 @@ class _KeelAppState extends State<KeelApp> {
         // Analytics — listens to Settings and swaps Noop ↔ real impl
         // when the user toggles opt-in. Noop by default.
         ChangeNotifierProvider<AnalyticsProvider>(
-          create: (ctx) =>
-              AnalyticsProvider(ctx.read<SettingsProvider>()),
+          create: (ctx) => AnalyticsProvider(ctx.read<SettingsProvider>()),
         ),
 
         // Project state — depends on database
@@ -89,18 +104,19 @@ class _KeelAppState extends State<KeelApp> {
         ),
 
         // File watcher — depends on db, settings, and project
-        ChangeNotifierProxyProvider2<SettingsProvider, ProjectProvider, WatcherService>(
+        ChangeNotifierProxyProvider2<
+          SettingsProvider,
+          ProjectProvider,
+          WatcherService
+        >(
           create: (ctx) => WatcherService(
             ctx.read<AppDatabase>(),
             ctx.read<SettingsProvider>(),
             ctx.read<ProjectProvider>(),
           ),
           update: (ctx, settings, project, previous) =>
-              previous ?? WatcherService(
-                ctx.read<AppDatabase>(),
-                settings,
-                project,
-              ),
+              previous ??
+              WatcherService(ctx.read<AppDatabase>(), settings, project),
         ),
       ],
       child: MaterialApp(
@@ -123,7 +139,7 @@ class _KeelAppState extends State<KeelApp> {
                     height: h,
                     child: MediaQuery(
                       data: mq.copyWith(size: Size(w, h)),
-                      child: const ShellLayout(),
+                      child: const UpdateOverlay(child: ShellLayout()),
                     ),
                   ),
                 );

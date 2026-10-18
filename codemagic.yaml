@@ -32,6 +32,7 @@ workflows:
 
       - name: Sign and notarize
         script: |
+          set -euo pipefail
           # Write the API private key to a file.
           # printf '%b' converts literal \n escape sequences to real newlines
           # in case Codemagic stored the key that way.
@@ -48,39 +49,80 @@ workflows:
           keychain add-certificates
 
           APP=$(find build/macos/Build/Products/Release -name "*.app" -maxdepth 1 | head -1)
+          echo "Signing $APP"
 
-          # Sign with Developer ID (no provisioning profile needed for direct distribution)
+          # Sign with Developer ID, the hardened runtime, Keel's entitlements
+          # (sandbox OFF — see Release.entitlements) and a secure timestamp.
+          # A missing timestamp is the commonest notarization rejection.
           codesign \
-            --deep --force --options runtime \
+            --deep --force --options runtime --timestamp \
+            --entitlements macos/Runner/Release.entitlements \
             --sign "Developer ID Application" \
             "$APP"
+          codesign --verify --deep --strict --verbose=2 "$APP"
 
           # Zip for notarization submission
           ditto -c -k --keepParent "$APP" keel-notarize.zip
 
-          # Submit to Apple notary service
-          xcrun notarytool submit keel-notarize.zip \
+          # Submit to Apple's notary service and REQUIRE acceptance. The
+          # old script carried on regardless, which is how 1.2.11 shipped a
+          # DMG Gatekeeper blocks. On any other status, print Apple's log
+          # so the failure explains itself in the build output.
+          SUBMIT=$(xcrun notarytool submit keel-notarize.zip \
             --key /tmp/certs/AuthKey.p8 \
             --key-id "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
             --issuer "$APP_STORE_CONNECT_ISSUER_ID" \
-            --wait
+            --wait --output-format json)
+          echo "$SUBMIT"
+          SUBMISSION_ID=$(echo "$SUBMIT" | jq -r '.id')
+          STATUS=$(echo "$SUBMIT" | jq -r '.status')
+          if [ "$STATUS" != "Accepted" ]; then
+            echo "Notarization status: $STATUS — fetching Apple's log"
+            xcrun notarytool log "$SUBMISSION_ID" \
+              --key /tmp/certs/AuthKey.p8 \
+              --key-id "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
+              --issuer "$APP_STORE_CONNECT_ISSUER_ID" || true
+            rm -rf /tmp/certs
+            exit 1
+          fi
 
-          # Staple the ticket to the .app
+          # Staple the ticket to the .app and prove Gatekeeper accepts it.
           xcrun stapler staple "$APP"
-
-          rm -rf /tmp/certs
+          xcrun stapler validate "$APP"
+          spctl --assess --type execute --verbose=4 "$APP"
 
       - name: Package as DMG
         script: |
+          set -euo pipefail
           APP=$(find build/macos/Build/Products/Release -name "*.app" -maxdepth 1 | head -1)
           mkdir -p dmg_staging
-          cp -r "$APP" dmg_staging/
+          cp -R "$APP" dmg_staging/
           ln -s /Applications dmg_staging/Applications
           hdiutil create \
             -volname "Keel" \
             -srcfolder dmg_staging \
             -ov -format UDZO \
             keel-macos.dmg
+
+          # Sign and notarize the DMG as well, so the disk image itself
+          # opens without a warning, then staple it.
+          codesign --force --timestamp --sign "Developer ID Application" keel-macos.dmg
+          SUBMIT=$(xcrun notarytool submit keel-macos.dmg \
+            --key /tmp/certs/AuthKey.p8 \
+            --key-id "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
+            --issuer "$APP_STORE_CONNECT_ISSUER_ID" \
+            --wait --output-format json)
+          echo "$SUBMIT"
+          if [ "$(echo "$SUBMIT" | jq -r '.status')" != "Accepted" ]; then
+            xcrun notarytool log "$(echo "$SUBMIT" | jq -r '.id')" \
+              --key /tmp/certs/AuthKey.p8 \
+              --key-id "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
+              --issuer "$APP_STORE_CONNECT_ISSUER_ID" || true
+            exit 1
+          fi
+          xcrun stapler staple keel-macos.dmg
+          xcrun stapler validate keel-macos.dmg
+          rm -rf /tmp/certs
 
       - name: Package as ZIP
         script: |

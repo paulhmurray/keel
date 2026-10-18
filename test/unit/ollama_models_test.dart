@@ -20,6 +20,16 @@ void main() {
         '/.local/share/keel/bin/ollama');
   });
 
+  test('macOS looks for the official app\'s CLI, never a loose copy', () {
+    final c = OllamaClient.macOllamaCandidates({'HOME': '/Users/sam'});
+    expect(c, [
+      '/opt/homebrew/bin/ollama',
+      '/usr/local/bin/ollama',
+      '/Applications/Ollama.app/Contents/Resources/ollama',
+      '/Users/sam/Applications/Ollama.app/Contents/Resources/ollama',
+    ]);
+  });
+
   test('recommendation fits the card: 12 GB → 14B, 8 GB → 8B, small → 4B', () {
     expect(recommendedOllamaModel(vramMiB: 12288), 'qwen3:14b');
     expect(recommendedOllamaModel(vramMiB: 8192), 'qwen3:8b');

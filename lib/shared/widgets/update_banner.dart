@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/keel_colors.dart';
 import '../../providers/update_provider.dart';
+import '../../core/update/self_updater.dart';
 import '../../core/update/update_service.dart';
 
 /// Full-width amber banner for critical updates — not dismissible.
@@ -46,25 +49,27 @@ class _UpdateBannerBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          const Icon(Icons.warning_amber_rounded,
-              size: 14, color: KColors.amber),
+          const Icon(
+            Icons.warning_amber_rounded,
+            size: 14,
+            color: KColors.amber,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               'Critical update required — Keel ${info.version}. ${info.releaseNotes}',
-              style: const TextStyle(
-                  color: KColors.amber, fontSize: 12),
+              style: const TextStyle(color: KColors.amber, fontSize: 12),
             ),
           ),
           _TextButton(
-            label: 'Download now',
-            onTap: () => _launch(info.downloadUrl),
+            label: 'Install now',
+            onTap: () => context.read<UpdateProvider>().install(info.version),
           ),
           const SizedBox(width: 12),
           _TextButton(
             label: 'Release notes',
-            onTap: () => _launch(
-                'https://keel-app.dev/changelog#v${info.version}'),
+            onTap: () =>
+                _launch('https://keel-app.dev/changelog#v${info.version}'),
           ),
         ],
       ),
@@ -97,8 +102,11 @@ class _UpdatePanelNotice extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.system_update_alt,
-                  size: 11, color: KColors.amber),
+              const Icon(
+                Icons.system_update_alt,
+                size: 11,
+                color: KColors.amber,
+              ),
               const SizedBox(width: 5),
               Text(
                 'UPDATE AVAILABLE'.toUpperCase(),
@@ -115,7 +123,10 @@ class _UpdatePanelNotice extends StatelessWidget {
           Text(
             'Keel ${info.version}',
             style: const TextStyle(
-                color: KColors.text, fontSize: 11, fontWeight: FontWeight.w500),
+              color: KColors.text,
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
           ),
           if (info.releaseNotes.isNotEmpty) ...[
             const SizedBox(height: 2),
@@ -130,11 +141,9 @@ class _UpdatePanelNotice extends StatelessWidget {
           Row(
             children: [
               _ActionButton(
-                label: 'Download',
-                onTap: () {
-                  final uri = Uri.tryParse(info.downloadUrl);
-                  if (uri != null) launchUrl(uri);
-                },
+                label: 'Install',
+                onTap: () =>
+                    context.read<UpdateProvider>().install(info.version),
               ),
               const SizedBox(width: 6),
               _ActionButton(
@@ -178,8 +187,11 @@ class _ActionButton extends StatelessWidget {
   final VoidCallback onTap;
   final bool muted;
 
-  const _ActionButton(
-      {required this.label, required this.onTap, this.muted = false});
+  const _ActionButton({
+    required this.label,
+    required this.onTap,
+    this.muted = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -190,7 +202,10 @@ class _ActionButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: muted ? Colors.transparent : KColors.amberDim,
           border: Border.all(
-              color: muted ? KColors.border2 : KColors.amber.withValues(alpha: 0.4)),
+            color: muted
+                ? KColors.border2
+                : KColors.amber.withValues(alpha: 0.4),
+          ),
           borderRadius: BorderRadius.circular(3),
         ),
         child: Text(
@@ -202,6 +217,145 @@ class _ActionButton extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Greys the whole app while an update downloads and installs, with the
+/// phase and progress. On failure it shows the reason and a Close; the
+/// app underneath is untouched.
+class UpdateOverlay extends StatefulWidget {
+  final Widget child;
+  const UpdateOverlay({super.key, required this.child});
+
+  @override
+  State<UpdateOverlay> createState() => _UpdateOverlayState();
+}
+
+class _UpdateOverlayState extends State<UpdateOverlay> {
+  // Once the relaunch has been handed off, a Close appears after a while
+  // so a hand-off that never completes (an installer that refused, say)
+  // cannot strand the user behind the barrier.
+  DateTime? _relaunchSince;
+  Timer? _tick;
+
+  @override
+  void dispose() {
+    _tick?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.watch<UpdateProvider>();
+    final progress = p.progress;
+    if (progress.phase == UpdatePhase.relaunching) {
+      _relaunchSince ??= DateTime.now();
+      _tick ??= Timer.periodic(const Duration(seconds: 5), (_) {
+        if (mounted) setState(() {});
+      });
+    } else {
+      _relaunchSince = null;
+      _tick?.cancel();
+      _tick = null;
+    }
+    final stuck =
+        _relaunchSince != null &&
+        DateTime.now().difference(_relaunchSince!) >
+            const Duration(seconds: 30);
+    final show = progress.busy || progress.phase == UpdatePhase.failed;
+    return Stack(
+      children: [
+        widget.child,
+        if (show) ...[
+          const ModalBarrier(dismissible: false, color: Color(0xB3000000)),
+          Center(
+            child: Container(
+              width: 420,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: KColors.surface,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: KColors.border),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        progress.phase == UpdatePhase.failed
+                            ? Icons.error_outline
+                            : Icons.system_update_alt,
+                        size: 16,
+                        color: progress.phase == UpdatePhase.failed
+                            ? KColors.red
+                            : KColors.amber,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        progress.phase == UpdatePhase.failed
+                            ? 'Update failed'
+                            : 'Updating Keel',
+                        style: const TextStyle(
+                          color: KColors.text,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    progress.message,
+                    style: const TextStyle(
+                      color: KColors.textDim,
+                      fontSize: 12,
+                    ),
+                  ),
+                  if (progress.busy) ...[
+                    const SizedBox(height: 12),
+                    LinearProgressIndicator(
+                      value: progress.fraction,
+                      color: KColors.amber,
+                      backgroundColor: KColors.surface2,
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Keel will close and reopen as the new version.',
+                      style: TextStyle(color: KColors.textMuted, fontSize: 11),
+                    ),
+                  ],
+                  if (progress.phase == UpdatePhase.failed || stuck) ...[
+                    const SizedBox(height: 14),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        if (stuck)
+                          const Expanded(
+                            child: Text(
+                              'Still here? The hand-off did not complete. '
+                              'Close this and try again, or install by hand.',
+                              style: TextStyle(
+                                color: KColors.amber,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                        TextButton(
+                          onPressed: () => p.clearError(),
+                          child: const Text('Close'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

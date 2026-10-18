@@ -56,8 +56,9 @@ class OllamaClient implements LLMClient {
     final picked = pickInstalledModel(model, installed);
     if (picked == null) {
       throw Exception(
-          'No models found on the Ollama server at $baseUrl. Open Settings → '
-          'AI assistant → Set up Ollama to download one.');
+        'No models found on the Ollama server at $baseUrl. Open Settings → '
+        'AI assistant → Set up Ollama to download one.',
+      );
     }
     return picked;
   }
@@ -89,16 +90,24 @@ class OllamaClient implements LLMClient {
 
       // With stream:false, headers only arrive after full generation.
       // Allow 3 min for model load + inference.
-      final response = await request.close()
-          .timeout(const Duration(seconds: 180), onTimeout: () {
-        throw Exception(
-            'Ollama took too long to respond. The model may still be loading — try again in a moment.');
-      });
+      final response = await request.close().timeout(
+        const Duration(seconds: 180),
+        onTimeout: () {
+          throw Exception(
+            'Ollama took too long to respond. The model may still be loading — try again in a moment.',
+          );
+        },
+      );
 
-      final responseBody = await response.transform(utf8.decoder).join()
-          .timeout(const Duration(seconds: 30), onTimeout: () {
-        throw Exception('Timed out reading Ollama response body.');
-      });
+      final responseBody = await response
+          .transform(utf8.decoder)
+          .join()
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              throw Exception('Timed out reading Ollama response body.');
+            },
+          );
 
       if (response.statusCode != 200) {
         throw Exception(
@@ -126,23 +135,30 @@ class OllamaClient implements LLMClient {
       final request = await client.postUrl(uri);
       request.headers.set('content-type', 'application/json');
 
-      final bodyBytes = utf8.encode(jsonEncode(buildChatBody(
-        model: await _resolveModel(),
-        systemPrompt: systemPrompt,
-        userMessage: userMessage,
-        stream: true,
-      )));
+      final bodyBytes = utf8.encode(
+        jsonEncode(
+          buildChatBody(
+            model: await _resolveModel(),
+            systemPrompt: systemPrompt,
+            userMessage: userMessage,
+            stream: true,
+          ),
+        ),
+      );
       request.headers.contentLength = bodyBytes.length;
       request.add(bodyBytes);
 
       // Allow up to 60 s for the model to load before the first token arrives.
       // The TCP connection failure (Ollama not running) is caught earlier by
       // client.connectionTimeout = 10 s, which throws a SocketException.
-      final response = await request.close()
-          .timeout(const Duration(seconds: 60), onTimeout: () {
-        throw Exception(
-            'Ollama did not respond in time. The model may be loading — try again in a moment.');
-      });
+      final response = await request.close().timeout(
+        const Duration(seconds: 60),
+        onTimeout: () {
+          throw Exception(
+            'Ollama did not respond in time. The model may be loading — try again in a moment.',
+          );
+        },
+      );
 
       if (response.statusCode != 200) {
         final body = await response.transform(utf8.decoder).join();
@@ -188,32 +204,46 @@ class OllamaClient implements LLMClient {
     required String userMessage,
     required bool stream,
     int? maxTokens,
-  }) =>
-      {
-        'model': model,
-        'messages': [
-          {'role': 'system', 'content': systemPrompt},
-          {'role': 'user', 'content': userMessage},
-        ],
-        'stream': stream,
-        'keep_alive': '30m',
-        if (ollamaModelThinks(model)) 'think': false,
-        'options': {
-          'num_ctx': 16384,
-          'num_predict': ?maxTokens,
-          'temperature': 0.4,
-        },
-      };
+  }) => {
+    'model': model,
+    'messages': [
+      {'role': 'system', 'content': systemPrompt},
+      {'role': 'user', 'content': userMessage},
+    ],
+    'stream': stream,
+    'keep_alive': '30m',
+    if (ollamaModelThinks(model)) 'think': false,
+    'options': {
+      'num_ctx': 16384,
+      'num_predict': ?maxTokens,
+      'temperature': 0.4,
+    },
+  };
 
   /// Where the setup wizard puts Keel's private Ollama when there is no
   /// system install: `~/.local/share/keel/bin/ollama` on Linux/macOS,
   /// `%LOCALAPPDATA%\Keel\bin\ollama.exe` on Windows. Pure so the path
   /// rule is unit-tested; [resolveOllamaExe] checks the file exists.
-  static String keelLocalOllamaExe(Map<String, String> env,
-      {required bool isWindows}) {
+  static String keelLocalOllamaExe(
+    Map<String, String> env, {
+    required bool isWindows,
+  }) {
     if (isWindows) return '${env['LOCALAPPDATA'] ?? ''}\\Keel\\bin\\ollama.exe';
     final home = env['HOME'] ?? env['USERPROFILE'] ?? '';
     return '$home/.local/share/keel/bin/ollama';
+  }
+
+  /// Where the official macOS Ollama leaves its command-line binary.
+  /// Keel never runs a CLI it extracted itself on a Mac: Ollama's own app
+  /// is signed and notarized, a loose copy is quarantined and blocked.
+  static List<String> macOllamaCandidates(Map<String, String> env) {
+    final home = env['HOME'] ?? '';
+    return [
+      '/opt/homebrew/bin/ollama',
+      '/usr/local/bin/ollama',
+      '/Applications/Ollama.app/Contents/Resources/ollama',
+      '$home/Applications/Ollama.app/Contents/Resources/ollama',
+    ];
   }
 
   /// The executable to launch: a system `ollama` on PATH first, else
@@ -224,12 +254,20 @@ class OllamaClient implements LLMClient {
   /// after a reboot instead of stranding the user at "run setup again".
   static Future<String> resolveOllamaExe() async {
     try {
-      final r = await Process.run(
-          Platform.isWindows ? 'where' : 'which', ['ollama']);
+      final r = await Process.run(Platform.isWindows ? 'where' : 'which', [
+        'ollama',
+      ]);
       if (r.exitCode == 0) return 'ollama';
     } catch (_) {}
-    final local = keelLocalOllamaExe(Platform.environment,
-        isWindows: Platform.isWindows);
+    if (Platform.isMacOS) {
+      for (final c in macOllamaCandidates(Platform.environment)) {
+        if (await File(c).exists()) return c;
+      }
+    }
+    final local = keelLocalOllamaExe(
+      Platform.environment,
+      isWindows: Platform.isWindows,
+    );
     if (await File(local).exists()) return local;
     return 'ollama';
   }
@@ -244,11 +282,9 @@ class OllamaClient implements LLMClient {
     if (await isRunning(baseUrl)) return true;
 
     try {
-      await Process.start(
-        await resolveOllamaExe(),
-        ['serve'],
-        mode: ProcessStartMode.detached,
-      );
+      await Process.start(await resolveOllamaExe(), [
+        'serve',
+      ], mode: ProcessStartMode.detached);
     } catch (_) {
       // No binary on PATH or in Keel's install, or it couldn't start — fall
       // through to poll in case another mechanism (systemd etc.) is bringing

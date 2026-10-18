@@ -2,6 +2,7 @@ import 'package:file_selector/file_selector.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
 
@@ -19,6 +20,7 @@ import '../../core/inbox/watcher_service.dart';
 import '../../providers/analytics_provider.dart';
 import '../../providers/project_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/update_provider.dart';
 import '../../providers/sync_provider.dart';
 import '../../shared/theme/keel_colors.dart';
 import '../../shared/widgets/keybindings_table.dart';
@@ -44,9 +46,11 @@ class SettingsView extends StatelessWidget {
               const Icon(Icons.settings, color: KColors.amber, size: 22),
               const SizedBox(width: 10),
               Flexible(
-                child: Text('Settings',
-                    style: theme.textTheme.headlineSmall,
-                    overflow: TextOverflow.ellipsis),
+                child: Text(
+                  'Settings',
+                  style: theme.textTheme.headlineSmall,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
@@ -128,11 +132,42 @@ class SettingsView extends StatelessWidget {
               children: [
                 _SettingsRow(label: 'App', value: 'Keel'),
                 const SizedBox(height: 4),
-                _SettingsRow(label: 'Version', value: '1.0.0'),
+                FutureBuilder<PackageInfo>(
+                  future: PackageInfo.fromPlatform(),
+                  builder: (context, snap) {
+                    final info = snap.data;
+                    return _SettingsRow(
+                      label: 'Version',
+                      value: info == null
+                          ? '…'
+                          : '${info.version} (build ${info.buildNumber})',
+                    );
+                  },
+                ),
                 const SizedBox(height: 4),
                 _SettingsRow(
-                    label: 'Description',
-                    value: 'Local-first TPM command centre.'),
+                  label: 'Description',
+                  value: 'Local-first TPM command centre.',
+                ),
+                if (!kIsWeb) ...[
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Updates install from inside Keel: when a new version is '
+                    'out, the notice offers Install and Keel reopens as the '
+                    'new version. Reinstall fetches the latest release and '
+                    'runs that same path now.',
+                    style: TextStyle(color: KColors.textDim, fontSize: 12),
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: context.watch<UpdateProvider>().installing
+                        ? null
+                        : () =>
+                              context.read<UpdateProvider>().reinstallLatest(),
+                    icon: const Icon(Icons.system_update_alt, size: 14),
+                    label: const Text('Reinstall latest release'),
+                  ),
+                ],
               ],
             ),
           ),
@@ -166,13 +201,16 @@ class _SettingsSection extends StatelessWidget {
                 Icon(icon, size: 16, color: KColors.amber),
                 const SizedBox(width: 8),
                 Flexible(
-                  child: Text(title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: KColors.amber)),
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: KColors.amber,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -208,8 +246,10 @@ class _DisplaySection extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              const Text('UI Scale',
-                  style: TextStyle(color: KColors.text, fontSize: 13)),
+              const Text(
+                'UI Scale',
+                style: TextStyle(color: KColors.text, fontSize: 13),
+              ),
               const SizedBox(width: 16),
               Expanded(
                 child: SliderTheme(
@@ -227,8 +267,9 @@ class _DisplaySection extends StatelessWidget {
                     divisions: 12,
                     onChanged: (v) {
                       final rounded = (v * 20).round() / 20;
-                      settingsProvider
-                          .save(settingsProvider.settings.copyWith(uiScale: rounded));
+                      settingsProvider.save(
+                        settingsProvider.settings.copyWith(uiScale: rounded),
+                      );
                     },
                   ),
                 ),
@@ -250,8 +291,9 @@ class _DisplaySection extends StatelessWidget {
               TextButton(
                 onPressed: scale == 1.0
                     ? null
-                    : () => settingsProvider
-                        .save(settingsProvider.settings.copyWith(uiScale: 1.0)),
+                    : () => settingsProvider.save(
+                        settingsProvider.settings.copyWith(uiScale: 1.0),
+                      ),
                 child: const Text('Reset', style: TextStyle(fontSize: 12)),
               ),
             ],
@@ -268,8 +310,18 @@ class _DisplaySection extends StatelessWidget {
 
 class _PlanningSection extends StatelessWidget {
   static const _monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
 
   @override
@@ -292,32 +344,55 @@ class _PlanningSection extends StatelessWidget {
             style: TextStyle(color: KColors.textDim, fontSize: 12),
           ),
           const SizedBox(height: 10),
-          Row(children: [
-            const Text('Day grid from',
-                style: TextStyle(color: KColors.text, fontSize: 13)),
-            const SizedBox(width: 12),
-            DropdownButton<int>(
-              value: dayStart,
-              dropdownColor: KColors.surface2,
-              items: [
-                for (var h = 4; h <= 12; h++)
-                  DropdownMenuItem(value: h * 60, child: Text(hh(h * 60), style: const TextStyle(fontSize: 13))),
-              ],
-              onChanged: (v) => v == null ? null : settingsProvider.setHelmDayWindow(startMinute: v),
-            ),
-            const SizedBox(width: 16),
-            const Text('to', style: TextStyle(color: KColors.text, fontSize: 13)),
-            const SizedBox(width: 12),
-            DropdownButton<int>(
-              value: dayEnd,
-              dropdownColor: KColors.surface2,
-              items: [
-                for (var h = 15; h <= 24; h++)
-                  DropdownMenuItem(value: h * 60, child: Text(hh(h * 60), style: const TextStyle(fontSize: 13))),
-              ],
-              onChanged: (v) => v == null ? null : settingsProvider.setHelmDayWindow(endMinute: v),
-            ),
-          ]),
+          Row(
+            children: [
+              const Text(
+                'Day grid from',
+                style: TextStyle(color: KColors.text, fontSize: 13),
+              ),
+              const SizedBox(width: 12),
+              DropdownButton<int>(
+                value: dayStart,
+                dropdownColor: KColors.surface2,
+                items: [
+                  for (var h = 4; h <= 12; h++)
+                    DropdownMenuItem(
+                      value: h * 60,
+                      child: Text(
+                        hh(h * 60),
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ),
+                ],
+                onChanged: (v) => v == null
+                    ? null
+                    : settingsProvider.setHelmDayWindow(startMinute: v),
+              ),
+              const SizedBox(width: 16),
+              const Text(
+                'to',
+                style: TextStyle(color: KColors.text, fontSize: 13),
+              ),
+              const SizedBox(width: 12),
+              DropdownButton<int>(
+                value: dayEnd,
+                dropdownColor: KColors.surface2,
+                items: [
+                  for (var h = 15; h <= 24; h++)
+                    DropdownMenuItem(
+                      value: h * 60,
+                      child: Text(
+                        hh(h * 60),
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ),
+                ],
+                onChanged: (v) => v == null
+                    ? null
+                    : settingsProvider.setHelmDayWindow(endMinute: v),
+              ),
+            ],
+          ),
           const SizedBox(height: 18),
           const Text(
             'How much focus work a normal day holds. The week ritual '
@@ -326,27 +401,32 @@ class _PlanningSection extends StatelessWidget {
             style: TextStyle(color: KColors.textDim, fontSize: 12),
           ),
           const SizedBox(height: 10),
-          Row(children: [
-            const Text('Focus per working day',
-                style: TextStyle(color: KColors.text, fontSize: 13)),
-            const SizedBox(width: 12),
-            DropdownButton<int>(
-              value: settingsProvider.settings.helmFocusSlotsPerDay,
-              dropdownColor: KColors.surface2,
-              items: [
-                for (var slots = 2; slots <= 16; slots += 2)
-                  DropdownMenuItem(
-                    value: slots,
-                    child: Text(
-                      '${slots ~/ 2} hour${slots == 2 ? '' : 's'} · $slots blocks',
-                      style: const TextStyle(fontSize: 13),
+          Row(
+            children: [
+              const Text(
+                'Focus per working day',
+                style: TextStyle(color: KColors.text, fontSize: 13),
+              ),
+              const SizedBox(width: 12),
+              DropdownButton<int>(
+                value: settingsProvider.settings.helmFocusSlotsPerDay,
+                dropdownColor: KColors.surface2,
+                items: [
+                  for (var slots = 2; slots <= 16; slots += 2)
+                    DropdownMenuItem(
+                      value: slots,
+                      child: Text(
+                        '${slots ~/ 2} hour${slots == 2 ? '' : 's'} · $slots blocks',
+                        style: const TextStyle(fontSize: 13),
+                      ),
                     ),
-                  ),
-              ],
-              onChanged: (v) =>
-                  v == null ? null : settingsProvider.setHelmFocusSlotsPerDay(v),
-            ),
-          ]),
+                ],
+                onChanged: (v) => v == null
+                    ? null
+                    : settingsProvider.setHelmFocusSlotsPerDay(v),
+              ),
+            ],
+          ),
           const SizedBox(height: 18),
           const Text(
             'Which month starts Q1 for Helm\'s quarterly planner. '
@@ -359,8 +439,10 @@ class _PlanningSection extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              const Text('Quarter cycle starts in',
-                  style: TextStyle(color: KColors.text, fontSize: 13)),
+              const Text(
+                'Quarter cycle starts in',
+                style: TextStyle(color: KColors.text, fontSize: 13),
+              ),
               const SizedBox(width: 16),
               Flexible(
                 child: DropdownButton<int>(
@@ -374,8 +456,8 @@ class _PlanningSection extends StatelessWidget {
                           m == 1
                               ? 'January (calendar quarters)'
                               : m == 7
-                                  ? 'July (Australian FY)'
-                                  : _monthNames[m - 1],
+                              ? 'July (Australian FY)'
+                              : _monthNames[m - 1],
                           style: const TextStyle(fontSize: 13),
                         ),
                       ),
@@ -473,7 +555,9 @@ class _ProfileSectionState extends State<_ProfileSection> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                        color: KColors.phosphor, fontSize: 11),
+                      color: KColors.phosphor,
+                      fontSize: 11,
+                    ),
                   ),
                 ),
               ],
@@ -487,7 +571,8 @@ class _ProfileSectionState extends State<_ProfileSection> {
   Future<void> _save(BuildContext context) async {
     final provider = context.read<SettingsProvider>();
     await provider.save(
-        provider.settings.copyWith(myName: _nameCtrl.text.trim()));
+      provider.settings.copyWith(myName: _nameCtrl.text.trim()),
+    );
   }
 }
 
@@ -541,7 +626,8 @@ class _WatcherSectionState extends State<_WatcherSection> {
                     labelText: 'Watch folder path',
                     hintText: '/Users/you/keel-inbox',
                   ),
-                  onSubmitted: (v) => settings.updateWatcher(directory: v.trim()),
+                  onSubmitted: (v) =>
+                      settings.updateWatcher(directory: v.trim()),
                   onChanged: (v) {
                     // Save on blur — handled by onEditingComplete via unfocus
                   },
@@ -567,9 +653,7 @@ class _WatcherSectionState extends State<_WatcherSection> {
               Text(
                 enabled ? 'Enabled' : 'Disabled',
                 style: TextStyle(
-                  color: enabled
-                      ? KColors.phosphor
-                      : KColors.textDim,
+                  color: enabled ? KColors.phosphor : KColors.textDim,
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                 ),
@@ -580,9 +664,7 @@ class _WatcherSectionState extends State<_WatcherSection> {
                     ? Icons.fiber_manual_record
                     : Icons.fiber_manual_record_outlined,
                 size: 12,
-                color: watcher.isActive
-                    ? KColors.phosphor
-                    : KColors.textDim,
+                color: watcher.isActive ? KColors.phosphor : KColors.textDim,
               ),
               const SizedBox(width: 4),
               Expanded(
@@ -607,12 +689,18 @@ class _WatcherSectionState extends State<_WatcherSection> {
 
 String _llmProviderLabel(LLMProvider p) {
   switch (p) {
-    case LLMProvider.claudeApi:    return 'Claude (Anthropic)';
-    case LLMProvider.openAi:       return 'ChatGPT (OpenAI)';
-    case LLMProvider.grok:         return 'Grok (xAI)';
-    case LLMProvider.githubModels: return 'GitHub Models';
-    case LLMProvider.azureOpenAi:  return 'Azure OpenAI';
-    case LLMProvider.ollama:       return 'Ollama (Local / Free)';
+    case LLMProvider.claudeApi:
+      return 'Claude (Anthropic)';
+    case LLMProvider.openAi:
+      return 'ChatGPT (OpenAI)';
+    case LLMProvider.grok:
+      return 'Grok (xAI)';
+    case LLMProvider.githubModels:
+      return 'GitHub Models';
+    case LLMProvider.azureOpenAi:
+      return 'Azure OpenAI';
+    case LLMProvider.ollama:
+      return 'Ollama (Local / Free)';
   }
 }
 
@@ -708,8 +796,11 @@ class _SettingsRow extends StatelessWidget {
   final String value;
   final Color? valueColor;
 
-  const _SettingsRow(
-      {required this.label, required this.value, this.valueColor});
+  const _SettingsRow({
+    required this.label,
+    required this.value,
+    this.valueColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -717,17 +808,21 @@ class _SettingsRow extends StatelessWidget {
       children: [
         SizedBox(
           width: 120,
-          child: Text(label,
-              style: const TextStyle(
-                  color: KColors.textDim,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500)),
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: KColors.textDim,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ),
         Expanded(
-          child: Text(value,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                  color: valueColor ?? KColors.text, fontSize: 13)),
+          child: Text(
+            value,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: valueColor ?? KColors.text, fontSize: 13),
+          ),
         ),
       ],
     );
@@ -833,9 +928,9 @@ class _SyncSectionState extends State<_SyncSection> {
     final parts = <String>[
       result.pulled == result.total
           ? 'Pulled all ${result.total} '
-              'project${result.total == 1 ? '' : 's'} from the server.'
+                'project${result.total == 1 ? '' : 's'} from the server.'
           : 'Pulled ${result.pulled} of ${result.total} — '
-              'some failed (check the sync password / connection).',
+                'some failed (check the sync password / connection).',
       if (result.keptLocal > 0)
         '${result.keptLocal} had unpushed local edits and the server had '
             'nothing newer — kept local and pushed up instead.',
@@ -867,8 +962,7 @@ class _SyncSectionState extends State<_SyncSection> {
   }
 
   void _showSnack(String msg) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   String _formatDate(DateTime dt) {
@@ -939,21 +1033,25 @@ class _SyncSectionState extends State<_SyncSection> {
             // --- Authenticated state ---
             Row(
               children: [
-                const Icon(Icons.account_circle_outlined,
-                    size: 16, color: KColors.phosphor),
+                const Icon(
+                  Icons.account_circle_outlined,
+                  size: 16,
+                  color: KColors.phosphor,
+                ),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     'Signed in as ${sync.userEmail ?? ''}',
-                    style: const TextStyle(
-                        color: KColors.text, fontSize: 13),
+                    style: const TextStyle(color: KColors.text, fontSize: 13),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 2),
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: sync.plan == 'solo'
                         ? KColors.phosDim
@@ -985,8 +1083,9 @@ class _SyncSectionState extends State<_SyncSection> {
                           width: 14,
                           height: 14,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: KColors.bg),
+                            strokeWidth: 2,
+                            color: KColors.bg,
+                          ),
                         )
                       : const Icon(Icons.upload_outlined, size: 14),
                   label: Text(isSyncing ? 'Syncing\u2026' : 'Sync Now'),
@@ -999,17 +1098,26 @@ class _SyncSectionState extends State<_SyncSection> {
                 OutlinedButton.icon(
                   onPressed: _showBillingPortal,
                   icon: Icon(
-                    sync.plan == 'solo' ? Icons.credit_card_outlined : Icons.star_outline,
+                    sync.plan == 'solo'
+                        ? Icons.credit_card_outlined
+                        : Icons.star_outline,
                     size: 14,
                   ),
-                  label: Text(sync.plan == 'solo' ? 'Manage Billing' : 'Upgrade to Solo'),
+                  label: Text(
+                    sync.plan == 'solo' ? 'Manage Billing' : 'Upgrade to Solo',
+                  ),
                 ),
                 TextButton.icon(
                   onPressed: isSyncing ? null : sync.logout,
-                  icon: const Icon(Icons.logout, size: 14,
-                      color: KColors.textDim),
-                  label: const Text('Log Out',
-                      style: TextStyle(color: KColors.textDim)),
+                  icon: const Icon(
+                    Icons.logout,
+                    size: 14,
+                    color: KColors.textDim,
+                  ),
+                  label: const Text(
+                    'Log Out',
+                    style: TextStyle(color: KColors.textDim),
+                  ),
                 ),
               ],
             ),
@@ -1017,8 +1125,7 @@ class _SyncSectionState extends State<_SyncSection> {
               const SizedBox(height: 8),
               Text(
                 'Last synced: ${_formatDate(lastSyncAt.toLocal())}',
-                style: const TextStyle(
-                    color: KColors.textDim, fontSize: 12),
+                style: const TextStyle(color: KColors.textDim, fontSize: 12),
               ),
             ],
           ],
@@ -1045,15 +1152,16 @@ class _SyncSectionState extends State<_SyncSection> {
             onTap: () => setState(() => _showServerUrl = !_showServerUrl),
             child: Row(
               children: [
-                const Text('Advanced',
-                    style: TextStyle(
-                        color: KColors.textDim,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600)),
+                const Text(
+                  'Advanced',
+                  style: TextStyle(
+                    color: KColors.textDim,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 Icon(
-                  _showServerUrl
-                      ? Icons.expand_less
-                      : Icons.expand_more,
+                  _showServerUrl ? Icons.expand_less : Icons.expand_more,
                   size: 14,
                   color: KColors.textDim,
                 ),
@@ -1075,9 +1183,9 @@ class _SyncSectionState extends State<_SyncSection> {
                     onSubmitted: (v) async {
                       final url = v.trim();
                       context.read<SyncProvider>().serverUrl = url;
-                      await context
-                          .read<SettingsProvider>()
-                          .updateSync(serverUrl: url);
+                      await context.read<SettingsProvider>().updateSync(
+                        serverUrl: url,
+                      );
                     },
                   ),
                 ),
@@ -1086,9 +1194,9 @@ class _SyncSectionState extends State<_SyncSection> {
                   onPressed: () async {
                     final url = _serverUrlCtrl.text.trim();
                     context.read<SyncProvider>().serverUrl = url;
-                    await context
-                        .read<SettingsProvider>()
-                        .updateSync(serverUrl: url);
+                    await context.read<SettingsProvider>().updateSync(
+                      serverUrl: url,
+                    );
                   },
                   child: const Text('Set'),
                 ),
@@ -1123,7 +1231,11 @@ class _DataSectionState extends State<_DataSection> {
     });
     try {
       final msg = await task();
-      if (mounted) setState(() { _busy = false; _lastMessage = msg; });
+      if (mounted)
+        setState(() {
+          _busy = false;
+          _lastMessage = msg;
+        });
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -1137,7 +1249,10 @@ class _DataSectionState extends State<_DataSection> {
 
   Future<void> _exportJson(BuildContext context) async {
     final projectId = context.read<ProjectProvider>().currentProjectId;
-    if (projectId == null) { _showNoProject(context); return; }
+    if (projectId == null) {
+      _showNoProject(context);
+      return;
+    }
     final db = context.read<AppDatabase>();
     await _run(() => JsonExporter.exportProject(projectId: projectId, db: db));
   }
@@ -1145,41 +1260,73 @@ class _DataSectionState extends State<_DataSection> {
   Future<void> _exportRaidCsv(BuildContext context) async {
     final projectProvider = context.read<ProjectProvider>();
     final projectId = projectProvider.currentProjectId;
-    if (projectId == null) { _showNoProject(context); return; }
+    if (projectId == null) {
+      _showNoProject(context);
+      return;
+    }
     final db = context.read<AppDatabase>();
     final projectName = projectProvider.currentProject?.name ?? 'project';
-    await _run(() => CsvExporter.exportRaidZip(
-        projectId: projectId, db: db, projectName: projectName));
+    await _run(
+      () => CsvExporter.exportRaidZip(
+        projectId: projectId,
+        db: db,
+        projectName: projectName,
+      ),
+    );
   }
 
   Future<void> _exportDecisionsCsv(BuildContext context) async {
     final projectProvider = context.read<ProjectProvider>();
     final projectId = projectProvider.currentProjectId;
-    if (projectId == null) { _showNoProject(context); return; }
+    if (projectId == null) {
+      _showNoProject(context);
+      return;
+    }
     final db = context.read<AppDatabase>();
     final projectName = projectProvider.currentProject?.name ?? 'project';
-    await _run(() => CsvExporter.exportDecisions(
-        projectId: projectId, db: db, projectName: projectName));
+    await _run(
+      () => CsvExporter.exportDecisions(
+        projectId: projectId,
+        db: db,
+        projectName: projectName,
+      ),
+    );
   }
 
   Future<void> _exportActionsCsv(BuildContext context) async {
     final projectProvider = context.read<ProjectProvider>();
     final projectId = projectProvider.currentProjectId;
-    if (projectId == null) { _showNoProject(context); return; }
+    if (projectId == null) {
+      _showNoProject(context);
+      return;
+    }
     final db = context.read<AppDatabase>();
     final projectName = projectProvider.currentProject?.name ?? 'project';
-    await _run(() => CsvExporter.exportActions(
-        projectId: projectId, db: db, projectName: projectName));
+    await _run(
+      () => CsvExporter.exportActions(
+        projectId: projectId,
+        db: db,
+        projectName: projectName,
+      ),
+    );
   }
 
   Future<void> _exportPeopleCsv(BuildContext context) async {
     final projectProvider = context.read<ProjectProvider>();
     final projectId = projectProvider.currentProjectId;
-    if (projectId == null) { _showNoProject(context); return; }
+    if (projectId == null) {
+      _showNoProject(context);
+      return;
+    }
     final db = context.read<AppDatabase>();
     final projectName = projectProvider.currentProject?.name ?? 'project';
-    await _run(() => CsvExporter.exportPeople(
-        projectId: projectId, db: db, projectName: projectName));
+    await _run(
+      () => CsvExporter.exportPeople(
+        projectId: projectId,
+        db: db,
+        projectName: projectName,
+      ),
+    );
   }
 
   Future<void> _importJson(BuildContext context) async {
@@ -1192,7 +1339,11 @@ class _DataSectionState extends State<_DataSection> {
     if (file == null) return;
     if (!mounted) return;
 
-    setState(() { _busy = true; _lastMessage = null; _isError = false; });
+    setState(() {
+      _busy = true;
+      _lastMessage = null;
+      _isError = false;
+    });
     try {
       final content = await file.readAsString();
       // Import clears + rewrites the project's tables — snapshot the whole
@@ -1204,7 +1355,8 @@ class _DataSectionState extends State<_DataSection> {
       if (mounted) {
         setState(() {
           _busy = false;
-          _lastMessage = 'Imported "${result.projectName}": ${result.risks} risks, '
+          _lastMessage =
+              'Imported "${result.projectName}": ${result.risks} risks, '
               '${result.decisions} decisions, ${result.actions} actions, '
               '${result.journalEntries} journal entries.';
         });
@@ -1221,9 +1373,9 @@ class _DataSectionState extends State<_DataSection> {
   }
 
   void _showNoProject(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Select a project first.')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Select a project first.')));
   }
 
   @override
@@ -1361,18 +1513,16 @@ class _AnalyticsSection extends StatelessWidget {
           const SizedBox(height: 10),
           // The opt-in toggle.
           InkWell(
-            onTap: () => context
-                .read<SettingsProvider>()
-                .setAnalyticsEnabled(!enabled),
+            onTap: () =>
+                context.read<SettingsProvider>().setAnalyticsEnabled(!enabled),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Row(
                 children: [
                   Switch(
                     value: enabled,
-                    onChanged: (v) => context
-                        .read<SettingsProvider>()
-                        .setAnalyticsEnabled(v),
+                    onChanged: (v) =>
+                        context.read<SettingsProvider>().setAnalyticsEnabled(v),
                     activeColor: KColors.amber,
                   ),
                   const SizedBox(width: 12),
@@ -1381,8 +1531,7 @@ class _AnalyticsSection extends StatelessWidget {
                       enabled
                           ? 'Sharing anonymous usage data — thank you'
                           : 'Not sharing usage data',
-                      style: const TextStyle(
-                          color: KColors.text, fontSize: 13),
+                      style: const TextStyle(color: KColors.text, fontSize: 13),
                     ),
                   ),
                 ],
@@ -1408,8 +1557,7 @@ class _AnalyticsSection extends StatelessWidget {
             '• Which templates you create (type only, not content)\n'
             '• Which promotion + export flows you use\n'
             '• Caught error categories (no stack traces, no messages)',
-            style: TextStyle(
-                color: KColors.textDim, fontSize: 12, height: 1.5),
+            style: TextStyle(color: KColors.textDim, fontSize: 12, height: 1.5),
           ),
           const SizedBox(height: 10),
           const Text(
@@ -1427,18 +1575,14 @@ class _AnalyticsSection extends StatelessWidget {
             '• Search queries or AI prompts\n'
             '• File paths or hostnames\n'
             '• IP addresses (anonymous install ID only)',
-            style: TextStyle(
-                color: KColors.textDim, fontSize: 12, height: 1.5),
+            style: TextStyle(color: KColors.textDim, fontSize: 12, height: 1.5),
           ),
           if (installId != null) ...[
             const SizedBox(height: 14),
             Row(
               children: [
                 Expanded(
-                  child: _SettingsRow(
-                    label: 'Install ID',
-                    value: installId,
-                  ),
+                  child: _SettingsRow(label: 'Install ID', value: installId),
                 ),
                 TextButton(
                   onPressed: () => context
@@ -1469,7 +1613,10 @@ class _AnalyticsSection extends StatelessWidget {
               'this run. Useful for self-auditing what gets sent. Cleared '
               'on opt-out.',
               style: TextStyle(
-                  color: KColors.textDim, fontSize: 11.5, height: 1.4),
+                color: KColors.textDim,
+                fontSize: 11.5,
+                height: 1.4,
+              ),
             ),
             const SizedBox(height: 6),
             Container(
@@ -1486,9 +1633,7 @@ class _AnalyticsSection extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 2),
                       child: Text(
-                        e.props.isEmpty
-                            ? e.name
-                            : '${e.name}  ${e.props}',
+                        e.props.isEmpty ? e.name : '${e.name}  ${e.props}',
                         style: const TextStyle(
                           color: KColors.text,
                           fontFamily: 'monospace',
@@ -1512,8 +1657,7 @@ class _AnalyticsSection extends StatelessWidget {
 
 class _ProgrammeLinksSection extends StatefulWidget {
   @override
-  State<_ProgrammeLinksSection> createState() =>
-      _ProgrammeLinksSectionState();
+  State<_ProgrammeLinksSection> createState() => _ProgrammeLinksSectionState();
 }
 
 class _ProgrammeLinksSectionState extends State<_ProgrammeLinksSection> {
@@ -1574,17 +1718,25 @@ class _ProgrammeLinksSectionState extends State<_ProgrammeLinksSection> {
         // brings across existing WPs / escalated items rather than
         // waiting for the next save or sync.
         await sync.replayCascadeForActivation(project.id, db);
-        messenger.showSnackBar(const SnackBar(
-            content: Text('Link active — both sides connected.')));
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Link active — both sides connected.')),
+        );
       case RedeemOutcome.pendingRemote:
-        messenger.showSnackBar(const SnackBar(
+        messenger.showSnackBar(
+          const SnackBar(
             content: Text(
-                'Code accepted. Waiting for the other side to claim '
-                'it — tap Refresh to check, or it activates '
-                'automatically next launch.')));
+              'Code accepted. Waiting for the other side to claim '
+              'it — tap Refresh to check, or it activates '
+              'automatically next launch.',
+            ),
+          ),
+        );
       case RedeemOutcome.alreadyLinked:
-        messenger.showSnackBar(const SnackBar(
-            content: Text('This entity already has a link for that code.')));
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('This entity already has a link for that code.'),
+          ),
+        );
     }
   }
 
@@ -1603,12 +1755,16 @@ class _ProgrammeLinksSectionState extends State<_ProgrammeLinksSection> {
     }
     if (!mounted) return;
     final messenger = ScaffoldMessenger.of(context);
-    messenger.showSnackBar(SnackBar(
-      content: Text(activated == 0
-          ? 'Nothing new — pending links are still waiting.'
-          : '$activated link${activated == 1 ? '' : 's'} '
-              'just activated.'),
-    ));
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          activated == 0
+              ? 'Nothing new — pending links are still waiting.'
+              : '$activated link${activated == 1 ? '' : 's'} '
+                    'just activated.',
+        ),
+      ),
+    );
   }
 
   @override
@@ -1627,11 +1783,11 @@ class _ProgrammeLinksSectionState extends State<_ProgrammeLinksSection> {
           Text(
             isProgramme
                 ? 'Generate a code and share it with project managers — '
-                    'they\'ll paste it in their project\'s settings to '
-                    'connect. Or paste a code one of them sent you.'
+                      'they\'ll paste it in their project\'s settings to '
+                      'connect. Or paste a code one of them sent you.'
                 : 'Generate a code and share it with your programme '
-                    'manager — they\'ll paste it in the programme\'s '
-                    'settings to connect. Or paste a code they sent you.',
+                      'manager — they\'ll paste it in the programme\'s '
+                      'settings to connect. Or paste a code they sent you.',
             style: const TextStyle(color: KColors.textDim, fontSize: 12),
           ),
           const SizedBox(height: 12),
@@ -1662,11 +1818,11 @@ class _ProgrammeLinksSectionState extends State<_ProgrammeLinksSection> {
                   visualDensity: VisualDensity.compact,
                   onPressed: () async {
                     await Clipboard.setData(
-                        ClipboardData(text: _generatedCode!));
+                      ClipboardData(text: _generatedCode!),
+                    );
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Full code copied')),
+                        const SnackBar(content: Text('Full code copied')),
                       );
                     }
                   },
@@ -1685,22 +1841,29 @@ class _ProgrammeLinksSectionState extends State<_ProgrammeLinksSection> {
           ),
           if (_generatedCode != null) ...[
             const SizedBox(height: 6),
-            Row(children: [
-              const Icon(Icons.lock_outline, size: 12, color: KColors.textMuted),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  'Share the whole code, including the part after "#". That '
-                  'part is the encryption key — it never leaves your device '
-                  'or reaches our servers, so send it through a channel you '
-                  'trust.',
-                  style: TextStyle(
+            Row(
+              children: [
+                const Icon(
+                  Icons.lock_outline,
+                  size: 12,
+                  color: KColors.textMuted,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Share the whole code, including the part after "#". That '
+                    'part is the encryption key — it never leaves your device '
+                    'or reaches our servers, so send it through a channel you '
+                    'trust.',
+                    style: TextStyle(
                       color: KColors.textMuted,
                       fontSize: 11,
-                      height: 1.35),
+                      height: 1.35,
+                    ),
+                  ),
                 ),
-              ),
-            ]),
+              ],
+            ),
           ],
           const SizedBox(height: 12),
 
@@ -1711,9 +1874,10 @@ class _ProgrammeLinksSectionState extends State<_ProgrammeLinksSection> {
                 child: TextField(
                   controller: _redeemCtrl,
                   style: const TextStyle(
-                      color: KColors.text,
-                      fontFamily: 'monospace',
-                      fontSize: 13),
+                    color: KColors.text,
+                    fontFamily: 'monospace',
+                    fontSize: 13,
+                  ),
                   decoration: const InputDecoration(
                     labelText: 'Paste a full code…',
                     hintText: 'KL-XXXX-XXXX-XXXX#…',
@@ -1733,8 +1897,7 @@ class _ProgrammeLinksSectionState extends State<_ProgrammeLinksSection> {
           // Existing links list — bound to a stream so revoking from
           // elsewhere refreshes the section live.
           StreamBuilder<List<ProgrammeLink>>(
-            stream: db.programmeLinksDao
-                .watchLinksForEntity(project.id),
+            stream: db.programmeLinksDao.watchLinksForEntity(project.id),
             builder: (context, snap) {
               final links = snap.data ?? const <ProgrammeLink>[];
               if (links.isEmpty) {
@@ -1742,8 +1905,7 @@ class _ProgrammeLinksSectionState extends State<_ProgrammeLinksSection> {
                   padding: EdgeInsets.symmetric(vertical: 6),
                   child: Text(
                     'No active links yet.',
-                    style: TextStyle(
-                        color: KColors.textMuted, fontSize: 12),
+                    style: TextStyle(color: KColors.textMuted, fontSize: 12),
                   ),
                 );
               }
@@ -1790,12 +1952,10 @@ class _LinkRow extends StatelessWidget {
     final db = context.read<AppDatabase>();
     final isPending = link.status == 'pending_remote';
     final isRevoked = link.status == 'revoked';
-    final partnerLabel = link.partnerName ??
-        (isPending
-            ? '(awaiting the other side)'
-            : '(unknown partner)');
-    final partnerTag =
-        link.partnerKind == 'programme' ? 'PROG' : 'PROJ';
+    final partnerLabel =
+        link.partnerName ??
+        (isPending ? '(awaiting the other side)' : '(unknown partner)');
+    final partnerTag = link.partnerKind == 'programme' ? 'PROG' : 'PROJ';
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -1809,31 +1969,34 @@ class _LinkRow extends StatelessWidget {
               color: isRevoked
                   ? KColors.red
                   : isPending
-                      ? KColors.amber
-                      : KColors.phosphor,
+                  ? KColors.amber
+                  : KColors.phosphor,
             ),
           ),
           const SizedBox(width: 8),
           Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 4, vertical: 1),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
             decoration: BoxDecoration(
               color: KColors.surface2,
               border: Border.all(color: KColors.border2, width: 0.5),
               borderRadius: BorderRadius.circular(2),
             ),
-            child: Text(partnerTag,
-                style: const TextStyle(
-                    color: KColors.textMuted,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w700)),
+            child: Text(
+              partnerTag,
+              style: const TextStyle(
+                color: KColors.textMuted,
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(partnerLabel,
-                style: const TextStyle(
-                    color: KColors.text, fontSize: 12),
-                overflow: TextOverflow.ellipsis),
+            child: Text(
+              partnerLabel,
+              style: const TextStyle(color: KColors.text, fontSize: 12),
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
           if (!isPending && !isRevoked) ...[
             _ShareLevelControl(link: link),
@@ -1842,43 +2005,49 @@ class _LinkRow extends StatelessWidget {
           Text(
             link.code,
             style: const TextStyle(
-                color: KColors.textMuted,
-                fontFamily: 'monospace',
-                fontSize: 10),
+              color: KColors.textMuted,
+              fontFamily: 'monospace',
+              fontSize: 10,
+            ),
           ),
           const SizedBox(width: 8),
           if (isPending)
             IconButton(
-              icon: const Icon(Icons.delete_outline,
-                  size: 14, color: KColors.textMuted),
+              icon: const Icon(
+                Icons.delete_outline,
+                size: 14,
+                color: KColors.textMuted,
+              ),
               tooltip: 'Cancel invitation',
               padding: EdgeInsets.zero,
               visualDensity: VisualDensity.compact,
-              constraints:
-                  const BoxConstraints(minWidth: 24, minHeight: 24),
-              onPressed: () => db.programmeLinksDao
-                  .revokeLinkWithRemote(
-                      linkId: link.id, remote: _gateway(context)),
+              constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+              onPressed: () => db.programmeLinksDao.revokeLinkWithRemote(
+                linkId: link.id,
+                remote: _gateway(context),
+              ),
             )
           else
             IconButton(
-              icon: const Icon(Icons.link_off,
-                  size: 14, color: KColors.textMuted),
+              icon: const Icon(
+                Icons.link_off,
+                size: 14,
+                color: KColors.textMuted,
+              ),
               tooltip: 'Revoke link',
               padding: EdgeInsets.zero,
               visualDensity: VisualDensity.compact,
-              constraints:
-                  const BoxConstraints(minWidth: 24, minHeight: 24),
-              onPressed: () => db.programmeLinksDao
-                  .revokeLinkWithRemote(
-                      linkId: link.id, remote: _gateway(context)),
+              constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+              onPressed: () => db.programmeLinksDao.revokeLinkWithRemote(
+                linkId: link.id,
+                remote: _gateway(context),
+              ),
             ),
         ],
       ),
     );
   }
 }
-
 
 /// What flows over a link. On the PROJECT side it's a control — the
 /// project owns its data and decides how much the programme sees. On the
@@ -1904,16 +2073,20 @@ class _ShareLevelControl extends StatelessWidget {
     } else {
       // Withdraw what the programme is no longer entitled to, then let a
       // same-machine programme pull the tombstones straight away.
-      await buildCascadeService(context)
-          .retractUnescalated(link.ownerEntityId);
+      await buildCascadeService(context).retractUnescalated(link.ownerEntityId);
       if (!context.mounted) return;
       await sync.replayCascadeForActivation(link.ownerEntityId, db);
     }
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(level == CascadeShareLevels.full
-              ? 'Sharing full detail with the programme'
-              : 'Sharing chosen items only')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            level == CascadeShareLevels.full
+                ? 'Sharing full detail with the programme'
+                : 'Sharing chosen items only',
+          ),
+        ),
+      );
     }
   }
 
@@ -1929,29 +2102,38 @@ class _ShareLevelControl extends StatelessWidget {
         border: Border.all(color: colour.withValues(alpha: 0.6), width: 0.5),
         borderRadius: BorderRadius.circular(2),
       ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(isFull ? Icons.visibility : Icons.arrow_upward,
-            size: 10, color: colour),
-        const SizedBox(width: 4),
-        Text(label.toUpperCase(),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isFull ? Icons.visibility : Icons.arrow_upward,
+            size: 10,
+            color: colour,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            label.toUpperCase(),
             style: TextStyle(
-                color: colour,
-                fontSize: 9,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.6)),
-        if (link.ownerKind == 'project') ...[
-          const SizedBox(width: 2),
-          Icon(Icons.arrow_drop_down, size: 14, color: colour),
+              color: colour,
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.6,
+            ),
+          ),
+          if (link.ownerKind == 'project') ...[
+            const SizedBox(width: 2),
+            Icon(Icons.arrow_drop_down, size: 14, color: colour),
+          ],
         ],
-      ]),
+      ),
     );
     if (link.ownerKind != 'project') {
       return Tooltip(
         message: isFull
             ? 'This project shares its whole RAID, actions, decisions '
-                'and plan detail with you.'
+                  'and plan detail with you.'
             : 'This project shares only what its PM chooses to. Ask them '
-                'to switch the link to full detail if you need more.',
+                  'to switch the link to full detail if you need more.',
         child: tag,
       );
     }
@@ -1967,9 +2149,11 @@ class _ShareLevelControl extends StatelessWidget {
             contentPadding: EdgeInsets.zero,
             leading: Icon(Icons.visibility, size: 16),
             title: Text('Full detail'),
-            subtitle: Text('Whole RAID, every action and decision, and the '
-                'plan down to tasks and arrows. For a hands-on '
-                'programme manager.'),
+            subtitle: Text(
+              'Whole RAID, every action and decision, and the '
+              'plan down to tasks and arrows. For a hands-on '
+              'programme manager.',
+            ),
           ),
         ),
         const PopupMenuItem(
@@ -1979,8 +2163,10 @@ class _ShareLevelControl extends StatelessWidget {
             contentPadding: EdgeInsets.zero,
             leading: Icon(Icons.arrow_upward, size: 16),
             title: Text('Shared items only'),
-            subtitle: Text('Only items you choose to share, plus '
-                'work-package headers, status reports, charter and people.'),
+            subtitle: Text(
+              'Only items you choose to share, plus '
+              'work-package headers, status reports, charter and people.',
+            ),
           ),
         ),
       ],

@@ -31,13 +31,21 @@ void main() {
 
     test('missing dates or anchor → null (months stay manual)', () {
       expect(
-          monthSpanForDates(
-              startDate: null, endDate: null, month0Date: '2026-06-01'),
-          isNull);
+        monthSpanForDates(
+          startDate: null,
+          endDate: null,
+          month0Date: '2026-06-01',
+        ),
+        isNull,
+      );
       expect(
-          monthSpanForDates(
-              startDate: '2026-07-01', endDate: null, month0Date: null),
-          isNull);
+        monthSpanForDates(
+          startDate: '2026-07-01',
+          endDate: null,
+          month0Date: null,
+        ),
+        isNull,
+      );
     });
 
     test('single date → single-month span', () {
@@ -55,24 +63,26 @@ void main() {
 
     test('undated → zero insets', () {
       final i = dateInsetsForCell(
-          startDate: null,
-          endDate: null,
-          month0Date: '2026-06-01',
-          colStart: 0,
-          colEnd: 0,
-          colWidth: w);
+        startDate: null,
+        endDate: null,
+        month0Date: '2026-06-01',
+        colStart: 0,
+        colEnd: 0,
+        colWidth: w,
+      );
       expect(i, (left: 0.0, right: 0.0));
     });
 
     test('start cell insets the left edge to the start day', () {
       // Starts 16 Jun (halfway through the 30-day month).
       final i = dateInsetsForCell(
-          startDate: '2026-06-16',
-          endDate: '2026-08-31',
-          month0Date: '2026-06-01',
-          colStart: 0,
-          colEnd: 0,
-          colWidth: w);
+        startDate: '2026-06-16',
+        endDate: '2026-08-31',
+        month0Date: '2026-06-01',
+        colStart: 0,
+        colEnd: 0,
+        colWidth: w,
+      );
       expect(i.left, closeTo(50, 0.01));
       expect(i.right, 0);
     });
@@ -80,56 +90,59 @@ void main() {
     test('end cell insets the right edge past the end day', () {
       // Ends 15 Aug (31-day month): bar covers through the 15th.
       final i = dateInsetsForCell(
-          startDate: '2026-06-16',
-          endDate: '2026-08-15',
-          month0Date: '2026-06-01',
-          colStart: 2,
-          colEnd: 2,
-          colWidth: w);
+        startDate: '2026-06-16',
+        endDate: '2026-08-15',
+        month0Date: '2026-06-01',
+        colStart: 2,
+        colEnd: 2,
+        colWidth: w,
+      );
       expect(i.left, 0);
       expect(i.right, closeTo((1 - 15 / 31) * 100, 0.01));
     });
 
     test('middle cell of the span gets no insets', () {
       final i = dateInsetsForCell(
-          startDate: '2026-06-16',
-          endDate: '2026-08-15',
-          month0Date: '2026-06-01',
-          colStart: 1,
-          colEnd: 1,
-          colWidth: w);
+        startDate: '2026-06-16',
+        endDate: '2026-08-15',
+        month0Date: '2026-06-01',
+        colStart: 1,
+        colEnd: 1,
+        colWidth: w,
+      );
       expect(i, (left: 0.0, right: 0.0));
     });
 
     test('quarter-mode column scales insets across the month range', () {
       // Column covers months 0–2; bar starts exactly at month 1.
       final i = dateInsetsForCell(
-          startDate: '2026-07-01',
-          endDate: '2026-08-31',
-          month0Date: '2026-06-01',
-          colStart: 0,
-          colEnd: 2,
-          colWidth: 300);
+        startDate: '2026-07-01',
+        endDate: '2026-08-31',
+        month0Date: '2026-06-01',
+        colStart: 0,
+        colEnd: 2,
+        colWidth: 300,
+      );
       expect(i.left, closeTo(100, 0.01));
       expect(i.right, closeTo(0, 0.01));
     });
 
     test('degenerate short span keeps a visible sliver', () {
       final i = dateInsetsForCell(
-          startDate: '2026-06-30',
-          endDate: '2026-06-30',
-          month0Date: '2026-06-01',
-          colStart: 0,
-          colEnd: 0,
-          colWidth: w);
+        startDate: '2026-06-30',
+        endDate: '2026-06-30',
+        month0Date: '2026-06-01',
+        colStart: 0,
+        colEnd: 0,
+        colWidth: w,
+      );
       expect(w - i.left - i.right, greaterThanOrEqualTo(2));
     });
   });
 
   group('resolveMonthSpan', () {
     test('a start-only date pins the start but NOT the end — the picked '
-        'end month wins (regression: span edits snapped back to 1 month)',
-        () {
+        'end month wins (regression: span edits snapped back to 1 month)', () {
       final span = resolveMonthSpan(
         isSinglePoint: false,
         pickedStartMonth: 2,
@@ -181,8 +194,7 @@ void main() {
       expect(span.endMonth, 2);
     });
 
-    test('dated start moved past the picked end clamps the span valid',
-        () {
+    test('dated start moved past the picked end clamps the span valid', () {
       final span = resolveMonthSpan(
         isSinglePoint: false,
         pickedStartMonth: 0,
@@ -197,39 +209,129 @@ void main() {
   });
 
   group('moveDateToMonth', () {
-    test('keeps the day and moves the month (the M-Power case: Oct → Aug)',
-        () {
+    test('keeps the day and moves the month (the M-Power case: Oct → Aug)', () {
       expect(
-          moveDateToMonth(
-              isoDate: '2026-10-21', month: 4, month0Date: '2026-04-01'),
-          '2026-08-21');
+        moveDateToMonth(
+          isoDate: '2026-10-21',
+          month: 4,
+          month0Date: '2026-04-01',
+        ),
+        '2026-08-21',
+      );
     });
 
     test('clamps the day to the target month length', () {
       expect(
-          moveDateToMonth(
-              isoDate: '2026-10-31', month: 7, month0Date: '2026-04-01'),
-          '2026-11-30');
+        moveDateToMonth(
+          isoDate: '2026-10-31',
+          month: 7,
+          month0Date: '2026-04-01',
+        ),
+        '2026-11-30',
+      );
       expect(
-          moveDateToMonth(
-              isoDate: '2026-08-30', month: 10, month0Date: '2026-04-01'),
-          '2027-02-28');
+        moveDateToMonth(
+          isoDate: '2026-08-30',
+          month: 10,
+          month0Date: '2026-04-01',
+        ),
+        '2027-02-28',
+      );
     });
 
     test('crosses the year boundary from month 0', () {
       expect(
-          moveDateToMonth(
-              isoDate: '2026-05-05', month: 9, month0Date: '2026-04-01'),
-          '2027-01-05');
+        moveDateToMonth(
+          isoDate: '2026-05-05',
+          month: 9,
+          month0Date: '2026-04-01',
+        ),
+        '2027-01-05',
+      );
     });
 
     test('no date or no anchor → unchanged', () {
-      expect(moveDateToMonth(isoDate: null, month: 3, month0Date: '2026-04-01'),
-          isNull);
-      expect(moveDateToMonth(isoDate: '2026-10-21', month: 3, month0Date: null),
-          '2026-10-21');
-      expect(moveDateToMonth(isoDate: 'soon', month: 3, month0Date: '2026-04-01'),
-          'soon');
+      expect(
+        moveDateToMonth(isoDate: null, month: 3, month0Date: '2026-04-01'),
+        isNull,
+      );
+      expect(
+        moveDateToMonth(isoDate: '2026-10-21', month: 3, month0Date: null),
+        '2026-10-21',
+      );
+      expect(
+        moveDateToMonth(isoDate: 'soon', month: 3, month0Date: '2026-04-01'),
+        'soon',
+      );
+    });
+  });
+
+  group('ganttXForDate', () {
+    final m0 = DateTime(2026, 6, 1);
+    final monthCols = [for (var i = 0; i < 6; i++) (start: i, end: i)];
+    test('month columns: whole months plus the day fraction', () {
+      // 1 Aug 2026 is month 2, first day → exactly 2 columns in.
+      expect(
+        ganttXForDate(
+          date: DateTime(2026, 8, 1),
+          month0: m0,
+          cols: monthCols,
+          colWidth: 40,
+        ),
+        80,
+      );
+      // 16 Aug: 15/31 of the way through August.
+      expect(
+        ganttXForDate(
+          date: DateTime(2026, 8, 16),
+          month0: m0,
+          cols: monthCols,
+          colWidth: 40,
+        ),
+        closeTo(80 + 40 * 15 / 31, 0.001),
+      );
+    });
+    test('quarter columns span three months', () {
+      final qCols = [(start: 0, end: 2), (start: 3, end: 5)];
+      // 1 Oct 2026 is month 4 → second quarter column, one month in.
+      expect(
+        ganttXForDate(
+          date: DateTime(2026, 10, 1),
+          month0: m0,
+          cols: qCols,
+          colWidth: 90,
+        ),
+        closeTo(90 + 30, 0.001),
+      );
+    });
+    test('outside the plan is null', () {
+      expect(
+        ganttXForDate(
+          date: DateTime(2027, 6, 1),
+          month0: m0,
+          cols: monthCols,
+          colWidth: 40,
+        ),
+        isNull,
+      );
+      expect(
+        ganttXForDate(
+          date: DateTime(2026, 5, 20),
+          month0: m0,
+          cols: monthCols,
+          colWidth: 40,
+        ),
+        isNull,
+      );
+      expect(
+        ganttXForDate(
+          date: DateTime(2026, 7, 1),
+          month0: m0,
+          cols: const [],
+          colWidth: 40,
+        ),
+        isNull,
+      );
     });
   });
 }

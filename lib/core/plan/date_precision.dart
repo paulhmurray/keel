@@ -61,10 +61,7 @@ double monthFractionOf(DateTime date, DateTime month0) {
   final s = DateTime.tryParse(startDate);
   if (m0 == null || s == null) return null;
   final e = endDate != null ? DateTime.tryParse(endDate) ?? s : s;
-  return (
-    startMonth: monthIndexOf(s, m0),
-    endMonth: monthIndexOf(e, m0),
-  );
+  return (startMonth: monthIndexOf(s, m0), endMonth: monthIndexOf(e, m0));
 }
 
 /// Pixel insets for one Gantt column so a dated bar starts/ends at the
@@ -123,11 +120,36 @@ String? moveDateToMonth({
   final m0 = DateTime.tryParse(month0Date);
   if (d == null || m0 == null) return isoDate;
   final firstOfTarget = DateTime(m0.year, m0.month + month, 1);
-  final daysInTarget =
-      DateTime(firstOfTarget.year, firstOfTarget.month + 1, 0).day;
+  final daysInTarget = DateTime(
+    firstOfTarget.year,
+    firstOfTarget.month + 1,
+    0,
+  ).day;
   final day = d.day > daysInTarget ? daysInTarget : d.day;
   final moved = DateTime(firstOfTarget.year, firstOfTarget.month, day);
   return '${moved.year.toString().padLeft(4, '0')}-'
       '${moved.month.toString().padLeft(2, '0')}-'
       '${moved.day.toString().padLeft(2, '0')}';
+}
+
+/// Horizontal position of [date] on a Gantt whose columns are [cols]
+/// (inclusive month ranges, month-mode one month each, quarter-mode
+/// three) each [colWidth] wide. Day-accurate inside the month. Null when
+/// the date falls outside the plan's columns, so no line is drawn.
+double? ganttXForDate({
+  required DateTime date,
+  required DateTime month0,
+  required List<({int start, int end})> cols,
+  required double colWidth,
+}) {
+  if (cols.isEmpty) return null;
+  final f = monthFractionOf(date, month0);
+  final month = f.floor();
+  for (var i = 0; i < cols.length; i++) {
+    final c = cols[i];
+    if (month < c.start || month > c.end) continue;
+    final span = c.end - c.start + 1;
+    return i * colWidth + ((f - c.start) / span) * colWidth;
+  }
+  return null;
 }

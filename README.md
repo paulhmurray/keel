@@ -49,9 +49,9 @@ Run `keel-windows-setup.exe`. Installs to `AppData\Local\Programs\Keel` with Sta
 Extract `keel-windows.zip` and run `keel.exe` from the folder. Use this if the installer is blocked by your organisation's security policy.
 
 **macOS**
-Open `keel-macos.dmg`, drag `Keel.app` to your Applications folder.
+Open `keel-macos.dmg`, drag Keel to your Applications folder, then open it from Applications.
 
-> Note: Keel is ad-hoc signed. On first launch, right-click → Open to bypass Gatekeeper.
+The app and the disk image are signed with a Developer ID and notarized by Apple, so macOS opens Keel without the "unidentified developer" block. If an older download is blocked, System Settings → Privacy & Security → Open Anyway.
 
 **Linux**
 
