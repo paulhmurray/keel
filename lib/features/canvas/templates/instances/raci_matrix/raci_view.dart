@@ -56,11 +56,12 @@ class _RaciViewState extends State<RaciView> {
   void _seedControllers() {
     for (final a in _content.activities) {
       _activityCtrls.putIfAbsent(
-          a.id, () => TextEditingController(text: a.name));
+        a.id,
+        () => TextEditingController(text: a.name),
+      );
     }
     for (final p in _content.people) {
-      _personCtrls.putIfAbsent(
-          p.id, () => TextEditingController(text: p.name));
+      _personCtrls.putIfAbsent(p.id, () => TextEditingController(text: p.name));
     }
   }
 
@@ -111,8 +112,7 @@ class _RaciViewState extends State<RaciView> {
   }
 
   void _deleteActivity(String id) {
-    final filtered =
-        _content.activities.where((a) => a.id != id).toList();
+    final filtered = _content.activities.where((a) => a.id != id).toList();
     final renumbered = [
       for (var i = 0; i < filtered.length; i++)
         filtered[i].copyWith(sortOrder: i),
@@ -122,10 +122,7 @@ class _RaciViewState extends State<RaciView> {
     final assignments = _content.assignments
         .where((x) => x.activityId != id)
         .toList();
-    _save(_content.copyWith(
-      activities: renumbered,
-      assignments: assignments,
-    ));
+    _save(_content.copyWith(activities: renumbered, assignments: assignments));
   }
 
   void _addPersonFromProject(Person p) {
@@ -161,28 +158,32 @@ class _RaciViewState extends State<RaciView> {
     if (result == null) return;
     final now = DateTime.now();
     final personId = const Uuid().v4();
-    await db.peopleDao.upsertPerson(PersonsCompanion(
-      id: Value(personId),
-      projectId: Value(widget.template.projectId),
-      name: Value(result.name),
-      role: Value(result.role),
-      organisation: Value(result.organisation),
-      personType: Value(result.personType),
-      isStakeholder: Value(result.isStakeholder),
-      createdAt: Value(now),
-      updatedAt: Value(now),
-    ));
-    _addPersonFromProject(Person(
-      id: personId,
-      projectId: widget.template.projectId,
-      name: result.name,
-      role: result.role,
-      organisation: result.organisation,
-      personType: result.personType,
-      isStakeholder: result.isStakeholder,
-      createdAt: now,
-      updatedAt: now,
-    ));
+    await db.peopleDao.upsertPerson(
+      PersonsCompanion(
+        id: Value(personId),
+        projectId: Value(widget.template.projectId),
+        name: Value(result.name),
+        role: Value(result.role),
+        organisation: Value(result.organisation),
+        personType: Value(result.personType),
+        isStakeholder: Value(result.isStakeholder),
+        createdAt: Value(now),
+        updatedAt: Value(now),
+      ),
+    );
+    _addPersonFromProject(
+      Person(
+        id: personId,
+        projectId: widget.template.projectId,
+        name: result.name,
+        role: result.role,
+        organisation: result.organisation,
+        personType: result.personType,
+        isStakeholder: result.isStakeholder,
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
   }
 
   void _editPersonName(String id, String name) {
@@ -199,20 +200,17 @@ class _RaciViewState extends State<RaciView> {
         filtered[i].copyWith(sortOrder: i),
     ];
     _personCtrls.remove(id)?.dispose();
-    final assignments =
-        _content.assignments.where((x) => x.personId != id).toList();
-    _save(_content.copyWith(
-      people: renumbered,
-      assignments: assignments,
-    ));
+    final assignments = _content.assignments
+        .where((x) => x.personId != id)
+        .toList();
+    _save(_content.copyWith(people: renumbered, assignments: assignments));
   }
 
   void _cycleCell(String activityId, String personId) {
     final current = _content.roleFor(activityId, personId);
     final next = RaciRole.next(current);
     final without = _content.assignments
-        .where((a) =>
-            !(a.activityId == activityId && a.personId == personId))
+        .where((a) => !(a.activityId == activityId && a.personId == personId))
         .toList();
     final updated = next == null
         ? without // blank — drop the row to keep JSON compact
@@ -233,8 +231,7 @@ class _RaciViewState extends State<RaciView> {
   Widget build(BuildContext context) {
     final db = context.read<AppDatabase>();
     return StreamBuilder<List<Person>>(
-      stream:
-          db.peopleDao.watchPersonsForProject(widget.template.projectId),
+      stream: db.peopleDao.watchPersonsForProject(widget.template.projectId),
       builder: (context, snap) {
         final people = snap.data ?? const <Person>[];
         // Persons NOT yet in the matrix (only filter project-linked
@@ -243,9 +240,7 @@ class _RaciViewState extends State<RaciView> {
             .map((p) => p.personId)
             .whereType<String>()
             .toSet();
-        final addable = people
-            .where((p) => !usedIds.contains(p.id))
-            .toList();
+        final addable = people.where((p) => !usedIds.contains(p.id)).toList();
         return Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
           child: Column(
@@ -280,67 +275,65 @@ class _RaciViewState extends State<RaciView> {
         scrollDirection: Axis.horizontal,
         child: SingleChildScrollView(
           child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header row.
-            Row(
-              children: [
-                Container(
-                  width: _activityColWidth,
-                  height: _headerHeight,
-                  alignment: Alignment.centerLeft,
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  decoration: const BoxDecoration(
-                    border: Border(
-                      bottom:
-                          BorderSide(color: KColors.border, width: 1),
-                      right:
-                          BorderSide(color: KColors.border, width: 1),
-                    ),
-                  ),
-                  child: const Text(
-                    'ACTIVITY',
-                    style: TextStyle(
-                      color: KColors.textMuted,
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.4,
-                    ),
-                  ),
-                ),
-                for (final p in _content.people)
-                  _PersonHeader(
-                    person: p,
-                    ctrl: _personCtrls[p.id]!,
-                    width: _personColWidth,
-                    height: _headerHeight,
-                    onNameChanged: (v) => _editPersonName(p.id, v),
-                    onDelete: () => _deletePerson(p.id),
-                  ),
-              ],
-            ),
-            // Activity rows.
-            for (final a in _content.activities)
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header row.
               Row(
                 children: [
-                  _ActivityCell(
-                    activity: a,
-                    ctrl: _activityCtrls[a.id]!,
+                  Container(
                     width: _activityColWidth,
-                    height: _rowHeight,
-                    onNameChanged: (v) => _editActivityName(a.id, v),
-                    onDelete: () => _deleteActivity(a.id),
+                    height: _headerHeight,
+                    alignment: Alignment.centerLeft,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(color: KColors.border, width: 1),
+                        right: BorderSide(color: KColors.border, width: 1),
+                      ),
+                    ),
+                    child: Text(
+                      'ACTIVITY',
+                      style: TextStyle(
+                        color: KColors.textMuted,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.4,
+                      ),
+                    ),
                   ),
                   for (final p in _content.people)
-                    _RoleCell(
-                      role: _content.roleFor(a.id, p.id),
+                    _PersonHeader(
+                      person: p,
+                      ctrl: _personCtrls[p.id]!,
                       width: _personColWidth,
-                      height: _rowHeight,
-                      onTap: () => _cycleCell(a.id, p.id),
+                      height: _headerHeight,
+                      onNameChanged: (v) => _editPersonName(p.id, v),
+                      onDelete: () => _deletePerson(p.id),
                     ),
                 ],
               ),
-          ],
+              // Activity rows.
+              for (final a in _content.activities)
+                Row(
+                  children: [
+                    _ActivityCell(
+                      activity: a,
+                      ctrl: _activityCtrls[a.id]!,
+                      width: _activityColWidth,
+                      height: _rowHeight,
+                      onNameChanged: (v) => _editActivityName(a.id, v),
+                      onDelete: () => _deleteActivity(a.id),
+                    ),
+                    for (final p in _content.people)
+                      _RoleCell(
+                        role: _content.roleFor(a.id, p.id),
+                        width: _personColWidth,
+                        height: _rowHeight,
+                        onTap: () => _cycleCell(a.id, p.id),
+                      ),
+                  ],
+                ),
+            ],
           ),
         ),
       ),
@@ -365,7 +358,7 @@ class _Toolbar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Text(
+        Text(
           'RACI MATRIX',
           style: TextStyle(
             color: KColors.amber,
@@ -381,9 +374,8 @@ class _Toolbar extends StatelessWidget {
           label: const Text('Add activity'),
           style: OutlinedButton.styleFrom(
             foregroundColor: KColors.amber,
-            side: const BorderSide(color: KColors.amber),
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            side: BorderSide(color: KColors.amber),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             textStyle: const TextStyle(fontSize: 12),
             minimumSize: const Size(0, 32),
           ),
@@ -405,8 +397,11 @@ class _Toolbar extends StatelessWidget {
                 value: p.id,
                 child: Row(
                   children: [
-                    const Icon(Icons.person_outline,
-                        size: 14, color: KColors.textDim),
+                    Icon(
+                      Icons.person_outline,
+                      size: 14,
+                      color: KColors.textDim,
+                    ),
                     const SizedBox(width: 8),
                     Flexible(
                       child: Text(
@@ -419,22 +414,23 @@ class _Toolbar extends StatelessWidget {
                 ),
               ),
             if (addable.isNotEmpty) const PopupMenuDivider(),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: '__add_new__',
               child: Row(
                 children: [
-                  Icon(Icons.person_add_alt_1,
-                      size: 14, color: KColors.textDim),
+                  Icon(
+                    Icons.person_add_alt_1,
+                    size: 14,
+                    color: KColors.textDim,
+                  ),
                   SizedBox(width: 8),
-                  Text('Add new person…',
-                      style: TextStyle(fontSize: 12.5)),
+                  Text('Add new person…', style: TextStyle(fontSize: 12.5)),
                 ],
               ),
             ),
           ],
           child: Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
               color: KColors.amberDim.withValues(alpha: 0.6),
               border: Border.all(
@@ -443,7 +439,7 @@ class _Toolbar extends StatelessWidget {
               ),
               borderRadius: BorderRadius.circular(4),
             ),
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.add, size: 14, color: KColors.amber),
@@ -488,7 +484,7 @@ class _ActivityCell extends StatelessWidget {
       width: width,
       height: height,
       padding: const EdgeInsets.symmetric(horizontal: 8),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: KColors.surface,
         border: Border(
           bottom: BorderSide(color: KColors.border, width: 0.5),
@@ -500,15 +496,14 @@ class _ActivityCell extends StatelessWidget {
           Expanded(
             child: TextField(
               controller: ctrl,
-              style: const TextStyle(
+              style: TextStyle(
                 color: KColors.text,
                 fontSize: 12.5,
                 fontWeight: FontWeight.w500,
               ),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'Activity',
-                hintStyle: TextStyle(
-                    color: KColors.textMuted, fontSize: 12),
+                hintStyle: TextStyle(color: KColors.textMuted, fontSize: 12),
                 isDense: true,
                 contentPadding: EdgeInsets.zero,
                 border: InputBorder.none,
@@ -522,8 +517,7 @@ class _ActivityCell extends StatelessWidget {
             visualDensity: VisualDensity.compact,
             onPressed: onDelete,
             tooltip: 'Delete activity',
-            icon: const Icon(Icons.close,
-                size: 13, color: KColors.textMuted),
+            icon: Icon(Icons.close, size: 13, color: KColors.textMuted),
           ),
         ],
       ),
@@ -553,7 +547,7 @@ class _PersonHeader extends StatelessWidget {
     return Container(
       width: width,
       height: height,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: KColors.surface,
         border: Border(
           bottom: BorderSide(color: KColors.border, width: 1),
@@ -567,15 +561,14 @@ class _PersonHeader extends StatelessWidget {
             child: TextField(
               controller: ctrl,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 color: KColors.text,
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
               ),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'Name',
-                hintStyle: TextStyle(
-                    color: KColors.textMuted, fontSize: 11.5),
+                hintStyle: TextStyle(color: KColors.textMuted, fontSize: 11.5),
                 isDense: true,
                 contentPadding: EdgeInsets.zero,
                 border: InputBorder.none,
@@ -589,11 +582,9 @@ class _PersonHeader extends StatelessWidget {
             visualDensity: VisualDensity.compact,
             onPressed: onDelete,
             tooltip: 'Remove column',
-            icon: const Icon(Icons.close,
-                size: 12, color: KColors.textMuted),
+            icon: Icon(Icons.close, size: 12, color: KColors.textMuted),
             padding: EdgeInsets.zero,
-            constraints:
-                const BoxConstraints(minWidth: 22, minHeight: 22),
+            constraints: const BoxConstraints(minWidth: 22, minHeight: 22),
           ),
         ],
       ),
@@ -627,10 +618,8 @@ class _RoleCell extends StatelessWidget {
         height: height,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: colour == null
-              ? KColors.bg
-              : colour.withValues(alpha: 0.18),
-          border: const Border(
+          color: colour == null ? KColors.bg : colour.withValues(alpha: 0.18),
+          border: Border(
             bottom: BorderSide(color: KColors.border, width: 0.5),
             right: BorderSide(color: KColors.border, width: 0.5),
           ),
@@ -638,15 +627,14 @@ class _RoleCell extends StatelessWidget {
         child: r == null
             ? const SizedBox.shrink()
             : Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
                   color: colour,
                   borderRadius: BorderRadius.circular(3),
                 ),
                 child: Text(
                   r,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: KColors.bg,
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
@@ -684,15 +672,14 @@ class _Legend extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
             decoration: BoxDecoration(
               color: color,
               borderRadius: BorderRadius.circular(3),
             ),
             child: Text(
               letter,
-              style: const TextStyle(
+              style: TextStyle(
                 color: KColors.bg,
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
@@ -700,13 +687,7 @@ class _Legend extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 6),
-          Text(
-            label,
-            style: const TextStyle(
-              color: KColors.textMuted,
-              fontSize: 11,
-            ),
-          ),
+          Text(label, style: TextStyle(color: KColors.textMuted, fontSize: 11)),
         ],
       );
     }
@@ -721,7 +702,7 @@ class _Legend extends StatelessWidget {
         const SizedBox(width: 16),
         chip('I', 'Informed', KColors.textDim),
         const Spacer(),
-        const Text(
+        Text(
           'Click a cell to cycle: blank → R → A → C → I → blank',
           style: TextStyle(
             color: KColors.textMuted,
@@ -749,10 +730,9 @@ class _EmptyState extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.table_chart_outlined,
-                  size: 26, color: KColors.amber),
+              Icon(Icons.table_chart_outlined, size: 26, color: KColors.amber),
               const SizedBox(height: 12),
-              const Text(
+              Text(
                 'Add activities and people to start',
                 style: TextStyle(
                   color: KColors.text,
@@ -761,7 +741,7 @@ class _EmptyState extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 6),
-              const Text(
+              Text(
                 'List the activities along the rows, the people across '
                 'the top, then click a cell to mark them Responsible, '
                 'Accountable, Consulted, or Informed.',
@@ -783,7 +763,7 @@ class _EmptyState extends StatelessWidget {
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(4),
-                    side: const BorderSide(color: KColors.amber, width: 0.5),
+                    side: BorderSide(color: KColors.amber, width: 0.5),
                   ),
                 ),
               ),

@@ -73,7 +73,9 @@ class _DecisionsViewState extends State<DecisionsView> {
 
   DependencySlack? _slackFor(Decision d) {
     if (kDecisionMadeStatuses.contains(d.status)) return null;
-    final a = d.planActivityId != null ? _activitiesById[d.planActivityId] : null;
+    final a = d.planActivityId != null
+        ? _activitiesById[d.planActivityId]
+        : null;
     if (a == null) return null;
     return dependencySlack(
       dueDate: d.dueDate,
@@ -107,8 +109,12 @@ class _DecisionsViewState extends State<DecisionsView> {
   Widget build(BuildContext context) {
     final projectId = context.watch<ProjectProvider>().currentProjectId;
     if (projectId == null) {
-      return const Center(child: Text('Select a project to view decisions.',
-          style: TextStyle(color: KColors.textDim)));
+      return Center(
+        child: Text(
+          'Select a project to view decisions.',
+          style: TextStyle(color: KColors.textDim),
+        ),
+      );
     }
 
     final db = context.read<AppDatabase>();
@@ -127,12 +133,14 @@ class _DecisionsViewState extends State<DecisionsView> {
           // Header
           Row(
             children: [
-              const Icon(Icons.gavel, color: KColors.amber, size: 18),
+              Icon(Icons.gavel, color: KColors.amber, size: 18),
               const SizedBox(width: 8),
               Flexible(
-                child: Text('DECISIONS',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                    overflow: TextOverflow.ellipsis),
+                child: Text(
+                  'DECISIONS',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               const SizedBox(width: 8),
               ElevatedButton.icon(
@@ -188,30 +196,40 @@ class _DecisionsViewState extends State<DecisionsView> {
                   updatedAt: (d) => d.updatedAt,
                   showClosed: _showClosed,
                 );
-                final items = _sourceFilter.apply(part.visible,
-                    sourceProjectId: (d) => d.sourceProjectId,
-                    escalatedAt: (d) => d.escalatedAt);
+                final items = _sourceFilter.apply(
+                  part.visible,
+                  sourceProjectId: (d) => d.sourceProjectId,
+                  escalatedAt: (d) => d.escalatedAt,
+                );
                 if (items.isEmpty && part.hidden.isNotEmpty) {
                   return HiddenClosedNotice(
-                      hiddenCount: part.hidden.length,
-                      onShow: _toggleShowClosed);
+                    hiddenCount: part.hidden.length,
+                    onShow: _toggleShowClosed,
+                  );
                 }
                 if (items.isEmpty) {
                   return Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.gavel_outlined,
-                            size: 40, color: KColors.textMuted),
+                        Icon(
+                          Icons.gavel_outlined,
+                          size: 40,
+                          color: KColors.textMuted,
+                        ),
                         const SizedBox(height: 12),
-                        const Text('No decisions yet.',
-                            style: TextStyle(color: KColors.textDim)),
+                        Text(
+                          'No decisions yet.',
+                          style: TextStyle(color: KColors.textDim),
+                        ),
                         const SizedBox(height: 12),
                         ElevatedButton.icon(
                           onPressed: () => showDialog(
                             context: context,
                             builder: (_) => DecisionFormDialog(
-                                projectId: projectId, db: db),
+                              projectId: projectId,
+                              db: db,
+                            ),
                           ),
                           icon: const Icon(Icons.add, size: 14),
                           label: const Text('Add Decision'),
@@ -277,268 +295,340 @@ class _DecisionCard extends StatelessWidget {
       title: decision.description,
       body: decision.rationale,
       child: Container(
-      decoration: BoxDecoration(
-        color: KColors.surface,
-        border: Border.all(color: KColors.border),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: InkWell(
-        onTap: () => showDialog(
-          context: context,
-          builder: (_) => DecisionFormDialog(
-              projectId: projectId, db: db, decision: decision,
-              startInViewMode: true),
+        decoration: BoxDecoration(
+          color: KColors.surface,
+          border: Border.all(color: KColors.border),
+          borderRadius: BorderRadius.circular(4),
         ),
-        borderRadius: BorderRadius.circular(4),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Colour bar
-              Container(
-                width: 2,
-                height: 48,
-                color: _decisionBarColor(decision.status),
-                margin: const EdgeInsets.only(right: 12),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (decision.ref != null) ...[
-                          Text(
-                            decision.ref!,
-                            style: const TextStyle(
+        child: InkWell(
+          onTap: () => showDialog(
+            context: context,
+            builder: (_) => DecisionFormDialog(
+              projectId: projectId,
+              db: db,
+              decision: decision,
+              startInViewMode: true,
+            ),
+          ),
+          borderRadius: BorderRadius.circular(4),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Colour bar
+                Container(
+                  width: 2,
+                  height: 48,
+                  color: _decisionBarColor(decision.status),
+                  margin: const EdgeInsets.only(right: 12),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (decision.ref != null) ...[
+                            Text(
+                              decision.ref!,
+                              style: TextStyle(
                                 color: KColors.amber,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 11),
-                          ),
-                          const SizedBox(width: 8),
-                        ],
-                        Expanded(
-                          child: Text(
-                            decision.description,
-                            style: const TextStyle(
+                                fontSize: 11,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          Expanded(
+                            child: Text(
+                              decision.description,
+                              style: TextStyle(
                                 fontWeight: FontWeight.w500,
                                 fontSize: 12,
-                                color: KColors.text),
-                          ),
-                        ),
-                        StatusChip(status: decision.status),
-                        const SizedBox(width: 6),
-                        if (decision.escalatedAt != null &&
-                            decision.sourceProjectId == null)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 5, vertical: 1),
-                            margin: const EdgeInsets.only(right: 4),
-                            decoration: BoxDecoration(
-                              color: KColors.amberDim,
-                              border: Border.all(
-                                  color: KColors.amber, width: 0.5),
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                            child: const Tooltip(
-                              message:
-                                  'Shared with linked programmes by the PM',
-                              child: Text(
-                                '↑ SHARED',
-                                style: TextStyle(
-                                  color: KColors.amber,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.4,
-                                ),
+                                color: KColors.text,
                               ),
                             ),
                           ),
-                        if (decision.sourceProjectId != null)
-                          Padding(
-                            padding: const EdgeInsets.only(right: 4),
-                            child: CascadedSourceBadge(
-                                sourceProjectId: decision.sourceProjectId),
-                          ),
-                        if (decision.sourceProjectId == null)
-                          PopupMenuButton<String>(
-                            icon: const Icon(Icons.more_vert,
-                                size: 16, color: KColors.textMuted),
-                            onSelected: (val) async {
-                              if (val == 'edit') {
-                                await showDialog(
-                                  context: context,
-                                  builder: (_) => DecisionFormDialog(
+                          StatusChip(status: decision.status),
+                          const SizedBox(width: 6),
+                          if (decision.escalatedAt != null &&
+                              decision.sourceProjectId == null)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                                vertical: 1,
+                              ),
+                              margin: const EdgeInsets.only(right: 4),
+                              decoration: BoxDecoration(
+                                color: KColors.amberDim,
+                                border: Border.all(
+                                  color: KColors.amber,
+                                  width: 0.5,
+                                ),
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                              child: Tooltip(
+                                message:
+                                    'Shared with linked programmes by the PM',
+                                child: Text(
+                                  '↑ SHARED',
+                                  style: TextStyle(
+                                    color: KColors.amber,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.4,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          if (decision.sourceProjectId != null)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 4),
+                              child: CascadedSourceBadge(
+                                sourceProjectId: decision.sourceProjectId,
+                              ),
+                            ),
+                          if (decision.sourceProjectId == null)
+                            PopupMenuButton<String>(
+                              icon: Icon(
+                                Icons.more_vert,
+                                size: 16,
+                                color: KColors.textMuted,
+                              ),
+                              onSelected: (val) async {
+                                if (val == 'edit') {
+                                  await showDialog(
+                                    context: context,
+                                    builder: (_) => DecisionFormDialog(
                                       projectId: projectId,
                                       db: db,
-                                      decision: decision),
-                                );
-                                if (context.mounted) {
+                                      decision: decision,
+                                    ),
+                                  );
+                                  if (context.mounted) {
+                                    final fresh = await db.decisionsDao
+                                        .getDecisionById(decision.id);
+                                    if (fresh != null && context.mounted) {
+                                      await _cascadeFor(
+                                        context,
+                                        db,
+                                      ).pushDecision(fresh);
+                                    }
+                                  }
+                                } else if (val == 'escalate') {
+                                  await db.decisionsDao.setDecisionEscalated(
+                                    decision.id,
+                                    true,
+                                  );
                                   final fresh = await db.decisionsDao
                                       .getDecisionById(decision.id);
                                   if (fresh != null && context.mounted) {
-                                    await _cascadeFor(context, db)
-                                        .pushDecision(fresh);
+                                    await _cascadeFor(
+                                      context,
+                                      db,
+                                    ).pushDecision(fresh);
                                   }
-                                }
-                              } else if (val == 'escalate') {
-                                await db.decisionsDao
-                                    .setDecisionEscalated(
-                                        decision.id, true);
-                                final fresh = await db.decisionsDao
-                                    .getDecisionById(decision.id);
-                                if (fresh != null && context.mounted) {
-                                  await _cascadeFor(context, db)
-                                      .pushDecision(fresh);
-                                }
-                              } else if (val == 'unescalate') {
-                                await db.decisionsDao.setDecisionEscalated(decision.id, false);
-                          // Re-push with the flag off: full-detail links keep
-                          // the row unflagged, escalated-only links get a tombstone.
-                          final fresh = await db.decisionsDao.getDecisionById(decision.id);
-                          if (fresh != null && context.mounted) {
-                            await _cascadeFor(context, db).pushDecision(fresh);
-                          }
-                              } else if (val == 'contingency') {
-                                await showDialog(
-                                  context: context,
-                                  builder: (_) => ContingencyMovementDialog(
-                                    db: db,
-                                    programmeId: projectId,
-                                    decisionId: decision.id,
-                                  ),
-                                );
-                              } else if (val == 'delete') {
-                                if (context.mounted) {
-                                  await _cascadeFor(context, db)
-                                      .tombstoneRaidItem(
-                                    projectId: projectId,
-                                    itemKind: CascadeKinds.decision,
-                                    itemId: decision.id,
+                                } else if (val == 'unescalate') {
+                                  await db.decisionsDao.setDecisionEscalated(
+                                    decision.id,
+                                    false,
+                                  );
+                                  // Re-push with the flag off: full-detail links keep
+                                  // the row unflagged, escalated-only links get a tombstone.
+                                  final fresh = await db.decisionsDao
+                                      .getDecisionById(decision.id);
+                                  if (fresh != null && context.mounted) {
+                                    await _cascadeFor(
+                                      context,
+                                      db,
+                                    ).pushDecision(fresh);
+                                  }
+                                } else if (val == 'contingency') {
+                                  await showDialog(
+                                    context: context,
+                                    builder: (_) => ContingencyMovementDialog(
+                                      db: db,
+                                      programmeId: projectId,
+                                      decisionId: decision.id,
+                                    ),
+                                  );
+                                } else if (val == 'delete') {
+                                  if (context.mounted) {
+                                    await _cascadeFor(
+                                      context,
+                                      db,
+                                    ).tombstoneRaidItem(
+                                      projectId: projectId,
+                                      itemKind: CascadeKinds.decision,
+                                      itemId: decision.id,
+                                    );
+                                  }
+                                  await DependencyPlanLink.remove(
+                                    db,
+                                    projectId,
+                                    decision.id,
+                                    kind: PlanLinkKind.decision,
+                                  );
+                                  await db.decisionsDao.deleteDecision(
+                                    decision.id,
                                   );
                                 }
-                                await DependencyPlanLink.remove(
-                                    db, projectId, decision.id,
-                                    kind: PlanLinkKind.decision);
-                                await db.decisionsDao
-                                    .deleteDecision(decision.id);
-                              }
-                            },
-                            itemBuilder: (_) => [
-                              const PopupMenuItem(
-                                  value: 'edit', child: Text('Edit')),
-                              if (decision.escalatedAt == null)
+                              },
+                              itemBuilder: (_) => [
                                 const PopupMenuItem(
-                                    value: 'escalate',
-                                    child:
-                                        Text('Share with programme'))
-                              else
-                                const PopupMenuItem(
-                                    value: 'unescalate',
-                                    child: Text('Stop sharing')),
-                              if (context.read<ProjectProvider>().isProgramme &&
-                                  decision.sourceProjectId == null)
-                                const PopupMenuItem(
-                                    value: 'contingency',
-                                    child: Text('Record contingency movement…')),
-                              const PopupMenuItem(
-                                  value: 'delete',
-                                  child: Text('Delete')),
-                            ],
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (decision.decisionMaker != null &&
-                                  decision.decisionMaker!.isNotEmpty) ...[
-                                const Icon(Icons.person_outline,
-                                    size: 11, color: KColors.textDim),
-                                const SizedBox(width: 3),
-                                Flexible(
-                                  child: Text(decision.decisionMaker!,
-                                      style: const TextStyle(
-                                          color: KColors.textDim, fontSize: 11),
-                                      overflow: TextOverflow.ellipsis),
+                                  value: 'edit',
+                                  child: Text('Edit'),
                                 ),
-                                const SizedBox(width: 10),
+                                if (decision.escalatedAt == null)
+                                  const PopupMenuItem(
+                                    value: 'escalate',
+                                    child: Text('Share with programme'),
+                                  )
+                                else
+                                  const PopupMenuItem(
+                                    value: 'unescalate',
+                                    child: Text('Stop sharing'),
+                                  ),
+                                if (context
+                                        .read<ProjectProvider>()
+                                        .isProgramme &&
+                                    decision.sourceProjectId == null)
+                                  const PopupMenuItem(
+                                    value: 'contingency',
+                                    child: Text('Record contingency movement…'),
+                                  ),
+                                const PopupMenuItem(
+                                  value: 'delete',
+                                  child: Text('Delete'),
+                                ),
                               ],
-                              if (decision.dueDate != null &&
-                                  decision.dueDate!.isNotEmpty) ...[
-                                const Icon(Icons.calendar_today_outlined,
-                                    size: 11, color: KColors.textDim),
-                                const SizedBox(width: 3),
-                                Text(du.formatDate(decision.dueDate),
-                                    style: const TextStyle(
-                                        color: KColors.textDim, fontSize: 11)),
-                                const SizedBox(width: 4),
-                              ],
-                            ],
-                          ),
-                        ),
-                        SourceBadge(source: decision.source),
-                        const SizedBox(width: 6),
-                        InCanvasIndicator(
-                          itemType: 'decision',
-                          itemId: decision.id,
-                        ),
-                      ],
-                    ),
-                    if (activityName != null || slack != null) ...[
-                      const SizedBox(height: 5),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 4,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          if (activityName != null)
-                            Row(mainAxisSize: MainAxisSize.min, children: [
-                              const Icon(Icons.timeline,
-                                  size: 11, color: KColors.textMuted),
-                              const SizedBox(width: 3),
-                              ConstrainedBox(
-                                constraints:
-                                    const BoxConstraints(maxWidth: 260),
-                                child: Text('Waiting: $activityName',
-                                    style: const TextStyle(
-                                        color: KColors.textDim, fontSize: 11),
-                                    overflow: TextOverflow.ellipsis),
-                              ),
-                            ]),
-                          if (slack != null)
-                            DependencySlackChip(slack: slack!, compact: true),
+                            ),
                         ],
                       ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (decision.decisionMaker != null &&
+                                    decision.decisionMaker!.isNotEmpty) ...[
+                                  Icon(
+                                    Icons.person_outline,
+                                    size: 11,
+                                    color: KColors.textDim,
+                                  ),
+                                  const SizedBox(width: 3),
+                                  Flexible(
+                                    child: Text(
+                                      decision.decisionMaker!,
+                                      style: TextStyle(
+                                        color: KColors.textDim,
+                                        fontSize: 11,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                ],
+                                if (decision.dueDate != null &&
+                                    decision.dueDate!.isNotEmpty) ...[
+                                  Icon(
+                                    Icons.calendar_today_outlined,
+                                    size: 11,
+                                    color: KColors.textDim,
+                                  ),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    du.formatDate(decision.dueDate),
+                                    style: TextStyle(
+                                      color: KColors.textDim,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                ],
+                              ],
+                            ),
+                          ),
+                          SourceBadge(source: decision.source),
+                          const SizedBox(width: 6),
+                          InCanvasIndicator(
+                            itemType: 'decision',
+                            itemId: decision.id,
+                          ),
+                        ],
+                      ),
+                      if (activityName != null || slack != null) ...[
+                        const SizedBox(height: 5),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            if (activityName != null)
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.timeline,
+                                    size: 11,
+                                    color: KColors.textMuted,
+                                  ),
+                                  const SizedBox(width: 3),
+                                  ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: 260,
+                                    ),
+                                    child: Text(
+                                      'Waiting: $activityName',
+                                      style: TextStyle(
+                                        color: KColors.textDim,
+                                        fontSize: 11,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            if (slack != null)
+                              DependencySlackChip(slack: slack!, compact: true),
+                          ],
+                        ),
+                      ],
+                      if (decision.rationale != null &&
+                          decision.rationale!.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          'Rationale: ${decision.rationale}',
+                          style: TextStyle(
+                            color: KColors.textDim,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                      if (decision.outcome != null &&
+                          decision.outcome!.isNotEmpty) ...[
+                        const SizedBox(height: 3),
+                        Text(
+                          'Outcome: ${decision.outcome}',
+                          style: TextStyle(
+                            color: KColors.textDim,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
                     ],
-                    if (decision.rationale != null &&
-                        decision.rationale!.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text('Rationale: ${decision.rationale}',
-                          style: const TextStyle(
-                              color: KColors.textDim, fontSize: 11)),
-                    ],
-                    if (decision.outcome != null &&
-                        decision.outcome!.isNotEmpty) ...[
-                      const SizedBox(height: 3),
-                      Text('Outcome: ${decision.outcome}',
-                          style: const TextStyle(
-                              color: KColors.textDim, fontSize: 11)),
-                    ],
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-    ),
     );
   }
 }

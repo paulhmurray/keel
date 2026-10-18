@@ -52,14 +52,18 @@ class DetailDialog extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: left)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: left,
+                ),
+              ),
               const SizedBox(width: 28),
               Expanded(
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: right)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: right,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -83,16 +87,21 @@ class DetailDialog extends StatelessWidget {
 
     return AlertDialog(
       backgroundColor: KColors.surface,
-      title: Row(children: [
-        Container(
+      title: Row(
+        children: [
+          Container(
             width: 3,
             height: 20,
             color: accent,
-            margin: const EdgeInsets.only(right: 10)),
-        ...title,
-      ]),
+            margin: const EdgeInsets.only(right: 10),
+          ),
+          ...title,
+        ],
+      ),
       content: SizedBox(
-        width: twoCol ? min(1180, size.width * 0.92) : min(760, size.width * 0.9),
+        width: twoCol
+            ? min(1180, size.width * 0.92)
+            : min(760, size.width * 0.9),
         height: min(940, size.height * 0.88),
         child: content,
       ),
@@ -113,11 +122,14 @@ class DetailRefChip extends StatelessWidget {
         color: KColors.amberDim,
         borderRadius: BorderRadius.circular(3),
       ),
-      child: Text(text,
-          style: const TextStyle(
-              color: KColors.amber,
-              fontSize: 11,
-              fontWeight: FontWeight.w700)),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: KColors.amber,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
     );
   }
 }
@@ -128,8 +140,8 @@ class DetailTitle extends StatelessWidget {
   const DetailTitle(this.text, {super.key});
 
   @override
-  Widget build(BuildContext context) => Text(text,
-      style: const TextStyle(color: KColors.text, fontSize: 16));
+  Widget build(BuildContext context) =>
+      Text(text, style: TextStyle(color: KColors.text, fontSize: 16));
 }
 
 /// Uppercase micro-label used to head a section inside the dialog.
@@ -139,14 +151,14 @@ class DetailSectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Text(
-        text.toUpperCase(),
-        style: const TextStyle(
-          color: KColors.textDim,
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.2,
-        ),
-      );
+    text.toUpperCase(),
+    style: TextStyle(
+      color: KColors.textDim,
+      fontSize: 10,
+      fontWeight: FontWeight.w700,
+      letterSpacing: 0.2,
+    ),
+  );
 }
 
 /// Read-mode field: label above wrapped value. Hidden when empty, so
@@ -157,8 +169,13 @@ class DetailField extends StatelessWidget {
   final bool large;
   final Color? valueColor;
 
-  const DetailField(this.label, this.value,
-      {super.key, this.large = false, this.valueColor});
+  const DetailField(
+    this.label,
+    this.value, {
+    super.key,
+    this.large = false,
+    this.valueColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -171,7 +188,7 @@ class DetailField extends StatelessWidget {
         children: [
           Text(
             label.toUpperCase(),
-            style: const TextStyle(
+            style: TextStyle(
               color: KColors.textMuted,
               fontSize: 10,
               fontWeight: FontWeight.w600,
@@ -198,8 +215,8 @@ class DetailDivider extends StatelessWidget {
   const DetailDivider({super.key});
 
   @override
-  Widget build(BuildContext context) => const Padding(
-        padding: EdgeInsets.symmetric(vertical: 10),
-        child: Divider(color: KColors.border, height: 1),
-      );
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.symmetric(vertical: 10),
+    child: Divider(color: KColors.border, height: 1),
+  );
 }

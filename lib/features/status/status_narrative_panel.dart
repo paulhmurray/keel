@@ -11,6 +11,7 @@ class StatusNarrativePanel extends StatefulWidget {
   final ProgrammeStatusData data;
   final SettingsProvider settings;
   final String projectName;
+
   /// Programme-kind entity → "programme" wording; otherwise "project".
   /// A project's narrative may still mention the programme it reports
   /// into, but never call the project itself a programme.
@@ -56,21 +57,24 @@ class _StatusNarrativePanelState extends State<StatusNarrativePanel> {
       setState(() => _error = 'No API key set. Add one in Settings.');
       return;
     }
-    setState(() { _drafting = true; _error = null; });
+    setState(() {
+      _drafting = true;
+      _error = null;
+    });
     try {
-      final client =
-          LLMClientFactory.fromSettings(widget.settings.settings);
+      final client = LLMClientFactory.fromSettings(widget.settings.settings);
       final prompt = _buildPrompt();
       final entity = widget.isProgramme ? 'programme' : 'project';
       final result = await client.complete(
-        systemPrompt: 'You are an expert ${widget.isProgramme ? 'programme' : 'project'} '
+        systemPrompt:
+            'You are an expert ${widget.isProgramme ? 'programme' : 'project'} '
             'manager writing a weekly status narrative for a steering '
             'committee about a $entity. Be concise, factual, and '
             'professional. Write in third person. 150-250 words. '
             'Refer to it as "the $entity" throughout'
             '${widget.isProgramme ? '' : '; use the word "programme" only for '
-                'the wider programme this project reports into, if the '
-                'context names one'}. Section headings, if any, must say '
+                      'the wider programme this project reports into, if the '
+                      'context names one'}. Section headings, if any, must say '
             '"$entity", e.g. "Overall ${entity[0].toUpperCase()}${entity.substring(1)} Health". '
             'The reader cannot open Keel and has no access to the risk, '
             'decision or action registers, so never rely on a reference code '
@@ -86,7 +90,9 @@ class _StatusNarrativePanelState extends State<StatusNarrativePanel> {
       );
       _ctrl.text = result.trim();
       widget.onNarrativeChanged(result.trim());
-      setState(() { _accepted = false; });
+      setState(() {
+        _accepted = false;
+      });
     } catch (e) {
       setState(() => _error = e.toString());
     } finally {
@@ -98,7 +104,9 @@ class _StatusNarrativePanelState extends State<StatusNarrativePanel> {
     final d = widget.data;
     final sb = StringBuffer();
     final entity = widget.isProgramme ? 'programme' : 'project';
-    sb.writeln('${widget.isProgramme ? 'Programme' : 'Project'}: ${widget.projectName}');
+    sb.writeln(
+      '${widget.isProgramme ? 'Programme' : 'Project'}: ${widget.projectName}',
+    );
     sb.writeln('Overall RAG: ${d.programmeRag.label}');
     sb.writeln('Trend: ${d.programmeTrend.label}');
     sb.writeln();
@@ -119,10 +127,11 @@ class _StatusNarrativePanelState extends State<StatusNarrativePanel> {
       for (final r in d.topRisks) {
         final soWhat = riskSoWhat(r);
         sb.writeln(
-            '  ${r.ref ?? ''}${r.steerco ? ' [ESCALATED]' : ''} '
-            '${r.title ?? r.description} '
-            '[${ratingSummary(r.likelihood, r.impact)}]'
-            '${soWhat != null ? ' — $soWhat' : ''}');
+          '  ${r.ref ?? ''}${r.steerco ? ' [ESCALATED]' : ''} '
+          '${r.title ?? r.description} '
+          '[${ratingSummary(r.likelihood, r.impact)}]'
+          '${soWhat != null ? ' — $soWhat' : ''}',
+        );
       }
       sb.writeln();
     }
@@ -130,7 +139,8 @@ class _StatusNarrativePanelState extends State<StatusNarrativePanel> {
       sb.writeln('Pending decisions:');
       for (final dec in d.pendingDecisions) {
         sb.writeln(
-            '  ${dec.ref ?? ''} ${dec.description} (due: ${dec.dueDate ?? 'no date'})');
+          '  ${dec.ref ?? ''} ${dec.description} (due: ${dec.dueDate ?? 'no date'})',
+        );
       }
       sb.writeln();
     }
@@ -139,8 +149,9 @@ class _StatusNarrativePanelState extends State<StatusNarrativePanel> {
     sb.writeln('Open risks: ${d.openRisksCount}');
     sb.writeln();
     sb.writeln(
-        'Write a status narrative covering: overall $entity health, '
-        'key highlights, key concerns, and next week\'s focus.');
+      'Write a status narrative covering: overall $entity health, '
+      'key highlights, key concerns, and next week\'s focus.',
+    );
     return sb.toString();
   }
 
@@ -150,63 +161,74 @@ class _StatusNarrativePanelState extends State<StatusNarrativePanel> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Action buttons
-        Wrap(spacing: 8, runSpacing: 8, children: [
-          ElevatedButton.icon(
-            onPressed: _drafting ? null : _draft,
-            icon: _drafting
-                ? const SizedBox(
-                    width: 14, height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.auto_awesome, size: 14),
-            label: Text(_drafting ? 'Drafting…' : 'Draft narrative'),
-          ),
-          if (_ctrl.text.isNotEmpty) ...[
-            if (!_accepted)
-              ElevatedButton(
-                onPressed: () {
-                  widget.onNarrativeChanged(_ctrl.text);
-                  setState(() => _accepted = true);
-                },
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: KColors.phosDim),
-                child: const Text('Accept',
-                    style: TextStyle(color: KColors.phosphor)),
-              ),
-            if (_accepted)
-              TextButton(
-                onPressed: () {
-                  widget.onNarrativeChanged(null);
-                  _ctrl.clear();
-                  setState(() => _accepted = false);
-                },
-                child: const Text('Clear',
-                    style: TextStyle(color: KColors.textDim, fontSize: 12)),
-              ),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            ElevatedButton.icon(
+              onPressed: _drafting ? null : _draft,
+              icon: _drafting
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.auto_awesome, size: 14),
+              label: Text(_drafting ? 'Drafting…' : 'Draft narrative'),
+            ),
+            if (_ctrl.text.isNotEmpty) ...[
+              if (!_accepted)
+                ElevatedButton(
+                  onPressed: () {
+                    widget.onNarrativeChanged(_ctrl.text);
+                    setState(() => _accepted = true);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: KColors.phosDim,
+                  ),
+                  child: Text(
+                    'Accept',
+                    style: TextStyle(color: KColors.phosphor),
+                  ),
+                ),
+              if (_accepted)
+                TextButton(
+                  onPressed: () {
+                    widget.onNarrativeChanged(null);
+                    _ctrl.clear();
+                    setState(() => _accepted = false);
+                  },
+                  child: Text(
+                    'Clear',
+                    style: TextStyle(color: KColors.textDim, fontSize: 12),
+                  ),
+                ),
+            ],
           ],
-        ]),
+        ),
         if (_error != null) ...[
           const SizedBox(height: 8),
-          Text(_error!,
-              style: const TextStyle(color: KColors.red, fontSize: 11)),
+          Text(_error!, style: TextStyle(color: KColors.red, fontSize: 11)),
         ],
         const SizedBox(height: 12),
         Container(
           decoration: BoxDecoration(
             color: KColors.surface,
             border: Border.all(
-                color: _accepted ? KColors.phosphor : KColors.border),
+              color: _accepted ? KColors.phosphor : KColors.border,
+            ),
             borderRadius: BorderRadius.circular(4),
           ),
           child: TextField(
             controller: _ctrl,
             minLines: 5,
             maxLines: null,
-            style: const TextStyle(
-                color: KColors.text, fontSize: 13, height: 1.6),
-            decoration: const InputDecoration(
+            style: TextStyle(color: KColors.text, fontSize: 13, height: 1.6),
+            decoration: InputDecoration(
               border: InputBorder.none,
               contentPadding: EdgeInsets.all(12),
-              hintText: 'Write a narrative, or click "Draft narrative" to '
+              hintText:
+                  'Write a narrative, or click "Draft narrative" to '
                   'have AI generate one based on the current programme state.',
               hintStyle: TextStyle(color: KColors.textDim, fontSize: 13),
             ),

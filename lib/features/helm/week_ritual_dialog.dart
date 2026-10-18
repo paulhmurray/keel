@@ -467,7 +467,7 @@ class _WeekRitualDialogState extends State<WeekRitualDialog> {
       backgroundColor: KColors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
-        side: const BorderSide(color: KColors.border),
+        side: BorderSide(color: KColors.border),
       ),
       child: SizedBox(
         width: 920,
@@ -479,7 +479,7 @@ class _WeekRitualDialogState extends State<WeekRitualDialog> {
               padding: const EdgeInsets.fromLTRB(20, 16, 12, 8),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.view_week_outlined,
                     size: 16,
                     color: KColors.amber,
@@ -500,18 +500,14 @@ class _WeekRitualDialogState extends State<WeekRitualDialog> {
                     const SizedBox(width: 6),
                   ],
                   IconButton(
-                    icon: const Icon(
-                      Icons.close,
-                      size: 16,
-                      color: KColors.textMuted,
-                    ),
+                    icon: Icon(Icons.close, size: 16, color: KColors.textMuted),
                     tooltip: 'Cancel — nothing is written until Commit',
                     onPressed: () => Navigator.of(context).pop(false),
                   ),
                 ],
               ),
             ),
-            const Divider(height: 1, color: KColors.border),
+            Divider(height: 1, color: KColors.border),
             Expanded(
               child: _loading
                   ? const Center(
@@ -521,10 +517,7 @@ class _WeekRitualDialogState extends State<WeekRitualDialog> {
                   ? Center(
                       child: Text(
                         'Could not load the week: $_loadError',
-                        style: const TextStyle(
-                          color: KColors.red,
-                          fontSize: 12,
-                        ),
+                        style: TextStyle(color: KColors.red, fontSize: 12),
                       ),
                     )
                   : Padding(
@@ -537,7 +530,7 @@ class _WeekRitualDialogState extends State<WeekRitualDialog> {
                       },
                     ),
             ),
-            const Divider(height: 1, color: KColors.border),
+            Divider(height: 1, color: KColors.border),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 10, 20, 12),
               child: Row(
@@ -602,7 +595,7 @@ class _WeekRitualDialogState extends State<WeekRitualDialog> {
     padding: const EdgeInsets.only(bottom: 6),
     child: Text(
       text.toUpperCase(),
-      style: const TextStyle(
+      style: TextStyle(
         color: KColors.textDim,
         fontSize: 10,
         fontWeight: FontWeight.w700,
@@ -615,7 +608,7 @@ class _WeekRitualDialogState extends State<WeekRitualDialog> {
     padding: const EdgeInsets.only(bottom: 10),
     child: Text(
       text,
-      style: const TextStyle(color: KColors.textDim, fontSize: 12, height: 1.4),
+      style: TextStyle(color: KColors.textDim, fontSize: 12, height: 1.4),
     ),
   );
 
@@ -634,7 +627,7 @@ class _WeekRitualDialogState extends State<WeekRitualDialog> {
           child: ListView(
             children: [
               if (_lastRows.isEmpty)
-                const Text(
+                Text(
                   'Last week had a plan but no rocks.',
                   style: TextStyle(color: KColors.textMuted, fontSize: 12),
                 ),
@@ -663,10 +656,7 @@ class _WeekRitualDialogState extends State<WeekRitualDialog> {
                       Expanded(
                         child: Text(
                           r.objective.label,
-                          style: const TextStyle(
-                            color: KColors.text,
-                            fontSize: 13,
-                          ),
+                          style: TextStyle(color: KColors.text, fontSize: 13),
                         ),
                       ),
                       Text(
@@ -682,7 +672,7 @@ class _WeekRitualDialogState extends State<WeekRitualDialog> {
                       if (_existing.any(
                         (o) => o.carriedFromId == r.objective.id,
                       ))
-                        const Text(
+                        Text(
                           'already carried',
                           style: TextStyle(
                             color: KColors.textMuted,
@@ -762,7 +752,7 @@ class _WeekRitualDialogState extends State<WeekRitualDialog> {
                         padding: const EdgeInsets.only(bottom: 10),
                         child: Text(
                           _monthMission!,
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: KColors.text,
                             fontSize: 13,
                             fontStyle: FontStyle.italic,
@@ -783,7 +773,7 @@ class _WeekRitualDialogState extends State<WeekRitualDialog> {
                       const SizedBox(height: 8),
                     ],
                     if (h == null)
-                      const Text(
+                      Text(
                         'The horizon could not be loaded.',
                         style: TextStyle(
                           color: KColors.textMuted,
@@ -810,7 +800,7 @@ class _WeekRitualDialogState extends State<WeekRitualDialog> {
                           _pickItem(it, KColors.blue),
                       ],
                       if (h.isEmpty)
-                        const Text(
+                        Text(
                           'Nothing dated in the next fortnight.',
                           style: TextStyle(
                             color: KColors.textMuted,
@@ -837,7 +827,7 @@ class _WeekRitualDialogState extends State<WeekRitualDialog> {
                   _h('This week\'s rocks · ${_rocks.length}'),
                   const Spacer(),
                   if (over)
-                    const Text(
+                    Text(
                       'more than five — be honest',
                       style: TextStyle(color: KColors.amber, fontSize: 10),
                     ),
@@ -847,7 +837,7 @@ class _WeekRitualDialogState extends State<WeekRitualDialog> {
                 child: ListView(
                   children: [
                     if (_rocks.isEmpty)
-                      const Text(
+                      Text(
                         'None yet.',
                         style: TextStyle(
                           color: KColors.textMuted,
@@ -874,14 +864,14 @@ class _WeekRitualDialogState extends State<WeekRitualDialog> {
                                 r.label,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: KColors.text,
                                   fontSize: 12,
                                 ),
                               ),
                             ),
                             IconButton(
-                              icon: const Icon(
+                              icon: Icon(
                                 Icons.close,
                                 size: 14,
                                 color: KColors.textMuted,
@@ -970,17 +960,14 @@ class _WeekRitualDialogState extends State<WeekRitualDialog> {
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: KColors.text, fontSize: 12),
+                  style: TextStyle(color: KColors.text, fontSize: 12),
                 ),
                 if (detail != null && detail.trim().isNotEmpty)
                   Text(
                     detail,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: KColors.textMuted,
-                      fontSize: 10,
-                    ),
+                    style: TextStyle(color: KColors.textMuted, fontSize: 10),
                   ),
               ],
             ),
@@ -1016,9 +1003,9 @@ class _WeekRitualDialogState extends State<WeekRitualDialog> {
                   border: TableBorder.all(color: KColors.border, width: 0.5),
                   children: [
                     TableRow(
-                      decoration: const BoxDecoration(color: KColors.surface2),
+                      decoration: BoxDecoration(color: KColors.surface2),
                       children: [
-                        const Padding(
+                        Padding(
                           padding: EdgeInsets.all(8),
                           child: Text(
                             'ROCK',
@@ -1058,7 +1045,7 @@ class _WeekRitualDialogState extends State<WeekRitualDialog> {
                                     r.label,
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       color: KColors.text,
                                       fontSize: 12,
                                     ),
@@ -1102,9 +1089,9 @@ class _WeekRitualDialogState extends State<WeekRitualDialog> {
                         ],
                       ),
                     TableRow(
-                      decoration: const BoxDecoration(color: KColors.surface2),
+                      decoration: BoxDecoration(color: KColors.surface2),
                       children: [
-                        const Padding(
+                        Padding(
                           padding: EdgeInsets.all(8),
                           child: Text(
                             'used / room',
@@ -1154,7 +1141,7 @@ class _WeekRitualDialogState extends State<WeekRitualDialog> {
                           width: 40,
                           child: Text(
                             _kDays[d],
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: KColors.textDim,
                               fontSize: 11,
                             ),
@@ -1209,15 +1196,12 @@ class _WeekRitualDialogState extends State<WeekRitualDialog> {
                   padding: const EdgeInsets.only(bottom: 6),
                   child: Row(
                     children: [
-                      const Icon(Icons.flag, size: 13, color: KColors.amber),
+                      Icon(Icons.flag, size: 13, color: KColors.amber),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           r.label,
-                          style: const TextStyle(
-                            color: KColors.text,
-                            fontSize: 13,
-                          ),
+                          style: TextStyle(color: KColors.text, fontSize: 13),
                         ),
                       ),
                       Text(
@@ -1241,25 +1225,22 @@ class _WeekRitualDialogState extends State<WeekRitualDialog> {
                 if (_missionCtrls[d]!.text.trim().isNotEmpty)
                   Text(
                     '${_kDays[d]}: ${_missionCtrls[d]!.text.trim()}',
-                    style: const TextStyle(
-                      color: KColors.textDim,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: KColors.textDim, fontSize: 12),
                   ),
               const SizedBox(height: 12),
               if (overDays.isNotEmpty)
                 Text(
                   'Overcommitted: ${overDays.join(', ')}. Something will give.',
-                  style: const TextStyle(color: KColors.red, fontSize: 12),
+                  style: TextStyle(color: KColors.red, fontSize: 12),
                 ),
               if (unallocated.isNotEmpty)
                 Text(
                   '${unallocated.length} ${unallocated.length == 1 ? 'rock has' : 'rocks have'} '
                   'no day. They stay on the list but the mornings won\'t pre-place them.',
-                  style: const TextStyle(color: KColors.amber, fontSize: 12),
+                  style: TextStyle(color: KColors.amber, fontSize: 12),
                 ),
               if (_rocks.isEmpty)
-                const Text(
+                Text(
                   'No rocks. Commit still records that the week was looked at.',
                   style: TextStyle(color: KColors.textMuted, fontSize: 12),
                 ),

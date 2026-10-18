@@ -30,10 +30,12 @@ class GovernanceView extends StatelessWidget {
           Row(
             children: [
               Flexible(
-                child: Text('Governance Cadences',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.headlineSmall),
+                child: Text(
+                  'Governance Cadences',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
               ),
               const Spacer(),
               ElevatedButton.icon(
@@ -53,9 +55,11 @@ class GovernanceView extends StatelessWidget {
                 }
                 final items = snap.data!;
                 if (items.isEmpty) {
-                  return const Center(
-                    child: Text('No governance cadences yet.',
-                        style: TextStyle(color: KColors.textDim)),
+                  return Center(
+                    child: Text(
+                      'No governance cadences yet.',
+                      style: TextStyle(color: KColors.textDim),
+                    ),
                   );
                 }
                 return ListView.separated(
@@ -68,44 +72,57 @@ class GovernanceView extends StatelessWidget {
                         padding: const EdgeInsets.all(14),
                         child: Row(
                           children: [
-                            const Icon(Icons.calendar_today,
-                                size: 18, color: KColors.amber),
+                            Icon(
+                              Icons.calendar_today,
+                              size: 18,
+                              color: KColors.amber,
+                            ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(g.meetingName,
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 14)),
+                                  Text(
+                                    g.meetingName,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                    ),
+                                  ),
                                   const SizedBox(height: 4),
                                   Row(
                                     children: [
                                       if (g.frequency != null)
                                         _InfoChip(
-                                            icon: Icons.repeat,
-                                            label: g.frequency!),
+                                          icon: Icons.repeat,
+                                          label: g.frequency!,
+                                        ),
                                       if (g.chair != null) ...[
                                         const SizedBox(width: 8),
                                         _InfoChip(
-                                            icon: Icons.person_outline,
-                                            label: 'Chair: ${g.chair}'),
+                                          icon: Icons.person_outline,
+                                          label: 'Chair: ${g.chair}',
+                                        ),
                                       ],
                                       if (g.myRole != null) ...[
                                         const SizedBox(width: 8),
                                         _InfoChip(
-                                            icon: Icons.badge_outlined,
-                                            label: 'My role: ${g.myRole}'),
+                                          icon: Icons.badge_outlined,
+                                          label: 'My role: ${g.myRole}',
+                                        ),
                                       ],
                                     ],
                                   ),
-                                  if (g.notes != null && g.notes!.isNotEmpty) ...[
+                                  if (g.notes != null &&
+                                      g.notes!.isNotEmpty) ...[
                                     const SizedBox(height: 4),
-                                    Text(g.notes!,
-                                        style: const TextStyle(
-                                            color: KColors.textDim,
-                                            fontSize: 12)),
+                                    Text(
+                                      g.notes!,
+                                      style: TextStyle(
+                                        color: KColors.textDim,
+                                        fontSize: 12,
+                                      ),
+                                    ),
                                   ],
                                 ],
                               ),
@@ -116,8 +133,11 @@ class GovernanceView extends StatelessWidget {
                                   _showForm(context, projectId, db, g),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.delete_outline,
-                                  size: 18, color: KColors.red),
+                              icon: Icon(
+                                Icons.delete_outline,
+                                size: 18,
+                                color: KColors.red,
+                              ),
                               onPressed: () =>
                                   db.programmeDao.deleteGovernance(g.id),
                             ),
@@ -135,12 +155,16 @@ class GovernanceView extends StatelessWidget {
     );
   }
 
-  void _showForm(BuildContext context, String projectId, AppDatabase db,
-      GovernanceCadence? cadence) {
+  void _showForm(
+    BuildContext context,
+    String projectId,
+    AppDatabase db,
+    GovernanceCadence? cadence,
+  ) {
     showDialog(
       context: context,
-      builder: (_) => _GovernanceFormDialog(
-          projectId: projectId, db: db, cadence: cadence),
+      builder: (_) =>
+          _GovernanceFormDialog(projectId: projectId, db: db, cadence: cadence),
     );
   }
 }
@@ -158,9 +182,7 @@ class _InfoChip extends StatelessWidget {
       children: [
         Icon(icon, size: 12, color: KColors.textDim),
         const SizedBox(width: 3),
-        Text(label,
-            style:
-                const TextStyle(color: KColors.textDim, fontSize: 12)),
+        Text(label, style: TextStyle(color: KColors.textDim, fontSize: 12)),
       ],
     );
   }
@@ -171,8 +193,11 @@ class _GovernanceFormDialog extends StatefulWidget {
   final AppDatabase db;
   final GovernanceCadence? cadence;
 
-  const _GovernanceFormDialog(
-      {required this.projectId, required this.db, this.cadence});
+  const _GovernanceFormDialog({
+    required this.projectId,
+    required this.db,
+    this.cadence,
+  });
 
   @override
   State<_GovernanceFormDialog> createState() => _GovernanceFormDialogState();
@@ -200,7 +225,9 @@ class _GovernanceFormDialogState extends State<_GovernanceFormDialog> {
   }
 
   Future<void> _loadPersons() async {
-    final list = await widget.db.peopleDao.getPersonsForProject(widget.projectId);
+    final list = await widget.db.peopleDao.getPersonsForProject(
+      widget.projectId,
+    );
     if (mounted) setState(() => _persons = list);
   }
 
@@ -224,13 +251,19 @@ class _GovernanceFormDialogState extends State<_GovernanceFormDialog> {
         projectId: Value(widget.projectId),
         meetingName: Value(_nameCtrl.text.trim()),
         frequency: Value(
-            _frequencyCtrl.text.trim().isEmpty ? null : _frequencyCtrl.text.trim()),
+          _frequencyCtrl.text.trim().isEmpty
+              ? null
+              : _frequencyCtrl.text.trim(),
+        ),
         chair: Value(
-            _chairCtrl.text.trim().isEmpty ? null : _chairCtrl.text.trim()),
+          _chairCtrl.text.trim().isEmpty ? null : _chairCtrl.text.trim(),
+        ),
         myRole: Value(
-            _roleCtrl.text.trim().isEmpty ? null : _roleCtrl.text.trim()),
+          _roleCtrl.text.trim().isEmpty ? null : _roleCtrl.text.trim(),
+        ),
         notes: Value(
-            _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim()),
+          _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
+        ),
         updatedAt: Value(DateTime.now()),
       ),
     );
@@ -260,7 +293,8 @@ class _GovernanceFormDialogState extends State<_GovernanceFormDialog> {
               TextFormField(
                 controller: _frequencyCtrl,
                 decoration: const InputDecoration(
-                    labelText: 'Frequency (e.g. Weekly, Fortnightly)'),
+                  labelText: 'Frequency (e.g. Weekly, Fortnightly)',
+                ),
               ),
               const SizedBox(height: 12),
               Row(

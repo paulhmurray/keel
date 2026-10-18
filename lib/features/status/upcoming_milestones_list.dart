@@ -22,10 +22,12 @@ class UpcomingMilestonesList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (milestones.isEmpty) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.symmetric(vertical: 8),
-        child: Text('No milestones in the next 3 months.',
-            style: TextStyle(color: KColors.textMuted, fontSize: 12)),
+        child: Text(
+          'No milestones in the next 3 months.',
+          style: TextStyle(color: KColors.textMuted, fontSize: 12),
+        ),
       );
     }
 
@@ -63,56 +65,59 @@ class _MilestoneRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final (icon, iconColor) = switch (activity.activityType) {
       'hard_deadline' => ('⚠', KColors.red),
-      'gate'          => ('◈', KColors.amber),
-      _               => ('◆', KColors.textDim),
+      'gate' => ('◈', KColors.amber),
+      _ => ('◆', KColors.textDim),
     };
     final isHard = activity.activityType == 'hard_deadline';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: isHard
-            ? const Color(0x08EF4444)
-            : KColors.surface,
+        color: isHard ? const Color(0x08EF4444) : KColors.surface,
         border: isLast
             ? null
             : Border(
                 bottom: BorderSide(
-                    color: KColors.border.withValues(alpha: 0.5))),
+                  color: KColors.border.withValues(alpha: 0.5),
+                ),
+              ),
         borderRadius: isLast
             ? const BorderRadius.vertical(bottom: Radius.circular(4))
             : null,
       ),
-      child: Row(children: [
-        SizedBox(
-          width: 24,
-          child: Text(icon,
-              style: TextStyle(color: iconColor, fontSize: 13)),
-        ),
-        Expanded(
-          child: Text(
-            activity.name,
-            style: TextStyle(
+      child: Row(
+        children: [
+          SizedBox(
+            width: 24,
+            child: Text(icon, style: TextStyle(color: iconColor, fontSize: 13)),
+          ),
+          Expanded(
+            child: Text(
+              activity.name,
+              style: TextStyle(
                 color: isHard ? KColors.red : KColors.text,
                 fontSize: 12,
-                fontWeight:
-                    isHard ? FontWeight.w600 : FontWeight.normal),
+                fontWeight: isHard ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
           ),
-        ),
-        SizedBox(
-          width: 72,
-          child: Text(monthLabel,
-              style: const TextStyle(
-                  color: KColors.textDim, fontSize: 11)),
-        ),
-        SizedBox(
-          width: 120,
-          child: Text(activity.owner ?? '—',
-              style: const TextStyle(
-                  color: KColors.textMuted, fontSize: 11),
-              overflow: TextOverflow.ellipsis),
-        ),
-      ]),
+          SizedBox(
+            width: 72,
+            child: Text(
+              monthLabel,
+              style: TextStyle(color: KColors.textDim, fontSize: 11),
+            ),
+          ),
+          SizedBox(
+            width: 120,
+            child: Text(
+              activity.owner ?? '—',
+              style: TextStyle(color: KColors.textMuted, fontSize: 11),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

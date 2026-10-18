@@ -27,9 +27,9 @@ class StatusCountsRow extends StatelessWidget {
           label: 'Overdue actions',
           countColor: overdueActions > 0 ? KColors.red : KColors.textMuted,
         ),
-        _CountTile(count: openActions,      label: 'Open actions'),
+        _CountTile(count: openActions, label: 'Open actions'),
         _CountTile(count: pendingDecisions, label: 'Pending decisions'),
-        _CountTile(count: openRisks,        label: 'Open risks'),
+        _CountTile(count: openRisks, label: 'Open risks'),
       ],
     );
   }
@@ -38,13 +38,15 @@ class StatusCountsRow extends StatelessWidget {
 class _CountTile extends StatelessWidget {
   final int count;
   final String label;
-  final Color countColor;
+  final Color? _countColor;
 
   const _CountTile({
     required this.count,
     required this.label,
-    this.countColor = KColors.amber,
-  });
+    Color? countColor,
+  }) : _countColor = countColor;
+
+  Color get countColor => _countColor ?? KColors.amber;
 
   @override
   Widget build(BuildContext context) {
@@ -59,17 +61,23 @@ class _CountTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('$count',
-              style: TextStyle(
-                  color: countColor,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700)),
+          Text(
+            '$count',
+            style: TextStyle(
+              color: countColor,
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           const SizedBox(height: 2),
-          Text(label,
-              style: const TextStyle(
-                  color: KColors.textMuted,
-                  fontSize: 10,
-                  letterSpacing: 0.1)),
+          Text(
+            label,
+            style: TextStyle(
+              color: KColors.textMuted,
+              fontSize: 10,
+              letterSpacing: 0.1,
+            ),
+          ),
         ],
       ),
     );

@@ -10,11 +10,7 @@ class CanvasListView extends StatelessWidget {
   final List<CanvasCard> cards;
   final void Function(CanvasCard) onTap;
 
-  const CanvasListView({
-    super.key,
-    required this.cards,
-    required this.onTap,
-  });
+  const CanvasListView({super.key, required this.cards, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -36,13 +32,9 @@ class CanvasListView extends StatelessWidget {
       children: [
         for (final band in bands)
           if ((byBand[band.$1] ?? const []).isNotEmpty)
-            _BandSection(
-              title: band.$2,
-              cards: byBand[band.$1]!,
-              onTap: onTap,
-            ),
+            _BandSection(title: band.$2, cards: byBand[band.$1]!, onTap: onTap),
         if (cards.isEmpty)
-          const Padding(
+          Padding(
             padding: EdgeInsets.all(32),
             child: Center(
               child: Text(
@@ -76,7 +68,7 @@ class _BandSection extends StatelessWidget {
           padding: const EdgeInsets.only(top: 8, bottom: 8),
           child: Text(
             '${title.toUpperCase()} · ${cards.length}',
-            style: const TextStyle(
+            style: TextStyle(
               color: KColors.amber,
               fontSize: 11,
               fontWeight: FontWeight.w700,
@@ -84,8 +76,7 @@ class _BandSection extends StatelessWidget {
             ),
           ),
         ),
-        for (final card in cards)
-          _Row(card: card, onTap: () => onTap(card)),
+        for (final card in cards) _Row(card: card, onTap: () => onTap(card)),
         const SizedBox(height: 16),
       ],
     );
@@ -104,10 +95,8 @@ class _Row extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-        decoration: const BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: KColors.border, width: 0.5),
-          ),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: KColors.border, width: 0.5)),
         ),
         child: Row(
           children: [
@@ -117,8 +106,7 @@ class _Row extends StatelessWidget {
                 child: Icon(
                   CanvasLinkBadge.iconForType(card.linkedItemType!),
                   size: 14,
-                  color: CanvasLinkBadge.colourForType(
-                      card.linkedItemType!),
+                  color: CanvasLinkBadge.colourForType(card.linkedItemType!),
                 ),
               ),
             Expanded(
@@ -127,7 +115,7 @@ class _Row extends StatelessWidget {
                 children: [
                   Text(
                     card.title.isEmpty ? '(untitled)' : card.title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: KColors.text,
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -140,7 +128,7 @@ class _Row extends StatelessWidget {
                         card.body!,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: KColors.textDim,
                           fontSize: 11.5,
                           height: 1.3,
@@ -151,10 +139,13 @@ class _Row extends StatelessWidget {
               ),
             ),
             if (card.promotedAt != null)
-              const Padding(
+              Padding(
                 padding: EdgeInsets.only(left: 8),
-                child: Icon(Icons.arrow_forward,
-                    size: 14, color: KColors.phosphor),
+                child: Icon(
+                  Icons.arrow_forward,
+                  size: 14,
+                  color: KColors.phosphor,
+                ),
               ),
           ],
         ),

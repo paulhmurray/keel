@@ -97,8 +97,7 @@ class _QuickCaptureOverlayState extends State<QuickCaptureOverlay> {
             ),
             child: Row(
               children: [
-                const Icon(Icons.bolt,
-                    size: 16, color: KColors.amber),
+                Icon(Icons.bolt, size: 16, color: KColors.amber),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Focus(
@@ -108,16 +107,13 @@ class _QuickCaptureOverlayState extends State<QuickCaptureOverlay> {
                       focusNode: _focusNode,
                       textInputAction: TextInputAction.send,
                       onSubmitted: (_) => _handleSubmit(),
-                      style: const TextStyle(
-                        color: KColors.text,
-                        fontSize: 13,
-                      ),
+                      style: TextStyle(color: KColors.text, fontSize: 13),
                       decoration: InputDecoration(
                         hintText: _captureCount == 0
                             ? 'Capture an idea — Enter to save, '
-                                'Esc to close'
+                                  'Esc to close'
                             : '+ $_captureCount captured · keep going',
-                        hintStyle: const TextStyle(
+                        hintStyle: TextStyle(
                           color: KColors.textMuted,
                           fontSize: 12,
                         ),
@@ -125,8 +121,7 @@ class _QuickCaptureOverlayState extends State<QuickCaptureOverlay> {
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
                         focusedBorder: InputBorder.none,
-                        contentPadding:
-                            const EdgeInsets.symmetric(vertical: 4),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 4),
                       ),
                     ),
                   ),
@@ -135,8 +130,7 @@ class _QuickCaptureOverlayState extends State<QuickCaptureOverlay> {
                 IconButton(
                   visualDensity: VisualDensity.compact,
                   onPressed: widget.onClose,
-                  icon: const Icon(Icons.close,
-                      size: 16, color: KColors.textDim),
+                  icon: Icon(Icons.close, size: 16, color: KColors.textDim),
                   tooltip: 'Close (Esc)',
                 ),
               ],

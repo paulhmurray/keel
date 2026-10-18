@@ -62,7 +62,12 @@ class _IssueFormDialogState extends State<IssueFormDialog> {
   final _priorities = ['low', 'medium', 'high', 'critical'];
   final _statuses = ['open', 'in progress', 'resolved', 'closed'];
   final _sources = [
-    'manual', 'inbox', 'document', 'observation', 'meeting', 'journal'
+    'manual',
+    'inbox',
+    'document',
+    'observation',
+    'meeting',
+    'journal',
   ];
 
   bool get _isEdit => widget.issue != null;
@@ -73,8 +78,7 @@ class _IssueFormDialogState extends State<IssueFormDialog> {
     final issue = widget.issue;
     _titleCtrl = TextEditingController(text: issue?.title ?? '');
     _descCtrl = TextEditingController(text: issue?.description ?? '');
-    _impactCtrl =
-        TextEditingController(text: issue?.impactStatement ?? '');
+    _impactCtrl = TextEditingController(text: issue?.impactStatement ?? '');
     _ownerCtrl = TextEditingController(text: issue?.owner ?? '');
     _resolutionCtrl = TextEditingController(text: issue?.resolution ?? '');
     _sourceNoteCtrl = TextEditingController(text: issue?.sourceNote ?? '');
@@ -88,7 +92,9 @@ class _IssueFormDialogState extends State<IssueFormDialog> {
   }
 
   Future<void> _loadPersons() async {
-    final list = await widget.db.peopleDao.getPersonsForProject(widget.projectId);
+    final list = await widget.db.peopleDao.getPersonsForProject(
+      widget.projectId,
+    );
     if (mounted) setState(() => _persons = list);
   }
 
@@ -104,11 +110,12 @@ class _IssueFormDialogState extends State<IssueFormDialog> {
   }
 
   String _nextRef(List<Issue> existing) {
-    final nums = existing
-        .where((i) => i.ref != null && i.ref!.startsWith('I'))
-        .map((i) => int.tryParse(i.ref!.substring(1)) ?? 0)
-        .toList()
-      ..sort();
+    final nums =
+        existing
+            .where((i) => i.ref != null && i.ref!.startsWith('I'))
+            .map((i) => int.tryParse(i.ref!.substring(1)) ?? 0)
+            .toList()
+          ..sort();
     return 'I${(nums.isEmpty ? 0 : nums.last) + 1}';
   }
 
@@ -116,7 +123,9 @@ class _IssueFormDialogState extends State<IssueFormDialog> {
     if (!_formKey.currentState!.validate()) return;
 
     final isNew = widget.issue == null;
-    final existing = await widget.db.raidDao.getIssuesForProject(widget.projectId);
+    final existing = await widget.db.raidDao.getIssuesForProject(
+      widget.projectId,
+    );
     final String ref = widget.issue?.ref ?? _nextRef(existing);
 
     final id = widget.issue?.id ?? const Uuid().v4();
@@ -126,28 +135,37 @@ class _IssueFormDialogState extends State<IssueFormDialog> {
         projectId: Value(widget.projectId),
         ref: Value(ref),
         title: Value(
-            _titleCtrl.text.trim().isEmpty ? null : _titleCtrl.text.trim()),
+          _titleCtrl.text.trim().isEmpty ? null : _titleCtrl.text.trim(),
+        ),
         description: Value(_descCtrl.text.trim()),
-        impactStatement: Value(_impactCtrl.text.trim().isEmpty
-            ? null
-            : _impactCtrl.text.trim()),
+        impactStatement: Value(
+          _impactCtrl.text.trim().isEmpty ? null : _impactCtrl.text.trim(),
+        ),
         escalationRequired: Value(_escalationRequired),
         owner: Value(
-            _ownerCtrl.text.trim().isEmpty ? null : _ownerCtrl.text.trim()),
+          _ownerCtrl.text.trim().isEmpty ? null : _ownerCtrl.text.trim(),
+        ),
         dueDate: Value(_dueDate),
         priority: Value(_priority),
         status: Value(_status),
-        closedAt: Value(nextClosedAt(
+        closedAt: Value(
+          nextClosedAt(
             kind: RaidKind.issue,
             newStatus: _status,
-            existing: widget.issue?.closedAt)),
-        resolution: Value(_resolutionCtrl.text.trim().isEmpty
-            ? null
-            : _resolutionCtrl.text.trim()),
+            existing: widget.issue?.closedAt,
+          ),
+        ),
+        resolution: Value(
+          _resolutionCtrl.text.trim().isEmpty
+              ? null
+              : _resolutionCtrl.text.trim(),
+        ),
         source: Value(_source),
-        sourceNote: Value(_sourceNoteCtrl.text.trim().isEmpty
-            ? null
-            : _sourceNoteCtrl.text.trim()),
+        sourceNote: Value(
+          _sourceNoteCtrl.text.trim().isEmpty
+              ? null
+              : _sourceNoteCtrl.text.trim(),
+        ),
         updatedAt: Value(DateTime.now()),
       ),
     );
@@ -172,8 +190,9 @@ class _IssueFormDialogState extends State<IssueFormDialog> {
   // ── AI assist ──────────────────────────────────────────────────────────────
 
   Future<RaidAssistPrompt> _prompt(IssueAssistField field) async {
-    final ctx =
-        await ContextBuilder(widget.db).buildSystemPrompt(widget.projectId);
+    final ctx = await ContextBuilder(
+      widget.db,
+    ).buildSystemPrompt(widget.projectId);
     return issueAssistPrompt(
       field: field,
       title: _titleCtrl.text,
@@ -189,29 +208,29 @@ class _IssueFormDialogState extends State<IssueFormDialog> {
   }
 
   Color get _accent => switch (_priority) {
-        'critical' => KColors.red,
-        'high' => KColors.amber,
-        _ => KColors.violet,
-      };
+    'critical' => KColors.red,
+    'high' => KColors.amber,
+    _ => KColors.violet,
+  };
 
-  Widget _escalationBanner() => const Padding(
-        padding: EdgeInsets.only(bottom: 14),
-        child: Row(
-          children: [
-            Icon(Icons.arrow_upward, size: 13, color: KColors.red),
-            SizedBox(width: 6),
-            Text(
-              'ESCALATION REQUIRED',
-              style: TextStyle(
-                color: KColors.red,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.08,
-              ),
-            ),
-          ],
+  Widget _escalationBanner() => Padding(
+    padding: EdgeInsets.only(bottom: 14),
+    child: Row(
+      children: [
+        Icon(Icons.arrow_upward, size: 13, color: KColors.red),
+        SizedBox(width: 6),
+        Text(
+          'ESCALATION REQUIRED',
+          style: TextStyle(
+            color: KColors.red,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.08,
+          ),
         ),
-      );
+      ],
+    ),
+  );
 
   // ── Read view ──────────────────────────────────────────────────────────────
 
@@ -221,11 +240,19 @@ class _IssueFormDialogState extends State<IssueFormDialog> {
     return DetailDialog(
       accent: _accent,
       title: [
-        if (i.ref != null) ...[DetailRefChip(i.ref!), const SizedBox(width: 10)],
+        if (i.ref != null) ...[
+          DetailRefChip(i.ref!),
+          const SizedBox(width: 10),
+        ],
         const Expanded(child: DetailTitle('Issue')),
-        Text(i.priority.toUpperCase(),
-            style: TextStyle(
-                color: _accent, fontSize: 11, fontWeight: FontWeight.w700)),
+        Text(
+          i.priority.toUpperCase(),
+          style: TextStyle(
+            color: _accent,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
       ],
       left: [
         if (hasTitle) DetailField('Title', i.title, large: true),
@@ -243,13 +270,19 @@ class _IssueFormDialogState extends State<IssueFormDialog> {
             if (i.owner != null && i.owner!.isNotEmpty)
               Expanded(child: DetailField('Owner', i.owner)),
             if (i.dueDate != null)
-              Expanded(child: DetailField('Due Date', du.formatDate(i.dueDate))),
+              Expanded(
+                child: DetailField('Due Date', du.formatDate(i.dueDate)),
+              ),
             if (isTerminalStatus(RaidKind.issue, i.status))
               Expanded(
-                  child: DetailField(
-                      'Closed on',
-                      du.formatDate(i.closedAt ??
-                          i.updatedAt.toIso8601String().substring(0, 10)))),
+                child: DetailField(
+                  'Closed on',
+                  du.formatDate(
+                    i.closedAt ??
+                        i.updatedAt.toIso8601String().substring(0, 10),
+                  ),
+                ),
+              ),
           ],
         ),
       ],
@@ -269,7 +302,9 @@ class _IssueFormDialogState extends State<IssueFormDialog> {
           itemText: i.title ?? i.description,
         ),
         DetailField(
-            'Last updated', du.formatDate(i.updatedAt.toIso8601String())),
+          'Last updated',
+          du.formatDate(i.updatedAt.toIso8601String()),
+        ),
         RaidLinksSection(
           db: widget.db,
           projectId: widget.projectId,
@@ -282,8 +317,10 @@ class _IssueFormDialogState extends State<IssueFormDialog> {
         const Spacer(),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Close',
-              style: TextStyle(color: KColors.textDim, fontSize: 12)),
+          child: Text(
+            'Close',
+            style: TextStyle(color: KColors.textDim, fontSize: 12),
+          ),
         ),
         const SizedBox(width: 8),
         ElevatedButton.icon(
@@ -325,7 +362,7 @@ class _IssueFormDialogState extends State<IssueFormDialog> {
         TextFormField(
           controller: _titleCtrl,
           autofocus: !isEdit,
-          style: const TextStyle(color: KColors.text, fontSize: 14),
+          style: TextStyle(color: KColors.text, fontSize: 14),
           decoration: const InputDecoration(
             labelText: 'Title',
             hintText: 'Short, scannable headline',
@@ -335,7 +372,8 @@ class _IssueFormDialogState extends State<IssueFormDialog> {
         AiAssistedLabel(
           label: 'Description',
           target: _descCtrl,
-          tooltip: 'Rewrite as what has happened, why, and what it is doing '
+          tooltip:
+              'Rewrite as what has happened, why, and what it is doing '
               'to the project now',
           buildPrompt: () => _prompt(IssueAssistField.description),
         ),
@@ -344,7 +382,7 @@ class _IssueFormDialogState extends State<IssueFormDialog> {
           controller: _descCtrl,
           minLines: 3,
           maxLines: 8,
-          style: const TextStyle(color: KColors.text, fontSize: 13),
+          style: TextStyle(color: KColors.text, fontSize: 13),
           decoration: InputDecoration(
             hintText: kRaidStatementPatterns[RaidKind.issue],
             alignLabelWithHint: true,
@@ -372,7 +410,7 @@ class _IssueFormDialogState extends State<IssueFormDialog> {
           controller: _impactCtrl,
           minLines: 2,
           maxLines: 6,
-          style: const TextStyle(color: KColors.text, fontSize: 13),
+          style: TextStyle(color: KColors.text, fontSize: 13),
           decoration: const InputDecoration(
             hintText: 'What happens to the project if this isn\'t resolved',
             isDense: true,
@@ -391,9 +429,9 @@ class _IssueFormDialogState extends State<IssueFormDialog> {
               ),
             ),
             const SizedBox(width: 8),
-            const Icon(Icons.arrow_upward, size: 13, color: KColors.red),
+            Icon(Icons.arrow_upward, size: 13, color: KColors.red),
             const SizedBox(width: 5),
-            const Expanded(
+            Expanded(
               child: Text(
                 'Escalation required — needs a decision or action '
                 'from above this project',
@@ -461,7 +499,7 @@ class _IssueFormDialogState extends State<IssueFormDialog> {
           controller: _resolutionCtrl,
           minLines: 3,
           maxLines: 8,
-          style: const TextStyle(color: KColors.text, fontSize: 13),
+          style: TextStyle(color: KColors.text, fontSize: 13),
           decoration: const InputDecoration(
             hintText: 'How this gets closed, and who needs to be involved',
             isDense: true,
@@ -510,20 +548,26 @@ class _IssueFormDialogState extends State<IssueFormDialog> {
         if (widget.startInViewMode)
           TextButton(
             onPressed: () => setState(() => _isViewing = true),
-            child: const Text('Cancel',
-                style: TextStyle(color: KColors.textDim, fontSize: 12)),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: KColors.textDim, fontSize: 12),
+            ),
           )
         else
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel',
-                style: TextStyle(color: KColors.textDim, fontSize: 12)),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: KColors.textDim, fontSize: 12),
+            ),
           ),
         const SizedBox(width: 8),
         ElevatedButton(
           onPressed: _save,
-          child: Text(isEdit ? 'Save' : 'Create',
-              style: const TextStyle(fontSize: 12)),
+          child: Text(
+            isEdit ? 'Save' : 'Create',
+            style: const TextStyle(fontSize: 12),
+          ),
         ),
       ],
     );

@@ -16,19 +16,19 @@ class JournalLinkRenderer extends StatefulWidget {
   final String text;
   final List<Person> persons;
   final List<GlossaryEntry> glossaryEntries;
-  final TextStyle baseStyle;
+  final TextStyle? _baseStyle;
 
   const JournalLinkRenderer({
     super.key,
     required this.text,
     this.persons = const [],
     this.glossaryEntries = const [],
-    this.baseStyle = const TextStyle(
-      color: KColors.text,
-      fontSize: 12,
-      height: 1.7,
-    ),
-  });
+    TextStyle? baseStyle,
+  }) : _baseStyle = baseStyle;
+
+  /// The caller's style, else the palette's body text.
+  TextStyle get baseStyle =>
+      _baseStyle ?? TextStyle(color: KColors.text, fontSize: 12, height: 1.7);
 
   @override
   State<JournalLinkRenderer> createState() => _JournalLinkRendererState();
@@ -47,15 +47,15 @@ class _Span {
   final GlossaryEntry? glossaryEntry;
 
   _Span.plain(this.text)
-      : kind = _SpanKind.plain,
-        person = null,
-        glossaryEntry = null;
+    : kind = _SpanKind.plain,
+      person = null,
+      glossaryEntry = null;
   _Span.person(this.text, this.person)
-      : kind = _SpanKind.person,
-        glossaryEntry = null;
+    : kind = _SpanKind.person,
+      glossaryEntry = null;
   _Span.glossary(this.text, this.glossaryEntry)
-      : kind = _SpanKind.glossary,
-        person = null;
+    : kind = _SpanKind.glossary,
+      person = null;
 }
 
 // ---------------------------------------------------------------------------
@@ -167,27 +167,31 @@ class _JournalLinkRendererState extends State<JournalLinkRenderer> {
           final p = span.person!;
           final r = TapGestureRecognizer()..onTap = () => _showPerson(p);
           _recognizers.add(r);
-          inlineSpans.add(TextSpan(
-            text: span.text,
-            style: widget.baseStyle.copyWith(
-              color: KColors.amber,
-              fontWeight: FontWeight.w600,
+          inlineSpans.add(
+            TextSpan(
+              text: span.text,
+              style: widget.baseStyle.copyWith(
+                color: KColors.amber,
+                fontWeight: FontWeight.w600,
+              ),
+              recognizer: r,
             ),
-            recognizer: r,
-          ));
+          );
 
         case _SpanKind.glossary:
           final e = span.glossaryEntry!;
           final r = TapGestureRecognizer()..onTap = () => _showGlossary(e);
           _recognizers.add(r);
-          inlineSpans.add(TextSpan(
-            text: span.text,
-            style: widget.baseStyle.copyWith(
-              color: KColors.phosphor,
-              fontWeight: FontWeight.w600,
+          inlineSpans.add(
+            TextSpan(
+              text: span.text,
+              style: widget.baseStyle.copyWith(
+                color: KColors.phosphor,
+                fontWeight: FontWeight.w600,
+              ),
+              recognizer: r,
             ),
-            recognizer: r,
-          ));
+          );
       }
     }
 
@@ -195,14 +199,14 @@ class _JournalLinkRendererState extends State<JournalLinkRenderer> {
   }
 
   void _showPerson(Person p) => showDialog(
-        context: context,
-        builder: (_) => _PersonPopup(person: p),
-      );
+    context: context,
+    builder: (_) => _PersonPopup(person: p),
+  );
 
   void _showGlossary(GlossaryEntry e) => showDialog(
-        context: context,
-        builder: (_) => _GlossaryPopup(entry: e),
-      );
+    context: context,
+    builder: (_) => _GlossaryPopup(entry: e),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -227,22 +231,32 @@ class _PersonPopup extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  _Avatar(name: person.name, color: KColors.amber,
-                      dimColor: KColors.amberDim),
+                  _Avatar(
+                    name: person.name,
+                    color: KColors.amber,
+                    dimColor: KColors.amberDim,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(person.name,
-                            style: const TextStyle(
-                                color: KColors.text,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600)),
+                        Text(
+                          person.name,
+                          style: TextStyle(
+                            color: KColors.text,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                         if (person.role != null && person.role!.isNotEmpty)
-                          Text(person.role!,
-                              style: const TextStyle(
-                                  color: KColors.textDim, fontSize: 12)),
+                          Text(
+                            person.role!,
+                            style: TextStyle(
+                              color: KColors.textDim,
+                              fontSize: 12,
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -251,7 +265,7 @@ class _PersonPopup extends StatelessWidget {
               ),
               if (_hasDetails) ...[
                 const SizedBox(height: 12),
-                const Divider(height: 1, color: KColors.border),
+                Divider(height: 1, color: KColors.border),
                 const SizedBox(height: 8),
               ],
               if (person.organisation?.isNotEmpty ?? false)
@@ -308,25 +322,32 @@ class _GlossaryPopup extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 entry.name,
-                style: const TextStyle(
-                    color: KColors.text,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: KColors.text,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               if (entry.acronym?.isNotEmpty ?? false)
-                Text(entry.acronym!,
-                    style: const TextStyle(
-                        color: KColors.phosphor,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500)),
+                Text(
+                  entry.acronym!,
+                  style: TextStyle(
+                    color: KColors.phosphor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               if (entry.description?.isNotEmpty ?? false) ...[
                 const SizedBox(height: 10),
-                const Divider(height: 1, color: KColors.border),
+                Divider(height: 1, color: KColors.border),
                 const SizedBox(height: 10),
                 Text(
                   entry.description!,
-                  style: const TextStyle(
-                      color: KColors.textDim, fontSize: 12, height: 1.6),
+                  style: TextStyle(
+                    color: KColors.textDim,
+                    fontSize: 12,
+                    height: 1.6,
+                  ),
                 ),
               ],
               if (isSystem) ...[
@@ -353,7 +374,11 @@ class _Avatar extends StatelessWidget {
   final String name;
   final Color color;
   final Color dimColor;
-  const _Avatar({required this.name, required this.color, required this.dimColor});
+  const _Avatar({
+    required this.name,
+    required this.color,
+    required this.dimColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -368,7 +393,10 @@ class _Avatar extends StatelessWidget {
         child: Text(
           name.isNotEmpty ? name[0].toUpperCase() : '?',
           style: TextStyle(
-              color: color, fontSize: 15, fontWeight: FontWeight.bold),
+            color: color,
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );
@@ -389,11 +417,12 @@ class _TypeBadge extends StatelessWidget {
       ),
       child: Text(
         isSystem ? 'SYSTEM' : 'TERM',
-        style: const TextStyle(
-            color: KColors.phosphor,
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.5),
+        style: TextStyle(
+          color: KColors.phosphor,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }
@@ -413,9 +442,10 @@ class _Row extends StatelessWidget {
           Icon(icon, size: 12, color: KColors.textMuted),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(text,
-                style:
-                    const TextStyle(color: KColors.textDim, fontSize: 12)),
+            child: Text(
+              text,
+              style: TextStyle(color: KColors.textDim, fontSize: 12),
+            ),
           ),
         ],
       ),
@@ -428,7 +458,7 @@ class _CloseButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return IconButton(
       onPressed: () => Navigator.of(context).pop(),
-      icon: const Icon(Icons.close, size: 16, color: KColors.textMuted),
+      icon: Icon(Icons.close, size: 16, color: KColors.textMuted),
       padding: EdgeInsets.zero,
       constraints: const BoxConstraints(),
       splashRadius: 14,

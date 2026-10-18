@@ -81,15 +81,16 @@ class _PersonDetailDialogState extends State<PersonDetailDialog> {
         includeClosed: result,
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Brief saved: $path')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Brief saved: $path')));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text('Export failed: $e'),
-            backgroundColor: KColors.red),
+          content: Text('Export failed: $e'),
+          backgroundColor: KColors.red,
+        ),
       );
     }
   }
@@ -120,8 +121,7 @@ class _PersonDetailDialogState extends State<PersonDetailDialog> {
                         if (workload == null)
                           const Padding(
                             padding: EdgeInsets.symmetric(vertical: 24),
-                            child: Center(
-                                child: CircularProgressIndicator()),
+                            child: Center(child: CircularProgressIndicator()),
                           )
                         else
                           _WorkloadPanel(
@@ -148,7 +148,7 @@ class _PersonDetailDialogState extends State<PersonDetailDialog> {
     final canExport = workload != null && !workload.isEmpty;
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: KColors.surface,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(12),
@@ -162,10 +162,11 @@ class _PersonDetailDialogState extends State<PersonDetailDialog> {
             radius: 28,
             child: Text(
               _initials(person.name),
-              style: const TextStyle(
-                  color: KColors.amber,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18),
+              style: TextStyle(
+                color: KColors.amber,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
             ),
           ),
           const SizedBox(width: 16),
@@ -173,24 +174,30 @@ class _PersonDetailDialogState extends State<PersonDetailDialog> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(person.name,
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(
+                  person.name,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 if ((person.role ?? '').isNotEmpty)
-                  Text(person.role!,
-                      style: const TextStyle(
-                          color: KColors.textDim, fontSize: 13)),
+                  Text(
+                    person.role!,
+                    style: TextStyle(color: KColors.textDim, fontSize: 13),
+                  ),
                 if ((person.organisation ?? '').isNotEmpty)
-                  Text(person.organisation!,
-                      style: const TextStyle(
-                          color: KColors.textDim, fontSize: 13)),
+                  Text(
+                    person.organisation!,
+                    style: TextStyle(color: KColors.textDim, fontSize: 13),
+                  ),
               ],
             ),
           ),
           Tooltip(
             message: canExport
                 ? 'Save a PDF of everything assigned to ${person.name}, '
-                    'ready to send them'
+                      'ready to send them'
                 : 'Nothing is assigned to ${person.name} yet',
             child: OutlinedButton.icon(
               onPressed: canExport ? () => _export(workload) : null,
@@ -209,7 +216,8 @@ class _PersonDetailDialogState extends State<PersonDetailDialog> {
   }
 
   List<Widget> _contactAndProfile() {
-    final hasContact = (person.email ?? '').isNotEmpty ||
+    final hasContact =
+        (person.email ?? '').isNotEmpty ||
         (person.phone ?? '').isNotEmpty ||
         (person.teamsHandle ?? '').isNotEmpty;
     return [
@@ -236,14 +244,19 @@ class _PersonDetailDialogState extends State<PersonDetailDialog> {
                 const _SectionHeader('Stakeholder Profile'),
                 const SizedBox(height: 8),
                 if (p.influence != null)
-                  _InfoRow(Icons.trending_up_outlined,
-                      'Influence: ${p.influence}'),
+                  _InfoRow(
+                    Icons.trending_up_outlined,
+                    'Influence: ${p.influence}',
+                  ),
                 if (p.stance != null)
-                  _InfoRow(Icons.sentiment_satisfied_outlined,
-                      'Stance: ${p.stance}'),
+                  _InfoRow(
+                    Icons.sentiment_satisfied_outlined,
+                    'Stance: ${p.stance}',
+                  ),
                 if ((p.engagementStrategy ?? '').isNotEmpty)
                   _LabelledText('Engagement strategy', p.engagementStrategy!),
-                if ((p.notes ?? '').isNotEmpty) _LabelledText('Notes', p.notes!),
+                if ((p.notes ?? '').isNotEmpty)
+                  _LabelledText('Notes', p.notes!),
                 const SizedBox(height: 16),
               ],
             );
@@ -266,7 +279,8 @@ class _PersonDetailDialogState extends State<PersonDetailDialog> {
                   const _InfoRow(Icons.person_pin_outlined, 'Direct report'),
                 if ((p.workingStyle ?? '').isNotEmpty)
                   _LabelledText('Working style', p.workingStyle!),
-                if ((p.notes ?? '').isNotEmpty) _LabelledText('Notes', p.notes!),
+                if ((p.notes ?? '').isNotEmpty)
+                  _LabelledText('Notes', p.notes!),
                 const SizedBox(height: 16),
               ],
             );
@@ -313,7 +327,9 @@ class _WorkloadPanel extends StatelessWidget {
                 borderRadius: BorderRadius.circular(4),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 6, vertical: 2),
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -325,9 +341,10 @@ class _WorkloadPanel extends StatelessWidget {
                         color: KColors.textDim,
                       ),
                       const SizedBox(width: 6),
-                      Text('Show completed ($closedTotal)',
-                          style: const TextStyle(
-                              color: KColors.textDim, fontSize: 11)),
+                      Text(
+                        'Show completed ($closedTotal)',
+                        style: TextStyle(color: KColors.textDim, fontSize: 11),
+                      ),
                     ],
                   ),
                 ),
@@ -343,8 +360,9 @@ class _WorkloadPanel extends StatelessWidget {
                   if (overdue > 0) '$overdue overdue',
                 ].join(' · '),
           style: TextStyle(
-              color: overdue > 0 ? KColors.red : KColors.textDim,
-              fontSize: 12),
+            color: overdue > 0 ? KColors.red : KColors.textDim,
+            fontSize: 12,
+          ),
         ),
         const SizedBox(height: 10),
         for (final kind in workload.populatedKinds)
@@ -377,7 +395,8 @@ class _WorkloadSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (buckets.activeCount == 0 && !(showClosed && buckets.closed.isNotEmpty)) {
+    if (buckets.activeCount == 0 &&
+        !(showClosed && buckets.closed.isNotEmpty)) {
       return const SizedBox.shrink();
     }
     return Padding(
@@ -391,52 +410,72 @@ class _WorkloadSection extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 kind.label.toUpperCase(),
-                style: const TextStyle(
-                    color: KColors.textDim,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.6),
+                style: TextStyle(
+                  color: KColors.textDim,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.6,
+                ),
               ),
               const SizedBox(width: 6),
-              Text('${buckets.activeCount}',
-                  style: const TextStyle(
-                      color: KColors.textMuted, fontSize: 11)),
+              Text(
+                '${buckets.activeCount}',
+                style: TextStyle(color: KColors.textMuted, fontSize: 11),
+              ),
               if (buckets.overdue.isNotEmpty) ...[
                 const SizedBox(width: 6),
-                Text('${buckets.overdue.length} overdue',
-                    style: const TextStyle(
-                        color: KColors.red,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600)),
+                Text(
+                  '${buckets.overdue.length} overdue',
+                  style: TextStyle(
+                    color: KColors.red,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ],
             ],
           ),
           const SizedBox(height: 4),
           for (final i in buckets.overdue)
-            _WorkloadRow(item: i, tone: _Tone.overdue, db: db, onChanged: onChanged),
+            _WorkloadRow(
+              item: i,
+              tone: _Tone.overdue,
+              db: db,
+              onChanged: onChanged,
+            ),
           for (final i in buckets.open)
-            _WorkloadRow(item: i, tone: _Tone.open, db: db, onChanged: onChanged),
+            _WorkloadRow(
+              item: i,
+              tone: _Tone.open,
+              db: db,
+              onChanged: onChanged,
+            ),
           if (showClosed)
             for (final i in buckets.closed)
-              _WorkloadRow(item: i, tone: _Tone.closed, db: db, onChanged: onChanged),
+              _WorkloadRow(
+                item: i,
+                tone: _Tone.closed,
+                db: db,
+                onChanged: onChanged,
+              ),
         ],
       ),
     );
   }
 
   static IconData _iconFor(WorkloadKind kind) => switch (kind) {
-        WorkloadKind.risk => Icons.warning_amber_outlined,
-        WorkloadKind.issue => Icons.error_outline,
-        WorkloadKind.assumption => Icons.help_outline,
-        WorkloadKind.dependency => Icons.link_outlined,
-        WorkloadKind.action => Icons.task_alt_outlined,
-        WorkloadKind.decision => Icons.gavel_outlined,
-        WorkloadKind.milestone => Icons.flag_outlined,
-        WorkloadKind.planActivity => Icons.view_timeline_outlined,
-        WorkloadKind.workstream => Icons.account_tree_outlined,
-        WorkloadKind.workstreamActivity => Icons.checklist_outlined,
-        WorkloadKind.contribution => Icons.group_work_outlined,
-      };
+    WorkloadKind.risk => Icons.warning_amber_outlined,
+    WorkloadKind.issue => Icons.error_outline,
+    WorkloadKind.assumption => Icons.help_outline,
+    WorkloadKind.dependency => Icons.link_outlined,
+    WorkloadKind.action => Icons.task_alt_outlined,
+    WorkloadKind.decision => Icons.gavel_outlined,
+    WorkloadKind.milestone => Icons.flag_outlined,
+    WorkloadKind.planActivity => Icons.view_timeline_outlined,
+    WorkloadKind.workstream => Icons.account_tree_outlined,
+    WorkloadKind.workstreamActivity => Icons.checklist_outlined,
+    WorkloadKind.contribution => Icons.group_work_outlined,
+  };
 }
 
 enum _Tone { overdue, open, closed }
@@ -479,13 +518,15 @@ class _WorkloadRow extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(top: 1),
             child: Icon(
-              closed ? Icons.check_circle_outline : Icons.radio_button_unchecked,
+              closed
+                  ? Icons.check_circle_outline
+                  : Icons.radio_button_unchecked,
               size: 15,
               color: closed
                   ? KColors.phosphor
                   : tone == _Tone.overdue
-                      ? KColors.red
-                      : KColors.textDim,
+                  ? KColors.red
+                  : KColors.textDim,
             ),
           ),
           const SizedBox(width: 8),
@@ -503,8 +544,7 @@ class _WorkloadRow extends StatelessWidget {
                 ),
                 Text(
                   meta.join(' · '),
-                  style: const TextStyle(
-                      color: KColors.textMuted, fontSize: 11),
+                  style: TextStyle(color: KColors.textMuted, fontSize: 11),
                 ),
                 if ((item.detail ?? '').isNotEmpty && !closed)
                   Padding(
@@ -513,8 +553,7 @@ class _WorkloadRow extends StatelessWidget {
                       item.detail!,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          color: KColors.textDim, fontSize: 12),
+                      style: TextStyle(color: KColors.textDim, fontSize: 12),
                     ),
                   ),
               ],
@@ -541,13 +580,15 @@ class _WorkloadRow extends StatelessWidget {
                 onPressed: () async {
                   final current = await db.actionsDao.getActionById(item.id);
                   if (current == null) return;
-                  await db.actionsDao.upsertAction(ProjectActionsCompanion(
-                    id: Value(current.id),
-                    projectId: Value(current.projectId),
-                    description: Value(current.description),
-                    status: const Value('closed'),
-                    updatedAt: Value(DateTime.now()),
-                  ));
+                  await db.actionsDao.upsertAction(
+                    ProjectActionsCompanion(
+                      id: Value(current.id),
+                      projectId: Value(current.projectId),
+                      description: Value(current.description),
+                      status: const Value('closed'),
+                      updatedAt: Value(DateTime.now()),
+                    ),
+                  );
                   onChanged();
                 },
               ),
@@ -583,8 +624,10 @@ class _ExportBriefDialogState extends State<_ExportBriefDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: KColors.surface,
-      title: Text('Export brief for ${widget.personName}',
-          style: const TextStyle(color: KColors.text, fontSize: 14)),
+      title: Text(
+        'Export brief for ${widget.personName}',
+        style: TextStyle(color: KColors.text, fontSize: 14),
+      ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -595,7 +638,7 @@ class _ExportBriefDialogState extends State<_ExportBriefDialog> {
             'one is, its status, due date and the current note. Stakeholder '
             'profile, engagement notes and journal entries are never '
             'included.',
-            style: const TextStyle(color: KColors.textDim, fontSize: 12),
+            style: TextStyle(color: KColors.textDim, fontSize: 12),
           ),
           const SizedBox(height: 12),
           CheckboxListTile(
@@ -642,7 +685,7 @@ class _SectionHeader extends StatelessWidget {
       children: [
         Text(
           text.toUpperCase(),
-          style: const TextStyle(
+          style: TextStyle(
             color: KColors.amber,
             fontSize: 11,
             fontWeight: FontWeight.bold,
@@ -650,7 +693,7 @@ class _SectionHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-        const Expanded(child: Divider(color: KColors.border)),
+        Expanded(child: Divider(color: KColors.border)),
       ],
     );
   }
@@ -688,8 +731,7 @@ class _LabelledText extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: const TextStyle(color: KColors.textDim, fontSize: 12)),
+          Text(label, style: TextStyle(color: KColors.textDim, fontSize: 12)),
           const SizedBox(height: 4),
           Text(text, style: const TextStyle(fontSize: 13)),
         ],

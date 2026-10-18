@@ -23,9 +23,11 @@ class CharterView extends StatelessWidget {
     final projectProvider = context.watch<ProjectProvider>();
     final projectId = projectProvider.currentProjectId;
     if (projectId == null) {
-      return const Center(
-        child: Text('Select a project to view its charter.',
-            style: TextStyle(color: KColors.textDim)),
+      return Center(
+        child: Text(
+          'Select a project to view its charter.',
+          style: TextStyle(color: KColors.textDim),
+        ),
       );
     }
     final db = context.read<AppDatabase>();
@@ -121,30 +123,36 @@ class _CharterBodyState extends State<_CharterBody> {
       ProjectChartersCompanion(
         id: Value(id),
         projectId: Value(widget.projectId),
-        vision: Value(_visionCtrl.text.trim().isEmpty
-            ? null
-            : _visionCtrl.text.trim()),
-        objectives: Value(_objectivesCtrl.text.trim().isEmpty
-            ? null
-            : _objectivesCtrl.text.trim()),
-        scopeIn: Value(_scopeInCtrl.text.trim().isEmpty
-            ? null
-            : _scopeInCtrl.text.trim()),
-        scopeOut: Value(_scopeOutCtrl.text.trim().isEmpty
-            ? null
-            : _scopeOutCtrl.text.trim()),
-        deliveryApproach: Value(_deliveryCtrl.text.trim().isEmpty
-            ? null
-            : _deliveryCtrl.text.trim()),
-        successCriteria: Value(_successCtrl.text.trim().isEmpty
-            ? null
-            : _successCtrl.text.trim()),
-        keyConstraints: Value(_constraintsCtrl.text.trim().isEmpty
-            ? null
-            : _constraintsCtrl.text.trim()),
-        assumptions: Value(_assumptionsCtrl.text.trim().isEmpty
-            ? null
-            : _assumptionsCtrl.text.trim()),
+        vision: Value(
+          _visionCtrl.text.trim().isEmpty ? null : _visionCtrl.text.trim(),
+        ),
+        objectives: Value(
+          _objectivesCtrl.text.trim().isEmpty
+              ? null
+              : _objectivesCtrl.text.trim(),
+        ),
+        scopeIn: Value(
+          _scopeInCtrl.text.trim().isEmpty ? null : _scopeInCtrl.text.trim(),
+        ),
+        scopeOut: Value(
+          _scopeOutCtrl.text.trim().isEmpty ? null : _scopeOutCtrl.text.trim(),
+        ),
+        deliveryApproach: Value(
+          _deliveryCtrl.text.trim().isEmpty ? null : _deliveryCtrl.text.trim(),
+        ),
+        successCriteria: Value(
+          _successCtrl.text.trim().isEmpty ? null : _successCtrl.text.trim(),
+        ),
+        keyConstraints: Value(
+          _constraintsCtrl.text.trim().isEmpty
+              ? null
+              : _constraintsCtrl.text.trim(),
+        ),
+        assumptions: Value(
+          _assumptionsCtrl.text.trim().isEmpty
+              ? null
+              : _assumptionsCtrl.text.trim(),
+        ),
         updatedAt: Value(DateTime.now()),
       ),
     );
@@ -154,14 +162,14 @@ class _CharterBodyState extends State<_CharterBody> {
     // payload so the programme-side card can label attribution
     // without a cross-machine join.
     if (mounted) {
-      final fresh =
-          await widget.db.projectCharterDao.getForProject(widget.projectId);
+      final fresh = await widget.db.projectCharterDao.getForProject(
+        widget.projectId,
+      );
       if (fresh != null && mounted) {
         // ignore: use_build_context_synchronously
-        await _cascadeFor(context).pushCharter(
-          fresh,
-          sourceProjectName: widget.projectName,
-        );
+        await _cascadeFor(
+          context,
+        ).pushCharter(fresh, sourceProjectName: widget.projectName);
       }
     }
 
@@ -182,16 +190,20 @@ class _CharterBodyState extends State<_CharterBody> {
   bool get _isProgramme => context.read<ProjectProvider>().isProgramme;
   String get entity => _isProgramme ? 'programme' : 'project';
 
-  Widget _ai(CharterField field, TextEditingController target, String tooltip) =>
-      AiAssistButton(
-        target: target,
-        tooltip: tooltip,
-        buildPrompt: () => _prompt(field),
-      );
+  Widget _ai(
+    CharterField field,
+    TextEditingController target,
+    String tooltip,
+  ) => AiAssistButton(
+    target: target,
+    tooltip: tooltip,
+    buildPrompt: () => _prompt(field),
+  );
 
   Future<RaidAssistPrompt> _prompt(CharterField field) async {
-    final ctx =
-        await ContextBuilder(widget.db).buildSystemPrompt(widget.projectId);
+    final ctx = await ContextBuilder(
+      widget.db,
+    ).buildSystemPrompt(widget.projectId);
     return charterAssistPrompt(
       field: field,
       isProgramme: _isProgramme,
@@ -216,65 +228,65 @@ class _CharterBodyState extends State<_CharterBody> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
-          Row(children: [
-            const Icon(Icons.article_outlined,
-                color: KColors.amber, size: 18),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('CHARTER · $projectName',
+          Row(
+            children: [
+              Icon(Icons.article_outlined, color: KColors.amber, size: 18),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'CHARTER · $projectName',
                       style: Theme.of(context).textTheme.headlineSmall,
-                      overflow: TextOverflow.ellipsis),
-                  const Text(
-                    'Foundational programme reference.',
-                    style: TextStyle(
-                        color: KColors.textMuted, fontSize: 11),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      'Foundational programme reference.',
+                      style: TextStyle(color: KColors.textMuted, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              if (_editing) ...[
+                ElevatedButton(onPressed: _save, child: const Text('Save')),
+                const SizedBox(width: 8),
+                TextButton(
+                  onPressed: _cancel,
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(color: KColors.textDim, fontSize: 12),
                   ),
-                ],
-              ),
-            ),
-            const Spacer(),
-            if (_editing) ...[
-              ElevatedButton(
-                onPressed: _save,
-                child: const Text('Save'),
-              ),
-              const SizedBox(width: 8),
-              TextButton(
-                onPressed: _cancel,
-                child: const Text('Cancel',
-                    style: TextStyle(
-                        color: KColors.textDim, fontSize: 12)),
-              ),
-            ] else ...[
-              ElevatedButton.icon(
-                onPressed: () => setState(() => _editing = true),
-                icon: const Icon(Icons.edit_outlined, size: 14),
-                label: const Text('Edit'),
-              ),
-              const SizedBox(width: 8),
-              ElevatedButton.icon(
-                onPressed: widget.charter == null
-                    ? null
-                    : () => showDialog<void>(
+                ),
+              ] else ...[
+                ElevatedButton.icon(
+                  onPressed: () => setState(() => _editing = true),
+                  icon: const Icon(Icons.edit_outlined, size: 14),
+                  label: const Text('Edit'),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  onPressed: widget.charter == null
+                      ? null
+                      : () => showDialog<void>(
                           context: context,
                           builder: (_) => CharterExportDialog(
                             projectName: projectName,
                             charter: widget.charter!,
                           ),
                         ),
-                icon: const Icon(Icons.download_outlined, size: 14),
-                label: const Text('Export'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: KColors.surface2,
-                  foregroundColor: KColors.text,
-                  side: const BorderSide(color: KColors.border2),
+                  icon: const Icon(Icons.download_outlined, size: 14),
+                  label: const Text('Export'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: KColors.surface2,
+                    foregroundColor: KColors.text,
+                    side: BorderSide(color: KColors.border2),
+                  ),
                 ),
-              ),
+              ],
             ],
-          ]),
+          ),
           const SizedBox(height: 28),
 
           if (_editing) ...[
@@ -282,70 +294,93 @@ class _CharterBodyState extends State<_CharterBody> {
               label: 'VISION',
               controller: _visionCtrl,
               hint: 'What does $entity success look like in one sentence?',
-              trailing: _ai(CharterField.vision, _visionCtrl,
-                  'Draft the vision from the charter and $entity context'),
+              trailing: _ai(
+                CharterField.vision,
+                _visionCtrl,
+                'Draft the vision from the charter and $entity context',
+              ),
             ),
             CharterEditSection(
               label: 'OBJECTIVES',
               controller: _objectivesCtrl,
               hint: 'Measurable outcomes the $entity must deliver.',
               minLines: 4,
-              trailing: _ai(CharterField.objectives, _objectivesCtrl,
-                  'Draft measurable objectives'),
+              trailing: _ai(
+                CharterField.objectives,
+                _objectivesCtrl,
+                'Draft measurable objectives',
+              ),
             ),
             CharterEditSection(
               label: 'SCOPE — IN SCOPE',
               controller: _scopeInCtrl,
               hint: 'What this $entity explicitly covers.',
               minLines: 4,
-              trailing: _ai(CharterField.scopeIn, _scopeInCtrl,
-                  'Draft what is in scope from the plan and context'),
+              trailing: _ai(
+                CharterField.scopeIn,
+                _scopeInCtrl,
+                'Draft what is in scope from the plan and context',
+              ),
             ),
             CharterEditSection(
               label: 'SCOPE — OUT OF SCOPE',
               controller: _scopeOutCtrl,
               hint: 'What this $entity explicitly does not cover.',
               minLines: 3,
-              trailing: _ai(CharterField.scopeOut, _scopeOutCtrl,
-                  'Draft what stakeholders might assume is in, but is not'),
+              trailing: _ai(
+                CharterField.scopeOut,
+                _scopeOutCtrl,
+                'Draft what stakeholders might assume is in, but is not',
+              ),
             ),
             CharterEditSection(
               label: 'DELIVERY APPROACH',
               controller: _deliveryCtrl,
-              hint: 'How the $entity will be delivered (methodology, phases, team structure).',
+              hint:
+                  'How the $entity will be delivered (methodology, phases, team structure).',
               minLines: 4,
-              trailing: _ai(CharterField.deliveryApproach, _deliveryCtrl,
-                  'Draft the delivery approach from the plan, people and governance'),
+              trailing: _ai(
+                CharterField.deliveryApproach,
+                _deliveryCtrl,
+                'Draft the delivery approach from the plan, people and governance',
+              ),
             ),
             CharterEditSection(
               label: 'SUCCESS CRITERIA',
               controller: _successCtrl,
               hint: 'How will we know we\'ve succeeded?',
               minLines: 3,
-              trailing: _ai(CharterField.successCriteria, _successCtrl,
-                  'Draft observable success criteria'),
+              trailing: _ai(
+                CharterField.successCriteria,
+                _successCtrl,
+                'Draft observable success criteria',
+              ),
             ),
             CharterEditSection(
               label: 'KEY CONSTRAINTS',
               controller: _constraintsCtrl,
-              hint: 'Fixed boundaries (budget, time, regulatory, dependencies).',
+              hint:
+                  'Fixed boundaries (budget, time, regulatory, dependencies).',
               minLines: 3,
-              trailing: _ai(CharterField.keyConstraints, _constraintsCtrl,
-                  'Draft the constraints from the deadline, budget and dependencies'),
+              trailing: _ai(
+                CharterField.keyConstraints,
+                _constraintsCtrl,
+                'Draft the constraints from the deadline, budget and dependencies',
+              ),
             ),
             CharterEditSection(
               label: 'ASSUMPTIONS',
               controller: _assumptionsCtrl,
               hint: 'What we are assuming to be true for planning purposes.',
               minLines: 3,
-              trailing: _ai(CharterField.assumptions, _assumptionsCtrl,
-                  'Draft assumptions in the "we are assuming … because … if false …" shape'),
+              trailing: _ai(
+                CharterField.assumptions,
+                _assumptionsCtrl,
+                'Draft assumptions in the "we are assuming … because … if false …" shape',
+              ),
             ),
           ] else ...[
-            CharterSection(
-              label: 'VISION',
-              value: widget.charter?.vision,
-            ),
+            CharterSection(label: 'VISION', value: widget.charter?.vision),
             CharterSection(
               label: 'OBJECTIVES',
               value: widget.charter?.objectives,
@@ -397,16 +432,12 @@ class _LinkedProjectCharters extends StatelessWidget {
   final String programmeId;
   final AppDatabase db;
 
-  const _LinkedProjectCharters({
-    required this.programmeId,
-    required this.db,
-  });
+  const _LinkedProjectCharters({required this.programmeId, required this.db});
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<ProjectCharter>>(
-      stream:
-          db.projectCharterDao.watchCascadedForProgramme(programmeId),
+      stream: db.projectCharterDao.watchCascadedForProgramme(programmeId),
       builder: (context, snap) {
         final charters = snap.data ?? const <ProjectCharter>[];
         if (charters.isEmpty) {
@@ -417,15 +448,18 @@ class _LinkedProjectCharters extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.account_tree_outlined,
-                    color: KColors.amber, size: 16),
+                Icon(
+                  Icons.account_tree_outlined,
+                  color: KColors.amber,
+                  size: 16,
+                ),
                 const SizedBox(width: 8),
                 Flexible(
                   child: Text(
                     'LINKED PROJECT CHARTERS · ${charters.length}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: KColors.amber,
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
@@ -436,11 +470,10 @@ class _LinkedProjectCharters extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               'Read-only summaries cascaded from each linked project. '
               'Edits happen on the source PM\'s machine.',
-              style:
-                  TextStyle(color: KColors.textMuted, fontSize: 11),
+              style: TextStyle(color: KColors.textMuted, fontSize: 11),
             ),
             const SizedBox(height: 12),
             for (final c in charters)
@@ -465,14 +498,13 @@ class _LinkedCharterCard extends StatelessWidget {
     return Card(
       child: ExpansionTile(
         leading: Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
           decoration: BoxDecoration(
             color: KColors.surface2,
             border: Border.all(color: KColors.border2, width: 0.5),
             borderRadius: BorderRadius.circular(2),
           ),
-          child: const Text(
+          child: Text(
             'PROJ',
             style: TextStyle(
               color: KColors.textMuted,
@@ -482,9 +514,10 @@ class _LinkedCharterCard extends StatelessWidget {
             ),
           ),
         ),
-        title: Text(name,
-            style: const TextStyle(
-                fontSize: 14, fontWeight: FontWeight.w600)),
+        title: Text(
+          name,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        ),
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -495,29 +528,36 @@ class _LinkedCharterCard extends StatelessWidget {
                   CharterSection(label: 'VISION', value: charter.vision),
                 if (charter.objectives != null)
                   CharterSection(
-                      label: 'OBJECTIVES', value: charter.objectives),
+                    label: 'OBJECTIVES',
+                    value: charter.objectives,
+                  ),
                 if (charter.scopeIn != null)
-                  CharterSection(
-                      label: 'IN SCOPE', value: charter.scopeIn),
+                  CharterSection(label: 'IN SCOPE', value: charter.scopeIn),
                 if (charter.scopeOut != null)
                   CharterSection(
-                      label: 'OUT OF SCOPE', value: charter.scopeOut),
+                    label: 'OUT OF SCOPE',
+                    value: charter.scopeOut,
+                  ),
                 if (charter.deliveryApproach != null)
                   CharterSection(
-                      label: 'DELIVERY APPROACH',
-                      value: charter.deliveryApproach),
+                    label: 'DELIVERY APPROACH',
+                    value: charter.deliveryApproach,
+                  ),
                 if (charter.successCriteria != null)
                   CharterSection(
-                      label: 'SUCCESS CRITERIA',
-                      value: charter.successCriteria),
+                    label: 'SUCCESS CRITERIA',
+                    value: charter.successCriteria,
+                  ),
                 if (charter.keyConstraints != null)
                   CharterSection(
-                      label: 'KEY CONSTRAINTS',
-                      value: charter.keyConstraints),
+                    label: 'KEY CONSTRAINTS',
+                    value: charter.keyConstraints,
+                  ),
                 if (charter.assumptions != null)
                   CharterSection(
-                      label: 'ASSUMPTIONS',
-                      value: charter.assumptions),
+                    label: 'ASSUMPTIONS',
+                    value: charter.assumptions,
+                  ),
               ],
             ),
           ),

@@ -45,12 +45,12 @@ class _AiAssistButtonState extends State<AiAssistButton> {
         systemPrompt: prompt.system,
         userMessage: prompt.user,
         maxTokens: 600,
-      ))
-          .trim();
+      )).trim();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-            SnackBar(content: Text('AI draft failed: $e')));
+        ScaffoldMessenger.maybeOf(
+          context,
+        )?.showSnackBar(SnackBar(content: Text('AI draft failed: $e')));
         setState(() => _busy = false);
       }
       return;
@@ -99,18 +99,21 @@ class _AiAssistButtonState extends State<AiAssistButton> {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (_busy)
-                const SizedBox(
-                    width: 11,
-                    height: 11,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 1.5, color: KColors.phosphor))
+                SizedBox(
+                  width: 11,
+                  height: 11,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 1.5,
+                    color: KColors.phosphor,
+                  ),
+                )
               else
-                const Icon(Icons.auto_awesome,
-                    size: 12, color: KColors.phosphor),
+                Icon(Icons.auto_awesome, size: 12, color: KColors.phosphor),
               const SizedBox(width: 4),
-              Text(_busy ? 'Drafting…' : 'AI draft',
-                  style: const TextStyle(
-                      color: KColors.phosphor, fontSize: 10)),
+              Text(
+                _busy ? 'Drafting…' : 'AI draft',
+                style: TextStyle(color: KColors.phosphor, fontSize: 10),
+              ),
             ],
           ),
         ),
@@ -138,18 +141,26 @@ class AiAssistedLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(children: [
-      Expanded(
-        child: Text(label.toUpperCase(),
-            style: const TextStyle(
-                color: KColors.textDim,
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.2)),
-      ),
-      AiAssistButton(
-          target: target, buildPrompt: buildPrompt, tooltip: tooltip),
-    ]);
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            label.toUpperCase(),
+            style: TextStyle(
+              color: KColors.textDim,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ),
+        AiAssistButton(
+          target: target,
+          buildPrompt: buildPrompt,
+          tooltip: tooltip,
+        ),
+      ],
+    );
   }
 }
 
@@ -171,8 +182,9 @@ class _AiReviewDialog extends StatefulWidget {
 }
 
 class _AiReviewDialogState extends State<_AiReviewDialog> {
-  late final TextEditingController _ctrl =
-      TextEditingController(text: widget.draft);
+  late final TextEditingController _ctrl = TextEditingController(
+    text: widget.draft,
+  );
 
   @override
   void dispose() {
@@ -184,18 +196,20 @@ class _AiReviewDialogState extends State<_AiReviewDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: KColors.surface,
-      title: const Row(children: [
-        Icon(Icons.auto_awesome, size: 14, color: KColors.phosphor),
-        SizedBox(width: 8),
-        Text('AI draft', style: TextStyle(color: KColors.text, fontSize: 15)),
-      ]),
+      title: Row(
+        children: [
+          Icon(Icons.auto_awesome, size: 14, color: KColors.phosphor),
+          SizedBox(width: 8),
+          Text('AI draft', style: TextStyle(color: KColors.text, fontSize: 15)),
+        ],
+      ),
       content: SizedBox(
         width: 560,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Edit before using it. Nothing is saved until you save the '
               'item.',
               style: TextStyle(color: KColors.textMuted, fontSize: 11),
@@ -205,8 +219,7 @@ class _AiReviewDialogState extends State<_AiReviewDialog> {
               controller: _ctrl,
               minLines: 5,
               maxLines: 14,
-              style: const TextStyle(
-                  color: KColors.text, fontSize: 12, height: 1.5),
+              style: TextStyle(color: KColors.text, fontSize: 12, height: 1.5),
               decoration: const InputDecoration(isDense: true),
             ),
           ],
@@ -214,22 +227,29 @@ class _AiReviewDialogState extends State<_AiReviewDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(context)
-              .pop(const _ReviewChoice(_ReviewAction.discard, '')),
-          child: const Text('Discard',
-              style: TextStyle(color: KColors.textDim, fontSize: 12)),
+          onPressed: () => Navigator.of(
+            context,
+          ).pop(const _ReviewChoice(_ReviewAction.discard, '')),
+          child: Text(
+            'Discard',
+            style: TextStyle(color: KColors.textDim, fontSize: 12),
+          ),
         ),
         if (widget.hasExisting)
           TextButton(
-            onPressed: () => Navigator.of(context)
-                .pop(_ReviewChoice(_ReviewAction.append, _ctrl.text.trim())),
+            onPressed: () => Navigator.of(
+              context,
+            ).pop(_ReviewChoice(_ReviewAction.append, _ctrl.text.trim())),
             child: const Text('Append', style: TextStyle(fontSize: 12)),
           ),
         ElevatedButton(
-          onPressed: () => Navigator.of(context)
-              .pop(_ReviewChoice(_ReviewAction.replace, _ctrl.text.trim())),
-          child: Text(widget.hasExisting ? 'Replace' : 'Use draft',
-              style: const TextStyle(fontSize: 12)),
+          onPressed: () => Navigator.of(
+            context,
+          ).pop(_ReviewChoice(_ReviewAction.replace, _ctrl.text.trim())),
+          child: Text(
+            widget.hasExisting ? 'Replace' : 'Use draft',
+            style: const TextStyle(fontSize: 12),
+          ),
         ),
       ],
     );

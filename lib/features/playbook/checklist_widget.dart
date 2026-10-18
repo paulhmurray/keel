@@ -38,16 +38,16 @@ class _ChecklistWidgetState extends State<ChecklistWidget> {
     if (json == null || json.isEmpty) return [];
     try {
       final raw = jsonDecode(json) as List<dynamic>;
-      return raw
-          .map((e) => Map<String, dynamic>.from(e as Map))
-          .toList();
+      return raw.map((e) => Map<String, dynamic>.from(e as Map)).toList();
     } catch (_) {
       return [];
     }
   }
 
   void _toggle(int index) {
-    setState(() => _items[index]['checked'] = !(_items[index]['checked'] as bool));
+    setState(
+      () => _items[index]['checked'] = !(_items[index]['checked'] as bool),
+    );
     widget.onChanged(jsonEncode(_items));
   }
 
@@ -75,11 +75,11 @@ class _ChecklistWidgetState extends State<ChecklistWidget> {
       children: [
         Row(
           children: [
-            const Icon(Icons.checklist_outlined, size: 12, color: KColors.textDim),
+            Icon(Icons.checklist_outlined, size: 12, color: KColors.textDim),
             const SizedBox(width: 5),
             Text(
               'CHECKLIST · $_checkedCount/${_items.length}',
-              style: const TextStyle(
+              style: TextStyle(
                 color: KColors.textDim,
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
@@ -110,31 +110,34 @@ class _ChecklistWidgetState extends State<ChecklistWidget> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: TextField(
-                    controller: TextEditingController(
-                        text: item['label'] as String? ?? '')
-                      ..selection = TextSelection.collapsed(
-                          offset:
-                              (item['label'] as String? ?? '').length),
+                    controller:
+                        TextEditingController(
+                            text: item['label'] as String? ?? '',
+                          )
+                          ..selection = TextSelection.collapsed(
+                            offset: (item['label'] as String? ?? '').length,
+                          ),
                     style: TextStyle(
                       color: checked ? KColors.textMuted : KColors.text,
                       fontSize: 12,
-                      decoration:
-                          checked ? TextDecoration.lineThrough : null,
+                      decoration: checked ? TextDecoration.lineThrough : null,
                     ),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: InputBorder.none,
                       isDense: true,
                       contentPadding: EdgeInsets.zero,
                       hintText: 'Checklist item…',
-                      hintStyle:
-                          TextStyle(color: KColors.textMuted, fontSize: 12),
+                      hintStyle: TextStyle(
+                        color: KColors.textMuted,
+                        fontSize: 12,
+                      ),
                     ),
                     onChanged: (v) => _updateLabel(i, v),
                   ),
                 ),
                 GestureDetector(
                   onTap: () => _removeItem(i),
-                  child: const Icon(Icons.close, size: 12, color: KColors.textMuted),
+                  child: Icon(Icons.close, size: 12, color: KColors.textMuted),
                 ),
               ],
             ),
@@ -142,8 +145,8 @@ class _ChecklistWidgetState extends State<ChecklistWidget> {
         }),
         TextButton.icon(
           onPressed: _addItem,
-          icon: const Icon(Icons.add, size: 12, color: KColors.textDim),
-          label: const Text(
+          icon: Icon(Icons.add, size: 12, color: KColors.textDim),
+          label: Text(
             'Add item',
             style: TextStyle(color: KColors.textDim, fontSize: 11),
           ),

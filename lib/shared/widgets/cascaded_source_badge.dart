@@ -23,18 +23,20 @@ class CascadedSourceBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final resolved = (sourceProjectName != null &&
-            sourceProjectName!.trim().isNotEmpty)
+    final resolved =
+        (sourceProjectName != null && sourceProjectName!.trim().isNotEmpty)
         ? sourceProjectName
         : (sourceProjectId == null
-            ? null
-            : context
-                .watch<ProjectProvider>()
-                .projects
-                .cast<Project?>()
-                .firstWhere((p) => p?.id == sourceProjectId,
-                    orElse: () => null)
-                ?.name);
+              ? null
+              : context
+                    .watch<ProjectProvider>()
+                    .projects
+                    .cast<Project?>()
+                    .firstWhere(
+                      (p) => p?.id == sourceProjectId,
+                      orElse: () => null,
+                    )
+                    ?.name);
     final label = resolved == null ? 'PROJ' : 'PROJ · $resolved';
     return Tooltip(
       message: resolved == null
@@ -52,7 +54,7 @@ class CascadedSourceBadge extends StatelessWidget {
           label,
           overflow: TextOverflow.ellipsis,
           maxLines: 1,
-          style: const TextStyle(
+          style: TextStyle(
             color: KColors.textMuted,
             fontSize: 9,
             fontWeight: FontWeight.w700,

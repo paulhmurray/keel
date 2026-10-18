@@ -28,8 +28,7 @@ class _VelocityData {
     this.depsConfirmedThisWeek = 0,
   });
 
-  static Future<_VelocityData> load(
-      AppDatabase db, String projectId) async {
+  static Future<_VelocityData> load(AppDatabase db, String projectId) async {
     final cutoff = DateTime.now().subtract(const Duration(days: 7));
 
     final actions = await db.actionsDao.getActionsForProject(projectId);
@@ -37,36 +36,37 @@ class _VelocityData {
         .where((a) => a.createdAt.isAfter(cutoff))
         .length;
     final actionsClosedThisWeek = actions
-        .where((a) =>
-            a.status == 'closed' && a.updatedAt.isAfter(cutoff))
+        .where((a) => a.status == 'closed' && a.updatedAt.isAfter(cutoff))
         .length;
 
-    final decisions =
-        await db.decisionsDao.getDecisionsForProject(projectId);
+    final decisions = await db.decisionsDao.getDecisionsForProject(projectId);
     final decisionsMadeThisWeek = decisions
-        .where((d) =>
-            d.status != 'pending' && d.updatedAt.isAfter(cutoff))
+        .where((d) => d.status != 'pending' && d.updatedAt.isAfter(cutoff))
         .length;
-    final decisionsPending =
-        decisions.where((d) => d.status == 'pending').length;
+    final decisionsPending = decisions
+        .where((d) => d.status == 'pending')
+        .length;
 
     final risks = await db.raidDao.getRisksForProject(projectId);
-    final risksNewThisWeek =
-        risks.where((r) => r.createdAt.isAfter(cutoff)).length;
+    final risksNewThisWeek = risks
+        .where((r) => r.createdAt.isAfter(cutoff))
+        .length;
     final risksResolvedThisWeek = risks
-        .where((r) =>
-            (r.status == 'closed' || r.status == 'accepted') &&
-            r.updatedAt.isAfter(cutoff))
+        .where(
+          (r) =>
+              (r.status == 'closed' || r.status == 'accepted') &&
+              r.updatedAt.isAfter(cutoff),
+        )
         .length;
 
-    final deps =
-        await db.raidDao.getDependenciesForProject(projectId);
-    final depsAtRisk =
-        deps.where((d) => d.status == 'blocked').length;
+    final deps = await db.raidDao.getDependenciesForProject(projectId);
+    final depsAtRisk = deps.where((d) => d.status == 'blocked').length;
     final depsConfirmedThisWeek = deps
-        .where((d) =>
-            (d.status == 'resolved' || d.status == 'closed') &&
-            d.updatedAt.isAfter(cutoff))
+        .where(
+          (d) =>
+              (d.status == 'resolved' || d.status == 'closed') &&
+              d.updatedAt.isAfter(cutoff),
+        )
         .length;
 
     return _VelocityData(
@@ -135,10 +135,12 @@ class _VelocityRowState extends State<VelocityRow> {
       return const SizedBox(
         height: 96,
         child: Center(
-            child: SizedBox(
-                width: 14,
-                height: 14,
-                child: CircularProgressIndicator(strokeWidth: 1.5))),
+          child: SizedBox(
+            width: 14,
+            height: 14,
+            child: CircularProgressIndicator(strokeWidth: 1.5),
+          ),
+        ),
       );
     }
 
@@ -330,7 +332,7 @@ class _VelocityCard extends StatelessWidget {
           children: [
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.15,
@@ -342,25 +344,24 @@ class _VelocityCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(row.label,
-                      style: const TextStyle(
-                          fontSize: 12, color: KColors.textDim)),
+                  Text(
+                    row.label,
+                    style: TextStyle(fontSize: 12, color: KColors.textDim),
+                  ),
                   Text(
                     '${row.value}',
-                    style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: KColors.text),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: KColors.text,
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 4),
             ],
             const SizedBox(height: 4),
-            Text(
-              netText,
-              style: TextStyle(fontSize: 11, color: netColor),
-            ),
+            Text(netText, style: TextStyle(fontSize: 11, color: netColor)),
           ],
         ),
       ),

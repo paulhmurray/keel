@@ -25,8 +25,7 @@ class OverviewNarrativePanel extends StatefulWidget {
   });
 
   @override
-  State<OverviewNarrativePanel> createState() =>
-      _OverviewNarrativePanelState();
+  State<OverviewNarrativePanel> createState() => _OverviewNarrativePanelState();
 }
 
 class _OverviewNarrativePanelState extends State<OverviewNarrativePanel> {
@@ -59,10 +58,9 @@ class _OverviewNarrativePanelState extends State<OverviewNarrativePanel> {
       widget.overviewState?.narrativeManualOverride ??
       widget.overviewState?.cachedNarrative;
 
-  String? get _generatedAt =>
-      widget.overviewState?.narrativeGeneratedAt != null
-          ? _formatAgo(widget.overviewState!.narrativeGeneratedAt!)
-          : null;
+  String? get _generatedAt => widget.overviewState?.narrativeGeneratedAt != null
+      ? _formatAgo(widget.overviewState!.narrativeGeneratedAt!)
+      : null;
 
   String _formatAgo(DateTime dt) {
     final diff = DateTime.now().difference(dt);
@@ -82,10 +80,10 @@ class _OverviewNarrativePanelState extends State<OverviewNarrativePanel> {
       _error = null;
     });
     try {
-      final ctx = await ProgrammeContextService(widget.db)
-          .getContext(widget.projectId);
-      final prompt =
-          ProgrammeContextService(widget.db).toPromptString(ctx);
+      final ctx = await ProgrammeContextService(
+        widget.db,
+      ).getContext(widget.projectId);
+      final prompt = ProgrammeContextService(widget.db).toPromptString(ctx);
 
       final client = LLMClientFactory.fromSettings(settings.settings);
       final entity = ctx.isProgramme ? 'programme' : 'project';
@@ -121,11 +119,13 @@ class _OverviewNarrativePanelState extends State<OverviewNarrativePanel> {
       ProgrammeOverviewStatesCompanion(
         id: Value(id),
         projectId: Value(widget.projectId),
-        narrativeManualOverride:
-            isGenerated ? const Value(null) : Value(narrative),
+        narrativeManualOverride: isGenerated
+            ? const Value(null)
+            : Value(narrative),
         cachedNarrative: isGenerated ? Value(narrative) : Value(null),
-        narrativeGeneratedAt:
-            isGenerated ? Value(DateTime.now()) : const Value(null),
+        narrativeGeneratedAt: isGenerated
+            ? Value(DateTime.now())
+            : const Value(null),
         updatedAt: Value(DateTime.now()),
       ),
     );
@@ -162,7 +162,7 @@ class _OverviewNarrativePanelState extends State<OverviewNarrativePanel> {
         children: [
           Row(
             children: [
-              const Text(
+              Text(
                 'CURRENT NARRATIVE',
                 style: TextStyle(
                   fontSize: 10,
@@ -175,8 +175,7 @@ class _OverviewNarrativePanelState extends State<OverviewNarrativePanel> {
               if (_generatedAt != null)
                 Text(
                   'Last updated: $_generatedAt',
-                  style: const TextStyle(
-                      fontSize: 10, color: KColors.textMuted),
+                  style: TextStyle(fontSize: 10, color: KColors.textMuted),
                 ),
             ],
           ),
@@ -187,7 +186,7 @@ class _OverviewNarrativePanelState extends State<OverviewNarrativePanel> {
               padding: const EdgeInsets.only(bottom: 8),
               child: Text(
                 _error!,
-                style: const TextStyle(fontSize: 12, color: KColors.red),
+                style: TextStyle(fontSize: 12, color: KColors.red),
               ),
             ),
 
@@ -200,20 +199,12 @@ class _OverviewNarrativePanelState extends State<OverviewNarrativePanel> {
                 hintText: 'Write or paste your narrative…',
                 isDense: true,
               ),
-              style: const TextStyle(
-                fontSize: 13,
-                height: 1.6,
-                color: KColors.text,
-              ),
+              style: TextStyle(fontSize: 13, height: 1.6, color: KColors.text),
             )
           else if (hasNarrative)
             Text(
               narrative,
-              style: const TextStyle(
-                fontSize: 13,
-                height: 1.6,
-                color: KColors.text,
-              ),
+              style: TextStyle(fontSize: 13, height: 1.6, color: KColors.text),
             )
           else
             Text(
@@ -235,8 +226,9 @@ class _OverviewNarrativePanelState extends State<OverviewNarrativePanel> {
                   onPressed: _saveEdits,
                   icon: const Icon(Icons.check, size: 13),
                   label: const Text('Save', style: TextStyle(fontSize: 11)),
-                  style:
-                      TextButton.styleFrom(foregroundColor: KColors.phosphor),
+                  style: TextButton.styleFrom(
+                    foregroundColor: KColors.phosphor,
+                  ),
                 ),
                 const SizedBox(width: 8),
                 TextButton(
@@ -246,19 +238,15 @@ class _OverviewNarrativePanelState extends State<OverviewNarrativePanel> {
                       _ctrl.text = _currentNarrative ?? '';
                     });
                   },
-                  style:
-                      TextButton.styleFrom(foregroundColor: KColors.textDim),
-                  child: const Text('Cancel',
-                      style: TextStyle(fontSize: 11)),
+                  style: TextButton.styleFrom(foregroundColor: KColors.textDim),
+                  child: const Text('Cancel', style: TextStyle(fontSize: 11)),
                 ),
               ] else ...[
                 TextButton.icon(
                   onPressed: () => setState(() => _editing = true),
                   icon: const Icon(Icons.edit_outlined, size: 13),
-                  label:
-                      const Text('Edit', style: TextStyle(fontSize: 11)),
-                  style:
-                      TextButton.styleFrom(foregroundColor: KColors.textDim),
+                  label: const Text('Edit', style: TextStyle(fontSize: 11)),
+                  style: TextButton.styleFrom(foregroundColor: KColors.textDim),
                 ),
                 const SizedBox(width: 8),
                 TextButton.icon(
@@ -267,36 +255,38 @@ class _OverviewNarrativePanelState extends State<OverviewNarrativePanel> {
                       ? const SizedBox(
                           width: 11,
                           height: 11,
-                          child:
-                              CircularProgressIndicator(strokeWidth: 1.5),
+                          child: CircularProgressIndicator(strokeWidth: 1.5),
                         )
                       : const Icon(Icons.auto_awesome_outlined, size: 13),
-                  label: const Text('Regenerate',
-                      style: TextStyle(fontSize: 11)),
-                  style:
-                      TextButton.styleFrom(foregroundColor: KColors.textDim),
+                  label: const Text(
+                    'Regenerate',
+                    style: TextStyle(fontSize: 11),
+                  ),
+                  style: TextButton.styleFrom(foregroundColor: KColors.textDim),
                 ),
                 if (hasNarrative) ...[
                   const SizedBox(width: 8),
                   TextButton.icon(
                     onPressed: _copy,
                     icon: const Icon(Icons.copy_outlined, size: 13),
-                    label: const Text('Copy',
-                        style: TextStyle(fontSize: 11)),
+                    label: const Text('Copy', style: TextStyle(fontSize: 11)),
                     style: TextButton.styleFrom(
-                        foregroundColor: KColors.textDim),
+                      foregroundColor: KColors.textDim,
+                    ),
                   ),
                 ],
                 if (hasNarrative && widget.onUseInStatusReport != null) ...[
                   const SizedBox(width: 8),
                   TextButton.icon(
                     onPressed: widget.onUseInStatusReport,
-                    icon:
-                        const Icon(Icons.send_outlined, size: 13),
-                    label: const Text('Use in status report',
-                        style: TextStyle(fontSize: 11)),
+                    icon: const Icon(Icons.send_outlined, size: 13),
+                    label: const Text(
+                      'Use in status report',
+                      style: TextStyle(fontSize: 11),
+                    ),
                     style: TextButton.styleFrom(
-                        foregroundColor: KColors.textDim),
+                      foregroundColor: KColors.textDim,
+                    ),
                   ),
                 ],
               ],

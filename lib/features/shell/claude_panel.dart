@@ -32,11 +32,8 @@ class _ChatMessage {
   final String content;
   final DateTime timestamp;
 
-  _ChatMessage({
-    required this.role,
-    required this.content,
-    DateTime? timestamp,
-  }) : timestamp = timestamp ?? DateTime.now();
+  _ChatMessage({required this.role, required this.content, DateTime? timestamp})
+    : timestamp = timestamp ?? DateTime.now();
 }
 
 // ---------------------------------------------------------------------------
@@ -78,8 +75,7 @@ class _ClaudePanelState extends State<ClaudePanel> {
     super.didChangeDependencies();
     final projectProvider = context.read<ProjectProvider>();
     final newId = projectProvider.currentProjectId;
-    final newName =
-        projectProvider.currentProject?.name ?? 'Unknown Project';
+    final newName = projectProvider.currentProject?.name ?? 'Unknown Project';
     if (newId != null && newId != _activeProjectId) {
       _handleProjectSwitch(newId, newName);
     }
@@ -116,10 +112,12 @@ class _ClaudePanelState extends State<ClaudePanel> {
       _errorMessage = null;
       final history = _historyByProject[newProjectId]!;
       if (history.isNotEmpty) {
-        history.add(_ChatMessage(
-          role: _MessageRole.system,
-          content: 'Switched to $newProjectName',
-        ));
+        history.add(
+          _ChatMessage(
+            role: _MessageRole.system,
+            content: 'Switched to $newProjectName',
+          ),
+        );
       }
     });
     _scrollToBottom();
@@ -128,7 +126,12 @@ class _ClaudePanelState extends State<ClaudePanel> {
   Future<void> _loadContextSummary(String projectId) async {
     final db = context.read<AppDatabase>();
     final sections = await ContextBuilder(db).buildContextSummary(projectId);
-    if (mounted) setState(() => _contextSections = sections.map((e) => _ContextSection(e.$1, e.$2)).toList());
+    if (mounted)
+      setState(
+        () => _contextSections = sections
+            .map((e) => _ContextSection(e.$1, e.$2))
+            .toList(),
+      );
   }
 
   Future<void> _sendMessage() async {
@@ -146,26 +149,30 @@ class _ClaudePanelState extends State<ClaudePanel> {
     _ensureProjectHistory(pid);
 
     setState(() {
-      _historyByProject[pid]!
-          .add(_ChatMessage(role: _MessageRole.user, content: text));
+      _historyByProject[pid]!.add(
+        _ChatMessage(role: _MessageRole.user, content: text),
+      );
       _isLoading = true;
       _errorMessage = null;
     });
     _scrollToBottom();
 
     try {
-      final quarterAnchor =
-          context.read<SettingsProvider>().settings.quarterAnchorMonth;
+      final quarterAnchor = context
+          .read<SettingsProvider>()
+          .settings
+          .quarterAnchorMonth;
       final contextBuilder = ContextBuilder(db);
       final systemPrompt = projectId != null
-          ? await contextBuilder.buildSystemPrompt(projectId,
-              quarterAnchorMonth: quarterAnchor)
+          ? await contextBuilder.buildSystemPrompt(
+              projectId,
+              quarterAnchorMonth: quarterAnchor,
+            )
           : _defaultSystemPrompt();
 
       // For Ollama: ensure the server is running, starting it if needed
       if (sp.llmProvider == LLMProvider.ollama) {
-        final running =
-            await OllamaClient.ensureRunning(sp.ollamaBaseUrl);
+        final running = await OllamaClient.ensureRunning(sp.ollamaBaseUrl);
         if (!running) {
           throw Exception(
             'Could not reach Ollama at ${sp.ollamaBaseUrl}.\n'
@@ -179,8 +186,13 @@ class _ClaudePanelState extends State<ClaudePanel> {
       // For Ollama: repoint a configured model that isn't installed at what
       // is (same rule the client itself applies), persisting the full tag.
       if (sp.llmProvider == LLMProvider.ollama) {
-        final installed = await OllamaClient.getAvailableModels(sp.ollamaBaseUrl);
-        final picked = OllamaClient.pickInstalledModel(sp.ollamaModel, installed);
+        final installed = await OllamaClient.getAvailableModels(
+          sp.ollamaBaseUrl,
+        );
+        final picked = OllamaClient.pickInstalledModel(
+          sp.ollamaModel,
+          installed,
+        );
         if (picked != null && picked != sp.ollamaModel) {
           await settings.save(sp.copyWith(ollamaModel: picked));
         }
@@ -193,7 +205,8 @@ class _ClaudePanelState extends State<ClaudePanel> {
       if (mounted) {
         setState(() {
           _historyByProject[pid]!.add(
-              _ChatMessage(role: _MessageRole.assistant, content: ''));
+            _ChatMessage(role: _MessageRole.assistant, content: ''),
+          );
         });
         _scrollToBottom();
       }
@@ -207,8 +220,10 @@ class _ClaudePanelState extends State<ClaudePanel> {
         if (mounted) {
           setState(() {
             final msgs = _historyByProject[pid]!;
-            msgs[msgs.length - 1] =
-                _ChatMessage(role: _MessageRole.assistant, content: buffer.toString());
+            msgs[msgs.length - 1] = _ChatMessage(
+              role: _MessageRole.assistant,
+              content: buffer.toString(),
+            );
           });
           _scrollToBottom();
         }
@@ -242,14 +257,17 @@ class _ClaudePanelState extends State<ClaudePanel> {
 
   String _buildUserMessage(String currentText, String projectId) {
     final history = (_historyByProject[projectId] ?? [])
-        .where((m) =>
-            m.role != _MessageRole.system &&
-            !(m.role == _MessageRole.user && m.content == currentText))
+        .where(
+          (m) =>
+              m.role != _MessageRole.system &&
+              !(m.role == _MessageRole.user && m.content == currentText),
+        )
         .toList();
     if (history.isEmpty) return currentText;
 
-    final recent =
-        history.length > 8 ? history.sublist(history.length - 8) : history;
+    final recent = history.length > 8
+        ? history.sublist(history.length - 8)
+        : history;
     final buffer = StringBuffer();
     buffer.writeln('[Conversation history]');
     for (final m in recent) {
@@ -293,7 +311,9 @@ class _ClaudePanelState extends State<ClaudePanel> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           _handleProjectSwitch(
-              newId, projectProvider.currentProject?.name ?? newId);
+            newId,
+            projectProvider.currentProject?.name ?? newId,
+          );
         }
       });
     }
@@ -322,7 +342,7 @@ class _ClaudePanelState extends State<ClaudePanel> {
           if (_showContextInfo && _contextSections.isNotEmpty)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: KColors.surface2,
                 border: Border(bottom: BorderSide(color: KColors.border)),
               ),
@@ -335,11 +355,16 @@ class _ClaudePanelState extends State<ClaudePanel> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'CONTEXT INJECTED',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: KColors.textMuted, fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.1),
+                      style: TextStyle(
+                        color: KColors.textMuted,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.1,
+                      ),
                     ),
                     const SizedBox(height: 6),
                     Flexible(
@@ -347,22 +372,40 @@ class _ClaudePanelState extends State<ClaudePanel> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            ..._contextSections.map((s) => Padding(
-                              padding: const EdgeInsets.only(bottom: 3),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.check, size: 10, color: KColors.phosphor),
-                                  const SizedBox(width: 5),
-                                  Expanded(
-                                    child: Text(s.label,
+                            ..._contextSections.map(
+                              (s) => Padding(
+                                padding: const EdgeInsets.only(bottom: 3),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.check,
+                                      size: 10,
+                                      color: KColors.phosphor,
+                                    ),
+                                    const SizedBox(width: 5),
+                                    Expanded(
+                                      child: Text(
+                                        s.label,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(color: KColors.textDim, fontSize: 10)),
-                                  ),
-                                  if (s.count > 0) Text('${s.count}', style: const TextStyle(color: KColors.textMuted, fontSize: 10)),
-                                ],
+                                        style: TextStyle(
+                                          color: KColors.textDim,
+                                          fontSize: 10,
+                                        ),
+                                      ),
+                                    ),
+                                    if (s.count > 0)
+                                      Text(
+                                        '${s.count}',
+                                        style: TextStyle(
+                                          color: KColors.textMuted,
+                                          fontSize: 10,
+                                        ),
+                                      ),
+                                  ],
+                                ),
                               ),
-                            )),
+                            ),
                           ],
                         ),
                       ),
@@ -376,9 +419,7 @@ class _ClaudePanelState extends State<ClaudePanel> {
           if (_activeProjectId != null)
             _ContextSummary(projectId: _activeProjectId!),
 
-          Expanded(
-            child: hasKey ? _buildChatArea() : _buildNoKeyPrompt(),
-          ),
+          Expanded(child: hasKey ? _buildChatArea() : _buildNoKeyPrompt()),
 
           _InputBar(
             controller: _inputCtrl,
@@ -398,16 +439,19 @@ class _ClaudePanelState extends State<ClaudePanel> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.auto_awesome_outlined,
-                size: 36, color: KColors.textMuted),
+            Icon(
+              Icons.auto_awesome_outlined,
+              size: 36,
+              color: KColors.textMuted,
+            ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Configure your API key to start chatting.',
               textAlign: TextAlign.center,
               style: TextStyle(color: KColors.textDim, fontSize: 12),
             ),
             const SizedBox(height: 12),
-            const Text(
+            Text(
               'Go to Settings → LLM Settings to add your Anthropic API key.',
               textAlign: TextAlign.center,
               style: TextStyle(color: KColors.textMuted, fontSize: 11),
@@ -420,8 +464,9 @@ class _ClaudePanelState extends State<ClaudePanel> {
 
   Widget _buildChatArea() {
     final msgs = _messages;
-    final visibleMessages =
-        msgs.where((m) => m.role != _MessageRole.system).toList();
+    final visibleMessages = msgs
+        .where((m) => m.role != _MessageRole.system)
+        .toList();
     if (visibleMessages.isEmpty && !_isLoading && _errorMessage == null) {
       return _buildWelcomeScreen();
     }
@@ -429,9 +474,8 @@ class _ClaudePanelState extends State<ClaudePanel> {
     return ListView.builder(
       controller: _scrollCtrl,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-      itemCount: msgs.length +
-          (_isLoading ? 1 : 0) +
-          (_errorMessage != null ? 1 : 0),
+      itemCount:
+          msgs.length + (_isLoading ? 1 : 0) + (_errorMessage != null ? 1 : 0),
       itemBuilder: (ctx, i) {
         if (i < msgs.length) {
           final m = msgs[i];
@@ -453,30 +497,31 @@ class _ClaudePanelState extends State<ClaudePanel> {
 
   Widget _buildWelcomeScreen() {
     final projectName =
-        context.watch<ProjectProvider>().currentProject?.name ??
-            'your project';
+        context.watch<ProjectProvider>().currentProject?.name ?? 'your project';
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.auto_awesome,
-                size: 28, color: KColors.phosphor),
+            Icon(Icons.auto_awesome, size: 28, color: KColors.phosphor),
             const SizedBox(height: 12),
             Text(
               'Ask me anything about $projectName',
               textAlign: TextAlign.center,
               style: GoogleFonts.jetBrainsMono(
-                  color: KColors.textDim,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500),
+                color: KColors.textDim,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
             ),
             const SizedBox(height: 14),
-            _SuggestionChips(onTap: (s) {
-              _inputCtrl.text = s;
-              _sendMessage();
-            }),
+            _SuggestionChips(
+              onTap: (s) {
+                _inputCtrl.text = s;
+                _sendMessage();
+              },
+            ),
           ],
         ),
       ),
@@ -501,7 +546,7 @@ class _ContextSummary extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: KColors.border)),
       ),
       child: Wrap(
@@ -519,8 +564,7 @@ class _ContextSummary extends StatelessWidget {
             },
           ),
           StreamBuilder<List<Decision>>(
-            stream:
-                db.decisionsDao.watchPendingDecisionsForProject(projectId),
+            stream: db.decisionsDao.watchPendingDecisionsForProject(projectId),
             builder: (_, snap) {
               final count = snap.data?.length ?? 0;
               if (count == 0) return const SizedBox.shrink();
@@ -528,13 +572,11 @@ class _ContextSummary extends StatelessWidget {
             },
           ),
           StreamBuilder<List<ProjectAction>>(
-            stream:
-                db.actionsDao.watchOverdueActionsForProject(projectId),
+            stream: db.actionsDao.watchOverdueActionsForProject(projectId),
             builder: (_, snap) {
               final count = snap.data?.length ?? 0;
               if (count == 0) return const SizedBox.shrink();
-              return _ContextPill(
-                  label: '$count overdue', color: KColors.red);
+              return _ContextPill(label: '$count overdue', color: KColors.red);
             },
           ),
         ],
@@ -606,100 +648,113 @@ class _PanelHeader extends StatelessWidget {
     final name = _providerLabel(settings).toUpperCase();
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: KColors.border)),
       ),
       // Sheds under squeeze — the panel animates through tiny widths on
       // collapse, and rigid trailing content overflows (clipped, but an
       // overflow is an overflow).
-      child: LayoutBuilder(builder: (context, c) {
-        final showBadge = c.maxWidth >= 200;
-        final showButtons = c.maxWidth >= 110;
-        return Row(
-        children: [
-          const Icon(Icons.auto_awesome, size: 13, color: KColors.phosphor),
-          const SizedBox(width: 6),
-          Flexible(
-            child: Text(
-              '⊹ $name',
-              maxLines: 1,
-              style: GoogleFonts.syne(
-                color: KColors.phosphor,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.2,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const Spacer(),
-          if (showButtons && onToggleWidth != null)
-            IconButton(
-              icon: Icon(
-                isWide
-                    ? Icons.keyboard_double_arrow_right
-                    : Icons.keyboard_double_arrow_left,
-                size: 14,
-                color: isWide ? KColors.amber : KColors.textMuted,
-              ),
-              onPressed: onToggleWidth,
-              tooltip: isWide
-                  ? 'Restore panel width'
-                  : 'Widen panel (drag the edge for fine control)',
-              padding: EdgeInsets.zero,
-              constraints:
-                  const BoxConstraints(minWidth: 24, minHeight: 24),
-            ),
-          if (showButtons)
-            IconButton(
-              icon: Icon(
-                Icons.info_outline,
-                size: 14,
-                color: showContextInfo ? KColors.amber : KColors.textMuted,
-              ),
-              onPressed: onToggleContextInfo,
-              tooltip: 'Context injected',
-              padding: EdgeInsets.zero,
-              constraints:
-                  const BoxConstraints(minWidth: 24, minHeight: 24),
-            ),
-          if (showBadge) ...[
-            const SizedBox(width: 4),
-            Flexible(
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 5, vertical: 2),
-                decoration: BoxDecoration(
-                  color: hasKey ? KColors.phosDim : KColors.amberDim,
-                  borderRadius: BorderRadius.circular(2),
-                ),
+      child: LayoutBuilder(
+        builder: (context, c) {
+          final showBadge = c.maxWidth >= 200;
+          final showButtons = c.maxWidth >= 110;
+          return Row(
+            children: [
+              Icon(Icons.auto_awesome, size: 13, color: KColors.phosphor),
+              const SizedBox(width: 6),
+              Flexible(
                 child: Text(
-                  hasKey ? 'Connected' : 'Not configured',
+                  '⊹ $name',
                   maxLines: 1,
+                  style: GoogleFonts.syne(
+                    color: KColors.phosphor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.2,
+                  ),
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: hasKey ? KColors.phosphor : KColors.amber,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
+                ),
+              ),
+              const Spacer(),
+              if (showButtons && onToggleWidth != null)
+                IconButton(
+                  icon: Icon(
+                    isWide
+                        ? Icons.keyboard_double_arrow_right
+                        : Icons.keyboard_double_arrow_left,
+                    size: 14,
+                    color: isWide ? KColors.amber : KColors.textMuted,
+                  ),
+                  onPressed: onToggleWidth,
+                  tooltip: isWide
+                      ? 'Restore panel width'
+                      : 'Widen panel (drag the edge for fine control)',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 24,
+                    minHeight: 24,
                   ),
                 ),
-              ),
-            ),
-          ],
-        ],
-        );
-      }),
+              if (showButtons)
+                IconButton(
+                  icon: Icon(
+                    Icons.info_outline,
+                    size: 14,
+                    color: showContextInfo ? KColors.amber : KColors.textMuted,
+                  ),
+                  onPressed: onToggleContextInfo,
+                  tooltip: 'Context injected',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 24,
+                    minHeight: 24,
+                  ),
+                ),
+              if (showBadge) ...[
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: hasKey ? KColors.phosDim : KColors.amberDim,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                    child: Text(
+                      hasKey ? 'Connected' : 'Not configured',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: hasKey ? KColors.phosphor : KColors.amber,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          );
+        },
+      ),
     );
   }
 }
 
 String _providerLabel(AppSettings s) {
   switch (s.llmProvider) {
-    case LLMProvider.claudeApi:      return 'Claude';
-    case LLMProvider.openAi:         return 'ChatGPT';
-    case LLMProvider.grok:           return 'Grok';
-    case LLMProvider.githubModels:   return 'GitHub Models';
-    case LLMProvider.azureOpenAi:    return 'Azure OpenAI';
+    case LLMProvider.claudeApi:
+      return 'Claude';
+    case LLMProvider.openAi:
+      return 'ChatGPT';
+    case LLMProvider.grok:
+      return 'Grok';
+    case LLMProvider.githubModels:
+      return 'GitHub Models';
+    case LLMProvider.azureOpenAi:
+      return 'Azure OpenAI';
     case LLMProvider.ollama:
       return ollamaModelLabel(s.ollamaModel);
   }
@@ -722,7 +777,7 @@ class _InputBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(10),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(top: BorderSide(color: KColors.border)),
       ),
       child: Row(
@@ -732,13 +787,13 @@ class _InputBar extends StatelessWidget {
               controller: controller,
               enabled: enabled,
               decoration: InputDecoration(
-                hintText: 'Ask ${_providerLabel(context.watch<SettingsProvider>().settings)}…',
+                hintText:
+                    'Ask ${_providerLabel(context.watch<SettingsProvider>().settings)}…',
                 isDense: true,
                 fillColor: KColors.bg,
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(3),
-                  borderSide:
-                      const BorderSide(color: KColors.phosphor, width: 1.5),
+                  borderSide: BorderSide(color: KColors.phosphor, width: 1.5),
                 ),
               ),
               style: GoogleFonts.jetBrainsMono(fontSize: 11),
@@ -752,22 +807,20 @@ class _InputBar extends StatelessWidget {
           IconButton(
             onPressed: enabled ? onSend : null,
             icon: isLoading
-                ? const SizedBox(
+                ? SizedBox(
                     width: 14,
                     height: 14,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: KColors.phosphor),
+                      strokeWidth: 2,
+                      color: KColors.phosphor,
+                    ),
                   )
                 : const Icon(Icons.send_outlined),
             iconSize: 16,
             tooltip: 'Send',
             style: IconButton.styleFrom(
-              backgroundColor: enabled
-                  ? KColors.phosDim
-                  : KColors.surface2,
-              foregroundColor:
-                  enabled ? KColors.phosphor : KColors.textMuted,
+              backgroundColor: enabled ? KColors.phosDim : KColors.surface2,
+              foregroundColor: enabled ? KColors.phosphor : KColors.textMuted,
               disabledForegroundColor: KColors.textMuted,
             ),
           ),
@@ -787,15 +840,13 @@ class _MessageBubble extends StatelessWidget {
     final isUser = message.role == _MessageRole.user;
 
     return Align(
-      alignment:
-          isUser ? Alignment.centerRight : Alignment.centerLeft,
+      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 3),
         constraints: BoxConstraints(
           maxWidth: MediaQuery.of(context).size.width * 0.85,
         ),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
           color: isUser ? KColors.blueDim : KColors.surface2,
           borderRadius: BorderRadius.only(
@@ -808,9 +859,7 @@ class _MessageBubble extends StatelessWidget {
                 ? const Radius.circular(1)
                 : const Radius.circular(6),
           ),
-          border: Border.all(
-            color: isUser ? KColors.border2 : KColors.border,
-          ),
+          border: Border.all(color: isUser ? KColors.border2 : KColors.border),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -819,15 +868,17 @@ class _MessageBubble extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  isUser
-                      ? Icons.person_outline
-                      : Icons.auto_awesome,
+                  isUser ? Icons.person_outline : Icons.auto_awesome,
                   size: 10,
                   color: isUser ? KColors.blue : KColors.phosphor,
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  isUser ? 'You' : _providerLabel(context.watch<SettingsProvider>().settings),
+                  isUser
+                      ? 'You'
+                      : _providerLabel(
+                          context.watch<SettingsProvider>().settings,
+                        ),
                   style: TextStyle(
                     color: isUser ? KColors.blue : KColors.phosphor,
                     fontSize: 10,
@@ -861,8 +912,7 @@ class _TypingIndicator extends StatelessWidget {
       alignment: Alignment.centerLeft,
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 3),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
           color: KColors.surface2,
           borderRadius: BorderRadius.circular(6),
@@ -871,25 +921,24 @@ class _TypingIndicator extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.auto_awesome,
-                size: 11, color: KColors.phosphor),
+            Icon(Icons.auto_awesome, size: 11, color: KColors.phosphor),
             const SizedBox(width: 6),
-            const SizedBox(
+            SizedBox(
               width: 14,
               height: 14,
               child: CircularProgressIndicator(
                 strokeWidth: 1.5,
-                valueColor:
-                    AlwaysStoppedAnimation<Color>(KColors.phosphor),
+                valueColor: AlwaysStoppedAnimation<Color>(KColors.phosphor),
               ),
             ),
             const SizedBox(width: 8),
             Text(
               'Thinking…',
               style: GoogleFonts.jetBrainsMono(
-                  color: KColors.textDim,
-                  fontSize: 11,
-                  fontStyle: FontStyle.italic),
+                color: KColors.textDim,
+                fontSize: 11,
+                fontStyle: FontStyle.italic,
+              ),
             ),
           ],
         ),
@@ -915,12 +964,12 @@ class _ErrorBubble extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline, size: 13, color: KColors.red),
+          Icon(Icons.error_outline, size: 13, color: KColors.red),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(color: KColors.red, fontSize: 11),
+              style: TextStyle(color: KColors.red, fontSize: 11),
             ),
           ),
         ],
@@ -940,7 +989,7 @@ class _ProjectSwitchDivider extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
         children: [
-          const Expanded(child: Divider(color: KColors.border)),
+          Expanded(child: Divider(color: KColors.border)),
           const SizedBox(width: 6),
           Icon(Icons.swap_horiz, size: 11, color: KColors.textMuted),
           const SizedBox(width: 4),
@@ -953,7 +1002,7 @@ class _ProjectSwitchDivider extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 6),
-          const Expanded(child: Divider(color: KColors.border)),
+          Expanded(child: Divider(color: KColors.border)),
         ],
       ),
     );
@@ -984,8 +1033,7 @@ class _SuggestionChips extends StatelessWidget {
               onTap: () => onTap(s),
               borderRadius: BorderRadius.circular(2),
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.transparent,
                   border: Border.all(color: KColors.border2),

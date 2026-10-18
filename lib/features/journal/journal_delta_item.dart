@@ -7,7 +7,7 @@ class _EditField {
   final String label;
   final TextEditingController ctrl;
   _EditField(this.key, this.label, String initial)
-      : ctrl = TextEditingController(text: initial);
+    : ctrl = TextEditingController(text: initial);
 }
 
 class JournalDeltaItemWidget extends StatefulWidget {
@@ -79,12 +79,15 @@ class _JournalDeltaItemWidgetState extends State<JournalDeltaItemWidget> {
   void _initControllers() {
     final ef = widget.delta.editFields;
     _descCtrl = TextEditingController(
-        text: ef['description'] ?? widget.delta.title);
+      text: ef['description'] ?? widget.delta.title,
+    );
     _fields = _buildFieldsForType(_editType, ef);
   }
 
   List<_EditField> _buildFieldsForType(
-      DeltaType type, Map<String, String?> ef) {
+    DeltaType type,
+    Map<String, String?> ef,
+  ) {
     switch (type) {
       case DeltaType.action:
         return [
@@ -93,8 +96,11 @@ class _JournalDeltaItemWidgetState extends State<JournalDeltaItemWidget> {
         ];
       case DeltaType.decision:
         return [
-          _EditField('decisionMaker', 'Decision-maker',
-              ef['decisionMaker'] ?? ''),
+          _EditField(
+            'decisionMaker',
+            'Decision-maker',
+            ef['decisionMaker'] ?? '',
+          ),
         ];
       case DeltaType.risk:
         return [
@@ -107,9 +113,7 @@ class _JournalDeltaItemWidgetState extends State<JournalDeltaItemWidget> {
           _EditField('priority', 'Priority', ef['priority'] ?? ''),
         ];
       case DeltaType.dependency:
-        return [
-          _EditField('owner', 'Owner', ef['owner'] ?? ''),
-        ];
+        return [_EditField('owner', 'Owner', ef['owner'] ?? '')];
       case DeltaType.timelineChange:
         return [
           _EditField('item', 'Item', ef['item'] ?? ''),
@@ -154,23 +158,35 @@ class _JournalDeltaItemWidgetState extends State<JournalDeltaItemWidget> {
 
   Color _colorForType(DeltaType t) {
     switch (t) {
-      case DeltaType.decision: return KColors.blue;
-      case DeltaType.action: return KColors.phosphor;
-      case DeltaType.risk: return KColors.amber;
-      case DeltaType.issue: return KColors.red;
-      case DeltaType.dependency: return KColors.blue;
-      case DeltaType.timelineChange: return KColors.amber;
+      case DeltaType.decision:
+        return KColors.blue;
+      case DeltaType.action:
+        return KColors.phosphor;
+      case DeltaType.risk:
+        return KColors.amber;
+      case DeltaType.issue:
+        return KColors.red;
+      case DeltaType.dependency:
+        return KColors.blue;
+      case DeltaType.timelineChange:
+        return KColors.amber;
     }
   }
 
   Color _bgForType(DeltaType t) {
     switch (t) {
-      case DeltaType.decision: return KColors.blueDim;
-      case DeltaType.action: return KColors.phosDim;
-      case DeltaType.risk: return KColors.amberDim;
-      case DeltaType.issue: return KColors.redDim;
-      case DeltaType.dependency: return KColors.blueDim;
-      case DeltaType.timelineChange: return KColors.amberDim;
+      case DeltaType.decision:
+        return KColors.blueDim;
+      case DeltaType.action:
+        return KColors.phosDim;
+      case DeltaType.risk:
+        return KColors.amberDim;
+      case DeltaType.issue:
+        return KColors.redDim;
+      case DeltaType.dependency:
+        return KColors.blueDim;
+      case DeltaType.timelineChange:
+        return KColors.amberDim;
     }
   }
 
@@ -183,7 +199,8 @@ class _JournalDeltaItemWidgetState extends State<JournalDeltaItemWidget> {
     final isConfirmed = delta.confirmed;
     final isIgnored = delta.ignored;
     final isActive = widget.isActive;
-    final isEditing = widget.isEditing && isActive && !isConfirmed && !isIgnored;
+    final isEditing =
+        widget.isEditing && isActive && !isConfirmed && !isIgnored;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 150),
@@ -192,18 +209,18 @@ class _JournalDeltaItemWidgetState extends State<JournalDeltaItemWidget> {
         color: isIgnored
             ? KColors.surface
             : isConfirmed
-                ? KColors.phosDim
-                : isActive
-                    ? KColors.surface2
-                    : KColors.surface,
+            ? KColors.phosDim
+            : isActive
+            ? KColors.surface2
+            : KColors.surface,
         border: Border.all(
           color: isEditing
               ? KColors.amber.withValues(alpha: 0.6)
               : isConfirmed
-                  ? KColors.phosphor.withValues(alpha: 0.4)
-                  : isActive
-                      ? _typeColor.withValues(alpha: 0.4)
-                      : KColors.border,
+              ? KColors.phosphor.withValues(alpha: 0.4)
+              : isActive
+              ? _typeColor.withValues(alpha: 0.4)
+              : KColors.border,
         ),
         borderRadius: BorderRadius.circular(4),
       ),
@@ -217,8 +234,10 @@ class _JournalDeltaItemWidgetState extends State<JournalDeltaItemWidget> {
               children: [
                 Flexible(
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: _typeBg,
                       borderRadius: BorderRadius.circular(3),
@@ -226,9 +245,10 @@ class _JournalDeltaItemWidgetState extends State<JournalDeltaItemWidget> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(delta.typeIcon,
-                            style:
-                                TextStyle(color: _typeColor, fontSize: 12)),
+                        Text(
+                          delta.typeIcon,
+                          style: TextStyle(color: _typeColor, fontSize: 12),
+                        ),
                         const SizedBox(width: 4),
                         Flexible(
                           child: Text(
@@ -249,7 +269,7 @@ class _JournalDeltaItemWidgetState extends State<JournalDeltaItemWidget> {
                 ),
                 const Spacer(),
                 if (isEditing)
-                  const Text(
+                  Text(
                     'EDITING',
                     style: TextStyle(
                       color: KColors.amber,
@@ -259,11 +279,13 @@ class _JournalDeltaItemWidgetState extends State<JournalDeltaItemWidget> {
                     ),
                   )
                 else if (isConfirmed)
-                  const Icon(Icons.check_circle,
-                      size: 14, color: KColors.phosphor)
+                  Icon(Icons.check_circle, size: 14, color: KColors.phosphor)
                 else if (isIgnored)
-                  const Icon(Icons.cancel_outlined,
-                      size: 14, color: KColors.textMuted),
+                  Icon(
+                    Icons.cancel_outlined,
+                    size: 14,
+                    color: KColors.textMuted,
+                  ),
               ],
             ),
             const SizedBox(height: 8),
@@ -313,8 +335,7 @@ class _JournalDeltaItemWidgetState extends State<JournalDeltaItemWidget> {
                   color: isIgnored ? KColors.textDim : KColors.text,
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  decoration:
-                      isIgnored ? TextDecoration.lineThrough : null,
+                  decoration: isIgnored ? TextDecoration.lineThrough : null,
                 ),
               ),
               // Fields display
@@ -373,25 +394,26 @@ class _JournalDeltaItemWidgetState extends State<JournalDeltaItemWidget> {
     final f = widget.delta.editFields;
     void addRow(String label, String? value) {
       if (value == null || value.isEmpty) return;
-      rows.add(Padding(
-        padding: const EdgeInsets.only(top: 2),
-        child: Row(
-          children: [
-            Text(
-              '$label: ',
-              style:
-                  const TextStyle(color: KColors.textDim, fontSize: 11),
-            ),
-            Expanded(
-              child: Text(
-                value,
-                style: const TextStyle(color: KColors.text, fontSize: 11),
-                overflow: TextOverflow.ellipsis,
+      rows.add(
+        Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: Row(
+            children: [
+              Text(
+                '$label: ',
+                style: TextStyle(color: KColors.textDim, fontSize: 11),
               ),
-            ),
-          ],
+              Expanded(
+                child: Text(
+                  value,
+                  style: TextStyle(color: KColors.text, fontSize: 11),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
         ),
-      ));
+      );
     }
 
     switch (widget.delta.type) {
@@ -445,27 +467,26 @@ class _EditTextField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(color: KColors.textDim, fontSize: 10),
-        ),
+        Text(label, style: TextStyle(color: KColors.textDim, fontSize: 10)),
         const SizedBox(height: 3),
         TextField(
           controller: controller,
           focusNode: focusNode,
           maxLines: maxLines,
-          style: const TextStyle(color: KColors.text, fontSize: 11),
+          style: TextStyle(color: KColors.text, fontSize: 11),
           decoration: InputDecoration(
             isDense: true,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: 6,
+            ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(3),
-              borderSide: const BorderSide(color: KColors.border2),
+              borderSide: BorderSide(color: KColors.border2),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(3),
-              borderSide: const BorderSide(color: KColors.amber),
+              borderSide: BorderSide(color: KColors.amber),
             ),
             filled: true,
             fillColor: KColors.bg,
@@ -485,8 +506,11 @@ class _ActionBtn extends StatelessWidget {
   final Color color;
   final VoidCallback onTap;
 
-  const _ActionBtn(
-      {required this.label, required this.color, required this.onTap});
+  const _ActionBtn({
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -541,12 +565,18 @@ class _TypeSelector extends StatelessWidget {
 
   static String _labelFor(DeltaType t) {
     switch (t) {
-      case DeltaType.action: return 'Action';
-      case DeltaType.decision: return 'Decision';
-      case DeltaType.risk: return 'Risk';
-      case DeltaType.issue: return 'Issue';
-      case DeltaType.dependency: return 'Dep.';
-      case DeltaType.timelineChange: return 'Timeline';
+      case DeltaType.action:
+        return 'Action';
+      case DeltaType.decision:
+        return 'Decision';
+      case DeltaType.risk:
+        return 'Risk';
+      case DeltaType.issue:
+        return 'Issue';
+      case DeltaType.dependency:
+        return 'Dep.';
+      case DeltaType.timelineChange:
+        return 'Timeline';
     }
   }
 
@@ -555,8 +585,7 @@ class _TypeSelector extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Type',
-            style: TextStyle(color: KColors.textDim, fontSize: 10)),
+        Text('Type', style: TextStyle(color: KColors.textDim, fontSize: 10)),
         const SizedBox(height: 4),
         Wrap(
           spacing: 4,
@@ -569,8 +598,7 @@ class _TypeSelector extends StatelessWidget {
               onTap: () => onChanged(t),
               borderRadius: BorderRadius.circular(3),
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                 decoration: BoxDecoration(
                   color: isSelected ? bg : Colors.transparent,
                   border: Border.all(

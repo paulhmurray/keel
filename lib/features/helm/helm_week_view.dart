@@ -159,11 +159,7 @@ class _HelmWeekViewState extends State<HelmWeekView> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Icons.view_week_outlined,
-            size: 48,
-            color: KColors.textMuted,
-          ),
+          Icon(Icons.view_week_outlined, size: 48, color: KColors.textMuted),
           const SizedBox(height: 16),
           Text(
             'Chart this week',
@@ -174,7 +170,7 @@ class _HelmWeekViewState extends State<HelmWeekView> {
             ),
           ),
           const SizedBox(height: 8),
-          const SizedBox(
+          SizedBox(
             width: 400,
             child: Text(
               'Pick the week\'s big rocks and give each day a mission. '
@@ -628,9 +624,9 @@ class _ObjectivesPanel extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(14, 14, 10, 4),
                 child: Row(
                   children: [
-                    const Icon(Icons.flag, size: 13, color: KColors.amber),
+                    Icon(Icons.flag, size: 13, color: KColors.amber),
                     const SizedBox(width: 6),
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'THIS WEEK — BIG ROCKS',
                         maxLines: 1,
@@ -644,7 +640,7 @@ class _ObjectivesPanel extends StatelessWidget {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.view_week_outlined,
                         size: 16,
                         color: KColors.amber,
@@ -657,18 +653,14 @@ class _ObjectivesPanel extends StatelessWidget {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(
-                        Icons.add,
-                        size: 16,
-                        color: KColors.amber,
-                      ),
+                      icon: Icon(Icons.add, size: 16, color: KColors.amber),
                       tooltip: 'Add objective',
                       onPressed: () => _editObjective(context, null),
                     ),
                   ],
                 ),
               ),
-              const Padding(
+              Padding(
                 padding: EdgeInsets.fromLTRB(14, 0, 14, 8),
                 child: Text(
                   '3–5 rocks. Drag onto the day grid each morning; done '
@@ -679,7 +671,7 @@ class _ObjectivesPanel extends StatelessWidget {
               // ── Spawn from a quarterly goal — the downward link that
               // makes the quarter feed the week.
               if (quarterGoals.any((g) => !g.done)) ...[
-                const Padding(
+                Padding(
                   padding: EdgeInsets.fromLTRB(14, 2, 14, 4),
                   child: Text(
                     'FROM THE QUARTER',
@@ -722,7 +714,7 @@ class _ObjectivesPanel extends StatelessWidget {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     Icons.landscape,
                                     size: 10,
                                     color: KColors.amber,
@@ -736,14 +728,14 @@ class _ObjectivesPanel extends StatelessWidget {
                                       g.label,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         color: KColors.textDim,
                                         fontSize: 10,
                                       ),
                                     ),
                                   ),
                                   const SizedBox(width: 4),
-                                  const Icon(
+                                  Icon(
                                     Icons.add,
                                     size: 10,
                                     color: KColors.amber,
@@ -759,7 +751,7 @@ class _ObjectivesPanel extends StatelessWidget {
               ],
               Expanded(
                 child: objectives.isEmpty
-                    ? const Center(
+                    ? Center(
                         child: Padding(
                           padding: EdgeInsets.all(20),
                           child: Text(
@@ -875,7 +867,7 @@ class _ObjectiveRow extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           border: Border(bottom: BorderSide(color: KColors.border)),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
@@ -892,7 +884,7 @@ class _ObjectiveRow extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             if (objective.goalId != null) ...[
-              const Tooltip(
+              Tooltip(
                 message: 'Linked to a quarterly goal',
                 child: Icon(Icons.landscape, size: 11, color: KColors.amber),
               ),
@@ -1013,7 +1005,7 @@ class _ObjectiveDialogState extends State<_ObjectiveDialog> {
             const SizedBox(height: 12),
             DropdownButtonFormField<int?>(
               value: _target,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Target (30-min blocks this week)',
                 helperText: 'Duration counts — one 90-min block = 3 blocks.',
                 helperStyle: TextStyle(color: KColors.textMuted, fontSize: 10),
@@ -1039,7 +1031,7 @@ class _ObjectiveDialogState extends State<_ObjectiveDialog> {
             onPressed: () => Navigator.of(
               context,
             ).pop(const _ObjectiveDialogResult(label: '', deleted: true)),
-            child: const Text('Delete', style: TextStyle(color: KColors.red)),
+            child: Text('Delete', style: TextStyle(color: KColors.red)),
           ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),

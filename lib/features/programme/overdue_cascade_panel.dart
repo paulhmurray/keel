@@ -33,10 +33,8 @@ class OverdueCascadePanel extends StatelessWidget {
     }
     final db = context.read<AppDatabase>();
     final stream = kind == OverdueCascadeKind.action
-        ? db.actionsDao
-            .watchOverdueCascadedActionsForProgramme(current.id)
-        : db.decisionsDao
-            .watchOverdueCascadedDecisionsForProgramme(current.id);
+        ? db.actionsDao.watchOverdueCascadedActionsForProgramme(current.id)
+        : db.decisionsDao.watchOverdueCascadedDecisionsForProgramme(current.id);
 
     return StreamBuilder<List<dynamic>>(
       stream: stream,
@@ -51,8 +49,7 @@ class OverdueCascadePanel extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: KColors.red.withValues(alpha: 0.06),
-            border: Border.all(
-                color: KColors.red.withValues(alpha: 0.35)),
+            border: Border.all(color: KColors.red.withValues(alpha: 0.35)),
             borderRadius: BorderRadius.circular(6),
           ),
           child: Column(
@@ -60,12 +57,15 @@ class OverdueCascadePanel extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.warning_amber_outlined,
-                      color: KColors.red, size: 14),
+                  Icon(
+                    Icons.warning_amber_outlined,
+                    color: KColors.red,
+                    size: 14,
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: KColors.red,
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
@@ -75,8 +75,7 @@ class OverdueCascadePanel extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 8),
-              for (final item in items)
-                _OverdueRow(item: item, kind: kind),
+              for (final item in items) _OverdueRow(item: item, kind: kind),
             ],
           ),
         );
@@ -110,12 +109,9 @@ class _OverdueRow extends StatelessWidget {
     final sourceName = sourceProjectId == null
         ? null
         : projects
-            .cast<Project?>()
-            .firstWhere(
-              (p) => p?.id == sourceProjectId,
-              orElse: () => null,
-            )
-            ?.name;
+              .cast<Project?>()
+              .firstWhere((p) => p?.id == sourceProjectId, orElse: () => null)
+              ?.name;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -123,8 +119,7 @@ class _OverdueRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
             decoration: BoxDecoration(
               color: KColors.surface,
               border: Border.all(color: KColors.border2, width: 0.5),
@@ -132,7 +127,7 @@ class _OverdueRow extends StatelessWidget {
             ),
             child: Text(
               sourceName != null ? 'PROJ · $sourceName' : 'PROJ',
-              style: const TextStyle(
+              style: TextStyle(
                 color: KColors.textMuted,
                 fontSize: 9,
                 fontWeight: FontWeight.w700,
@@ -144,7 +139,7 @@ class _OverdueRow extends StatelessWidget {
           if (ref.isNotEmpty) ...[
             Text(
               ref,
-              style: const TextStyle(
+              style: TextStyle(
                 color: KColors.amber,
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
@@ -155,24 +150,20 @@ class _OverdueRow extends StatelessWidget {
           Expanded(
             child: Text(
               description,
-              style: const TextStyle(color: KColors.text, fontSize: 12),
+              style: TextStyle(color: KColors.text, fontSize: 12),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
           ),
           if (owner != null && owner.isNotEmpty) ...[
             const SizedBox(width: 8),
-            Text(
-              owner,
-              style: const TextStyle(
-                  color: KColors.textDim, fontSize: 11),
-            ),
+            Text(owner, style: TextStyle(color: KColors.textDim, fontSize: 11)),
           ],
           const SizedBox(width: 12),
           // Due date in red — this is the whole point of the panel.
           Text(
             dueDate == null ? '' : du.formatDate(dueDate),
-            style: const TextStyle(
+            style: TextStyle(
               color: KColors.red,
               fontSize: 11,
               fontWeight: FontWeight.w700,

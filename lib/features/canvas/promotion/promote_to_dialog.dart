@@ -16,9 +16,9 @@ class PromoteToDialog extends StatelessWidget {
       backgroundColor: KColors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(6),
-        side: const BorderSide(color: KColors.border),
+        side: BorderSide(color: KColors.border),
       ),
-      title: const Text(
+      title: Text(
         'Promote to…',
         style: TextStyle(
           color: KColors.amber,
@@ -33,7 +33,7 @@ class PromoteToDialog extends StatelessWidget {
           shrinkWrap: true,
           itemCount: options.length,
           separatorBuilder: (_, __) =>
-              const Divider(height: 1, color: KColors.border),
+              Divider(height: 1, color: KColors.border),
           itemBuilder: (_, i) {
             final type = options[i];
             return ListTile(
@@ -45,15 +45,11 @@ class PromoteToDialog extends StatelessWidget {
               ),
               title: Text(
                 CanvasLinkBadge.labelForType(type),
-                style:
-                    const TextStyle(color: KColors.text, fontSize: 13),
+                style: TextStyle(color: KColors.text, fontSize: 13),
               ),
               subtitle: Text(
                 _hintFor(type),
-                style: const TextStyle(
-                  color: KColors.textMuted,
-                  fontSize: 10.5,
-                ),
+                style: TextStyle(color: KColors.textMuted, fontSize: 10.5),
               ),
               onTap: () => Navigator.of(context).pop(type),
             );

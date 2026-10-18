@@ -38,7 +38,7 @@ class CanvasCardEditor extends StatefulWidget {
   /// revert through PromotionService (which the editor doesn't depend on
   /// directly) so the UX can surface a snackbar.
   final Future<void> Function(CanvasCard card, bool deletePromotedItem)?
-      onRevertPromotion;
+  onRevertPromotion;
 
   const CanvasCardEditor({
     super.key,
@@ -87,8 +87,7 @@ class _CanvasCardEditorState extends State<CanvasCardEditor> {
     _startDate = widget.card.startDate;
     _endDate = widget.card.endDate;
     _effortDays = widget.card.effortDays;
-    _effortCtrl =
-        TextEditingController(text: _effortDays?.toString() ?? '');
+    _effortCtrl = TextEditingController(text: _effortDays?.toString() ?? '');
     _currentTags = CanvasTags.extractFromBody(widget.card.body);
     _bodyCtrl.addListener(_recomputeSuggestion);
     _bodyFocus.addListener(_recomputeSuggestion);
@@ -207,9 +206,7 @@ class _CanvasCardEditorState extends State<CanvasCardEditor> {
 
   Future<void> _save() async {
     if (!_validateDates()) return;
-    final body = _bodyCtrl.text.trim().isEmpty
-        ? null
-        : _bodyCtrl.text.trim();
+    final body = _bodyCtrl.text.trim().isEmpty ? null : _bodyCtrl.text.trim();
     // Parse #tags out of the body on every save so the tags column
     // stays in sync with the source-of-truth body text.
     final tags = CanvasTags.extractFromBody(body);
@@ -258,16 +255,17 @@ class _CanvasCardEditorState extends State<CanvasCardEditor> {
     final on = widget.onRevertPromotion;
     if (on == null) return;
     final typeLabel = CanvasLinkBadge.labelForType(
-        widget.card.promotedToType ?? 'item');
+      widget.card.promotedToType ?? 'item',
+    );
     final choice = await showDialog<_RevertChoice>(
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: KColors.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(6),
-          side: const BorderSide(color: KColors.border),
+          side: BorderSide(color: KColors.border),
         ),
-        title: const Text(
+        title: Text(
           'Revert promotion?',
           style: TextStyle(
             color: KColors.amber,
@@ -278,11 +276,7 @@ class _CanvasCardEditorState extends State<CanvasCardEditor> {
         content: Text(
           'This card was promoted to a $typeLabel. What should happen '
           'to the $typeLabel itself?',
-          style: const TextStyle(
-            color: KColors.textDim,
-            fontSize: 12.5,
-            height: 1.4,
-          ),
+          style: TextStyle(color: KColors.textDim, fontSize: 12.5, height: 1.4),
         ),
         actions: [
           TextButton(
@@ -315,11 +309,9 @@ class _CanvasCardEditorState extends State<CanvasCardEditor> {
   Widget build(BuildContext context) {
     return Container(
       width: 360,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: KColors.surface,
-        border: Border(
-          left: BorderSide(color: KColors.border, width: 1),
-        ),
+        border: Border(left: BorderSide(color: KColors.border, width: 1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -335,7 +327,7 @@ class _CanvasCardEditorState extends State<CanvasCardEditor> {
                   TextField(
                     controller: _titleCtrl,
                     maxLines: 2,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: KColors.text,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -350,13 +342,14 @@ class _CanvasCardEditorState extends State<CanvasCardEditor> {
                     focusNode: _bodyFocus,
                     maxLines: 8,
                     minLines: 4,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: KColors.text,
                       fontSize: 12.5,
                       height: 1.4,
                     ),
                     decoration: _fieldDecoration(
-                        'Free-form thinking… type #tag to tag'),
+                      'Free-form thinking… type #tag to tag',
+                    ),
                     onChanged: (_) => _onBodyChanged(),
                   ),
                   // Autocomplete strip — visible only while the caret
@@ -427,16 +420,13 @@ class _CanvasCardEditorState extends State<CanvasCardEditor> {
                       padding: const EdgeInsets.only(top: 6),
                       child: Text(
                         _dateError!,
-                        style: const TextStyle(
-                          color: KColors.red,
-                          fontSize: 11,
-                        ),
+                        style: TextStyle(color: KColors.red, fontSize: 11),
                       ),
                     )
                   else if (_startDate == null &&
                       _endDate == null &&
                       widget.card.linkedItemType != null)
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.only(top: 6),
                       child: Text(
                         'No dates set — calendar uses the linked item\'s date.',
@@ -452,10 +442,7 @@ class _CanvasCardEditorState extends State<CanvasCardEditor> {
                   TextField(
                     controller: _effortCtrl,
                     keyboardType: TextInputType.number,
-                    style: const TextStyle(
-                      color: KColors.text,
-                      fontSize: 13,
-                    ),
+                    style: TextStyle(color: KColors.text, fontSize: 13),
                     decoration: _fieldDecoration('e.g. 7 = 1 week'),
                     onChanged: _onEffortChanged,
                   ),
@@ -465,10 +452,10 @@ class _CanvasCardEditorState extends State<CanvasCardEditor> {
                       child: Text(
                         _effortDays != null
                             ? 'Dragging from the No-date sidebar will '
-                                'place this as a $_effortDays-day bar.'
+                                  'place this as a $_effortDays-day bar.'
                             : 'No effort set — sidebar drops default to '
-                                '7 days.',
-                        style: const TextStyle(
+                                  '7 days.',
+                        style: TextStyle(
                           color: KColors.textMuted,
                           fontSize: 11,
                           fontStyle: FontStyle.italic,
@@ -507,8 +494,7 @@ class _CanvasCardEditorState extends State<CanvasCardEditor> {
                   const SizedBox(height: 8),
                   if (widget.onStartSequence != null) ...[
                     TextButton.icon(
-                      onPressed: () =>
-                          widget.onStartSequence!(widget.card),
+                      onPressed: () => widget.onStartSequence!(widget.card),
                       icon: const Icon(Icons.arrow_forward, size: 16),
                       label: const Text('Add arrow to…'),
                     ),
@@ -522,7 +508,7 @@ class _CanvasCardEditorState extends State<CanvasCardEditor> {
                       label: const Text('Promote to…'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: KColors.amber,
-                        side: const BorderSide(color: KColors.amber),
+                        side: BorderSide(color: KColors.amber),
                       ),
                     ),
                   if (widget.card.promotedAt != null)
@@ -537,14 +523,17 @@ class _CanvasCardEditorState extends State<CanvasCardEditor> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.check_circle,
-                              size: 14, color: KColors.phosphor),
+                          Icon(
+                            Icons.check_circle,
+                            size: 14,
+                            color: KColors.phosphor,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               'Promoted to '
                               '${CanvasLinkBadge.labelForType(widget.card.promotedToType ?? 'item')}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: KColors.phosphor,
                                 fontSize: 11.5,
                               ),
@@ -556,12 +545,11 @@ class _CanvasCardEditorState extends State<CanvasCardEditor> {
                               style: TextButton.styleFrom(
                                 foregroundColor: KColors.phosphor,
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 8),
+                                  horizontal: 8,
+                                ),
                                 minimumSize: const Size(0, 24),
-                                tapTargetSize:
-                                    MaterialTapTargetSize.shrinkWrap,
-                                textStyle:
-                                    const TextStyle(fontSize: 11),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                textStyle: const TextStyle(fontSize: 11),
                               ),
                               child: const Text('Revert'),
                             ),
@@ -571,10 +559,15 @@ class _CanvasCardEditorState extends State<CanvasCardEditor> {
                   const SizedBox(height: 24),
                   TextButton.icon(
                     onPressed: _delete,
-                    icon: const Icon(Icons.delete_outline,
-                        size: 16, color: KColors.red),
-                    label: const Text('Delete card',
-                        style: TextStyle(color: KColors.red)),
+                    icon: Icon(
+                      Icons.delete_outline,
+                      size: 16,
+                      color: KColors.red,
+                    ),
+                    label: Text(
+                      'Delete card',
+                      style: TextStyle(color: KColors.red),
+                    ),
                   ),
                 ],
               ),
@@ -588,21 +581,20 @@ class _CanvasCardEditorState extends State<CanvasCardEditor> {
   InputDecoration _fieldDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: KColors.textMuted, fontSize: 12),
+      hintStyle: TextStyle(color: KColors.textMuted, fontSize: 12),
       isDense: true,
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(4),
-        borderSide: const BorderSide(color: KColors.border),
+        borderSide: BorderSide(color: KColors.border),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(4),
-        borderSide: const BorderSide(color: KColors.border),
+        borderSide: BorderSide(color: KColors.border),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(4),
-        borderSide: const BorderSide(color: KColors.amber),
+        borderSide: BorderSide(color: KColors.amber),
       ),
     );
   }
@@ -618,10 +610,7 @@ class _TagSuggestionStrip extends StatelessWidget {
   final TagSuggestion suggestion;
   final ValueChanged<String> onPick;
 
-  const _TagSuggestionStrip({
-    required this.suggestion,
-    required this.onPick,
-  });
+  const _TagSuggestionStrip({required this.suggestion, required this.onPick});
 
   @override
   Widget build(BuildContext context) {
@@ -635,8 +624,7 @@ class _TagSuggestionStrip extends StatelessWidget {
             onTap: () => onPick(tag),
             borderRadius: BorderRadius.circular(3),
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 7, vertical: 3),
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
               decoration: BoxDecoration(
                 color: KColors.surface2,
                 borderRadius: BorderRadius.circular(3),
@@ -647,7 +635,7 @@ class _TagSuggestionStrip extends StatelessWidget {
               ),
               child: Text(
                 '#$tag',
-                style: const TextStyle(
+                style: TextStyle(
                   color: KColors.amber,
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
@@ -674,27 +662,28 @@ class _EditorTagChips extends StatelessWidget {
       spacing: 5,
       runSpacing: 4,
       children: tags
-          .map((t) => Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: KColors.amberDim.withValues(alpha: 0.55),
-                  borderRadius: BorderRadius.circular(3),
-                  border: Border.all(
-                    color: KColors.amber.withValues(alpha: 0.5),
-                    width: 0.5,
-                  ),
+          .map(
+            (t) => Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: KColors.amberDim.withValues(alpha: 0.55),
+                borderRadius: BorderRadius.circular(3),
+                border: Border.all(
+                  color: KColors.amber.withValues(alpha: 0.5),
+                  width: 0.5,
                 ),
-                child: Text(
-                  '#$t',
-                  style: const TextStyle(
-                    color: KColors.amber,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.2,
-                  ),
+              ),
+              child: Text(
+                '#$t',
+                style: TextStyle(
+                  color: KColors.amber,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.2,
                 ),
-              ))
+              ),
+            ),
+          )
           .toList(),
     );
   }
@@ -711,17 +700,14 @@ class _Header extends StatelessWidget {
     return Container(
       height: CanvasLayout.headerHeight,
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: KColors.border, width: 0.5),
-        ),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: KColors.border, width: 0.5)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.edit_outlined,
-              size: 16, color: KColors.textDim),
+          Icon(Icons.edit_outlined, size: 16, color: KColors.textDim),
           const SizedBox(width: 8),
-          const Text(
+          Text(
             'EDIT CARD',
             style: TextStyle(
               color: KColors.textDim,
@@ -734,7 +720,7 @@ class _Header extends StatelessWidget {
           IconButton(
             visualDensity: VisualDensity.compact,
             onPressed: onClose,
-            icon: const Icon(Icons.close, size: 18, color: KColors.textDim),
+            icon: Icon(Icons.close, size: 18, color: KColors.textDim),
             tooltip: 'Close',
           ),
         ],
@@ -753,7 +739,7 @@ class _SectionLabel extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 6, top: 4),
       child: Text(
         text.toUpperCase(),
-        style: const TextStyle(
+        style: TextStyle(
           color: KColors.textMuted,
           fontSize: 10.5,
           fontWeight: FontWeight.w700,
@@ -776,11 +762,9 @@ class _ColourPicker extends StatelessWidget {
       spacing: 8,
       children: [
         _swatch(null, KColors.border, 'None'),
-        ...CanvasCardColours.all.map((key) => _swatch(
-              key,
-              CanvasCardColours.palette[key]!,
-              key,
-            )),
+        ...CanvasCardColours.all.map(
+          (key) => _swatch(key, CanvasCardColours.palette[key]!, key),
+        ),
       ],
     );
   }
@@ -804,7 +788,7 @@ class _ColourPicker extends StatelessWidget {
             ),
           ),
           child: value == null
-              ? const Center(
+              ? Center(
                   child: Icon(Icons.block, size: 12, color: KColors.textDim),
                 )
               : null,
@@ -822,11 +806,7 @@ class _SizePicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final options = [
-      ('small', 'S'),
-      ('medium', 'M'),
-      ('large', 'L'),
-    ];
+    final options = [('small', 'S'), ('medium', 'M'), ('large', 'L')];
     return Row(
       children: options.map((opt) {
         final isSelected = selected == opt.$1;
@@ -839,13 +819,13 @@ class _SizePicker extends StatelessWidget {
               side: BorderSide(
                 color: isSelected ? KColors.amber : KColors.border,
               ),
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 12, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               minimumSize: const Size(40, 28),
             ),
-            child: Text(opt.$2,
-                style: const TextStyle(
-                    fontSize: 12, fontWeight: FontWeight.w700)),
+            child: Text(
+              opt.$2,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+            ),
           ),
         );
       }).toList(),

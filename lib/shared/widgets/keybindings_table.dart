@@ -70,13 +70,16 @@ class KeybindingsTable extends StatelessWidget {
               child: Row(
                 children: [
                   Expanded(
-                    child: Text(b.$1,
-                        style: const TextStyle(
-                            color: KColors.text, fontSize: 12)),
+                    child: Text(
+                      b.$1,
+                      style: TextStyle(color: KColors.text, fontSize: 12),
+                    ),
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: KColors.surface2,
                       border: Border.all(color: KColors.border2),
@@ -84,7 +87,7 @@ class KeybindingsTable extends StatelessWidget {
                     ),
                     child: Text(
                       b.$2,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: KColors.amber,
                         fontSize: 11,
                         fontWeight: FontWeight.w600,

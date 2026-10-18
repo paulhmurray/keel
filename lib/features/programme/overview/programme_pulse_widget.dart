@@ -29,9 +29,12 @@ class ProgrammePulseWidget extends StatelessWidget {
     final override = overviewState?.ragManualOverride;
     if (override != null) {
       switch (override) {
-        case 'green': return Rag.green;
-        case 'amber': return Rag.amber;
-        case 'red':   return Rag.red;
+        case 'green':
+          return Rag.green;
+        case 'amber':
+          return Rag.amber;
+        case 'red':
+          return Rag.red;
       }
     }
     return workPackages.isEmpty
@@ -43,28 +46,42 @@ class ProgrammePulseWidget extends StatelessWidget {
     if (lastSnapshot == null) return RagTrend.noData;
     Rag? prev;
     switch (lastSnapshot!.programmeRag) {
-      case 'green': prev = Rag.green; break;
-      case 'amber': prev = Rag.amber; break;
-      case 'red':   prev = Rag.red;   break;
+      case 'green':
+        prev = Rag.green;
+        break;
+      case 'amber':
+        prev = Rag.amber;
+        break;
+      case 'red':
+        prev = Rag.red;
+        break;
     }
     return StatusCalculator.computeTrend(_effectiveRag, prev);
   }
 
   Color get _ragColor {
     switch (_effectiveRag) {
-      case Rag.green:      return const Color(0xFF22c55e);
-      case Rag.amber:      return KColors.amber;
-      case Rag.red:        return KColors.red;
-      case Rag.notStarted: return KColors.textMuted;
+      case Rag.green:
+        return const Color(0xFF22c55e);
+      case Rag.amber:
+        return KColors.amber;
+      case Rag.red:
+        return KColors.red;
+      case Rag.notStarted:
+        return KColors.textMuted;
     }
   }
 
   Color get _ragBg {
     switch (_effectiveRag) {
-      case Rag.green:      return const Color(0xFF0d3325);
-      case Rag.amber:      return KColors.amberDim;
-      case Rag.red:        return KColors.redDim;
-      case Rag.notStarted: return KColors.surface2;
+      case Rag.green:
+        return const Color(0xFF0d3325);
+      case Rag.amber:
+        return KColors.amberDim;
+      case Rag.red:
+        return KColors.redDim;
+      case Rag.notStarted:
+        return KColors.surface2;
     }
   }
 
@@ -72,7 +89,8 @@ class ProgrammePulseWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final rag = _effectiveRag;
     final trend = _trend;
-    final narrative = overviewState?.narrativeManualOverride ??
+    final narrative =
+        overviewState?.narrativeManualOverride ??
         overviewState?.cachedNarrative;
 
     return Container(
@@ -113,77 +131,90 @@ class ProgrammePulseWidget extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(children: [
-                  const Text(
-                    'PROGRAMME RAG',
-                    style: TextStyle(
-                      color: KColors.textMuted,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.15,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  if (trend != RagTrend.noData)
-                    Flexible(
-                      child: Text(
-                        '${trend.arrow} ${trend.label}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            color: KColors.textDim, fontSize: 11),
+                Row(
+                  children: [
+                    Text(
+                      'PROGRAMME RAG',
+                      style: TextStyle(
+                        color: KColors.textMuted,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.15,
                       ),
                     ),
-                  if (lastSnapshot != null && trend != RagTrend.noData) ...[
-                    const Text('  ·  ',
-                        style: TextStyle(
-                            color: KColors.border2, fontSize: 11)),
-                    Flexible(
-                      child: Text(
-                        'was ${lastSnapshot!.programmeRag}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            color: KColors.textMuted, fontSize: 11),
+                    const SizedBox(width: 12),
+                    if (trend != RagTrend.noData)
+                      Flexible(
+                        child: Text(
+                          '${trend.arrow} ${trend.label}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: KColors.textDim,
+                            fontSize: 11,
+                          ),
+                        ),
                       ),
-                    ),
+                    if (lastSnapshot != null && trend != RagTrend.noData) ...[
+                      Text(
+                        '  ·  ',
+                        style: TextStyle(color: KColors.border2, fontSize: 11),
+                      ),
+                      Flexible(
+                        child: Text(
+                          'was ${lastSnapshot!.programmeRag}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: KColors.textMuted,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
-                ]),
+                ),
                 const SizedBox(height: 8),
                 if (narrative != null && narrative.isNotEmpty)
                   Text(
                     narrative,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: KColors.text,
                       fontSize: 13,
                       height: 1.6,
                     ),
                   )
                 else
-                  const Text(
+                  Text(
                     'No narrative yet. Click "Draft narrative" below to generate one.',
-                    style: TextStyle(
-                        color: KColors.textMuted, fontSize: 12),
+                    style: TextStyle(color: KColors.textMuted, fontSize: 12),
                   ),
                 const SizedBox(height: 12),
                 // Wrap, not Row — the pane can be squeezed well below
                 // the two buttons' combined width.
-                Wrap(spacing: 8, runSpacing: 4, children: [
-                  TextButton.icon(
-                    onPressed: onEditNarrative,
-                    icon: const Icon(Icons.edit_outlined, size: 13),
-                    label: const Text('Edit narrative',
-                        style: TextStyle(fontSize: 11)),
-                    style: TextButton.styleFrom(
-                        foregroundColor: KColors.textDim),
-                  ),
-                  _RagOverrideButton(
-                    projectId: projectId,
-                    db: db,
-                    overviewState: overviewState,
-                    currentRag: rag,
-                  ),
-                ]),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    TextButton.icon(
+                      onPressed: onEditNarrative,
+                      icon: const Icon(Icons.edit_outlined, size: 13),
+                      label: const Text(
+                        'Edit narrative',
+                        style: TextStyle(fontSize: 11),
+                      ),
+                      style: TextButton.styleFrom(
+                        foregroundColor: KColors.textDim,
+                      ),
+                    ),
+                    _RagOverrideButton(
+                      projectId: projectId,
+                      db: db,
+                      overviewState: overviewState,
+                      currentRag: rag,
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -232,34 +263,39 @@ class _RagOverrideButton extends StatelessWidget {
         ),
         child: Text(
           hasOverride ? 'RAG: manual' : 'Override RAG',
-          style: const TextStyle(
-              color: KColors.textDim, fontSize: 11),
+          style: TextStyle(color: KColors.textDim, fontSize: 11),
         ),
       ),
       onSelected: (v) => _setOverride(context, v),
       itemBuilder: (_) => [
         const PopupMenuItem(
           value: 'green',
-          child: Text('Force Green',
-              style: TextStyle(
-                  color: Color(0xFF22c55e), fontSize: 12)),
+          child: Text(
+            'Force Green',
+            style: TextStyle(color: Color(0xFF22c55e), fontSize: 12),
+          ),
         ),
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'amber',
-          child: Text('Force Amber',
-              style: TextStyle(color: KColors.amber, fontSize: 12)),
+          child: Text(
+            'Force Amber',
+            style: TextStyle(color: KColors.amber, fontSize: 12),
+          ),
         ),
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'red',
-          child: Text('Force Red',
-              style: TextStyle(color: KColors.red, fontSize: 12)),
+          child: Text(
+            'Force Red',
+            style: TextStyle(color: KColors.red, fontSize: 12),
+          ),
         ),
         if (hasOverride)
-          const PopupMenuItem(
+          PopupMenuItem(
             value: null,
-            child: Text('Clear override',
-                style: TextStyle(
-                    color: KColors.textDim, fontSize: 12)),
+            child: Text(
+              'Clear override',
+              style: TextStyle(color: KColors.textDim, fontSize: 12),
+            ),
           ),
       ],
     );

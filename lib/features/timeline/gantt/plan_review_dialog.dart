@@ -266,9 +266,9 @@ class _PlanReviewDialogState extends State<PlanReviewDialog> {
       contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
       title: Row(
         children: [
-          const Icon(Icons.fact_check_outlined, size: 16, color: KColors.amber),
+          Icon(Icons.fact_check_outlined, size: 16, color: KColors.amber),
           const SizedBox(width: 8),
-          const Expanded(
+          Expanded(
             child: Text(
               'Review my plan',
               style: TextStyle(color: KColors.text, fontSize: 14),
@@ -277,10 +277,10 @@ class _PlanReviewDialogState extends State<PlanReviewDialog> {
           if (_phase == _Phase.cards)
             Text(
               '${_index + 1} of ${_suggestions.length}',
-              style: const TextStyle(color: KColors.textMuted, fontSize: 11),
+              style: TextStyle(color: KColors.textMuted, fontSize: 11),
             ),
           IconButton(
-            icon: const Icon(Icons.close, size: 16, color: KColors.textMuted),
+            icon: Icon(Icons.close, size: 16, color: KColors.textMuted),
             tooltip: _phase == _Phase.cards
                 ? 'Stop — what you accepted stays'
                 : 'Close',
@@ -352,7 +352,7 @@ class _PlanReviewDialogState extends State<PlanReviewDialog> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'First the facts the plan itself gives away: arrows pointing '
               'backwards in time, work nothing connects to, milestones '
               'nothing leads to, work packages with no end point. Then, if '
@@ -367,7 +367,7 @@ class _PlanReviewDialogState extends State<PlanReviewDialog> {
             ),
             const SizedBox(height: 14),
             if (_findings.isEmpty)
-              const Text(
+              Text(
                 'Nothing to flag. Arrows run forward, every milestone '
                 'has work leading to it, every package has an end point.',
                 style: TextStyle(color: KColors.phosphor, fontSize: 13),
@@ -376,7 +376,7 @@ class _PlanReviewDialogState extends State<PlanReviewDialog> {
               Text(
                 '${_findings.length} ${_findings.length == 1 ? 'finding' : 'findings'}'
                 '${warns > 0 ? ', $warns worth fixing' : ''}',
-                style: const TextStyle(
+                style: TextStyle(
                   color: KColors.textDim,
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
@@ -420,7 +420,7 @@ class _PlanReviewDialogState extends State<PlanReviewDialog> {
               const SizedBox(height: 10),
               Text(
                 'The model could not review the plan: $_askError',
-                style: const TextStyle(color: KColors.amber, fontSize: 11),
+                style: TextStyle(color: KColors.amber, fontSize: 11),
               ),
             ],
           ],
@@ -429,7 +429,7 @@ class _PlanReviewDialogState extends State<PlanReviewDialog> {
     );
   }
 
-  Widget _askingStep() => const Column(
+  Widget _askingStep() => Column(
     mainAxisSize: MainAxisSize.min,
     children: [
       SizedBox(height: 12),
@@ -474,7 +474,7 @@ class _PlanReviewDialogState extends State<PlanReviewDialog> {
                 s.kind == SuggestionKind.reorder
                     ? '${after?.name ?? '?'} should finish before ${before?.name ?? '?'} starts'
                     : s.name!,
-                style: const TextStyle(
+                style: TextStyle(
                   color: KColors.text,
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
@@ -486,11 +486,7 @@ class _PlanReviewDialogState extends State<PlanReviewDialog> {
         const SizedBox(height: 10),
         Text(
           s.message,
-          style: const TextStyle(
-            color: KColors.text,
-            fontSize: 12,
-            height: 1.4,
-          ),
+          style: TextStyle(color: KColors.text, fontSize: 12, height: 1.4),
         ),
         const SizedBox(height: 12),
         Container(
@@ -503,7 +499,7 @@ class _PlanReviewDialogState extends State<PlanReviewDialog> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'ACCEPTING DOES THIS',
                 style: TextStyle(
                   color: KColors.textDim,
@@ -520,7 +516,7 @@ class _PlanReviewDialogState extends State<PlanReviewDialog> {
                   '${_deps.any((d) => d.fromActivityId == s.beforeId && d.toActivityId == s.afterId) ? ', replacing the arrow that currently points the other way' : ''}. '
                   'Dates do not change now; Re-plan will push '
                   '${before?.name ?? 'it'} if the arrow is violated.',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: KColors.textDim,
                     fontSize: 12,
                     height: 1.4,
@@ -534,7 +530,7 @@ class _PlanReviewDialogState extends State<PlanReviewDialog> {
                   '${after != null ? ', after ${after.name}' : ''}'
                   '${before != null ? ', before ${before.name}' : ''}'
                   '${after != null || before != null ? ', with the arrows to match' : ''}.',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: KColors.textDim,
                     fontSize: 12,
                     height: 1.4,
@@ -557,11 +553,11 @@ class _PlanReviewDialogState extends State<PlanReviewDialog> {
           total == 0
               ? 'The model had nothing to add. The plan reads as sound.'
               : '$_accepted of $total applied${_skipped > 0 ? ', $_skipped skipped' : ''}.',
-          style: const TextStyle(color: KColors.text, fontSize: 13),
+          style: TextStyle(color: KColors.text, fontSize: 13),
         ),
         if (_accepted > 0) ...[
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'New rows carry a note saying why they were added. Run Re-plan '
             'to settle the dates around any new arrows. The Gantt reloads '
             'when you close this.',

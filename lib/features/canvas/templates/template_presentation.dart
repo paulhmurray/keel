@@ -58,7 +58,7 @@ class _PresentationScaffold extends StatelessWidget {
               Container(
                 height: 44,
                 padding: const EdgeInsets.symmetric(horizontal: 14),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: KColors.surface,
                   border: Border(
                     bottom: BorderSide(color: KColors.border, width: 1),
@@ -73,7 +73,7 @@ class _PresentationScaffold extends StatelessWidget {
                         title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: KColors.text,
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
@@ -81,7 +81,7 @@ class _PresentationScaffold extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    const Text(
+                    Text(
                       'PRESENTATION',
                       style: TextStyle(
                         color: KColors.amber,
@@ -92,15 +92,16 @@ class _PresentationScaffold extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     OutlinedButton.icon(
-                      onPressed: () =>
-                          Navigator.of(context).maybePop(),
+                      onPressed: () => Navigator.of(context).maybePop(),
                       icon: const Icon(Icons.fullscreen_exit, size: 14),
                       label: const Text('Exit (Esc)'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: KColors.amber,
-                        side: const BorderSide(color: KColors.amber),
+                        side: BorderSide(color: KColors.amber),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         textStyle: const TextStyle(fontSize: 12),
                         minimumSize: const Size(0, 30),
                       ),

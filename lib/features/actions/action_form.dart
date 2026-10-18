@@ -23,9 +23,18 @@ import '../journal/journal_source_link.dart';
 // ---------------------------------------------------------------------------
 
 const _kCustomColors = [
-  '#EF4444', '#F97316', '#EAB308', '#22C55E',
-  '#14B8A6', '#3B82F6', '#6366F1', '#8B5CF6',
-  '#EC4899', '#6B7280', '#F59E0B', '#10B981',
+  '#EF4444',
+  '#F97316',
+  '#EAB308',
+  '#22C55E',
+  '#14B8A6',
+  '#3B82F6',
+  '#6366F1',
+  '#8B5CF6',
+  '#EC4899',
+  '#6B7280',
+  '#F59E0B',
+  '#10B981',
 ];
 
 // ---------------------------------------------------------------------------
@@ -42,6 +51,7 @@ class ActionFormDialog extends StatefulWidget {
   final AppDatabase db;
   final ProjectAction? action;
   final bool startInViewMode;
+
   /// Pre-link to a specific plan activity (e.g. when opened from the Plan view).
   final String? preLinkedActivityId;
 
@@ -96,9 +106,20 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
   final _statuses = ['open', 'in progress', 'closed', 'blocked'];
   final _priorities = ['low', 'medium', 'high', 'critical'];
   final _sources = [
-    'manual', 'inbox', 'document', 'observation', 'meeting', 'journal'
+    'manual',
+    'inbox',
+    'document',
+    'observation',
+    'meeting',
+    'journal',
   ];
-  final _recurrences = ['none', 'weekly', 'fortnightly', 'monthly', 'quarterly'];
+  final _recurrences = [
+    'none',
+    'weekly',
+    'fortnightly',
+    'monthly',
+    'quarterly',
+  ];
 
   bool get _isEdit => widget.action != null;
 
@@ -124,11 +145,20 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
 
   Future<void> _loadData() async {
     await widget.db.actionCategoriesDao.seedPresetsIfEmpty(widget.projectId);
-    final cats = await widget.db.actionCategoriesDao.getForProject(widget.projectId);
-    final persons = await widget.db.peopleDao.getPersonsForProject(widget.projectId);
-    final actions = await widget.db.actionsDao.getActionsForProject(widget.projectId);
-    final wps = await widget.db.programmeGanttDao.getWorkPackages(widget.projectId);
-    final activities = await widget.db.programmeGanttDao.getActivitiesForProject(widget.projectId);
+    final cats = await widget.db.actionCategoriesDao.getForProject(
+      widget.projectId,
+    );
+    final persons = await widget.db.peopleDao.getPersonsForProject(
+      widget.projectId,
+    );
+    final actions = await widget.db.actionsDao.getActionsForProject(
+      widget.projectId,
+    );
+    final wps = await widget.db.programmeGanttDao.getWorkPackages(
+      widget.projectId,
+    );
+    final activities = await widget.db.programmeGanttDao
+        .getActivitiesForProject(widget.projectId);
     if (!mounted) return;
     setState(() {
       _categories = cats;
@@ -157,11 +187,11 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
     while (!cursor.isAfter(end)) {
       dates.add(cursor.toIso8601String().substring(0, 10));
       cursor = switch (type) {
-        'weekly'      => cursor.add(const Duration(days: 7)),
+        'weekly' => cursor.add(const Duration(days: 7)),
         'fortnightly' => cursor.add(const Duration(days: 14)),
-        'monthly'     => DateTime(cursor.year, cursor.month + 1, cursor.day),
-        'quarterly'   => DateTime(cursor.year, cursor.month + 3, cursor.day),
-        _             => end.add(const Duration(days: 1)),
+        'monthly' => DateTime(cursor.year, cursor.month + 1, cursor.day),
+        'quarterly' => DateTime(cursor.year, cursor.month + 3, cursor.day),
+        _ => end.add(const Duration(days: 1)),
       };
     }
     return dates;
@@ -179,9 +209,10 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
       _isParent = true;
     }
 
-    final existing = await widget.db.actionsDao.getActionsForProject(widget.projectId);
-    final String baseRef =
-        widget.action?.ref ?? ActionsDao.nextRef(existing);
+    final existing = await widget.db.actionsDao.getActionsForProject(
+      widget.projectId,
+    );
+    final String baseRef = widget.action?.ref ?? ActionsDao.nextRef(existing);
 
     final isEdit = widget.action != null;
 
@@ -193,49 +224,61 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
       final groupId = const Uuid().v4();
       final dates = _generateDates(_dueDate!, _recurrence, _recurrenceEndDate!);
       for (final date in dates) {
-        await widget.db.actionsDao.upsertAction(ProjectActionsCompanion(
-          id: Value(const Uuid().v4()),
-          projectId: Value(widget.projectId),
-          ref: Value(baseRef),
-          description: Value(_descCtrl.text.trim()),
-          owner: Value(_ownerCtrl.text.trim().isEmpty ? null : _ownerCtrl.text.trim()),
-          dueDate: Value(date),
-          status: Value(_status),
-          priority: Value(_priority),
-          source: Value(_source),
-          sourceNote: Value(_sourceNoteCtrl.text.trim().isEmpty
-              ? null
-              : _sourceNoteCtrl.text.trim()),
-          categoryId: Value(_categoryId),
-          recurrenceGroupId: Value(groupId),
-          linkedActionId: Value(_linkedActionId),
-          planActivityId: Value(_planActivityId),
-          isParent: Value(_isParent),
-          updatedAt: Value(DateTime.now()),
-        ));
+        await widget.db.actionsDao.upsertAction(
+          ProjectActionsCompanion(
+            id: Value(const Uuid().v4()),
+            projectId: Value(widget.projectId),
+            ref: Value(baseRef),
+            description: Value(_descCtrl.text.trim()),
+            owner: Value(
+              _ownerCtrl.text.trim().isEmpty ? null : _ownerCtrl.text.trim(),
+            ),
+            dueDate: Value(date),
+            status: Value(_status),
+            priority: Value(_priority),
+            source: Value(_source),
+            sourceNote: Value(
+              _sourceNoteCtrl.text.trim().isEmpty
+                  ? null
+                  : _sourceNoteCtrl.text.trim(),
+            ),
+            categoryId: Value(_categoryId),
+            recurrenceGroupId: Value(groupId),
+            linkedActionId: Value(_linkedActionId),
+            planActivityId: Value(_planActivityId),
+            isParent: Value(_isParent),
+            updatedAt: Value(DateTime.now()),
+          ),
+        );
       }
     } else {
       final id = widget.action?.id ?? const Uuid().v4();
-      await widget.db.actionsDao.upsertAction(ProjectActionsCompanion(
-        id: Value(id),
-        projectId: Value(widget.projectId),
-        ref: Value(baseRef),
-        description: Value(_descCtrl.text.trim()),
-        owner: Value(_ownerCtrl.text.trim().isEmpty ? null : _ownerCtrl.text.trim()),
-        dueDate: Value(_dueDate),
-        status: Value(_status),
-        priority: Value(_priority),
-        source: Value(_source),
-        sourceNote: Value(_sourceNoteCtrl.text.trim().isEmpty
-            ? null
-            : _sourceNoteCtrl.text.trim()),
-        categoryId: Value(_categoryId),
-        linkedActionId: Value(_linkedActionId),
-        planActivityId: Value(_planActivityId),
-        parentActionId: Value(_parentActionId),
-        isParent: Value(_isParent),
-        updatedAt: Value(DateTime.now()),
-      ));
+      await widget.db.actionsDao.upsertAction(
+        ProjectActionsCompanion(
+          id: Value(id),
+          projectId: Value(widget.projectId),
+          ref: Value(baseRef),
+          description: Value(_descCtrl.text.trim()),
+          owner: Value(
+            _ownerCtrl.text.trim().isEmpty ? null : _ownerCtrl.text.trim(),
+          ),
+          dueDate: Value(_dueDate),
+          status: Value(_status),
+          priority: Value(_priority),
+          source: Value(_source),
+          sourceNote: Value(
+            _sourceNoteCtrl.text.trim().isEmpty
+                ? null
+                : _sourceNoteCtrl.text.trim(),
+          ),
+          categoryId: Value(_categoryId),
+          linkedActionId: Value(_linkedActionId),
+          planActivityId: Value(_planActivityId),
+          parentActionId: Value(_parentActionId),
+          isParent: Value(_isParent),
+          updatedAt: Value(DateTime.now()),
+        ),
+      );
       // Sub-tasks queued while creating — the parent row exists now.
       for (final name in _pendingSubTaskNames) {
         await widget.db.actionsDao.addSubTask(
@@ -264,10 +307,10 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
   }
 
   String _planActivityLabel(String activityId) => PlanActivityPicker.labelFor(
-        activityId,
-        workPackages: _workPackages,
-        activities: _planActivities,
-      );
+    activityId,
+    workPackages: _workPackages,
+    activities: _planActivities,
+  );
 
   Color get _accent {
     final cat = _categoryId != null
@@ -296,9 +339,7 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
   List<ProjectAction> get _children {
     final parent = widget.action;
     if (parent == null) return const [];
-    return _allActions
-        .where((c) => c.parentActionId == parent.id)
-        .toList()
+    return _allActions.where((c) => c.parentActionId == parent.id).toList()
       ..sort((x, y) {
         final xClosed = x.status == 'closed' ? 1 : 0;
         final yClosed = y.status == 'closed' ? 1 : 0;
@@ -358,7 +399,7 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
 
     if (!editable && children.isEmpty) return const [];
     if (editable && !_canHaveSubTasks) {
-      return const [
+      return [
         Padding(
           padding: EdgeInsets.symmetric(vertical: 4),
           child: Text(
@@ -371,49 +412,63 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
     }
 
     return [
-      DetailSectionLabel(children.isEmpty
-          ? 'Sub-tasks'
-          : 'Sub-tasks · $doneCount of ${children.length} done'),
+      DetailSectionLabel(
+        children.isEmpty
+            ? 'Sub-tasks'
+            : 'Sub-tasks · $doneCount of ${children.length} done',
+      ),
       const SizedBox(height: 6),
       for (final c in children) _subTaskRow(c, today, editable: editable),
       if (!_isEdit)
         for (var i = 0; i < _pendingSubTaskNames.length; i++)
           Padding(
             padding: const EdgeInsets.only(bottom: 4),
-            child: Row(children: [
-              const Icon(Icons.radio_button_unchecked,
-                  size: 16, color: KColors.textMuted),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(_pendingSubTaskNames[i],
-                    style: const TextStyle(color: KColors.text, fontSize: 12),
-                    overflow: TextOverflow.ellipsis),
-              ),
-              InkWell(
-                onTap: () =>
-                    setState(() => _pendingSubTaskNames.removeAt(i)),
-                child: const Padding(
-                  padding: EdgeInsets.all(2),
-                  child: Icon(Icons.close, size: 12, color: KColors.textMuted),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.radio_button_unchecked,
+                  size: 16,
+                  color: KColors.textMuted,
                 ),
-              ),
-            ]),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _pendingSubTaskNames[i],
+                    style: TextStyle(color: KColors.text, fontSize: 12),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                InkWell(
+                  onTap: () => setState(() => _pendingSubTaskNames.removeAt(i)),
+                  child: Padding(
+                    padding: EdgeInsets.all(2),
+                    child: Icon(
+                      Icons.close,
+                      size: 12,
+                      color: KColors.textMuted,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
       if (editable) ...[
         const SizedBox(height: 4),
         TextField(
           controller: _subTaskCtrl,
           focusNode: _subTaskFocus,
-          style: const TextStyle(color: KColors.text, fontSize: 12),
+          style: TextStyle(color: KColors.text, fontSize: 12),
           decoration: InputDecoration(
             hintText: _isEdit
                 ? 'Add sub-task — Enter to save, keep typing for more'
                 : 'Add sub-task — created with the action',
-            hintStyle: const TextStyle(color: KColors.textMuted, fontSize: 12),
+            hintStyle: TextStyle(color: KColors.textMuted, fontSize: 12),
             isDense: true,
-            prefixIcon: const Icon(Icons.add, size: 14, color: KColors.textDim),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            prefixIcon: Icon(Icons.add, size: 14, color: KColors.textDim),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 10,
+              vertical: 8,
+            ),
           ),
           onSubmitted: (_) => _quickAddSubTask(),
         ),
@@ -431,78 +486,90 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
       onTap: () => _openSubTask(c),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 2),
-        child: Row(children: [
-          Tooltip(
-            message: closed ? 'Reopen' : 'Mark done',
-            child: InkWell(
-              onTap: () async {
-                await widget.db.actionsDao
-                    .setStatus(c.id, closed ? 'open' : 'closed');
-                await _loadData();
-              },
-              child: Icon(
-                closed ? Icons.check_circle : Icons.radio_button_unchecked,
-                size: 16,
-                color: closed ? KColors.phosphor : KColors.textMuted,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          if (c.ref != null) ...[
-            Text(c.ref!,
-                style: const TextStyle(
-                    color: KColors.amber,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700)),
-            const SizedBox(width: 8),
-          ],
-          Expanded(
-            child: Text(
-              c.description,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: closed ? KColors.textMuted : KColors.text,
-                fontSize: 12,
-                decoration: closed ? TextDecoration.lineThrough : null,
-                decorationColor: KColors.textMuted,
-              ),
-            ),
-          ),
-          if (c.owner != null && c.owner!.isNotEmpty) ...[
-            const SizedBox(width: 8),
-            Text(c.owner!,
-                style:
-                    const TextStyle(color: KColors.textMuted, fontSize: 10)),
-          ],
-          if (c.dueDate != null) ...[
-            const SizedBox(width: 8),
-            Text(
-              du.formatDate(c.dueDate),
-              style: TextStyle(
-                color: overdue ? KColors.red : KColors.textMuted,
-                fontSize: 10,
-              ),
-            ),
-          ],
-          const SizedBox(width: 4),
-          if (editable)
+        child: Row(
+          children: [
             Tooltip(
-              message: 'Move to top level (keeps the action)',
+              message: closed ? 'Reopen' : 'Mark done',
               child: InkWell(
                 onTap: () async {
-                  await widget.db.actionsDao.setParent(c.id, null);
+                  await widget.db.actionsDao.setStatus(
+                    c.id,
+                    closed ? 'open' : 'closed',
+                  );
                   await _loadData();
                 },
-                child: const Padding(
-                  padding: EdgeInsets.all(2),
-                  child: Icon(Icons.close, size: 12, color: KColors.textMuted),
+                child: Icon(
+                  closed ? Icons.check_circle : Icons.radio_button_unchecked,
+                  size: 16,
+                  color: closed ? KColors.phosphor : KColors.textMuted,
                 ),
               ),
-            )
-          else
-            const Icon(Icons.chevron_right, size: 14, color: KColors.textMuted),
-        ]),
+            ),
+            const SizedBox(width: 8),
+            if (c.ref != null) ...[
+              Text(
+                c.ref!,
+                style: TextStyle(
+                  color: KColors.amber,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
+            Expanded(
+              child: Text(
+                c.description,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: closed ? KColors.textMuted : KColors.text,
+                  fontSize: 12,
+                  decoration: closed ? TextDecoration.lineThrough : null,
+                  decorationColor: KColors.textMuted,
+                ),
+              ),
+            ),
+            if (c.owner != null && c.owner!.isNotEmpty) ...[
+              const SizedBox(width: 8),
+              Text(
+                c.owner!,
+                style: TextStyle(color: KColors.textMuted, fontSize: 10),
+              ),
+            ],
+            if (c.dueDate != null) ...[
+              const SizedBox(width: 8),
+              Text(
+                du.formatDate(c.dueDate),
+                style: TextStyle(
+                  color: overdue ? KColors.red : KColors.textMuted,
+                  fontSize: 10,
+                ),
+              ),
+            ],
+            const SizedBox(width: 4),
+            if (editable)
+              Tooltip(
+                message: 'Move to top level (keeps the action)',
+                child: InkWell(
+                  onTap: () async {
+                    await widget.db.actionsDao.setParent(c.id, null);
+                    await _loadData();
+                  },
+                  child: Padding(
+                    padding: EdgeInsets.all(2),
+                    child: Icon(
+                      Icons.close,
+                      size: 12,
+                      color: KColors.textMuted,
+                    ),
+                  ),
+                ),
+              )
+            else
+              Icon(Icons.chevron_right, size: 14, color: KColors.textMuted),
+          ],
+        ),
       ),
     );
   }
@@ -511,9 +578,13 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
 
   Widget _readView() {
     final a = widget.action!;
-    final isOverdue = a.dueDate != null &&
+    final isOverdue =
+        a.dueDate != null &&
         a.status != 'closed' &&
-        a.dueDate!.compareTo(DateTime.now().toIso8601String().substring(0, 10)) < 0;
+        a.dueDate!.compareTo(
+              DateTime.now().toIso8601String().substring(0, 10),
+            ) <
+            0;
     final cat = a.categoryId != null
         ? _categories.where((c) => c.id == a.categoryId).firstOrNull
         : null;
@@ -524,10 +595,13 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
     return DetailDialog(
       accent: _accent,
       title: [
-        if (a.ref != null) ...[DetailRefChip(a.ref!), const SizedBox(width: 10)],
+        if (a.ref != null) ...[
+          DetailRefChip(a.ref!),
+          const SizedBox(width: 10),
+        ],
         const Expanded(child: DetailTitle('Action')),
         if (a.recurrenceGroupId != null)
-          const Tooltip(
+          Tooltip(
             message: 'Recurring action',
             child: Icon(Icons.repeat, size: 14, color: KColors.textDim),
           ),
@@ -537,41 +611,57 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
             width: 10,
             height: 10,
             decoration: BoxDecoration(
-                color: parseHexColor(cat.color), shape: BoxShape.circle),
+              color: parseHexColor(cat.color),
+              shape: BoxShape.circle,
+            ),
           ),
           const SizedBox(width: 6),
-          Text(cat.name,
-              style: TextStyle(
-                  color: parseHexColor(cat.color),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600)),
+          Text(
+            cat.name,
+            style: TextStyle(
+              color: parseHexColor(cat.color),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ],
       left: [
         DetailField('Description', a.description, large: true),
-        Row(children: [
-          Expanded(child: DetailField('Status', a.status)),
-          Expanded(child: DetailField('Priority', a.priority)),
-        ]),
-        Row(children: [
-          if (a.owner != null && a.owner!.isNotEmpty)
-            Expanded(child: DetailField('Owner', a.owner)),
-          if (a.dueDate != null)
-            Expanded(
-              child: DetailField('Due Date', du.formatDate(a.dueDate),
-                  valueColor: isOverdue ? KColors.red : null),
-            ),
-        ]),
-        Row(children: [
-          Expanded(child: DetailField('Source', a.source)),
-          if (a.sourceNote != null && a.sourceNote!.isNotEmpty)
-            Expanded(child: DetailField('Source Note', a.sourceNote)),
-        ]),
+        Row(
+          children: [
+            Expanded(child: DetailField('Status', a.status)),
+            Expanded(child: DetailField('Priority', a.priority)),
+          ],
+        ),
+        Row(
+          children: [
+            if (a.owner != null && a.owner!.isNotEmpty)
+              Expanded(child: DetailField('Owner', a.owner)),
+            if (a.dueDate != null)
+              Expanded(
+                child: DetailField(
+                  'Due Date',
+                  du.formatDate(a.dueDate),
+                  valueColor: isOverdue ? KColors.red : null,
+                ),
+              ),
+          ],
+        ),
+        Row(
+          children: [
+            Expanded(child: DetailField('Source', a.source)),
+            if (a.sourceNote != null && a.sourceNote!.isNotEmpty)
+              Expanded(child: DetailField('Source Note', a.sourceNote)),
+          ],
+        ),
         if (a.planActivityId != null)
           DetailField('Plan Activity', _planActivityLabel(a.planActivityId!)),
         if (parent != null)
-          DetailField('Part of',
-              '${parent.ref != null ? '${parent.ref} · ' : ''}${parent.description}'),
+          DetailField(
+            'Part of',
+            '${parent.ref != null ? '${parent.ref} · ' : ''}${parent.description}',
+          ),
         JournalSourceLink(
           db: widget.db,
           projectId: widget.projectId,
@@ -588,8 +678,10 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
         const Spacer(),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Close',
-              style: TextStyle(color: KColors.textDim, fontSize: 12)),
+          child: Text(
+            'Close',
+            style: TextStyle(color: KColors.textDim, fontSize: 12),
+          ),
         ),
         const SizedBox(width: 8),
         ElevatedButton.icon(
@@ -627,12 +719,15 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
             spacing: 6,
             runSpacing: 6,
             children: [
-              ..._categories.map((cat) => _CategoryChip(
-                    category: cat,
-                    selected: _categoryId == cat.id,
-                    onTap: () => setState(() =>
-                        _categoryId = _categoryId == cat.id ? null : cat.id),
-                  )),
+              ..._categories.map(
+                (cat) => _CategoryChip(
+                  category: cat,
+                  selected: _categoryId == cat.id,
+                  onTap: () => setState(
+                    () => _categoryId = _categoryId == cat.id ? null : cat.id,
+                  ),
+                ),
+              ),
               _AddCategoryChip(onTap: () => _showAddCategoryDialog()),
             ],
           ),
@@ -645,7 +740,7 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
           autofocus: !isEdit,
           minLines: 2,
           maxLines: 5,
-          style: const TextStyle(color: KColors.text, fontSize: 14),
+          style: TextStyle(color: KColors.text, fontSize: 14),
           decoration: const InputDecoration(
             labelText: 'Description *',
             alignLabelWithHint: true,
@@ -655,99 +750,107 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
         const SizedBox(height: 12),
 
         // ── Status + Priority ──────────────────────────────────
-        Row(children: [
-          Expanded(
-            child: DropdownField(
-              label: 'Status',
-              value: _status,
-              items: _statuses,
-              onChanged: (v) => setState(() => _status = v!),
+        Row(
+          children: [
+            Expanded(
+              child: DropdownField(
+                label: 'Status',
+                value: _status,
+                items: _statuses,
+                onChanged: (v) => setState(() => _status = v!),
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: DropdownField(
-              label: 'Priority',
-              value: _priority,
-              items: _priorities,
-              onChanged: (v) => setState(() => _priority = v!),
+            const SizedBox(width: 12),
+            Expanded(
+              child: DropdownField(
+                label: 'Priority',
+                value: _priority,
+                items: _priorities,
+                onChanged: (v) => setState(() => _priority = v!),
+              ),
             ),
-          ),
-        ]),
+          ],
+        ),
         const SizedBox(height: 12),
 
         // ── Owner + Due Date ───────────────────────────────────
-        Row(children: [
-          Expanded(
-            child: PersonPickerField(
-              controller: _ownerCtrl,
-              label: 'Owner',
-              persons: _persons,
-              db: widget.db,
-              projectId: widget.projectId,
-              onPersonCreated: _loadData,
+        Row(
+          children: [
+            Expanded(
+              child: PersonPickerField(
+                controller: _ownerCtrl,
+                label: 'Owner',
+                persons: _persons,
+                db: widget.db,
+                projectId: widget.projectId,
+                onPersonCreated: _loadData,
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: DatePickerField(
-              label: 'Due Date',
-              isoValue: _dueDate,
-              onChanged: (v) => setState(() => _dueDate = v),
+            const SizedBox(width: 12),
+            Expanded(
+              child: DatePickerField(
+                label: 'Due Date',
+                isoValue: _dueDate,
+                onChanged: (v) => setState(() => _dueDate = v),
+              ),
             ),
-          ),
-        ]),
+          ],
+        ),
         const SizedBox(height: 12),
 
         // ── Recurrence (create only) ───────────────────────────
         if (!isEdit) ...[
-          const Divider(color: KColors.border, height: 1),
+          Divider(color: KColors.border, height: 1),
           const SizedBox(height: 12),
           const DetailSectionLabel('Recurrence'),
           const SizedBox(height: 8),
-          Row(children: [
-            Expanded(
-              child: DropdownField(
-                label: 'Repeats',
-                value: _recurrence,
-                items: _recurrences,
-                onChanged: (v) => setState(() => _recurrence = v!),
-              ),
-            ),
-            if (_recurrence != 'none') ...[
-              const SizedBox(width: 12),
+          Row(
+            children: [
               Expanded(
-                child: DatePickerField(
-                  label: 'Repeat until',
-                  isoValue: _recurrenceEndDate,
-                  onChanged: (v) => setState(() => _recurrenceEndDate = v),
+                child: DropdownField(
+                  label: 'Repeats',
+                  value: _recurrence,
+                  items: _recurrences,
+                  onChanged: (v) => setState(() => _recurrence = v!),
                 ),
               ),
+              if (_recurrence != 'none') ...[
+                const SizedBox(width: 12),
+                Expanded(
+                  child: DatePickerField(
+                    label: 'Repeat until',
+                    isoValue: _recurrenceEndDate,
+                    onChanged: (v) => setState(() => _recurrenceEndDate = v),
+                  ),
+                ),
+              ],
             ],
-          ]),
+          ),
           const SizedBox(height: 12),
-          const Divider(color: KColors.border, height: 1),
+          Divider(color: KColors.border, height: 1),
           const SizedBox(height: 12),
         ],
 
         // ── Source ─────────────────────────────────────────────
-        Row(children: [
-          Expanded(
-            child: DropdownField(
-              label: 'Source',
-              value: _source,
-              items: _sources,
-              onChanged: (v) => setState(() => _source = v!),
+        Row(
+          children: [
+            Expanded(
+              child: DropdownField(
+                label: 'Source',
+                value: _source,
+                items: _sources,
+                onChanged: (v) => setState(() => _source = v!),
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: TextFormField(
-              controller: _sourceNoteCtrl,
-              decoration: const InputDecoration(labelText: 'Source Note'),
+            const SizedBox(width: 12),
+            Expanded(
+              child: TextFormField(
+                controller: _sourceNoteCtrl,
+                decoration: const InputDecoration(labelText: 'Source Note'),
+              ),
             ),
-          ),
-        ]),
+          ],
+        ),
         const SizedBox(height: 12),
       ],
       right: [
@@ -802,20 +905,26 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
         if (widget.startInViewMode)
           TextButton(
             onPressed: () => setState(() => _isViewing = true),
-            child: const Text('Cancel',
-                style: TextStyle(color: KColors.textDim, fontSize: 12)),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: KColors.textDim, fontSize: 12),
+            ),
           )
         else
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel',
-                style: TextStyle(color: KColors.textDim, fontSize: 12)),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: KColors.textDim, fontSize: 12),
+            ),
           ),
         const SizedBox(width: 8),
         ElevatedButton(
           onPressed: _save,
-          child: Text(isEdit ? 'Save' : 'Create',
-              style: const TextStyle(fontSize: 12)),
+          child: Text(
+            isEdit ? 'Save' : 'Create',
+            style: const TextStyle(fontSize: 12),
+          ),
         ),
       ],
     );
@@ -827,14 +936,16 @@ class _ActionFormDialogState extends State<ActionFormDialog> {
       builder: (_) => const _AddCategoryDialog(),
     );
     if (result == null || !mounted) return;
-    await widget.db.actionCategoriesDao.upsert(ActionCategoriesCompanion(
-      id: Value(const Uuid().v4()),
-      projectId: Value(widget.projectId),
-      name: Value(result.$1),
-      color: Value(result.$2),
-      isPreset: const Value(false),
-      sortOrder: Value(_categories.length),
-    ));
+    await widget.db.actionCategoriesDao.upsert(
+      ActionCategoriesCompanion(
+        id: Value(const Uuid().v4()),
+        projectId: Value(widget.projectId),
+        name: Value(result.$1),
+        color: Value(result.$2),
+        isPreset: const Value(false),
+        sortOrder: Value(_categories.length),
+      ),
+    );
     await _loadData();
   }
 }
@@ -865,7 +976,9 @@ class _CategoryChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected ? color.withAlpha(40) : KColors.surface2,
           border: Border.all(
-              color: selected ? color : KColors.border2, width: 1.2),
+            color: selected ? color : KColors.border2,
+            width: 1.2,
+          ),
           borderRadius: BorderRadius.circular(4),
         ),
         child: Row(
@@ -874,8 +987,7 @@ class _CategoryChip extends StatelessWidget {
             Container(
               width: 8,
               height: 8,
-              decoration: BoxDecoration(
-                  color: color, shape: BoxShape.circle),
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
             ),
             const SizedBox(width: 6),
             Text(
@@ -883,8 +995,7 @@ class _CategoryChip extends StatelessWidget {
               style: TextStyle(
                 color: selected ? color : KColors.textDim,
                 fontSize: 11,
-                fontWeight:
-                    selected ? FontWeight.w600 : FontWeight.normal,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
           ],
@@ -913,13 +1024,15 @@ class _AddCategoryChip extends StatelessWidget {
           border: Border.all(color: KColors.border2),
           borderRadius: BorderRadius.circular(4),
         ),
-        child: const Row(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.add, size: 12, color: KColors.textDim),
             SizedBox(width: 4),
-            Text('Custom',
-                style: TextStyle(color: KColors.textDim, fontSize: 11)),
+            Text(
+              'Custom',
+              style: TextStyle(color: KColors.textDim, fontSize: 11),
+            ),
           ],
         ),
       ),
@@ -964,12 +1077,15 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
               decoration: const InputDecoration(labelText: 'Name *'),
             ),
             const SizedBox(height: 16),
-            const Text('COLOUR',
-                style: TextStyle(
-                    color: KColors.textMuted,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.1)),
+            Text(
+              'COLOUR',
+              style: TextStyle(
+                color: KColors.textMuted,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.1,
+              ),
+            ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -978,8 +1094,7 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
                 final color = parseHexColor(hex);
                 final sel = hex == _selectedColor;
                 return GestureDetector(
-                  onTap: () =>
-                      setState(() => _selectedColor = hex),
+                  onTap: () => setState(() => _selectedColor = hex),
                   child: Container(
                     width: 26,
                     height: 26,
@@ -987,13 +1102,16 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
                       color: color,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: sel
-                            ? Colors.white
-                            : Colors.transparent,
+                        color: sel ? Colors.white : Colors.transparent,
                         width: 2,
                       ),
                       boxShadow: sel
-                          ? [BoxShadow(color: color.withAlpha(120), blurRadius: 6)]
+                          ? [
+                              BoxShadow(
+                                color: color.withAlpha(120),
+                                blurRadius: 6,
+                              ),
+                            ]
                           : null,
                     ),
                   ),
@@ -1047,8 +1165,7 @@ class _IsParentCheckbox extends StatelessWidget {
         : allActions.where((a) => a.parentActionId == editing!.id).length;
     // Locked on while children exist; unavailable to sub-tasks (a child
     // whose chosen parent is itself nested is already at max depth).
-    final chosenParent =
-        parentActionId != null ? byId[parentActionId!] : null;
+    final chosenParent = parentActionId != null ? byId[parentActionId!] : null;
     final atMaxDepth =
         chosenParent != null && chosenParent.parentActionId != null;
     final locked = childCount > 0 || atMaxDepth;
@@ -1069,15 +1186,13 @@ class _IsParentCheckbox extends StatelessWidget {
           height: 18,
           child: Checkbox(
             value: value || childCount > 0,
-            onChanged:
-                locked ? null : (v) => onChanged(v ?? false),
+            onChanged: locked ? null : (v) => onChanged(v ?? false),
           ),
         ),
         const SizedBox(width: 8),
-        const Icon(Icons.account_tree_outlined,
-            size: 13, color: KColors.phosphor),
+        Icon(Icons.account_tree_outlined, size: 13, color: KColors.phosphor),
         const SizedBox(width: 5),
-        const Flexible(
+        Flexible(
           child: Text(
             'Parent — can group other actions',
             overflow: TextOverflow.ellipsis,
@@ -1087,11 +1202,12 @@ class _IsParentCheckbox extends StatelessWidget {
         if (hint != null) ...[
           const SizedBox(width: 8),
           Flexible(
-            child: Text(hint,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.end,
-                style:
-                    const TextStyle(color: KColors.textMuted, fontSize: 10)),
+            child: Text(
+              hint,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.end,
+              style: TextStyle(color: KColors.textMuted, fontSize: 10),
+            ),
           ),
         ],
       ],
@@ -1115,8 +1231,10 @@ class _ParentActionPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final byId = {for (final a in allActions) a.id: a};
-    final candidates =
-        eligibleParentCandidates(editing: editing, all: allActions);
+    final candidates = eligibleParentCandidates(
+      editing: editing,
+      all: allActions,
+    );
     // A selection made before rules changed (or synced in) stays visible
     // even if it's no longer offered fresh.
     if (value != null &&
@@ -1128,7 +1246,7 @@ class _ParentActionPicker extends StatelessWidget {
     if (editing != null && candidates.isEmpty && value == null) {
       final part = partitionByParent(allActions);
       if (actionSubtreeHeight(editing!.id, part.childrenByParent) >= 2) {
-        return const Padding(
+        return Padding(
           padding: EdgeInsets.symmetric(vertical: 4),
           child: Text(
             'Has sub-tasks two levels deep — can’t be nested under '
@@ -1141,9 +1259,10 @@ class _ParentActionPicker extends StatelessWidget {
 
     String labelFor(ProjectAction a) {
       final base = '${a.ref != null ? '${a.ref} ' : ''}${a.description}';
-      final parent =
-          a.parentActionId != null ? byId[a.parentActionId!] : null;
-      return parent == null ? base : '$base  ·  under ${parent.ref ?? parent.description}';
+      final parent = a.parentActionId != null ? byId[a.parentActionId!] : null;
+      return parent == null
+          ? base
+          : '$base  ·  under ${parent.ref ?? parent.description}';
     }
 
     // Before the action list loads (or if the parent was deleted) the
@@ -1159,14 +1278,15 @@ class _ParentActionPicker extends StatelessWidget {
       ),
       items: [
         const DropdownMenuItem<String?>(
-            value: null, child: Text('— none (top level) —')),
-        ...candidates.map((a) => DropdownMenuItem<String?>(
-              value: a.id,
-              child: Text(
-                labelFor(a),
-                overflow: TextOverflow.ellipsis,
-              ),
-            )),
+          value: null,
+          child: Text('— none (top level) —'),
+        ),
+        ...candidates.map(
+          (a) => DropdownMenuItem<String?>(
+            value: a.id,
+            child: Text(labelFor(a), overflow: TextOverflow.ellipsis),
+          ),
+        ),
       ],
       onChanged: onChanged,
     );
@@ -1203,15 +1323,17 @@ class _CommentsThreadState extends State<_CommentsThread> {
     setState(() => _saving = true);
     final author = context.read<SettingsProvider>().settings.myName;
     final now = DateTime.now();
-    await widget.db.actionCommentsDao.upsertComment(ActionCommentsCompanion(
-      id: Value(const Uuid().v4()),
-      actionId: Value(widget.action.id),
-      content: Value(text),
-      isCompletion: const Value(false),
-      authorName: Value(author.isEmpty ? null : author),
-      createdAt: Value(now),
-      updatedAt: Value(now),
-    ));
+    await widget.db.actionCommentsDao.upsertComment(
+      ActionCommentsCompanion(
+        id: Value(const Uuid().v4()),
+        actionId: Value(widget.action.id),
+        content: Value(text),
+        isCompletion: const Value(false),
+        authorName: Value(author.isEmpty ? null : author),
+        createdAt: Value(now),
+        updatedAt: Value(now),
+      ),
+    );
     if (mounted) {
       _ctrl.clear();
       setState(() => _saving = false);
@@ -1223,23 +1345,25 @@ class _CommentsThreadState extends State<_CommentsThread> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('COMMENTS',
-            style: TextStyle(
-                color: KColors.textMuted,
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.1)),
+        Text(
+          'COMMENTS',
+          style: TextStyle(
+            color: KColors.textMuted,
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.1,
+          ),
+        ),
         const SizedBox(height: 8),
         StreamBuilder<List<ActionComment>>(
-          stream:
-              widget.db.actionCommentsDao.watchForAction(widget.action.id),
+          stream: widget.db.actionCommentsDao.watchForAction(widget.action.id),
           builder: (context, snap) {
             final comments = snap.data ?? const <ActionComment>[];
-            final hasRealCompletion =
-                comments.any((c) => c.isCompletion);
+            final hasRealCompletion = comments.any((c) => c.isCompletion);
             // Legacy fallback: synthesise a completion-comment view when the
             // action has an outcome but no completion comment row yet.
-            final synth = (!hasRealCompletion &&
+            final synth =
+                (!hasRealCompletion &&
                     widget.action.outcome != null &&
                     widget.action.outcome!.isNotEmpty)
                 ? _SyntheticCompletion(
@@ -1248,13 +1372,16 @@ class _CommentsThreadState extends State<_CommentsThread> {
                   )
                 : null;
             if (comments.isEmpty && synth == null) {
-              return const Padding(
+              return Padding(
                 padding: EdgeInsets.only(bottom: 12),
-                child: Text('No comments yet.',
-                    style: TextStyle(
-                        color: KColors.textMuted,
-                        fontSize: 11,
-                        fontStyle: FontStyle.italic)),
+                child: Text(
+                  'No comments yet.',
+                  style: TextStyle(
+                    color: KColors.textMuted,
+                    fontSize: 11,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
               );
             }
             return Column(
@@ -1289,12 +1416,14 @@ class _CommentsThreadState extends State<_CommentsThread> {
                 controller: _ctrl,
                 minLines: 1,
                 maxLines: 4,
-                style: const TextStyle(color: KColors.text, fontSize: 12),
+                style: TextStyle(color: KColors.text, fontSize: 12),
                 decoration: const InputDecoration(
                   hintText: 'Add a comment…',
                   isDense: true,
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
                 ),
                 onSubmitted: (_) => _addComment(),
               ),
@@ -1339,7 +1468,9 @@ class _CompletionTile extends StatelessWidget {
         color: KColors.phosDim.withValues(alpha: 0.5),
         border: Border(
           left: BorderSide(
-              color: KColors.phosphor.withValues(alpha: 0.7), width: 3),
+            color: KColors.phosphor.withValues(alpha: 0.7),
+            width: 3,
+          ),
         ),
         borderRadius: BorderRadius.circular(3),
       ),
@@ -1348,33 +1479,40 @@ class _CompletionTile extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.check_circle_outline,
-                  size: 12, color: KColors.phosphor),
+              Icon(
+                Icons.check_circle_outline,
+                size: 12,
+                color: KColors.phosphor,
+              ),
               const SizedBox(width: 6),
               Text(
                 'REASON COMPLETED${isSynthetic ? ' · legacy' : ''}',
-                style: const TextStyle(
-                    color: KColors.phosphor,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.5),
+                style: TextStyle(
+                  color: KColors.phosphor,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                ),
               ),
               const Spacer(),
               if (author != null && author!.isNotEmpty) ...[
-                Text(author!,
-                    style: const TextStyle(
-                        color: KColors.textDim, fontSize: 10)),
+                Text(
+                  author!,
+                  style: TextStyle(color: KColors.textDim, fontSize: 10),
+                ),
                 const SizedBox(width: 6),
               ],
-              Text(du.formatDate(when.toIso8601String().substring(0, 10)),
-                  style: const TextStyle(
-                      color: KColors.textMuted, fontSize: 10)),
+              Text(
+                du.formatDate(when.toIso8601String().substring(0, 10)),
+                style: TextStyle(color: KColors.textMuted, fontSize: 10),
+              ),
             ],
           ),
           const SizedBox(height: 4),
-          Text(content,
-              style: const TextStyle(
-                  color: KColors.text, fontSize: 12, height: 1.45)),
+          Text(
+            content,
+            style: TextStyle(color: KColors.text, fontSize: 12, height: 1.45),
+          ),
         ],
       ),
     );
@@ -1402,26 +1540,30 @@ class _CommentTile extends StatelessWidget {
             children: [
               if (comment.authorName != null &&
                   comment.authorName!.isNotEmpty) ...[
-                Text(comment.authorName!,
-                    style: const TextStyle(
-                        color: KColors.textDim,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600)),
+                Text(
+                  comment.authorName!,
+                  style: TextStyle(
+                    color: KColors.textDim,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 const SizedBox(width: 6),
               ],
               const Spacer(),
               Text(
                 du.formatDate(
-                    comment.createdAt.toIso8601String().substring(0, 10)),
-                style:
-                    const TextStyle(color: KColors.textMuted, fontSize: 10),
+                  comment.createdAt.toIso8601String().substring(0, 10),
+                ),
+                style: TextStyle(color: KColors.textMuted, fontSize: 10),
               ),
             ],
           ),
           const SizedBox(height: 4),
-          Text(comment.content,
-              style: const TextStyle(
-                  color: KColors.text, fontSize: 12, height: 1.45)),
+          Text(
+            comment.content,
+            style: TextStyle(color: KColors.text, fontSize: 12, height: 1.45),
+          ),
         ],
       ),
     );

@@ -40,7 +40,7 @@ class CanvasCardDimensions {
 
 /// Visual colour mapping for the optional bottom colour band on each card.
 class CanvasCardColours {
-  static const Map<String, Color> palette = {
+  static final Map<String, Color> palette = {
     'amber': KColors.amber,
     'green': KColors.phosphor,
     'red': KColors.red,
@@ -50,8 +50,7 @@ class CanvasCardColours {
 
   static const List<String> all = ['amber', 'green', 'red', 'blue', 'purple'];
 
-  static Color? colourFor(String? key) =>
-      key == null ? null : palette[key];
+  static Color? colourFor(String? key) => key == null ? null : palette[key];
 }
 
 /// Subtle band background — slightly brighter for the active "This Week"

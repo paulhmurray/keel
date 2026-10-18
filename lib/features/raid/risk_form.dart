@@ -77,7 +77,12 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
 
   final _statuses = ['open', 'in progress', 'closed', 'accepted'];
   final _sources = [
-    'manual', 'inbox', 'document', 'observation', 'meeting', 'journal'
+    'manual',
+    'inbox',
+    'document',
+    'observation',
+    'meeting',
+    'journal',
   ];
 
   bool get _isEdit => widget.risk != null;
@@ -92,20 +97,23 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
     _ownerCtrl = TextEditingController(text: r?.owner ?? '');
     _assigneeCtrl = TextEditingController(text: r?.assignee ?? '');
     _sourceNoteCtrl = TextEditingController(text: r?.sourceNote ?? '');
-    _likelihoodWhyCtrl =
-        TextEditingController(text: r?.likelihoodRationale ?? '');
+    _likelihoodWhyCtrl = TextEditingController(
+      text: r?.likelihoodRationale ?? '',
+    );
     _impactWhyCtrl = TextEditingController(text: r?.impactRationale ?? '');
     _closureNoteCtrl = TextEditingController(text: r?.closureNote ?? '');
     _statusNoteCtrl = TextEditingController(text: r?.statusNote ?? '');
-    _enterpriseLinkCtrl =
-        TextEditingController(text: r?.enterpriseRiskLink ?? '');
+    _enterpriseLinkCtrl = TextEditingController(
+      text: r?.enterpriseRiskLink ?? '',
+    );
     _likelihood = normaliseLikelihood(r?.likelihood);
     _impact = normaliseConsequence(r?.impact);
     _likelihoodTarget = r?.likelihoodTarget == null
         ? null
         : normaliseLikelihood(r!.likelihoodTarget);
-    _impactTarget =
-        r?.impactTarget == null ? null : normaliseConsequence(r!.impactTarget);
+    _impactTarget = r?.impactTarget == null
+        ? null
+        : normaliseConsequence(r!.impactTarget);
     _strategy = kRiskStrategies.contains(r?.strategy) ? r!.strategy : 'treat';
     _steerco = r?.steerco ?? false;
     _dueDate = r?.dueDate;
@@ -118,7 +126,9 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
   }
 
   Future<void> _loadPersons() async {
-    final list = await widget.db.peopleDao.getPersonsForProject(widget.projectId);
+    final list = await widget.db.peopleDao.getPersonsForProject(
+      widget.projectId,
+    );
     if (mounted) setState(() => _persons = list);
   }
 
@@ -165,7 +175,8 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
     if (!_formKey.currentState!.validate()) return;
 
     final isNew = widget.risk == null;
-    final String ref = widget.risk?.ref ??
+    final String ref =
+        widget.risk?.ref ??
         _nextRef(await widget.db.raidDao.getRisksForProject(widget.projectId));
 
     final id = widget.risk?.id ?? const Uuid().v4();
@@ -193,10 +204,13 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
         nextReviewAt: Value(_nextReviewAt),
         statusNote: Value(_trimOrNull(_statusNoteCtrl)),
         status: Value(_status),
-        closedAt: Value(nextClosedAt(
+        closedAt: Value(
+          nextClosedAt(
             kind: RaidKind.risk,
             newStatus: _status,
-            existing: widget.risk?.closedAt)),
+            existing: widget.risk?.closedAt,
+          ),
+        ),
         closureNote: Value(_trimOrNull(_closureNoteCtrl)),
         source: Value(_source),
         sourceNote: Value(_trimOrNull(_sourceNoteCtrl)),
@@ -224,8 +238,9 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
   // ── AI assist ──────────────────────────────────────────────────────────────
 
   Future<RaidAssistPrompt> _prompt(RiskAssistField field) async {
-    final ctx =
-        await ContextBuilder(widget.db).buildSystemPrompt(widget.projectId);
+    final ctx = await ContextBuilder(
+      widget.db,
+    ).buildSystemPrompt(widget.projectId);
     return riskAssistPrompt(
       field: field,
       description: _titleCtrl.text.trim().isEmpty
@@ -242,10 +257,10 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
   }
 
   Color _bandColor(String band) => switch (band) {
-        'high' => KColors.red,
-        'medium' => KColors.amber,
-        _ => KColors.phosphor,
-      };
+    'high' => KColors.red,
+    'medium' => KColors.amber,
+    _ => KColors.phosphor,
+  };
 
   Color get _accent => _bandColor(riskBand(_likelihood, _impact));
 
@@ -278,18 +293,25 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
     return DetailDialog(
       accent: _accent,
       title: [
-        if (r.ref != null) ...[DetailRefChip(r.ref!), const SizedBox(width: 10)],
+        if (r.ref != null) ...[
+          DetailRefChip(r.ref!),
+          const SizedBox(width: 10),
+        ],
         const Expanded(child: DetailTitle('Risk')),
         if (r.steerco) ...[
-          const Tooltip(
-            message: 'Escalated for attention — how and where it is raised '
+          Tooltip(
+            message:
+                'Escalated for attention — how and where it is raised '
                 'is the PM\'s call',
-            child: Text('▲ ESCALATED',
-                style: TextStyle(
-                    color: KColors.red,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.4)),
+            child: Text(
+              '▲ ESCALATED',
+              style: TextStyle(
+                color: KColors.red,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.4,
+              ),
+            ),
           ),
           const SizedBox(width: 10),
         ],
@@ -298,79 +320,119 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
       left: [
         if (hasTitle) DetailField('Risk', r.title, large: true),
         DetailField('Description', r.description, large: !hasTitle),
-        Row(children: [
-          Expanded(
-              child: DetailField('Likelihood (current)',
-                  likelihoodLabel(r.likelihood))),
-          Expanded(
-              child: DetailField(
-                  'Consequence (current)', consequenceLabel(r.impact))),
-          Expanded(child: DetailField('Status', r.status)),
-        ]),
-        DetailField('Why this likelihood', r.likelihoodRationale),
-        DetailField('Why this consequence', r.impactRationale),
-        Row(children: [
-          Expanded(
-              child: DetailField(
-                  'Strategy',
-                  kRiskStrategyLabels[r.strategy]?.split(' — ').first ??
-                      r.strategy)),
-          if (r.likelihoodTarget != null || r.impactTarget != null)
+        Row(
+          children: [
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('TARGET RATING',
-                        style: TextStyle(
-                            color: KColors.textMuted,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.1)),
-                    const SizedBox(height: 4),
-                    _scoreChip(r.likelihoodTarget ?? r.likelihood,
-                        r.impactTarget ?? r.impact),
-                  ],
-                ),
+              child: DetailField(
+                'Likelihood (current)',
+                likelihoodLabel(r.likelihood),
               ),
             ),
-        ]),
+            Expanded(
+              child: DetailField(
+                'Consequence (current)',
+                consequenceLabel(r.impact),
+              ),
+            ),
+            Expanded(child: DetailField('Status', r.status)),
+          ],
+        ),
+        DetailField('Why this likelihood', r.likelihoodRationale),
+        DetailField('Why this consequence', r.impactRationale),
+        Row(
+          children: [
+            Expanded(
+              child: DetailField(
+                'Strategy',
+                kRiskStrategyLabels[r.strategy]?.split(' — ').first ??
+                    r.strategy,
+              ),
+            ),
+            if (r.likelihoodTarget != null || r.impactTarget != null)
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'TARGET RATING',
+                        style: TextStyle(
+                          color: KColors.textMuted,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.1,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      _scoreChip(
+                        r.likelihoodTarget ?? r.likelihood,
+                        r.impactTarget ?? r.impact,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
         DetailField('Treatment plan', r.mitigation),
         if (terminal)
           DetailField(
-              r.status == 'accepted' ? 'Accepted on' : 'Closed on',
-              du.formatDate(r.closedAt ??
-                  r.updatedAt.toIso8601String().substring(0, 10))),
+            r.status == 'accepted' ? 'Accepted on' : 'Closed on',
+            du.formatDate(
+              r.closedAt ?? r.updatedAt.toIso8601String().substring(0, 10),
+            ),
+          ),
         DetailField(
-            r.status == 'accepted' ? 'Why accepted' : 'Why closed',
-            r.closureNote),
+          r.status == 'accepted' ? 'Why accepted' : 'Why closed',
+          r.closureNote,
+        ),
       ],
       right: [
-        Row(children: [
-          Expanded(child: DetailField('Risk owner', r.owner)),
-          Expanded(child: DetailField('Assignee', r.assignee)),
-        ]),
+        Row(
+          children: [
+            Expanded(child: DetailField('Risk owner', r.owner)),
+            Expanded(child: DetailField('Assignee', r.assignee)),
+          ],
+        ),
         DetailField('Status update', r.statusNote),
-        Row(children: [
-          Expanded(child: DetailField('Due date', du.formatDate(r.dueDate))),
-          Expanded(
-              child: DetailField('Last review', du.formatDate(r.lastReviewedAt))),
-          Expanded(
-              child: DetailField('Next review', du.formatDate(r.nextReviewAt),
-                  valueColor: overdueReview ? KColors.amber : null)),
-        ]),
-        Row(children: [
-          Expanded(
-              child: DetailField('Enterprise risk link', r.enterpriseRiskLink)),
-          Expanded(
+        Row(
+          children: [
+            Expanded(child: DetailField('Due date', du.formatDate(r.dueDate))),
+            Expanded(
               child: DetailField(
-                  'Raised on', du.formatDate(r.createdAt.toIso8601String()))),
-        ]),
-        Row(children: [
-          Expanded(child: DetailField('Source', r.source)),
-          Expanded(child: DetailField('Source Note', r.sourceNote)),
-        ]),
+                'Last review',
+                du.formatDate(r.lastReviewedAt),
+              ),
+            ),
+            Expanded(
+              child: DetailField(
+                'Next review',
+                du.formatDate(r.nextReviewAt),
+                valueColor: overdueReview ? KColors.amber : null,
+              ),
+            ),
+          ],
+        ),
+        Row(
+          children: [
+            Expanded(
+              child: DetailField('Enterprise risk link', r.enterpriseRiskLink),
+            ),
+            Expanded(
+              child: DetailField(
+                'Raised on',
+                du.formatDate(r.createdAt.toIso8601String()),
+              ),
+            ),
+          ],
+        ),
+        Row(
+          children: [
+            Expanded(child: DetailField('Source', r.source)),
+            Expanded(child: DetailField('Source Note', r.sourceNote)),
+          ],
+        ),
         JournalSourceLink(
           db: widget.db,
           projectId: widget.projectId,
@@ -389,8 +451,10 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
         const Spacer(),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Close',
-              style: TextStyle(color: KColors.textDim, fontSize: 12)),
+          child: Text(
+            'Close',
+            style: TextStyle(color: KColors.textDim, fontSize: 12),
+          ),
         ),
         const SizedBox(width: 8),
         ElevatedButton.icon(
@@ -415,27 +479,29 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
   }) {
     final lItems = [if (allowNone) '', ...kLikelihoodScale];
     final cItems = [if (allowNone) '', ...kConsequenceScale];
-    return Row(children: [
-      Expanded(
-        child: DropdownField(
-          label: likelihoodLabelText,
-          value: likelihood ?? '',
-          items: lItems,
-          labelOverrides: {...kLikelihoodLabels, '': '— not set —'},
-          onChanged: (v) => onLikelihood(v == null || v.isEmpty ? null : v),
+    return Row(
+      children: [
+        Expanded(
+          child: DropdownField(
+            label: likelihoodLabelText,
+            value: likelihood ?? '',
+            items: lItems,
+            labelOverrides: {...kLikelihoodLabels, '': '— not set —'},
+            onChanged: (v) => onLikelihood(v == null || v.isEmpty ? null : v),
+          ),
         ),
-      ),
-      const SizedBox(width: 12),
-      Expanded(
-        child: DropdownField(
-          label: consequenceLabelText,
-          value: consequence ?? '',
-          items: cItems,
-          labelOverrides: {...kConsequenceLabels, '': '— not set —'},
-          onChanged: (v) => onConsequence(v == null || v.isEmpty ? null : v),
+        const SizedBox(width: 12),
+        Expanded(
+          child: DropdownField(
+            label: consequenceLabelText,
+            value: consequence ?? '',
+            items: cItems,
+            labelOverrides: {...kConsequenceLabels, '': '— not set —'},
+            onChanged: (v) => onConsequence(v == null || v.isEmpty ? null : v),
+          ),
         ),
-      ),
-    ]);
+      ],
+    );
   }
 
   @override
@@ -444,7 +510,8 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
 
     final isEdit = _isEdit;
     final targetSet = _likelihoodTarget != null || _impactTarget != null;
-    final targetEqualsCurrent = targetSet &&
+    final targetEqualsCurrent =
+        targetSet &&
         (_likelihoodTarget ?? _likelihood) == _likelihood &&
         (_impactTarget ?? _impact) == _impact;
 
@@ -473,17 +540,19 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
         TextFormField(
           controller: _titleCtrl,
           autofocus: !isEdit,
-          style: const TextStyle(color: KColors.text, fontSize: 14),
+          style: TextStyle(color: KColors.text, fontSize: 14),
           decoration: const InputDecoration(
             labelText: 'Risk (title)',
-            hintText: 'Short, scannable headline, e.g. "AWS connections land late"',
+            hintText:
+                'Short, scannable headline, e.g. "AWS connections land late"',
           ),
         ),
         const SizedBox(height: 12),
         AiAssistedLabel(
           label: 'Description',
           target: _descCtrl,
-          tooltip: 'Rewrite as "If [cause], then [event] may occur, '
+          tooltip:
+              'Rewrite as "If [cause], then [event] may occur, '
               'resulting in [impact]" from what is here',
           buildPrompt: () => _prompt(RiskAssistField.description),
         ),
@@ -492,7 +561,7 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
           controller: _descCtrl,
           minLines: 3,
           maxLines: 8,
-          style: const TextStyle(color: KColors.text, fontSize: 13),
+          style: TextStyle(color: KColors.text, fontSize: 13),
           decoration: InputDecoration(
             hintText: kRaidStatementPatterns[RaidKind.risk],
             alignLabelWithHint: true,
@@ -521,7 +590,8 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
         AiAssistedLabel(
           label: 'Why this likelihood?',
           target: _likelihoodWhyCtrl,
-          tooltip: 'Draft the likelihood rationale from the risk and '
+          tooltip:
+              'Draft the likelihood rationale from the risk and '
               'project context',
           buildPrompt: () => _prompt(RiskAssistField.likelihoodRationale),
         ),
@@ -530,7 +600,7 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
           controller: _likelihoodWhyCtrl,
           minLines: 2,
           maxLines: 5,
-          style: const TextStyle(color: KColors.text, fontSize: 13),
+          style: TextStyle(color: KColors.text, fontSize: 13),
           decoration: const InputDecoration(
             hintText: 'Optional — the drivers and evidence behind the rating',
             isDense: true,
@@ -540,7 +610,8 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
         AiAssistedLabel(
           label: 'Why this consequence?',
           target: _impactWhyCtrl,
-          tooltip: 'Draft the consequence rationale from the risk and project '
+          tooltip:
+              'Draft the consequence rationale from the risk and project '
               'context',
           buildPrompt: () => _prompt(RiskAssistField.impactRationale),
         ),
@@ -549,9 +620,10 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
           controller: _impactWhyCtrl,
           minLines: 2,
           maxLines: 5,
-          style: const TextStyle(color: KColors.text, fontSize: 13),
+          style: TextStyle(color: KColors.text, fontSize: 13),
           decoration: const InputDecoration(
-            hintText: 'Optional — which of schedule, cost, scope, quality '
+            hintText:
+                'Optional — which of schedule, cost, scope, quality '
                 'is hit, and how badly',
             isDense: true,
           ),
@@ -579,9 +651,10 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
           controller: _mitigationCtrl,
           minLines: 3,
           maxLines: 8,
-          style: const TextStyle(color: KColors.text, fontSize: 13),
+          style: TextStyle(color: KColors.text, fontSize: 13),
           decoration: const InputDecoration(
-            hintText: 'How we reduce the likelihood, soften the consequence, '
+            hintText:
+                'How we reduce the likelihood, soften the consequence, '
                 'and what warns us early',
             isDense: true,
           ),
@@ -598,86 +671,99 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
         ),
         if (targetSet) ...[
           const SizedBox(height: 8),
-          Row(children: [
-            _scoreChip(_likelihoodTarget ?? _likelihood,
+          Row(
+            children: [
+              _scoreChip(
+                _likelihoodTarget ?? _likelihood,
                 _impactTarget ?? _impact,
-                prefix: 'Target: '),
-            if (targetEqualsCurrent && _strategy == 'treat') ...[
-              const SizedBox(width: 10),
-              const Flexible(
-                child: Text(
-                  'Target equals current — if the treatment changes nothing, '
-                  'the strategy should be Tolerate.',
-                  style: TextStyle(color: KColors.amber, fontSize: 10),
-                ),
+                prefix: 'Target: ',
               ),
+              if (targetEqualsCurrent && _strategy == 'treat') ...[
+                const SizedBox(width: 10),
+                Flexible(
+                  child: Text(
+                    'Target equals current — if the treatment changes nothing, '
+                    'the strategy should be Tolerate.',
+                    style: TextStyle(color: KColors.amber, fontSize: 10),
+                  ),
+                ),
+              ],
             ],
-          ]),
+          ),
         ],
         const SizedBox(height: 12),
       ],
       right: [
-        Row(children: [
-          Expanded(
-            child: PersonPickerField(
-              controller: _ownerCtrl,
-              label: 'Risk owner (accountable)',
-              persons: _persons,
-              db: widget.db,
-              projectId: widget.projectId,
-              onPersonCreated: _loadPersons,
+        Row(
+          children: [
+            Expanded(
+              child: PersonPickerField(
+                controller: _ownerCtrl,
+                label: 'Risk owner (accountable)',
+                persons: _persons,
+                db: widget.db,
+                projectId: widget.projectId,
+                onPersonCreated: _loadPersons,
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: PersonPickerField(
-              controller: _assigneeCtrl,
-              label: 'Assignee (does the treatment)',
-              persons: _persons,
-              db: widget.db,
-              projectId: widget.projectId,
-              onPersonCreated: _loadPersons,
+            const SizedBox(width: 12),
+            Expanded(
+              child: PersonPickerField(
+                controller: _assigneeCtrl,
+                label: 'Assignee (does the treatment)',
+                persons: _persons,
+                db: widget.db,
+                projectId: widget.projectId,
+                onPersonCreated: _loadPersons,
+              ),
             ),
-          ),
-        ]),
+          ],
+        ),
         const SizedBox(height: 12),
-        Row(children: [
-          Expanded(
-            child: DropdownField(
-              label: 'Status',
-              value: _status,
-              items: _statuses,
-              onChanged: (v) => setState(() => _status = v!),
+        Row(
+          children: [
+            Expanded(
+              child: DropdownField(
+                label: 'Status',
+                value: _status,
+                items: _statuses,
+                onChanged: (v) => setState(() => _status = v!),
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Row(children: [
-              SizedBox(
-                width: 18,
-                height: 18,
-                child: Checkbox(
-                  value: _steerco,
-                  onChanged: (v) => setState(() => _steerco = v ?? false),
-                ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: Checkbox(
+                      value: _steerco,
+                      onChanged: (v) => setState(() => _steerco = v ?? false),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    Icons.warning_amber_rounded,
+                    size: 13,
+                    color: KColors.red,
+                  ),
+                  const SizedBox(width: 5),
+                  Expanded(
+                    child: Text(
+                      'Escalate this risk',
+                      style: TextStyle(color: KColors.text, fontSize: 12),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              const Icon(Icons.warning_amber_rounded,
-                  size: 13, color: KColors.red),
-              const SizedBox(width: 5),
-              const Expanded(
-                child: Text(
-                  'Escalate this risk',
-                  style: TextStyle(color: KColors.text, fontSize: 12),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ]),
-          ),
-        ]),
+            ),
+          ],
+        ),
         if (_steerco) ...[
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Marks the risk as raised above the project. Where you take it — '
             'sponsor, SteerCo, programme board — is your call; it leads the '
             'status report and the Top Risks list either way.',
@@ -690,13 +776,13 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
             controller: _closureNoteCtrl,
             minLines: 2,
             maxLines: 5,
-            style: const TextStyle(color: KColors.text, fontSize: 13),
+            style: TextStyle(color: KColors.text, fontSize: 13),
             decoration: InputDecoration(
               labelText: _status == 'accepted' ? 'Why accepted' : 'Why closed',
               hintText: _status == 'accepted'
                   ? 'Why we live with this risk rather than act on it'
                   : 'What happened — mitigated, did not materialise, '
-                      'superseded, out of scope…',
+                        'superseded, out of scope…',
               alignLabelWithHint: true,
             ),
           ),
@@ -704,49 +790,57 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
         const SizedBox(height: 16),
         const DetailSectionLabel('Review'),
         const SizedBox(height: 6),
-        Row(children: [
-          Expanded(
-            child: DatePickerField(
-              label: 'Due date (treatment in effect)',
-              isoValue: _dueDate,
-              onChanged: (v) => setState(() => _dueDate = v),
+        Row(
+          children: [
+            Expanded(
+              child: DatePickerField(
+                label: 'Due date (treatment in effect)',
+                isoValue: _dueDate,
+                onChanged: (v) => setState(() => _dueDate = v),
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: DatePickerField(
-              label: 'Last review',
-              isoValue: _lastReviewedAt,
-              onChanged: (v) => setState(() => _lastReviewedAt = v),
+            const SizedBox(width: 12),
+            Expanded(
+              child: DatePickerField(
+                label: 'Last review',
+                isoValue: _lastReviewedAt,
+                onChanged: (v) => setState(() => _lastReviewedAt = v),
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: DatePickerField(
-              label: 'Next review',
-              isoValue: _nextReviewAt,
-              onChanged: (v) => setState(() => _nextReviewAt = v),
+            const SizedBox(width: 12),
+            Expanded(
+              child: DatePickerField(
+                label: 'Next review',
+                isoValue: _nextReviewAt,
+                onChanged: (v) => setState(() => _nextReviewAt = v),
+              ),
             ),
-          ),
-        ]),
+          ],
+        ),
         const SizedBox(height: 6),
-        Row(children: [
-          TextButton.icon(
-            onPressed: _reviewedToday,
-            icon: const Icon(Icons.event_available, size: 14),
-            label: const Text('Reviewed today (+14 days)',
-                style: TextStyle(fontSize: 11)),
-          ),
-          if (reviewOverdue(_nextReviewAt, DateTime.now()))
-            const Text('Review overdue',
-                style: TextStyle(color: KColors.amber, fontSize: 11)),
-        ]),
+        Row(
+          children: [
+            TextButton.icon(
+              onPressed: _reviewedToday,
+              icon: const Icon(Icons.event_available, size: 14),
+              label: const Text(
+                'Reviewed today (+14 days)',
+                style: TextStyle(fontSize: 11),
+              ),
+            ),
+            if (reviewOverdue(_nextReviewAt, DateTime.now()))
+              Text(
+                'Review overdue',
+                style: TextStyle(color: KColors.amber, fontSize: 11),
+              ),
+          ],
+        ),
         const SizedBox(height: 8),
         TextFormField(
           controller: _statusNoteCtrl,
           minLines: 2,
           maxLines: 5,
-          style: const TextStyle(color: KColors.text, fontSize: 13),
+          style: TextStyle(color: KColors.text, fontSize: 13),
           decoration: const InputDecoration(
             labelText: 'Status update (notes)',
             hintText: 'One or two lines for the fortnightly report',
@@ -756,15 +850,16 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
         const SizedBox(height: 12),
         Autocomplete<String>(
           initialValue: TextEditingValue(text: _enterpriseLinkCtrl.text),
-          optionsBuilder: (v) => kEnterpriseRiskLinks.where((o) =>
-              o.toLowerCase().contains(v.text.toLowerCase())),
+          optionsBuilder: (v) => kEnterpriseRiskLinks.where(
+            (o) => o.toLowerCase().contains(v.text.toLowerCase()),
+          ),
           onSelected: (v) => _enterpriseLinkCtrl.text = v,
           fieldViewBuilder: (context, ctrl, focus, onSubmit) {
             ctrl.addListener(() => _enterpriseLinkCtrl.text = ctrl.text);
             return TextFormField(
               controller: ctrl,
               focusNode: focus,
-              style: const TextStyle(color: KColors.text, fontSize: 13),
+              style: TextStyle(color: KColors.text, fontSize: 13),
               decoration: const InputDecoration(
                 labelText: 'Enterprise risk link',
                 hintText: 'e.g. Strategic Delivery, Process Failure',
@@ -773,23 +868,25 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
           },
         ),
         const SizedBox(height: 12),
-        Row(children: [
-          Expanded(
-            child: DropdownField(
-              label: 'Source',
-              value: _source,
-              items: _sources,
-              onChanged: (v) => setState(() => _source = v!),
+        Row(
+          children: [
+            Expanded(
+              child: DropdownField(
+                label: 'Source',
+                value: _source,
+                items: _sources,
+                onChanged: (v) => setState(() => _source = v!),
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: TextFormField(
-              controller: _sourceNoteCtrl,
-              decoration: const InputDecoration(labelText: 'Source Note'),
+            const SizedBox(width: 12),
+            Expanded(
+              child: TextFormField(
+                controller: _sourceNoteCtrl,
+                decoration: const InputDecoration(labelText: 'Source Note'),
+              ),
             ),
-          ),
-        ]),
+          ],
+        ),
         if (isEdit) ...[
           const SizedBox(height: 12),
           JournalSourceLink(
@@ -813,20 +910,26 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
         if (widget.startInViewMode)
           TextButton(
             onPressed: () => setState(() => _isViewing = true),
-            child: const Text('Cancel',
-                style: TextStyle(color: KColors.textDim, fontSize: 12)),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: KColors.textDim, fontSize: 12),
+            ),
           )
         else
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel',
-                style: TextStyle(color: KColors.textDim, fontSize: 12)),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: KColors.textDim, fontSize: 12),
+            ),
           ),
         const SizedBox(width: 8),
         ElevatedButton(
           onPressed: _save,
-          child: Text(isEdit ? 'Save' : 'Create',
-              style: const TextStyle(fontSize: 12)),
+          child: Text(
+            isEdit ? 'Save' : 'Create',
+            style: const TextStyle(fontSize: 12),
+          ),
         ),
       ],
     );

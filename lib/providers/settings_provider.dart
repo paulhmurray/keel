@@ -53,6 +53,8 @@ class AppSettings {
 
   // Display
   final double uiScale;
+  // Palette id from keel_palettes.dart; a local preference, not synced.
+  final String themeId;
 
   // Editor
   final bool journalVimMode;
@@ -108,6 +110,7 @@ class AppSettings {
     this.syncEmail = '',
     this.myName = '',
     this.uiScale = 1.0,
+    this.themeId = 'keel',
     this.journalVimMode = false,
     this.vimEscapeSequence = '',
     this.quarterAnchorMonth = 1,
@@ -159,6 +162,7 @@ class AppSettings {
     String? syncEmail,
     String? myName,
     double? uiScale,
+    String? themeId,
     bool? journalVimMode,
     String? vimEscapeSequence,
     int? quarterAnchorMonth,
@@ -193,6 +197,7 @@ class AppSettings {
       syncEmail: syncEmail ?? this.syncEmail,
       myName: myName ?? this.myName,
       uiScale: uiScale ?? this.uiScale,
+      themeId: themeId ?? this.themeId,
       journalVimMode: journalVimMode ?? this.journalVimMode,
       vimEscapeSequence: vimEscapeSequence ?? this.vimEscapeSequence,
       quarterAnchorMonth: quarterAnchorMonth ?? this.quarterAnchorMonth,
@@ -200,7 +205,8 @@ class AppSettings {
       helmDayEndMinute: helmDayEndMinute ?? this.helmDayEndMinute,
       helmFocusSlotsPerDay: helmFocusSlotsPerDay ?? this.helmFocusSlotsPerDay,
       hasSeenThreeViewTour: hasSeenThreeViewTour ?? this.hasSeenThreeViewTour,
-      hasSeenCharterMigrationNotice: hasSeenCharterMigrationNotice ?? this.hasSeenCharterMigrationNotice,
+      hasSeenCharterMigrationNotice:
+          hasSeenCharterMigrationNotice ?? this.hasSeenCharterMigrationNotice,
       analyticsEnabled: analyticsEnabled ?? this.analyticsEnabled,
       analyticsInstallId: identical(analyticsInstallId, _kUnchanged)
           ? this.analyticsInstallId
@@ -209,39 +215,39 @@ class AppSettings {
   }
 
   Map<String, dynamic> toJson() => {
-        'llmProvider': llmProvider.name,
-        'claudeApiKey': claudeApiKey,
-        'claudeModel': claudeModel,
-        'openAiApiKey': openAiApiKey,
-        'openAiModel': openAiModel,
-        'grokApiKey': grokApiKey,
-        'grokModel': grokModel,
-        'githubToken': githubToken,
-        'githubModel': githubModel,
-        'azureEndpoint': azureEndpoint,
-        'azureApiKey': azureApiKey,
-        'azureModel': azureModel,
-        'ollamaBaseUrl': ollamaBaseUrl,
-        'ollamaModel': ollamaModel,
-        'watcherEnabled': watcherEnabled,
-        'watcherDirectory': watcherDirectory,
-        'syncServerUrl': syncServerUrl,
-        'syncEnabled': syncEnabled,
-        'syncEmail': syncEmail,
-        'myName': myName,
-        'uiScale': uiScale,
-        'journalVimMode': journalVimMode,
-        'vimEscapeSequence': vimEscapeSequence,
-        'quarterAnchorMonth': quarterAnchorMonth,
-        'helmDayStartMinute': helmDayStartMinute,
-        'helmDayEndMinute': helmDayEndMinute,
-        'helmFocusSlotsPerDay': helmFocusSlotsPerDay,
-        'hasSeenThreeViewTour': hasSeenThreeViewTour,
-        'hasSeenCharterMigrationNotice': hasSeenCharterMigrationNotice,
-        'analyticsEnabled': analyticsEnabled,
-        if (analyticsInstallId != null)
-          'analyticsInstallId': analyticsInstallId,
-      };
+    'llmProvider': llmProvider.name,
+    'claudeApiKey': claudeApiKey,
+    'claudeModel': claudeModel,
+    'openAiApiKey': openAiApiKey,
+    'openAiModel': openAiModel,
+    'grokApiKey': grokApiKey,
+    'grokModel': grokModel,
+    'githubToken': githubToken,
+    'githubModel': githubModel,
+    'azureEndpoint': azureEndpoint,
+    'azureApiKey': azureApiKey,
+    'azureModel': azureModel,
+    'ollamaBaseUrl': ollamaBaseUrl,
+    'ollamaModel': ollamaModel,
+    'watcherEnabled': watcherEnabled,
+    'watcherDirectory': watcherDirectory,
+    'syncServerUrl': syncServerUrl,
+    'syncEnabled': syncEnabled,
+    'syncEmail': syncEmail,
+    'myName': myName,
+    'uiScale': uiScale,
+    'themeId': themeId,
+    'journalVimMode': journalVimMode,
+    'vimEscapeSequence': vimEscapeSequence,
+    'quarterAnchorMonth': quarterAnchorMonth,
+    'helmDayStartMinute': helmDayStartMinute,
+    'helmDayEndMinute': helmDayEndMinute,
+    'helmFocusSlotsPerDay': helmFocusSlotsPerDay,
+    'hasSeenThreeViewTour': hasSeenThreeViewTour,
+    'hasSeenCharterMigrationNotice': hasSeenCharterMigrationNotice,
+    'analyticsEnabled': analyticsEnabled,
+    if (analyticsInstallId != null) 'analyticsInstallId': analyticsInstallId,
+  };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) {
     final providerStr = json['llmProvider'] as String? ?? 'claudeApi';
@@ -273,6 +279,7 @@ class AppSettings {
       syncEmail: json['syncEmail'] as String? ?? '',
       myName: json['myName'] as String? ?? '',
       uiScale: (json['uiScale'] as num?)?.toDouble() ?? 1.0,
+      themeId: json['themeId'] as String? ?? 'keel',
       journalVimMode: json['journalVimMode'] as bool? ?? false,
       vimEscapeSequence: json['vimEscapeSequence'] as String? ?? '',
       quarterAnchorMonth: json['quarterAnchorMonth'] as int? ?? 1,
@@ -280,7 +287,8 @@ class AppSettings {
       helmDayEndMinute: json['helmDayEndMinute'] as int? ?? 20 * 60,
       helmFocusSlotsPerDay: json['helmFocusSlotsPerDay'] as int? ?? 8,
       hasSeenThreeViewTour: json['hasSeenThreeViewTour'] as bool? ?? false,
-      hasSeenCharterMigrationNotice: json['hasSeenCharterMigrationNotice'] as bool? ?? false,
+      hasSeenCharterMigrationNotice:
+          json['hasSeenCharterMigrationNotice'] as bool? ?? false,
       analyticsEnabled: json['analyticsEnabled'] as bool? ?? false,
       analyticsInstallId: json['analyticsInstallId'] as String?,
     );
@@ -348,7 +356,10 @@ class SettingsProvider extends ChangeNotifier {
     final url = _settings.ollamaBaseUrl;
     if (!await OllamaClient.ensureRunning(url)) return;
     final installed = await OllamaClient.getAvailableModels(url);
-    final picked = OllamaClient.pickInstalledModel(_settings.ollamaModel, installed);
+    final picked = OllamaClient.pickInstalledModel(
+      _settings.ollamaModel,
+      installed,
+    );
     if (picked != null && picked != _settings.ollamaModel) {
       await save(_settings.copyWith(ollamaModel: picked));
     }
@@ -378,10 +389,9 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   Future<void> updateWatcher({bool? enabled, String? directory}) async {
-    await save(_settings.copyWith(
-      watcherEnabled: enabled,
-      watcherDirectory: directory,
-    ));
+    await save(
+      _settings.copyWith(watcherEnabled: enabled, watcherDirectory: directory),
+    );
   }
 
   Future<void> updateSync({
@@ -389,11 +399,13 @@ class SettingsProvider extends ChangeNotifier {
     bool? enabled,
     String? email,
   }) async {
-    await save(_settings.copyWith(
-      syncServerUrl: serverUrl,
-      syncEnabled: enabled,
-      syncEmail: email,
-    ));
+    await save(
+      _settings.copyWith(
+        syncServerUrl: serverUrl,
+        syncEnabled: enabled,
+        syncEmail: email,
+      ),
+    );
   }
 
   Future<void> setQuarterAnchorMonth(int month) async {
@@ -405,8 +417,13 @@ class SettingsProvider extends ChangeNotifier {
     var start = (startMinute ?? _settings.helmDayStartMinute).clamp(0, 23 * 60);
     var end = (endMinute ?? _settings.helmDayEndMinute).clamp(60, 24 * 60);
     if (end <= start) end = start + 60;
-    await save(_settings.copyWith(
-        helmDayStartMinute: start, helmDayEndMinute: end));
+    await save(
+      _settings.copyWith(helmDayStartMinute: start, helmDayEndMinute: end),
+    );
+  }
+
+  Future<void> setThemeId(String id) async {
+    await save(_settings.copyWith(themeId: id));
   }
 
   Future<void> setHelmFocusSlotsPerDay(int slots) async {
@@ -430,10 +447,12 @@ class SettingsProvider extends ChangeNotifier {
   /// [clearAnalyticsInstallId] to fully reset.
   Future<void> setAnalyticsEnabled(bool enabled) async {
     if (enabled && _settings.analyticsInstallId == null) {
-      await save(_settings.copyWith(
-        analyticsEnabled: true,
-        analyticsInstallId: const Uuid().v4(),
-      ));
+      await save(
+        _settings.copyWith(
+          analyticsEnabled: true,
+          analyticsInstallId: const Uuid().v4(),
+        ),
+      );
     } else {
       await save(_settings.copyWith(analyticsEnabled: enabled));
     }

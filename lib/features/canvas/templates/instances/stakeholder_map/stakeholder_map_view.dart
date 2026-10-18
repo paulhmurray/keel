@@ -84,20 +84,13 @@ class _StakeholderMapViewState extends State<StakeholderMapView> {
 
   void _addPerson(Person person) {
     // Default to centre — analyst drags from there.
-    final dot = StakeholderDot(
-      id: const Uuid().v4(),
-      personId: person.id,
-    );
-    _save(_content.copyWith(
-      stakeholders: [..._content.stakeholders, dot],
-    ));
+    final dot = StakeholderDot(id: const Uuid().v4(), personId: person.id);
+    _save(_content.copyWith(stakeholders: [..._content.stakeholders, dot]));
   }
 
   void _moveDot(String id, double newX, double newY) {
     final updated = _content.stakeholders.map((d) {
-      return d.id == id
-          ? d.copyWith(positionX: newX, positionY: newY)
-          : d;
+      return d.id == id ? d.copyWith(positionX: newX, positionY: newY) : d;
     }).toList();
     _save(_content.copyWith(stakeholders: updated));
   }
@@ -110,8 +103,7 @@ class _StakeholderMapViewState extends State<StakeholderMapView> {
   }
 
   void _removeDot(String id) {
-    final updated =
-        _content.stakeholders.where((d) => d.id != id).toList();
+    final updated = _content.stakeholders.where((d) => d.id != id).toList();
     if (_selectedDotId == id) {
       _selectedDotId = null;
       _notesCtrl?.dispose();
@@ -147,17 +139,14 @@ class _StakeholderMapViewState extends State<StakeholderMapView> {
         final people = snap.data ?? const <Person>[];
         final personById = {for (final p in people) p.id: p};
         // Persons NOT yet placed — fuel for the Add dropdown.
-        final placedIds =
-            _content.stakeholders.map((d) => d.personId).toSet();
-        final addable = people
-            .where((p) => !placedIds.contains(p.id))
-            .toList();
+        final placedIds = _content.stakeholders.map((d) => d.personId).toSet();
+        final addable = people.where((p) => !placedIds.contains(p.id)).toList();
         final selected = _selectedDotId == null
             ? null
             : _content.stakeholders
-                .where((d) => d.id == _selectedDotId)
-                .cast<StakeholderDot?>()
-                .firstOrNull;
+                  .where((d) => d.id == _selectedDotId)
+                  .cast<StakeholderDot?>()
+                  .firstOrNull;
         return Row(
           children: [
             Expanded(
@@ -219,7 +208,7 @@ class _GridArea extends StatelessWidget {
           // Top toolbar: Add button.
           Row(
             children: [
-              const Text(
+              Text(
                 'STAKEHOLDER MAP',
                 style: TextStyle(
                   color: KColors.amber,
@@ -231,16 +220,10 @@ class _GridArea extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 '${content.stakeholders.length} placed',
-                style: const TextStyle(
-                  color: KColors.textMuted,
-                  fontSize: 11,
-                ),
+                style: TextStyle(color: KColors.textMuted, fontSize: 11),
               ),
               const Spacer(),
-              _AddStakeholderButton(
-                addable: addable,
-                onSelected: onAddPerson,
-              ),
+              _AddStakeholderButton(addable: addable, onSelected: onAddPerson),
             ],
           ),
           const SizedBox(height: 12),
@@ -252,7 +235,7 @@ class _GridArea extends StatelessWidget {
                 SizedBox(
                   width: 28,
                   child: Column(
-                    children: const [
+                    children: [
                       Expanded(
                         child: Center(
                           child: RotatedBox(
@@ -295,7 +278,7 @@ class _GridArea extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       // X-axis label row.
-                      const Row(
+                      Row(
                         children: [
                           Text(
                             'LOW INTEREST',
@@ -353,36 +336,41 @@ class _AddStakeholderButton extends StatelessWidget {
       },
       itemBuilder: (_) {
         return addable
-            .map((p) => PopupMenuItem<String>(
-                  value: p.id,
-                  child: Row(
-                    children: [
-                      const Icon(Icons.person_outline,
-                          size: 14, color: KColors.textDim),
+            .map(
+              (p) => PopupMenuItem<String>(
+                value: p.id,
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.person_outline,
+                      size: 14,
+                      color: KColors.textDim,
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        p.name,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 12.5),
+                      ),
+                    ),
+                    if (p.role != null && p.role!.isNotEmpty) ...[
                       const SizedBox(width: 8),
                       Flexible(
                         child: Text(
-                          p.name,
+                          '· ${p.role}',
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 12.5),
-                        ),
-                      ),
-                      if (p.role != null && p.role!.isNotEmpty) ...[
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Text(
-                            '· ${p.role}',
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: KColors.textMuted,
-                            ),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: KColors.textMuted,
                           ),
                         ),
-                      ],
+                      ),
                     ],
-                  ),
-                ))
+                  ],
+                ),
+              ),
+            )
             .toList();
       },
       child: Container(
@@ -463,16 +451,14 @@ class _MapGrid extends StatelessWidget {
                 right: 0,
                 top: h / 2 - 0.5,
                 height: 1,
-                child:
-                    Container(color: KColors.border.withValues(alpha: 0.7)),
+                child: Container(color: KColors.border.withValues(alpha: 0.7)),
               ),
               Positioned(
                 top: 0,
                 bottom: 0,
                 left: w / 2 - 0.5,
                 width: 1,
-                child:
-                    Container(color: KColors.border.withValues(alpha: 0.7)),
+                child: Container(color: KColors.border.withValues(alpha: 0.7)),
               ),
               // Dots.
               ...content.stakeholders.map((dot) {
@@ -529,8 +515,7 @@ class _QuadrantLabels extends StatelessWidget {
           ),
           Align(
             alignment: Alignment.topRight,
-            child:
-                cell(StakeholderQuadrant.manageClosely, Alignment.topRight),
+            child: cell(StakeholderQuadrant.manageClosely, Alignment.topRight),
           ),
           Align(
             alignment: Alignment.bottomLeft,
@@ -538,8 +523,10 @@ class _QuadrantLabels extends StatelessWidget {
           ),
           Align(
             alignment: Alignment.bottomRight,
-            child:
-                cell(StakeholderQuadrant.keepInformed, Alignment.bottomRight),
+            child: cell(
+              StakeholderQuadrant.keepInformed,
+              Alignment.bottomRight,
+            ),
           ),
         ],
       ),
@@ -619,9 +606,7 @@ class _DraggableDotState extends State<_DraggableDot> {
         child: MouseRegion(
           cursor: SystemMouseCursors.move,
           child: Tooltip(
-            message: role == null || role.isEmpty
-                ? name
-                : '$name — $role',
+            message: role == null || role.isEmpty ? name : '$name — $role',
             waitDuration: const Duration(milliseconds: 600),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -632,12 +617,11 @@ class _DraggableDotState extends State<_DraggableDot> {
                   height: dotSize,
                   decoration: BoxDecoration(
                     color: KColors.amber.withValues(
-                        alpha: widget.isSelected ? 1.0 : 0.85),
+                      alpha: widget.isSelected ? 1.0 : 0.85,
+                    ),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: widget.isSelected
-                          ? KColors.text
-                          : KColors.amber,
+                      color: widget.isSelected ? KColors.text : KColors.amber,
                       width: widget.isSelected ? 2 : 1.5,
                     ),
                     boxShadow: [
@@ -651,7 +635,7 @@ class _DraggableDotState extends State<_DraggableDot> {
                   child: Center(
                     child: Text(
                       _initials(name),
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: KColors.bg,
                         fontSize: 11,
                         fontWeight: FontWeight.w800,
@@ -664,7 +648,9 @@ class _DraggableDotState extends State<_DraggableDot> {
                   constraints: const BoxConstraints(maxWidth: 120),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 4, vertical: 1),
+                      horizontal: 4,
+                      vertical: 1,
+                    ),
                     decoration: BoxDecoration(
                       color: KColors.surface.withValues(alpha: 0.85),
                       borderRadius: BorderRadius.circular(2),
@@ -673,7 +659,7 @@ class _DraggableDotState extends State<_DraggableDot> {
                       name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: KColors.text,
                         fontSize: 10.5,
                         fontWeight: FontWeight.w600,
@@ -718,7 +704,7 @@ class _DetailsSidePanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 280,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: KColors.surface,
         border: Border(left: BorderSide(color: KColors.border, width: 1)),
       ),
@@ -728,14 +714,14 @@ class _DetailsSidePanel extends StatelessWidget {
           // Header.
           Container(
             padding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(color: KColors.border, width: 0.5),
               ),
             ),
             child: Row(
               children: [
-                const Text(
+                Text(
                   'STAKEHOLDER',
                   style: TextStyle(
                     color: KColors.textDim,
@@ -748,8 +734,7 @@ class _DetailsSidePanel extends StatelessWidget {
                 IconButton(
                   visualDensity: VisualDensity.compact,
                   onPressed: onClose,
-                  icon: const Icon(Icons.close,
-                      size: 16, color: KColors.textDim),
+                  icon: Icon(Icons.close, size: 16, color: KColors.textDim),
                   tooltip: 'Close',
                 ),
               ],
@@ -763,7 +748,7 @@ class _DetailsSidePanel extends StatelessWidget {
                 children: [
                   Text(
                     person?.name ?? '(missing person)',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: KColors.text,
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
@@ -773,10 +758,7 @@ class _DetailsSidePanel extends StatelessWidget {
                   if (person?.role != null && person!.role!.isNotEmpty)
                     Text(
                       person!.role!,
-                      style: const TextStyle(
-                        color: KColors.textDim,
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: KColors.textDim, fontSize: 12),
                     ),
                   if (person?.organisation != null &&
                       person!.organisation!.isNotEmpty)
@@ -784,7 +766,7 @@ class _DetailsSidePanel extends StatelessWidget {
                       padding: const EdgeInsets.only(top: 2),
                       child: Text(
                         person!.organisation!,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: KColors.textMuted,
                           fontSize: 11.5,
                         ),
@@ -793,14 +775,16 @@ class _DetailsSidePanel extends StatelessWidget {
                   const SizedBox(height: 14),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 6),
+                      horizontal: 8,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: KColors.surface2,
                       borderRadius: BorderRadius.circular(3),
                     ),
                     child: Text(
                       'Quadrant · ${StakeholderQuadrant.at(dot.positionX, dot.positionY)}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: KColors.amber,
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
@@ -809,7 +793,7 @@ class _DetailsSidePanel extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     'NOTES',
                     style: TextStyle(
                       color: KColors.textMuted,
@@ -823,7 +807,7 @@ class _DetailsSidePanel extends StatelessWidget {
                     controller: notesCtrl,
                     maxLines: 5,
                     minLines: 3,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: KColors.text,
                       fontSize: 12.5,
                       height: 1.4,
@@ -831,24 +815,23 @@ class _DetailsSidePanel extends StatelessWidget {
                     decoration: InputDecoration(
                       hintText:
                           'Engagement strategy, last conversation, blockers…',
-                      hintStyle: const TextStyle(
-                          color: KColors.textMuted, fontSize: 12),
+                      hintStyle: TextStyle(
+                        color: KColors.textMuted,
+                        fontSize: 12,
+                      ),
                       isDense: true,
                       contentPadding: const EdgeInsets.all(8),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(4),
-                        borderSide:
-                            const BorderSide(color: KColors.border),
+                        borderSide: BorderSide(color: KColors.border),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(4),
-                        borderSide:
-                            const BorderSide(color: KColors.border),
+                        borderSide: BorderSide(color: KColors.border),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(4),
-                        borderSide:
-                            const BorderSide(color: KColors.amber),
+                        borderSide: BorderSide(color: KColors.amber),
                       ),
                     ),
                     onChanged: onNotesChanged,
@@ -860,7 +843,7 @@ class _DetailsSidePanel extends StatelessWidget {
                     label: const Text('Remove from map'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: KColors.red,
-                      side: const BorderSide(color: KColors.red),
+                      side: BorderSide(color: KColors.red),
                     ),
                   ),
                 ],

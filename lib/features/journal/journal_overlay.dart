@@ -73,8 +73,7 @@ class JournalOverlayState extends State<JournalOverlay> {
 
   /// True when the docked note has typed-but-unsaved content — the shell
   /// checks this before swapping the dock to a different entry.
-  bool get hasUnsavedChanges =>
-      _hasChanges && _bodyCtrl.text.trim().isNotEmpty;
+  bool get hasUnsavedChanges => _hasChanges && _bodyCtrl.text.trim().isNotEmpty;
 
   bool get _alreadyParsed =>
       _parsedThisSession || (widget.existingEntry?.parsed ?? false);
@@ -93,12 +92,15 @@ class JournalOverlayState extends State<JournalOverlay> {
     _loadPersons();
     _loadGlossaryEntries();
     _loadSeries();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _bodyFocus.requestFocus());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _bodyFocus.requestFocus(),
+    );
   }
 
   Future<void> _loadSeries() async {
-    final all =
-        await widget.db.journalSeriesDao.getForProject(widget.projectId);
+    final all = await widget.db.journalSeriesDao.getForProject(
+      widget.projectId,
+    );
     if (mounted) setState(() => _allSeries = all);
   }
 
@@ -132,8 +134,9 @@ class JournalOverlayState extends State<JournalOverlay> {
       _deltas = [];
       _phase = _OverlayPhase.editor;
     });
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => _bodyFocus.requestFocus());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _bodyFocus.requestFocus(),
+    );
   }
 
   @override
@@ -145,14 +148,14 @@ class JournalOverlayState extends State<JournalOverlay> {
   }
 
   Future<void> _loadPersons() async {
-    final persons =
-        await widget.db.peopleDao.getPersonsForProject(widget.projectId);
+    final persons = await widget.db.peopleDao.getPersonsForProject(
+      widget.projectId,
+    );
     if (mounted) setState(() => _persons = persons);
   }
 
   Future<void> _loadGlossaryEntries() async {
-    final entries =
-        await widget.db.glossaryDao.getForProject(widget.projectId);
+    final entries = await widget.db.glossaryDao.getForProject(widget.projectId);
     if (mounted) setState(() => _glossaryEntries = entries);
   }
 
@@ -163,16 +166,18 @@ class JournalOverlayState extends State<JournalOverlay> {
       builder: (_) => _QuickGlossaryDialog(name: name),
     );
     if (result != null) {
-      await widget.db.glossaryDao.upsert(GlossaryEntriesCompanion(
-        id: Value(result.id),
-        projectId: Value(widget.projectId),
-        name: Value(result.name),
-        acronym: Value(result.acronym),
-        type: Value(result.type),
-        description: Value(result.description),
-        createdAt: Value(result.createdAt),
-        updatedAt: Value(result.updatedAt),
-      ));
+      await widget.db.glossaryDao.upsert(
+        GlossaryEntriesCompanion(
+          id: Value(result.id),
+          projectId: Value(widget.projectId),
+          name: Value(result.name),
+          acronym: Value(result.acronym),
+          type: Value(result.type),
+          description: Value(result.description),
+          createdAt: Value(result.createdAt),
+          updatedAt: Value(result.updatedAt),
+        ),
+      );
       await _loadGlossaryEntries();
     }
     return result;
@@ -185,15 +190,17 @@ class JournalOverlayState extends State<JournalOverlay> {
       builder: (_) => _QuickPersonDialog(name: name),
     );
     if (result != null) {
-      await widget.db.peopleDao.upsertPerson(PersonsCompanion(
-        id: Value(result.id),
-        projectId: Value(widget.projectId),
-        name: Value(result.name),
-        role: Value(result.role),
-        organisation: Value(result.organisation),
-        createdAt: Value(result.createdAt),
-        updatedAt: Value(result.updatedAt),
-      ));
+      await widget.db.peopleDao.upsertPerson(
+        PersonsCompanion(
+          id: Value(result.id),
+          projectId: Value(widget.projectId),
+          name: Value(result.name),
+          role: Value(result.role),
+          organisation: Value(result.organisation),
+          createdAt: Value(result.createdAt),
+          updatedAt: Value(result.updatedAt),
+        ),
+      );
       await _loadPersons();
     }
     return result;
@@ -208,7 +215,20 @@ class JournalOverlayState extends State<JournalOverlay> {
   String _formatDisplayDate(String isoDate) {
     try {
       final dt = DateTime.parse(isoDate);
-      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
       return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
     } catch (_) {
       return isoDate;
@@ -225,7 +245,9 @@ class JournalOverlayState extends State<JournalOverlay> {
     final entryId = _savedEntryId ?? const Uuid().v4();
     _savedEntryId = entryId;
     final now = DateTime.now();
-    final title = _titleCtrl.text.trim().isEmpty ? null : _titleCtrl.text.trim();
+    final title = _titleCtrl.text.trim().isEmpty
+        ? null
+        : _titleCtrl.text.trim();
     final contentChanged = body != _originalBody.trim();
 
     // If already parsed and nothing changed (and not a forced re-parse),
@@ -233,18 +255,20 @@ class JournalOverlayState extends State<JournalOverlay> {
     if (_alreadyParsed && !contentChanged && !_forceReparse) {
       if (_hasChanges || _seriesId != widget.existingEntry?.seriesId) {
         final existing = await widget.db.journalDao.getEntryById(entryId);
-        await widget.db.journalDao.upsertEntry(JournalEntriesCompanion(
-          id: Value(entryId),
-          projectId: Value(widget.projectId),
-          title: Value(title),
-          body: Value(body),
-          entryDate: Value(_entryDate),
-          parsed: const Value(true),
-          confirmedAt: Value(existing?.confirmedAt),
-          seriesId: Value(_seriesId),
-          createdAt: Value(existing?.createdAt ?? now),
-          updatedAt: Value(now),
-        ));
+        await widget.db.journalDao.upsertEntry(
+          JournalEntriesCompanion(
+            id: Value(entryId),
+            projectId: Value(widget.projectId),
+            title: Value(title),
+            body: Value(body),
+            entryDate: Value(_entryDate),
+            parsed: const Value(true),
+            confirmedAt: Value(existing?.confirmedAt),
+            seriesId: Value(_seriesId),
+            createdAt: Value(existing?.createdAt ?? now),
+            updatedAt: Value(now),
+          ),
+        );
       }
       _finishCycle();
       return;
@@ -262,36 +286,39 @@ class JournalOverlayState extends State<JournalOverlay> {
     // Nothing new to parse (e.g. whitespace-only edits to parsed text):
     // save the edits, keep the parsed state, and close without review.
     if (textToParse.isEmpty && dbEntry != null) {
-      await widget.db.journalDao.upsertEntry(JournalEntriesCompanion(
-        id: Value(entryId),
-        projectId: Value(widget.projectId),
-        title: Value(title),
-        body: Value(body),
-        entryDate: Value(_entryDate),
-        parsed: Value(dbEntry.parsed),
-        confirmedAt: Value(dbEntry.confirmedAt),
-        lastParsedBody: Value(body),
-        seriesId: Value(_seriesId),
-        createdAt: Value(dbEntry.createdAt),
-        updatedAt: Value(now),
-      ));
+      await widget.db.journalDao.upsertEntry(
+        JournalEntriesCompanion(
+          id: Value(entryId),
+          projectId: Value(widget.projectId),
+          title: Value(title),
+          body: Value(body),
+          entryDate: Value(_entryDate),
+          parsed: Value(dbEntry.parsed),
+          confirmedAt: Value(dbEntry.confirmedAt),
+          lastParsedBody: Value(body),
+          seriesId: Value(_seriesId),
+          createdAt: Value(dbEntry.createdAt),
+          updatedAt: Value(now),
+        ),
+      );
       _finishCycle();
       return;
     }
 
     // Save to DB — mark as not-yet-parsed until review is confirmed
-    await widget.db.journalDao.upsertEntry(JournalEntriesCompanion(
-      id: Value(entryId),
-      projectId: Value(widget.projectId),
-      title: Value(title),
-      body: Value(body),
-      entryDate: Value(_entryDate),
-      parsed: const Value(false),
-      seriesId: Value(_seriesId),
-      createdAt: Value(
-          widget.existingEntry?.createdAt ?? now),
-      updatedAt: Value(now),
-    ));
+    await widget.db.journalDao.upsertEntry(
+      JournalEntriesCompanion(
+        id: Value(entryId),
+        projectId: Value(widget.projectId),
+        title: Value(title),
+        body: Value(body),
+        entryDate: Value(_entryDate),
+        parsed: const Value(false),
+        seriesId: Value(_seriesId),
+        createdAt: Value(widget.existingEntry?.createdAt ?? now),
+        updatedAt: Value(now),
+      ),
+    );
 
     setState(() => _phase = _OverlayPhase.parsing);
 
@@ -322,7 +349,9 @@ class JournalOverlayState extends State<JournalOverlay> {
   /// whose description matches an already-linked item as ignored, so the
   /// user is not asked to confirm duplicates.
   Future<List<DetectedDelta>> _filterAlreadyExtracted(
-      String entryId, List<DetectedDelta> deltas) async {
+    String entryId,
+    List<DetectedDelta> deltas,
+  ) async {
     final links = await widget.db.journalDao.getLinksForEntry(entryId);
     if (links.isEmpty) return deltas;
 
@@ -332,20 +361,26 @@ class JournalOverlayState extends State<JournalOverlay> {
       String? desc;
       switch (link.itemType) {
         case 'action':
-          desc = (await widget.db.actionsDao.getActionById(link.itemId))?.description;
+          desc = (await widget.db.actionsDao.getActionById(
+            link.itemId,
+          ))?.description;
         case 'decision':
-          desc = (await widget.db.decisionsDao.getDecisionById(link.itemId))?.description;
+          desc = (await widget.db.decisionsDao.getDecisionById(
+            link.itemId,
+          ))?.description;
         case 'risk':
-          desc = (await widget.db.raidDao.getRiskById(link.itemId))?.description;
+          desc = (await widget.db.raidDao.getRiskById(
+            link.itemId,
+          ))?.description;
         case 'issue':
-          final issue = await (widget.db.select(widget.db.issues)
-                ..where((t) => t.id.equals(link.itemId)))
-              .getSingleOrNull();
+          final issue = await (widget.db.select(
+            widget.db.issues,
+          )..where((t) => t.id.equals(link.itemId))).getSingleOrNull();
           desc = issue?.description;
         case 'dependency':
-          final dep = await (widget.db.select(widget.db.programDependencies)
-                ..where((t) => t.id.equals(link.itemId)))
-              .getSingleOrNull();
+          final dep = await (widget.db.select(
+            widget.db.programDependencies,
+          )..where((t) => t.id.equals(link.itemId))).getSingleOrNull();
           desc = dep?.description;
       }
       if (desc != null && desc.isNotEmpty) {
@@ -355,8 +390,9 @@ class JournalOverlayState extends State<JournalOverlay> {
 
     // Mark deltas that match existing extractions as ignored
     for (final delta in deltas) {
-      final desc =
-          (delta.editFields['description'] ?? delta.title).toLowerCase().trim();
+      final desc = (delta.editFields['description'] ?? delta.title)
+          .toLowerCase()
+          .trim();
       if (existingDescs.contains(desc)) {
         delta.ignored = true;
       }
@@ -411,7 +447,9 @@ class JournalOverlayState extends State<JournalOverlay> {
   }
 
   void _attemptClose() {
-    if (_hasChanges && _bodyCtrl.text.trim().isNotEmpty && _phase == _OverlayPhase.editor) {
+    if (_hasChanges &&
+        _bodyCtrl.text.trim().isNotEmpty &&
+        _phase == _OverlayPhase.editor) {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
@@ -495,9 +533,7 @@ class JournalOverlayState extends State<JournalOverlay> {
                 // Title bar
                 _buildTitleBar(),
                 // Content
-                Expanded(
-                  child: _buildContent(),
-                ),
+                Expanded(child: _buildContent()),
               ],
             ),
           ),
@@ -509,13 +545,13 @@ class JournalOverlayState extends State<JournalOverlay> {
   Widget _buildTitleBar() {
     return Container(
       height: 40,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: KColors.border)),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
-          const Icon(Icons.menu_book_outlined, size: 14, color: KColors.amber),
+          Icon(Icons.menu_book_outlined, size: 14, color: KColors.amber),
           const SizedBox(width: 8),
           Flexible(
             child: Text(
@@ -523,7 +559,7 @@ class JournalOverlayState extends State<JournalOverlay> {
                   ? 'REVIEW CHANGES — ${_formatDisplayDate(_entryDate)}'
                   : 'JOURNAL — ${_formatDisplayDate(_entryDate)}',
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: TextStyle(
                 color: KColors.amber,
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
@@ -541,7 +577,9 @@ class JournalOverlayState extends State<JournalOverlay> {
                 final created = await showDialog<JournalSeries>(
                   context: context,
                   builder: (_) => JournalSeriesFormDialog(
-                      projectId: widget.projectId, db: widget.db),
+                    projectId: widget.projectId,
+                    db: widget.db,
+                  ),
                 );
                 await _loadSeries();
                 if (created != null && mounted) {
@@ -558,12 +596,15 @@ class JournalOverlayState extends State<JournalOverlay> {
                 },
                 borderRadius: BorderRadius.circular(3),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     border: Border.all(color: KColors.border2),
                     borderRadius: BorderRadius.circular(3),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Re-parse',
                     style: TextStyle(color: KColors.textDim, fontSize: 10),
                   ),
@@ -571,7 +612,7 @@ class JournalOverlayState extends State<JournalOverlay> {
               ),
             const SizedBox(width: 8),
             if (!widget.docked)
-              const Text(
+              Text(
                 'Cmd+Enter to save · Esc to close',
                 style: TextStyle(color: KColors.textMuted, fontSize: 10),
               ),
@@ -580,7 +621,7 @@ class JournalOverlayState extends State<JournalOverlay> {
           InkWell(
             onTap: _attemptClose,
             borderRadius: BorderRadius.circular(3),
-            child: const Padding(
+            child: Padding(
               padding: EdgeInsets.all(4),
               child: Icon(Icons.close, size: 14, color: KColors.textMuted),
             ),
@@ -609,7 +650,7 @@ class JournalOverlayState extends State<JournalOverlay> {
         );
 
       case _OverlayPhase.parsing:
-        return const Center(
+        return Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -642,7 +683,7 @@ class JournalOverlayState extends State<JournalOverlay> {
               flex: 3,
               child: Container(
                 padding: const EdgeInsets.all(20),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   border: Border(right: BorderSide(color: KColors.border)),
                 ),
                 child: Column(
@@ -651,7 +692,7 @@ class JournalOverlayState extends State<JournalOverlay> {
                     if (_titleCtrl.text.isNotEmpty) ...[
                       Text(
                         _titleCtrl.text,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: KColors.text,
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -661,11 +702,14 @@ class JournalOverlayState extends State<JournalOverlay> {
                     ],
                     Text(
                       _formatDisplayDate(_entryDate),
-                      style: const TextStyle(
-                          color: KColors.amber, fontSize: 11, fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                        color: KColors.amber,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                     const SizedBox(height: 12),
-                    const Divider(color: KColors.border, height: 1),
+                    Divider(color: KColors.border, height: 1),
                     const SizedBox(height: 12),
                     Expanded(
                       child: SingleChildScrollView(
@@ -678,10 +722,16 @@ class JournalOverlayState extends State<JournalOverlay> {
                     ),
                     const SizedBox(height: 8),
                     TextButton.icon(
-                      onPressed: () => setState(() => _phase = _OverlayPhase.editor),
+                      onPressed: () =>
+                          setState(() => _phase = _OverlayPhase.editor),
                       icon: const Icon(Icons.edit_outlined, size: 12),
-                      label: const Text('Edit entry', style: TextStyle(fontSize: 11)),
-                      style: TextButton.styleFrom(foregroundColor: KColors.textDim),
+                      label: const Text(
+                        'Edit entry',
+                        style: TextStyle(fontSize: 11),
+                      ),
+                      style: TextButton.styleFrom(
+                        foregroundColor: KColors.textDim,
+                      ),
                     ),
                   ],
                 ),
@@ -739,8 +789,7 @@ class _QuickPersonDialogState extends State<_QuickPersonDialog> {
       name: name,
       email: null,
       role: _roleCtrl.text.trim().isEmpty ? null : _roleCtrl.text.trim(),
-      organisation:
-          _orgCtrl.text.trim().isEmpty ? null : _orgCtrl.text.trim(),
+      organisation: _orgCtrl.text.trim().isEmpty ? null : _orgCtrl.text.trim(),
       phone: null,
       teamsHandle: null,
       personType: 'colleague',
@@ -755,8 +804,10 @@ class _QuickPersonDialogState extends State<_QuickPersonDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: KColors.surface,
-      title: const Text('Add Person',
-          style: TextStyle(color: KColors.text, fontSize: 14)),
+      title: Text(
+        'Add Person',
+        style: TextStyle(color: KColors.text, fontSize: 14),
+      ),
       content: SizedBox(
         width: 320,
         child: Column(
@@ -765,8 +816,8 @@ class _QuickPersonDialogState extends State<_QuickPersonDialog> {
             TextField(
               controller: _nameCtrl,
               autofocus: true,
-              style: const TextStyle(color: KColors.text, fontSize: 13),
-              decoration: const InputDecoration(
+              style: TextStyle(color: KColors.text, fontSize: 13),
+              decoration: InputDecoration(
                 labelText: 'Name',
                 labelStyle: TextStyle(color: KColors.textDim, fontSize: 12),
               ),
@@ -775,8 +826,8 @@ class _QuickPersonDialogState extends State<_QuickPersonDialog> {
             const SizedBox(height: 8),
             TextField(
               controller: _roleCtrl,
-              style: const TextStyle(color: KColors.text, fontSize: 13),
-              decoration: const InputDecoration(
+              style: TextStyle(color: KColors.text, fontSize: 13),
+              decoration: InputDecoration(
                 labelText: 'Role (optional)',
                 labelStyle: TextStyle(color: KColors.textDim, fontSize: 12),
               ),
@@ -785,8 +836,8 @@ class _QuickPersonDialogState extends State<_QuickPersonDialog> {
             const SizedBox(height: 8),
             TextField(
               controller: _orgCtrl,
-              style: const TextStyle(color: KColors.text, fontSize: 13),
-              decoration: const InputDecoration(
+              style: TextStyle(color: KColors.text, fontSize: 13),
+              decoration: InputDecoration(
                 labelText: 'Organisation (optional)',
                 labelStyle: TextStyle(color: KColors.textDim, fontSize: 12),
               ),
@@ -798,13 +849,12 @@ class _QuickPersonDialogState extends State<_QuickPersonDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel',
-              style: TextStyle(color: KColors.textDim, fontSize: 12)),
+          child: Text(
+            'Cancel',
+            style: TextStyle(color: KColors.textDim, fontSize: 12),
+          ),
         ),
-        ElevatedButton(
-          onPressed: _submit,
-          child: const Text('Add'),
-        ),
+        ElevatedButton(onPressed: _submit, child: const Text('Add')),
       ],
     );
   }
@@ -846,7 +896,9 @@ class _QuickGlossaryDialogState extends State<_QuickGlossaryDialog> {
       id: const Uuid().v4(),
       projectId: '',
       name: name,
-      acronym: _acronymCtrl.text.trim().isEmpty ? null : _acronymCtrl.text.trim(),
+      acronym: _acronymCtrl.text.trim().isEmpty
+          ? null
+          : _acronymCtrl.text.trim(),
       type: _type,
       description: _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
       owner: null,
@@ -862,8 +914,10 @@ class _QuickGlossaryDialogState extends State<_QuickGlossaryDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: KColors.surface,
-      title: const Text('Add Glossary Entry',
-          style: TextStyle(color: KColors.text, fontSize: 14)),
+      title: Text(
+        'Add Glossary Entry',
+        style: TextStyle(color: KColors.text, fontSize: 14),
+      ),
       content: SizedBox(
         width: 340,
         child: Column(
@@ -872,8 +926,10 @@ class _QuickGlossaryDialogState extends State<_QuickGlossaryDialog> {
             // Type toggle
             Row(
               children: [
-                const Text('Type:',
-                    style: TextStyle(color: KColors.textDim, fontSize: 12)),
+                Text(
+                  'Type:',
+                  style: TextStyle(color: KColors.textDim, fontSize: 12),
+                ),
                 const SizedBox(width: 12),
                 _TypeToggle(
                   value: _type,
@@ -885,8 +941,8 @@ class _QuickGlossaryDialogState extends State<_QuickGlossaryDialog> {
             TextField(
               controller: _nameCtrl,
               autofocus: true,
-              style: const TextStyle(color: KColors.text, fontSize: 13),
-              decoration: const InputDecoration(
+              style: TextStyle(color: KColors.text, fontSize: 13),
+              decoration: InputDecoration(
                 labelText: 'Name',
                 labelStyle: TextStyle(color: KColors.textDim, fontSize: 12),
               ),
@@ -895,8 +951,8 @@ class _QuickGlossaryDialogState extends State<_QuickGlossaryDialog> {
             const SizedBox(height: 8),
             TextField(
               controller: _acronymCtrl,
-              style: const TextStyle(color: KColors.text, fontSize: 13),
-              decoration: const InputDecoration(
+              style: TextStyle(color: KColors.text, fontSize: 13),
+              decoration: InputDecoration(
                 labelText: 'Acronym (optional)',
                 labelStyle: TextStyle(color: KColors.textDim, fontSize: 12),
               ),
@@ -905,9 +961,9 @@ class _QuickGlossaryDialogState extends State<_QuickGlossaryDialog> {
             const SizedBox(height: 8),
             TextField(
               controller: _descCtrl,
-              style: const TextStyle(color: KColors.text, fontSize: 13),
+              style: TextStyle(color: KColors.text, fontSize: 13),
               maxLines: 3,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Description (optional)',
                 labelStyle: TextStyle(color: KColors.textDim, fontSize: 12),
                 alignLabelWithHint: true,
@@ -919,13 +975,12 @@ class _QuickGlossaryDialogState extends State<_QuickGlossaryDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel',
-              style: TextStyle(color: KColors.textDim, fontSize: 12)),
+          child: Text(
+            'Cancel',
+            style: TextStyle(color: KColors.textDim, fontSize: 12),
+          ),
         ),
-        ElevatedButton(
-          onPressed: _submit,
-          child: const Text('Add'),
-        ),
+        ElevatedButton(onPressed: _submit, child: const Text('Add')),
       ],
     );
   }
@@ -961,8 +1016,11 @@ class _ToggleBtn extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
-  const _ToggleBtn(
-      {required this.label, required this.selected, required this.onTap});
+  const _ToggleBtn({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1028,11 +1086,13 @@ class _SeriesChip extends StatelessWidget {
         }
       },
       itemBuilder: (_) => [
-        const PopupMenuItem(
+        PopupMenuItem(
           value: '__none__',
           height: 32,
-          child: Text('— No series —',
-              style: TextStyle(color: KColors.textDim, fontSize: 12)),
+          child: Text(
+            '— No series —',
+            style: TextStyle(color: KColors.textDim, fontSize: 12),
+          ),
         ),
         const PopupMenuDivider(height: 1),
         for (final s in allSeries)
@@ -1042,16 +1102,17 @@ class _SeriesChip extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.repeat, size: 11, color: KColors.blue),
+                Icon(Icons.repeat, size: 11, color: KColors.blue),
                 const SizedBox(width: 6),
-                Text(s.name,
-                    style:
-                        const TextStyle(color: KColors.text, fontSize: 12)),
+                Text(
+                  s.name,
+                  style: TextStyle(color: KColors.text, fontSize: 12),
+                ),
               ],
             ),
           ),
         const PopupMenuDivider(height: 1),
-        const PopupMenuItem(
+        PopupMenuItem(
           value: '__new__',
           height: 32,
           child: Row(
@@ -1059,8 +1120,10 @@ class _SeriesChip extends StatelessWidget {
             children: [
               Icon(Icons.add, size: 11, color: KColors.phosphor),
               SizedBox(width: 6),
-              Text('Create new series…',
-                  style: TextStyle(color: KColors.phosphor, fontSize: 12)),
+              Text(
+                'Create new series…',
+                style: TextStyle(color: KColors.phosphor, fontSize: 12),
+              ),
             ],
           ),
         ),
@@ -1070,7 +1133,8 @@ class _SeriesChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: current == null ? KColors.surface2 : KColors.blueDim,
           border: Border.all(
-              color: current == null ? KColors.border2 : KColors.blue),
+            color: current == null ? KColors.border2 : KColors.blue,
+          ),
           borderRadius: BorderRadius.circular(3),
         ),
         child: Row(

@@ -1,22 +1,45 @@
 import 'package:flutter/material.dart';
 
+import 'keel_palettes.dart';
+
+export 'keel_palettes.dart'
+    show KeelPalette, kPalettes, kKeelPalette, paletteById;
+
+/// The UI palette, read everywhere as `KColors.amber` and friends.
+///
+/// Backed by the palette the user picked in Settings → Appearance; the
+/// role names are historical (see [KeelPalette]). These are getters, not
+/// constants, so a theme change takes effect without touching call
+/// sites — the app keys its root on the palette id so every widget
+/// rebuilds.
 abstract class KColors {
-  static const bg        = Color(0xFF0f1419);
-  static const surface   = Color(0xFF141c24);
-  static const surface2  = Color(0xFF1b2530);
-  static const border    = Color(0xFF253545);
-  static const border2   = Color(0xFF2f4258);
-  static const amber     = Color(0xFFe8a430);
-  static const amberDim  = Color(0xFF4a3412);
-  static const phosphor  = Color(0xFF2dd4a0);
-  static const phosDim   = Color(0xFF0e3b2e);
-  static const red       = Color(0xFFe05252);
-  static const redDim    = Color(0xFF3a1818);
-  static const blue      = Color(0xFF4a9eff);
-  static const blueDim   = Color(0xFF122748);
-  static const violet    = Color(0xFFa78bfa);
-  static const violetDim = Color(0xFF2a2150);
-  static const text      = Color(0xFFe2eaf2);
-  static const textDim   = Color(0xFF8aaabb);
-  static const textMuted = Color(0xFF607d94);
+  static KeelPalette _current = kKeelPalette;
+
+  static KeelPalette get palette => _current;
+
+  /// Switches the palette. The caller is responsible for rebuilding the
+  /// widget tree (see app.dart).
+  static void apply(KeelPalette palette) => _current = palette;
+
+  static Color get bg => _current.bg;
+  static Color get surface => _current.surface;
+  static Color get surface2 => _current.surface2;
+  static Color get border => _current.border;
+  static Color get border2 => _current.border2;
+  static Color get amber => _current.amber;
+  static Color get amberDim => _current.amberDim;
+  static Color get phosphor => _current.phosphor;
+  static Color get phosDim => _current.phosDim;
+  static Color get red => _current.red;
+  static Color get redDim => _current.redDim;
+  static Color get blue => _current.blue;
+  static Color get blueDim => _current.blueDim;
+  static Color get violet => _current.violet;
+  static Color get violetDim => _current.violetDim;
+  static Color get text => _current.text;
+  static Color get textDim => _current.textDim;
+  static Color get textMuted => _current.textMuted;
+
+  /// Text on a primary or positive fill.
+  static Color get onAccent => _current.onAccent;
 }

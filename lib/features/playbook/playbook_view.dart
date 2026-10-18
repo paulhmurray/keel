@@ -13,28 +13,28 @@ import 'checklist_widget.dart';
 import 'playbook_setup_view.dart';
 
 Color _statusColor(String status) => switch (status) {
-      'complete' => KColors.phosphor,
-      'in_progress' => KColors.amber,
-      'blocked' => KColors.red,
-      'pending_approval' => KColors.blue,
-      _ => KColors.textMuted,
-    };
+  'complete' => KColors.phosphor,
+  'in_progress' => KColors.amber,
+  'blocked' => KColors.red,
+  'pending_approval' => KColors.blue,
+  _ => KColors.textMuted,
+};
 
 IconData _statusIcon(String status) => switch (status) {
-      'complete' => Icons.check_circle,
-      'in_progress' => Icons.play_circle_outline,
-      'blocked' => Icons.block_outlined,
-      'pending_approval' => Icons.hourglass_empty_outlined,
-      _ => Icons.radio_button_unchecked,
-    };
+  'complete' => Icons.check_circle,
+  'in_progress' => Icons.play_circle_outline,
+  'blocked' => Icons.block_outlined,
+  'pending_approval' => Icons.hourglass_empty_outlined,
+  _ => Icons.radio_button_unchecked,
+};
 
 String _statusLabel(String status) => switch (status) {
-      'complete' => 'COMPLETE',
-      'in_progress' => 'IN PROGRESS',
-      'blocked' => 'BLOCKED',
-      'pending_approval' => 'PENDING APPROVAL',
-      _ => 'NOT STARTED',
-    };
+  'complete' => 'COMPLETE',
+  'in_progress' => 'IN PROGRESS',
+  'blocked' => 'BLOCKED',
+  'pending_approval' => 'PENDING APPROVAL',
+  _ => 'NOT STARTED',
+};
 
 // ---------------------------------------------------------------------------
 // PlaybookView
@@ -64,9 +64,11 @@ class _PlaybookViewState extends State<PlaybookView> {
   Widget build(BuildContext context) {
     final projectId = context.watch<ProjectProvider>().currentProjectId;
     if (projectId == null) {
-      return const Center(
-        child: Text('Select a project to view its playbook.',
-            style: TextStyle(color: KColors.textDim)),
+      return Center(
+        child: Text(
+          'Select a project to view its playbook.',
+          style: TextStyle(color: KColors.textDim),
+        ),
       );
     }
 
@@ -79,12 +81,14 @@ class _PlaybookViewState extends State<PlaybookView> {
         children: [
           Row(
             children: [
-              const Icon(Icons.account_tree_outlined, color: KColors.amber, size: 18),
+              Icon(Icons.account_tree_outlined, color: KColors.amber, size: 18),
               const SizedBox(width: 8),
               Flexible(
-                child: Text('PLAYBOOK',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                    overflow: TextOverflow.ellipsis),
+                child: Text(
+                  'PLAYBOOK',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               const Spacer(),
               OutlinedButton.icon(
@@ -96,7 +100,7 @@ class _PlaybookViewState extends State<PlaybookView> {
                 label: const Text('Manage playbooks'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: KColors.textDim,
-                  side: const BorderSide(color: KColors.border2),
+                  side: BorderSide(color: KColors.border2),
                   textStyle: const TextStyle(fontSize: 12),
                 ),
               ),
@@ -115,7 +119,8 @@ class _PlaybookViewState extends State<PlaybookView> {
                   db: db,
                   expandedStageId: _expandedStageId,
                   onExpand: (id) => setState(
-                      () => _expandedStageId = _expandedStageId == id ? null : id),
+                    () => _expandedStageId = _expandedStageId == id ? null : id,
+                  ),
                 );
               },
             ),
@@ -157,7 +162,11 @@ class _NoPlaybookWidgetState extends State<_NoPlaybookWidget> {
     for (final org in orgs) {
       books.addAll(await widget.db.playbookDao.getPlaybooksForOrg(org.id));
     }
-    if (mounted) setState(() { _orgs = orgs; _playbooks = books; });
+    if (mounted)
+      setState(() {
+        _orgs = orgs;
+        _playbooks = books;
+      });
   }
 
   @override
@@ -167,18 +176,30 @@ class _NoPlaybookWidgetState extends State<_NoPlaybookWidget> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.account_tree_outlined, size: 48, color: KColors.textMuted),
+            Icon(
+              Icons.account_tree_outlined,
+              size: 48,
+              color: KColors.textMuted,
+            ),
             const SizedBox(height: 16),
-            const Text('No playbooks set up yet.',
-                style: TextStyle(color: KColors.textDim, fontSize: 14)),
+            Text(
+              'No playbooks set up yet.',
+              style: TextStyle(color: KColors.textDim, fontSize: 14),
+            ),
             const SizedBox(height: 8),
-            const Text('Set up your organisation and delivery sequence first.',
-                style: TextStyle(color: KColors.textMuted, fontSize: 12)),
+            Text(
+              'Set up your organisation and delivery sequence first.',
+              style: TextStyle(color: KColors.textMuted, fontSize: 12),
+            ),
             const SizedBox(height: 20),
             ElevatedButton.icon(
               onPressed: () async {
-                await Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => PlaybookSetupView(db: widget.db)));
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PlaybookSetupView(db: widget.db),
+                  ),
+                );
                 _load();
               },
               icon: const Icon(Icons.add, size: 14),
@@ -196,13 +217,21 @@ class _NoPlaybookWidgetState extends State<_NoPlaybookWidget> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.link_outlined, size: 40, color: KColors.textMuted),
+            Icon(Icons.link_outlined, size: 40, color: KColors.textMuted),
             const SizedBox(height: 16),
-            const Text('Attach a playbook to this project',
-                style: TextStyle(color: KColors.text, fontSize: 16, fontWeight: FontWeight.w600)),
+            Text(
+              'Attach a playbook to this project',
+              style: TextStyle(
+                color: KColors.text,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             const SizedBox(height: 8),
-            const Text('Choose the delivery sequence that applies to this project.',
-                style: TextStyle(color: KColors.textDim, fontSize: 12)),
+            Text(
+              'Choose the delivery sequence that applies to this project.',
+              style: TextStyle(color: KColors.textDim, fontSize: 12),
+            ),
             const SizedBox(height: 20),
             Container(
               decoration: BoxDecoration(
@@ -216,14 +245,20 @@ class _NoPlaybookWidgetState extends State<_NoPlaybookWidget> {
                   value: _selectedPlaybookId,
                   isExpanded: true,
                   dropdownColor: KColors.surface2,
-                  hint: const Text('Select playbook…',
-                      style: TextStyle(color: KColors.textDim, fontSize: 13)),
+                  hint: Text(
+                    'Select playbook…',
+                    style: TextStyle(color: KColors.textDim, fontSize: 13),
+                  ),
                   items: _playbooks
-                      .map((pb) => DropdownMenuItem<String?>(
-                            value: pb.id,
-                            child: Text(pb.name,
-                                style: const TextStyle(color: KColors.text, fontSize: 13)),
-                          ))
+                      .map(
+                        (pb) => DropdownMenuItem<String?>(
+                          value: pb.id,
+                          child: Text(
+                            pb.name,
+                            style: TextStyle(color: KColors.text, fontSize: 13),
+                          ),
+                        ),
+                      )
                       .toList(),
                   onChanged: (v) => setState(() => _selectedPlaybookId = v),
                 ),
@@ -241,12 +276,18 @@ class _NoPlaybookWidgetState extends State<_NoPlaybookWidget> {
                 const SizedBox(width: 12),
                 TextButton(
                   onPressed: () async {
-                    await Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => PlaybookSetupView(db: widget.db)));
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => PlaybookSetupView(db: widget.db),
+                      ),
+                    );
                     _load();
                   },
-                  child: const Text('Manage playbooks',
-                      style: TextStyle(color: KColors.textDim, fontSize: 12)),
+                  child: Text(
+                    'Manage playbooks',
+                    style: TextStyle(color: KColors.textDim, fontSize: 12),
+                  ),
                 ),
               ],
             ),
@@ -299,19 +340,26 @@ class _PlaybookProgressState extends State<_PlaybookProgress> {
     final projectId = widget.projectPlaybook.projectId;
     final persons = await widget.db.peopleDao.getPersonsForProject(projectId);
     final glossary = await widget.db.glossaryDao.getForProject(projectId);
-    if (mounted) setState(() { _persons = persons; _glossaryEntries = glossary; });
+    if (mounted)
+      setState(() {
+        _persons = persons;
+        _glossaryEntries = glossary;
+      });
   }
 
   Future<void> _loadPersons() async {
-    final persons = await widget.db.peopleDao
-        .getPersonsForProject(widget.projectPlaybook.projectId);
+    final persons = await widget.db.peopleDao.getPersonsForProject(
+      widget.projectPlaybook.projectId,
+    );
     if (mounted) setState(() => _persons = persons);
   }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<Playbook?>(
-      future: widget.db.playbookDao.getPlaybookById(widget.projectPlaybook.playbookId),
+      future: widget.db.playbookDao.getPlaybookById(
+        widget.projectPlaybook.playbookId,
+      ),
       builder: (context, pbSnap) {
         final playbook = pbSnap.data;
         return Column(
@@ -319,7 +367,10 @@ class _PlaybookProgressState extends State<_PlaybookProgress> {
           children: [
             if (playbook != null) ...[
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: KColors.surface,
                   border: Border.all(color: KColors.border),
@@ -327,11 +378,20 @@ class _PlaybookProgressState extends State<_PlaybookProgress> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.account_tree_outlined, size: 13, color: KColors.amber),
+                    Icon(
+                      Icons.account_tree_outlined,
+                      size: 13,
+                      color: KColors.amber,
+                    ),
                     const SizedBox(width: 6),
-                    Text(playbook.name,
-                        style: const TextStyle(
-                            color: KColors.text, fontSize: 13, fontWeight: FontWeight.w600)),
+                    Text(
+                      playbook.name,
+                      style: TextStyle(
+                        color: KColors.text,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     if (playbook.version != null) ...[
                       const SizedBox(width: 8),
                       _Chip(label: playbook.version!, color: KColors.textDim),
@@ -339,8 +399,13 @@ class _PlaybookProgressState extends State<_PlaybookProgress> {
                     const Spacer(),
                     TextButton(
                       onPressed: () => _confirmDetach(context),
-                      child: const Text('Detach',
-                          style: TextStyle(color: KColors.textMuted, fontSize: 11)),
+                      child: Text(
+                        'Detach',
+                        style: TextStyle(
+                          color: KColors.textMuted,
+                          fontSize: 11,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -349,24 +414,30 @@ class _PlaybookProgressState extends State<_PlaybookProgress> {
             ],
             Expanded(
               child: StreamBuilder<List<PlaybookStage>>(
-                stream: widget.db.playbookDao
-                    .watchStagesForPlaybook(widget.projectPlaybook.playbookId),
+                stream: widget.db.playbookDao.watchStagesForPlaybook(
+                  widget.projectPlaybook.playbookId,
+                ),
                 builder: (context, stagesSnap) {
                   final stages = stagesSnap.data ?? [];
                   return StreamBuilder<List<ProjectStageProgressesData>>(
                     stream: widget.db.playbookDao
-                        .watchProgressForProjectPlaybook(widget.projectPlaybook.id),
+                        .watchProgressForProjectPlaybook(
+                          widget.projectPlaybook.id,
+                        ),
                     builder: (context, progressSnap) {
                       final progressList = progressSnap.data ?? [];
                       final progressMap = <String, ProjectStageProgressesData>{
-                        for (final p in progressList) p.stageId: p
+                        for (final p in progressList) p.stageId: p,
                       };
 
                       if (stages.isEmpty) {
-                        return const Center(
+                        return Center(
                           child: Text(
                             'This playbook has no stages yet. Edit the playbook to add stages.',
-                            style: TextStyle(color: KColors.textDim, fontSize: 12),
+                            style: TextStyle(
+                              color: KColors.textDim,
+                              fontSize: 12,
+                            ),
                           ),
                         );
                       }
@@ -409,13 +480,17 @@ class _PlaybookProgressState extends State<_PlaybookProgress> {
           'The playbook itself will not be deleted.',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: KColors.red),
             onPressed: () async {
               Navigator.pop(ctx);
-              await widget.db.playbookDao
-                  .detachPlaybook(widget.projectPlaybook.projectId);
+              await widget.db.playbookDao.detachPlaybook(
+                widget.projectPlaybook.projectId,
+              );
             },
             child: const Text('Detach'),
           ),
@@ -470,8 +545,12 @@ class _StageRowState extends State<_StageRow> {
   @override
   void initState() {
     super.initState();
-    _approvedByCtrl = TextEditingController(text: widget.progress?.approvedBy ?? '');
-    _approvalNotesCtrl = TextEditingController(text: widget.progress?.approvalNotes ?? '');
+    _approvedByCtrl = TextEditingController(
+      text: widget.progress?.approvedBy ?? '',
+    );
+    _approvalNotesCtrl = TextEditingController(
+      text: widget.progress?.approvalNotes ?? '',
+    );
     _notesCtrl = TextEditingController(text: widget.progress?.notes ?? '');
     _lastSavedApprovedBy = widget.progress?.approvedBy?.trim() ?? '';
     _approvedByCtrl.addListener(_onApprovedByChanged);
@@ -544,13 +623,17 @@ class _StageRowState extends State<_StageRow> {
     try {
       final items = jsonDecode(widget.progress?.checklist ?? '[]') as List;
       return items.where((e) => (e as Map)['checked'] == true).length;
-    } catch (_) { return 0; }
+    } catch (_) {
+      return 0;
+    }
   }
 
   int get _totalCount {
     try {
       return (jsonDecode(widget.progress?.checklist ?? '[]') as List).length;
-    } catch (_) { return 0; }
+    } catch (_) {
+      return 0;
+    }
   }
 
   @override
@@ -573,261 +656,340 @@ class _StageRowState extends State<_StageRow> {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          // Timeline spine circle
-          SizedBox(
-            width: 40,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: color, width: 1.5),
-                  ),
-                  child: Center(
-                    child: Icon(_statusIcon(status), size: 14, color: color),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          // Card
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(bottom: widget.isLast ? 0 : 16),
+            // Timeline spine circle
+            SizedBox(
+              width: 40,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Collapsed header
-                  GestureDetector(
-                    onTap: widget.onExpand,
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: KColors.surface,
-                        border: Border.all(
-                          color: widget.expanded ? color : KColors.border,
-                          width: widget.expanded ? 1.5 : 1,
-                        ),
-                        borderRadius: BorderRadius.only(
-                          topLeft: const Radius.circular(4),
-                          topRight: const Radius.circular(4),
-                          bottomLeft: Radius.circular(widget.expanded ? 0 : 4),
-                          bottomRight: Radius.circular(widget.expanded ? 0 : 4),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Text(
-                                      'Stage ${widget.stageIndex + 1}: ${widget.stage.name}',
-                                      style: TextStyle(
-                                        color: complete ? KColors.textDim : KColors.text,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    _Chip(label: _statusLabel(status), color: color),
-                                  ],
-                                ),
-                                if (!widget.expanded && _totalCount > 0) ...[
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '$_checkedCount of $_totalCount checklist items done',
-                                    style: const TextStyle(color: KColors.textMuted, fontSize: 11),
-                                  ),
-                                ],
-                                if (!widget.expanded && widget.progress?.approvedBy != null) ...[
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Approved by: ${widget.progress!.approvedBy}'
-                                    '${widget.progress?.approvedAt != null ? ' · ${du.formatDate(widget.progress!.approvedAt!.toIso8601String().substring(0, 10))}' : ''}',
-                                    style: const TextStyle(color: KColors.textMuted, fontSize: 11),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                          Icon(widget.expanded ? Icons.expand_less : Icons.expand_more,
-                              size: 18, color: KColors.textMuted),
-                        ],
-                      ),
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: color, width: 1.5),
+                    ),
+                    child: Center(
+                      child: Icon(_statusIcon(status), size: 14, color: color),
                     ),
                   ),
-                  // Expanded detail panel
-                  if (widget.expanded)
-                    Container(
-                      decoration: BoxDecoration(
-                        color: KColors.surface2,
-                        border: Border(
-                          left: BorderSide(color: color, width: 1.5),
-                          right: BorderSide(color: color, width: 1.5),
-                          bottom: BorderSide(color: color, width: 1.5),
-                        ),
-                        borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(4),
-                          bottomRight: Radius.circular(4),
-                        ),
-                      ),
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (widget.stage.description != null) ...[
-                            Text(widget.stage.description!,
-                                style: const TextStyle(color: KColors.textDim, fontSize: 12)),
-                            const SizedBox(height: 12),
-                          ],
-                          // Gate + approver info
-                          if (widget.stage.gateCondition != null || widget.stage.approverRole != null) ...[
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: KColors.surface,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  if (widget.stage.gateCondition != null)
-                                    _LabelValue(label: 'Gate', value: widget.stage.gateCondition!),
-                                  if (widget.stage.approverRole != null)
-                                    _LabelValue(label: 'Approver', value: widget.stage.approverRole!),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                          ],
-                          // Checklist
-                          ChecklistWidget(
-                            checklistJson: widget.progress?.checklist,
-                            onChanged: (json) => _upsertProgress(checklist: json),
-                          ),
-                          const SizedBox(height: 16),
-                          const Divider(color: KColors.border, height: 1),
-                          const SizedBox(height: 12),
-                          // Approval
-                          const _SectionLabel('APPROVAL'),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: PersonPickerField(
-                                  controller: _approvedByCtrl,
-                                  label: 'Approved by',
-                                  persons: widget.persons,
-                                  db: widget.db,
-                                  projectId: widget.projectId,
-                                  onPersonCreated: widget.onPersonCreated,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Row(
-                                children: [
-                                  Checkbox(
-                                    value: widget.progress?.gateMet ?? false,
-                                    onChanged: (v) => _upsertProgress(gateMet: v ?? false),
-                                    activeColor: KColors.phosphor,
-                                  ),
-                                  const Text('Gate met',
-                                      style: TextStyle(color: KColors.textDim, fontSize: 12)),
-                                ],
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          TextField(
-                            controller: _approvalNotesCtrl,
-                            maxLines: 2,
-                            style: const TextStyle(color: KColors.text, fontSize: 12),
-                            decoration: const InputDecoration(
-                              labelText: 'Approval notes',
-                              labelStyle: TextStyle(color: KColors.textDim, fontSize: 11),
-                              border: OutlineInputBorder(),
-                              isDense: true,
-                              contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                            ),
-                            onEditingComplete: () => _upsertProgress(
-                              approvalNotes: _approvalNotesCtrl.text.trim().isEmpty
-                                  ? null
-                                  : _approvalNotesCtrl.text.trim(),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          // Stage notes (institutional knowledge)
-                          if (widget.stage.notes != null) ...[
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: KColors.amberDim,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Icon(Icons.lightbulb_outline, size: 13, color: KColors.amber),
-                                  const SizedBox(width: 6),
-                                  Expanded(
-                                    child: Text(widget.stage.notes!,
-                                        style: const TextStyle(color: KColors.amber, fontSize: 11)),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                          ],
-                          // Progress notes — supports @person and #glossary mentions
-                          MentionTextField(
-                            controller: _notesCtrl,
-                            persons: widget.persons,
-                            glossaryEntries: widget.glossaryEntries,
-                            db: widget.db,
-                            projectId: widget.projectId,
-                            onPersonCreated: widget.onPersonCreated,
-                            maxLines: 3,
-                            style: const TextStyle(color: KColors.text, fontSize: 12),
-                            decoration: const InputDecoration(
-                              labelText: 'Notes',
-                              hintText: '@ mention a person, # link a system…',
-                              hintStyle: TextStyle(color: KColors.textMuted, fontSize: 11),
-                              labelStyle: TextStyle(color: KColors.textDim, fontSize: 11),
-                              border: OutlineInputBorder(),
-                              isDense: true,
-                              contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                            ),
-                            onEditingComplete: () => _upsertProgress(
-                              notes: _notesCtrl.text.trim().isEmpty
-                                  ? null
-                                  : _notesCtrl.text.trim(),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          const Divider(color: KColors.border, height: 1),
-                          const SizedBox(height: 12),
-                          // Status actions
-                          _StatusActions(currentStatus: status, onSetStatus: (s) => _upsertProgress(status: s)),
-                        ],
-                      ),
-                      ),
-                    ),
                 ],
               ),
             ),
-          ),
-        ],
-      ),
+            const SizedBox(width: 10),
+            // Card
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(bottom: widget.isLast ? 0 : 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Collapsed header
+                    GestureDetector(
+                      onTap: widget.onExpand,
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: KColors.surface,
+                          border: Border.all(
+                            color: widget.expanded ? color : KColors.border,
+                            width: widget.expanded ? 1.5 : 1,
+                          ),
+                          borderRadius: BorderRadius.only(
+                            topLeft: const Radius.circular(4),
+                            topRight: const Radius.circular(4),
+                            bottomLeft: Radius.circular(
+                              widget.expanded ? 0 : 4,
+                            ),
+                            bottomRight: Radius.circular(
+                              widget.expanded ? 0 : 4,
+                            ),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        'Stage ${widget.stageIndex + 1}: ${widget.stage.name}',
+                                        style: TextStyle(
+                                          color: complete
+                                              ? KColors.textDim
+                                              : KColors.text,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      _Chip(
+                                        label: _statusLabel(status),
+                                        color: color,
+                                      ),
+                                    ],
+                                  ),
+                                  if (!widget.expanded && _totalCount > 0) ...[
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '$_checkedCount of $_totalCount checklist items done',
+                                      style: TextStyle(
+                                        color: KColors.textMuted,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
+                                  if (!widget.expanded &&
+                                      widget.progress?.approvedBy != null) ...[
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Approved by: ${widget.progress!.approvedBy}'
+                                      '${widget.progress?.approvedAt != null ? ' · ${du.formatDate(widget.progress!.approvedAt!.toIso8601String().substring(0, 10))}' : ''}',
+                                      style: TextStyle(
+                                        color: KColors.textMuted,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            Icon(
+                              widget.expanded
+                                  ? Icons.expand_less
+                                  : Icons.expand_more,
+                              size: 18,
+                              color: KColors.textMuted,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    // Expanded detail panel
+                    if (widget.expanded)
+                      Container(
+                        decoration: BoxDecoration(
+                          color: KColors.surface2,
+                          border: Border(
+                            left: BorderSide(color: color, width: 1.5),
+                            right: BorderSide(color: color, width: 1.5),
+                            bottom: BorderSide(color: color, width: 1.5),
+                          ),
+                          borderRadius: const BorderRadius.only(
+                            bottomLeft: Radius.circular(4),
+                            bottomRight: Radius.circular(4),
+                          ),
+                        ),
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (widget.stage.description != null) ...[
+                                Text(
+                                  widget.stage.description!,
+                                  style: TextStyle(
+                                    color: KColors.textDim,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                              ],
+                              // Gate + approver info
+                              if (widget.stage.gateCondition != null ||
+                                  widget.stage.approverRole != null) ...[
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: KColors.surface,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      if (widget.stage.gateCondition != null)
+                                        _LabelValue(
+                                          label: 'Gate',
+                                          value: widget.stage.gateCondition!,
+                                        ),
+                                      if (widget.stage.approverRole != null)
+                                        _LabelValue(
+                                          label: 'Approver',
+                                          value: widget.stage.approverRole!,
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                              ],
+                              // Checklist
+                              ChecklistWidget(
+                                checklistJson: widget.progress?.checklist,
+                                onChanged: (json) =>
+                                    _upsertProgress(checklist: json),
+                              ),
+                              const SizedBox(height: 16),
+                              Divider(color: KColors.border, height: 1),
+                              const SizedBox(height: 12),
+                              // Approval
+                              const _SectionLabel('APPROVAL'),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: PersonPickerField(
+                                      controller: _approvedByCtrl,
+                                      label: 'Approved by',
+                                      persons: widget.persons,
+                                      db: widget.db,
+                                      projectId: widget.projectId,
+                                      onPersonCreated: widget.onPersonCreated,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Row(
+                                    children: [
+                                      Checkbox(
+                                        value:
+                                            widget.progress?.gateMet ?? false,
+                                        onChanged: (v) => _upsertProgress(
+                                          gateMet: v ?? false,
+                                        ),
+                                        activeColor: KColors.phosphor,
+                                      ),
+                                      Text(
+                                        'Gate met',
+                                        style: TextStyle(
+                                          color: KColors.textDim,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              TextField(
+                                controller: _approvalNotesCtrl,
+                                maxLines: 2,
+                                style: TextStyle(
+                                  color: KColors.text,
+                                  fontSize: 12,
+                                ),
+                                decoration: InputDecoration(
+                                  labelText: 'Approval notes',
+                                  labelStyle: TextStyle(
+                                    color: KColors.textDim,
+                                    fontSize: 11,
+                                  ),
+                                  border: OutlineInputBorder(),
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 8,
+                                  ),
+                                ),
+                                onEditingComplete: () => _upsertProgress(
+                                  approvalNotes:
+                                      _approvalNotesCtrl.text.trim().isEmpty
+                                      ? null
+                                      : _approvalNotesCtrl.text.trim(),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              // Stage notes (institutional knowledge)
+                              if (widget.stage.notes != null) ...[
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: KColors.amberDim,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Icon(
+                                        Icons.lightbulb_outline,
+                                        size: 13,
+                                        color: KColors.amber,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          widget.stage.notes!,
+                                          style: TextStyle(
+                                            color: KColors.amber,
+                                            fontSize: 11,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                              ],
+                              // Progress notes — supports @person and #glossary mentions
+                              MentionTextField(
+                                controller: _notesCtrl,
+                                persons: widget.persons,
+                                glossaryEntries: widget.glossaryEntries,
+                                db: widget.db,
+                                projectId: widget.projectId,
+                                onPersonCreated: widget.onPersonCreated,
+                                maxLines: 3,
+                                style: TextStyle(
+                                  color: KColors.text,
+                                  fontSize: 12,
+                                ),
+                                decoration: InputDecoration(
+                                  labelText: 'Notes',
+                                  hintText:
+                                      '@ mention a person, # link a system…',
+                                  hintStyle: TextStyle(
+                                    color: KColors.textMuted,
+                                    fontSize: 11,
+                                  ),
+                                  labelStyle: TextStyle(
+                                    color: KColors.textDim,
+                                    fontSize: 11,
+                                  ),
+                                  border: OutlineInputBorder(),
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 8,
+                                  ),
+                                ),
+                                onEditingComplete: () => _upsertProgress(
+                                  notes: _notesCtrl.text.trim().isEmpty
+                                      ? null
+                                      : _notesCtrl.text.trim(),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Divider(color: KColors.border, height: 1),
+                              const SizedBox(height: 12),
+                              // Status actions
+                              _StatusActions(
+                                currentStatus: status,
+                                onSetStatus: (s) => _upsertProgress(status: s),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -841,7 +1003,10 @@ class _StatusActions extends StatelessWidget {
   final String currentStatus;
   final Future<void> Function(String) onSetStatus;
 
-  const _StatusActions({required this.currentStatus, required this.onSetStatus});
+  const _StatusActions({
+    required this.currentStatus,
+    required this.onSetStatus,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -850,20 +1015,35 @@ class _StatusActions extends StatelessWidget {
       runSpacing: 8,
       children: [
         if (currentStatus != 'in_progress')
-          _ActionBtn(label: 'Mark In Progress', color: KColors.amber,
-              onTap: () => onSetStatus('in_progress')),
+          _ActionBtn(
+            label: 'Mark In Progress',
+            color: KColors.amber,
+            onTap: () => onSetStatus('in_progress'),
+          ),
         if (currentStatus != 'blocked')
-          _ActionBtn(label: 'Mark Blocked', color: KColors.red,
-              onTap: () => onSetStatus('blocked')),
+          _ActionBtn(
+            label: 'Mark Blocked',
+            color: KColors.red,
+            onTap: () => onSetStatus('blocked'),
+          ),
         if (currentStatus != 'pending_approval')
-          _ActionBtn(label: 'Pending Approval', color: KColors.blue,
-              onTap: () => onSetStatus('pending_approval')),
+          _ActionBtn(
+            label: 'Pending Approval',
+            color: KColors.blue,
+            onTap: () => onSetStatus('pending_approval'),
+          ),
         if (currentStatus != 'complete')
-          _ActionBtn(label: 'Mark Complete', color: KColors.phosphor,
-              onTap: () => onSetStatus('complete')),
+          _ActionBtn(
+            label: 'Mark Complete',
+            color: KColors.phosphor,
+            onTap: () => onSetStatus('complete'),
+          ),
         if (currentStatus != 'not_started')
-          _ActionBtn(label: 'Reset', color: KColors.textDim,
-              onTap: () => onSetStatus('not_started')),
+          _ActionBtn(
+            label: 'Reset',
+            color: KColors.textDim,
+            onTap: () => onSetStatus('not_started'),
+          ),
       ],
     );
   }
@@ -874,7 +1054,11 @@ class _ActionBtn extends StatelessWidget {
   final Color color;
   final VoidCallback onTap;
 
-  const _ActionBtn({required this.label, required this.color, required this.onTap});
+  const _ActionBtn({
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -910,9 +1094,15 @@ class _Chip extends StatelessWidget {
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(3),
       ),
-      child: Text(label,
-          style: TextStyle(
-              color: color, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.1)),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.1,
+        ),
+      ),
     );
   }
 }
@@ -931,11 +1121,21 @@ class _LabelValue extends StatelessWidget {
         children: [
           SizedBox(
             width: 72,
-            child: Text('$label:',
-                style: const TextStyle(
-                    color: KColors.textDim, fontSize: 11, fontWeight: FontWeight.w600)),
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                color: KColors.textDim,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
-          Expanded(child: Text(value, style: const TextStyle(color: KColors.text, fontSize: 11))),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(color: KColors.text, fontSize: 11),
+            ),
+          ),
         ],
       ),
     );
@@ -948,8 +1148,14 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(text,
-        style: const TextStyle(
-            color: KColors.textDim, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.12));
+    return Text(
+      text,
+      style: TextStyle(
+        color: KColors.textDim,
+        fontSize: 10,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.12,
+      ),
+    );
   }
 }

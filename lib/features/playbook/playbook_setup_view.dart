@@ -8,11 +8,7 @@ class PlaybookSetupView extends StatefulWidget {
   final AppDatabase db;
   final String? initialOrgId;
 
-  const PlaybookSetupView({
-    super.key,
-    required this.db,
-    this.initialOrgId,
-  });
+  const PlaybookSetupView({super.key, required this.db, this.initialOrgId});
 
   @override
   State<PlaybookSetupView> createState() => _PlaybookSetupViewState();
@@ -35,7 +31,7 @@ class _PlaybookSetupViewState extends State<PlaybookSetupView> {
       appBar: AppBar(
         backgroundColor: KColors.surface,
         foregroundColor: KColors.text,
-        title: const Row(
+        title: Row(
           children: [
             Icon(Icons.account_tree_outlined, color: KColors.amber, size: 18),
             SizedBox(width: 8),
@@ -65,7 +61,7 @@ class _PlaybookSetupViewState extends State<PlaybookSetupView> {
           // Left: org list
           Container(
             width: 220,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: KColors.surface,
               border: Border(right: BorderSide(color: KColors.border)),
             ),
@@ -82,7 +78,7 @@ class _PlaybookSetupViewState extends State<PlaybookSetupView> {
           if (_selectedOrgId != null)
             Container(
               width: 240,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: KColors.surface,
                 border: Border(right: BorderSide(color: KColors.border)),
               ),
@@ -108,7 +104,7 @@ class _PlaybookSetupViewState extends State<PlaybookSetupView> {
                   _selectedOrgId == null
                       ? 'Select or create an organisation'
                       : 'Select or create a playbook',
-                  style: const TextStyle(color: KColors.textDim, fontSize: 13),
+                  style: TextStyle(color: KColors.textDim, fontSize: 13),
                 ),
               ),
             ),
@@ -148,10 +144,13 @@ class _OrgList extends StatelessWidget {
             ),
             Expanded(
               child: orgs.isEmpty
-                  ? const Center(
+                  ? Center(
                       child: Text(
                         'No organisations yet',
-                        style: TextStyle(color: KColors.textMuted, fontSize: 11),
+                        style: TextStyle(
+                          color: KColors.textMuted,
+                          fontSize: 11,
+                        ),
                       ),
                     )
                   : ListView.builder(
@@ -188,7 +187,9 @@ class _OrgList extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete organisation?'),
-        content: Text('Delete "${org.name}"? This will also delete all its playbooks and stages.'),
+        content: Text(
+          'Delete "${org.name}"? This will also delete all its playbooks and stages.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -240,10 +241,13 @@ class _PlaybookList extends StatelessWidget {
             ),
             Expanded(
               child: books.isEmpty
-                  ? const Center(
+                  ? Center(
                       child: Text(
                         'No playbooks yet',
-                        style: TextStyle(color: KColors.textMuted, fontSize: 11),
+                        style: TextStyle(
+                          color: KColors.textMuted,
+                          fontSize: 11,
+                        ),
                       ),
                     )
                   : ListView.builder(
@@ -282,7 +286,10 @@ class _PlaybookList extends StatelessWidget {
         title: const Text('Delete playbook?'),
         content: Text('Delete "${pb.name}"? Stages will also be deleted.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: KColors.red),
             onPressed: () async {
@@ -318,12 +325,12 @@ class _StageEditor extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 border: Border(bottom: BorderSide(color: KColors.border)),
               ),
               child: Row(
                 children: [
-                  const Text(
+                  Text(
                     'STAGES',
                     style: TextStyle(
                       color: KColors.textDim,
@@ -338,16 +345,20 @@ class _StageEditor extends StatelessWidget {
                       '${stages.length} stages',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: KColors.textMuted, fontSize: 10),
+                      style: TextStyle(color: KColors.textMuted, fontSize: 10),
                     ),
                   ),
                   const SizedBox(width: 12),
                   ElevatedButton.icon(
-                    onPressed: () => _showStageDialog(context, null, stages.length),
+                    onPressed: () =>
+                        _showStageDialog(context, null, stages.length),
                     icon: const Icon(Icons.add, size: 13),
                     label: const Text('Add Stage'),
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       textStyle: const TextStyle(fontSize: 12),
                     ),
                   ),
@@ -356,16 +367,22 @@ class _StageEditor extends StatelessWidget {
             ),
             Expanded(
               child: stages.isEmpty
-                  ? const Center(
+                  ? Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.account_tree_outlined,
-                              size: 32, color: KColors.textMuted),
+                          Icon(
+                            Icons.account_tree_outlined,
+                            size: 32,
+                            color: KColors.textMuted,
+                          ),
                           SizedBox(height: 10),
                           Text(
                             'No stages yet. Add the first stage.',
-                            style: TextStyle(color: KColors.textDim, fontSize: 12),
+                            style: TextStyle(
+                              color: KColors.textDim,
+                              fontSize: 12,
+                            ),
                           ),
                         ],
                       ),
@@ -378,8 +395,9 @@ class _StageEditor extends StatelessWidget {
                         final reordered = List.of(stages);
                         final moved = reordered.removeAt(oldIndex);
                         reordered.insert(newIndex, moved);
-                        await db.playbookDao
-                            .reorderStages(reordered.map((s) => s.id).toList());
+                        await db.playbookDao.reorderStages(
+                          reordered.map((s) => s.id).toList(),
+                        );
                       },
                       itemBuilder: (_, i) {
                         final stage = stages[i];
@@ -388,7 +406,8 @@ class _StageEditor extends StatelessWidget {
                           stage: stage,
                           index: i,
                           db: db,
-                          onEdit: () => _showStageDialog(context, stage, stages.length),
+                          onEdit: () =>
+                              _showStageDialog(context, stage, stages.length),
                           onDelete: () => _confirmDeleteStage(context, stage),
                         );
                       },
@@ -400,7 +419,11 @@ class _StageEditor extends StatelessWidget {
     );
   }
 
-  void _showStageDialog(BuildContext context, PlaybookStage? existing, int count) {
+  void _showStageDialog(
+    BuildContext context,
+    PlaybookStage? existing,
+    int count,
+  ) {
     showDialog(
       context: context,
       builder: (_) => _StageDialog(
@@ -419,7 +442,10 @@ class _StageEditor extends StatelessWidget {
         title: const Text('Delete stage?'),
         content: Text('Delete "${stage.name}"?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: KColors.red),
             onPressed: () async {
@@ -471,7 +497,7 @@ class _StageCard extends StatelessWidget {
           child: Center(
             child: Text(
               '${index + 1}',
-              style: const TextStyle(
+              style: TextStyle(
                 color: KColors.amber,
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
@@ -481,34 +507,46 @@ class _StageCard extends StatelessWidget {
         ),
         title: Text(
           stage.name,
-          style: const TextStyle(color: KColors.text, fontSize: 13, fontWeight: FontWeight.w500),
+          style: TextStyle(
+            color: KColors.text,
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
         ),
         subtitle: stage.approverRole != null || stage.gateCondition != null
             ? Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (stage.approverRole != null)
-                    Text('Approver: ${stage.approverRole}',
-                        style: const TextStyle(color: KColors.textDim, fontSize: 11)),
+                    Text(
+                      'Approver: ${stage.approverRole}',
+                      style: TextStyle(color: KColors.textDim, fontSize: 11),
+                    ),
                   if (stage.gateCondition != null)
-                    Text('Gate: ${stage.gateCondition}',
-                        style: const TextStyle(color: KColors.textDim, fontSize: 11)),
+                    Text(
+                      'Gate: ${stage.gateCondition}',
+                      style: TextStyle(color: KColors.textDim, fontSize: 11),
+                    ),
                 ],
               )
             : null,
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.drag_indicator, size: 16, color: KColors.textMuted),
+            Icon(Icons.drag_indicator, size: 16, color: KColors.textMuted),
             const SizedBox(width: 8),
             IconButton(
-              icon: const Icon(Icons.edit_outlined, size: 15, color: KColors.textDim),
+              icon: Icon(Icons.edit_outlined, size: 15, color: KColors.textDim),
               onPressed: onEdit,
               tooltip: 'Edit stage',
               splashRadius: 16,
             ),
             IconButton(
-              icon: const Icon(Icons.delete_outline, size: 15, color: KColors.textMuted),
+              icon: Icon(
+                Icons.delete_outline,
+                size: 15,
+                color: KColors.textMuted,
+              ),
               onPressed: onDelete,
               tooltip: 'Delete stage',
               splashRadius: 16,
@@ -573,7 +611,9 @@ class _OrgDialogState extends State<_OrgDialog> {
             const SizedBox(height: 8),
             TextField(
               controller: _short,
-              decoration: const InputDecoration(labelText: 'Short name / acronym'),
+              decoration: const InputDecoration(
+                labelText: 'Short name / acronym',
+              ),
             ),
             const SizedBox(height: 8),
             TextField(
@@ -585,7 +625,10 @@ class _OrgDialogState extends State<_OrgDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
         ElevatedButton(
           onPressed: _save,
           child: Text(isEdit ? 'Save' : 'Create'),
@@ -598,14 +641,18 @@ class _OrgDialogState extends State<_OrgDialog> {
     final name = _name.text.trim();
     if (name.isEmpty) return;
     final now = DateTime.now();
-    await widget.db.playbookDao.upsertOrganisation(OrganisationsCompanion(
-      id: Value(widget.existing?.id ?? const Uuid().v4()),
-      name: Value(name),
-      shortName: Value(_short.text.trim().isEmpty ? null : _short.text.trim()),
-      notes: Value(_notes.text.trim().isEmpty ? null : _notes.text.trim()),
-      createdAt: Value(widget.existing?.createdAt ?? now),
-      updatedAt: Value(now),
-    ));
+    await widget.db.playbookDao.upsertOrganisation(
+      OrganisationsCompanion(
+        id: Value(widget.existing?.id ?? const Uuid().v4()),
+        name: Value(name),
+        shortName: Value(
+          _short.text.trim().isEmpty ? null : _short.text.trim(),
+        ),
+        notes: Value(_notes.text.trim().isEmpty ? null : _notes.text.trim()),
+        createdAt: Value(widget.existing?.createdAt ?? now),
+        updatedAt: Value(now),
+      ),
+    );
     if (mounted) Navigator.pop(context);
   }
 }
@@ -672,7 +719,10 @@ class _PlaybookDialogState extends State<_PlaybookDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
         ElevatedButton(
           onPressed: _save,
           child: Text(isEdit ? 'Save' : 'Create'),
@@ -685,15 +735,21 @@ class _PlaybookDialogState extends State<_PlaybookDialog> {
     final name = _name.text.trim();
     if (name.isEmpty) return;
     final now = DateTime.now();
-    await widget.db.playbookDao.upsertPlaybook(PlaybooksCompanion(
-      id: Value(widget.existing?.id ?? const Uuid().v4()),
-      organisationId: Value(widget.orgId),
-      name: Value(name),
-      description: Value(_desc.text.trim().isEmpty ? null : _desc.text.trim()),
-      version: Value(_version.text.trim().isEmpty ? null : _version.text.trim()),
-      createdAt: Value(widget.existing?.createdAt ?? now),
-      updatedAt: Value(now),
-    ));
+    await widget.db.playbookDao.upsertPlaybook(
+      PlaybooksCompanion(
+        id: Value(widget.existing?.id ?? const Uuid().v4()),
+        organisationId: Value(widget.orgId),
+        name: Value(name),
+        description: Value(
+          _desc.text.trim().isEmpty ? null : _desc.text.trim(),
+        ),
+        version: Value(
+          _version.text.trim().isEmpty ? null : _version.text.trim(),
+        ),
+        createdAt: Value(widget.existing?.createdAt ?? now),
+        updatedAt: Value(now),
+      ),
+    );
     if (mounted) Navigator.pop(context);
   }
 }
@@ -727,7 +783,9 @@ class _StageDialogState extends State<_StageDialog> {
     super.initState();
     _name = TextEditingController(text: widget.existing?.name ?? '');
     _desc = TextEditingController(text: widget.existing?.description ?? '');
-    _approver = TextEditingController(text: widget.existing?.approverRole ?? '');
+    _approver = TextEditingController(
+      text: widget.existing?.approverRole ?? '',
+    );
     _gate = TextEditingController(text: widget.existing?.gateCondition ?? '');
     _notes = TextEditingController(text: widget.existing?.notes ?? '');
   }
@@ -797,7 +855,10 @@ class _StageDialogState extends State<_StageDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
         ElevatedButton(
           onPressed: _save,
           child: Text(isEdit ? 'Save' : 'Add Stage'),
@@ -810,18 +871,26 @@ class _StageDialogState extends State<_StageDialog> {
     final name = _name.text.trim();
     if (name.isEmpty) return;
     final now = DateTime.now();
-    await widget.db.playbookDao.upsertStage(PlaybookStagesCompanion(
-      id: Value(widget.existing?.id ?? const Uuid().v4()),
-      playbookId: Value(widget.playbookId),
-      name: Value(name),
-      description: Value(_desc.text.trim().isEmpty ? null : _desc.text.trim()),
-      sortOrder: Value(widget.existing?.sortOrder ?? widget.nextSortOrder),
-      approverRole: Value(_approver.text.trim().isEmpty ? null : _approver.text.trim()),
-      gateCondition: Value(_gate.text.trim().isEmpty ? null : _gate.text.trim()),
-      notes: Value(_notes.text.trim().isEmpty ? null : _notes.text.trim()),
-      createdAt: Value(widget.existing?.createdAt ?? now),
-      updatedAt: Value(now),
-    ));
+    await widget.db.playbookDao.upsertStage(
+      PlaybookStagesCompanion(
+        id: Value(widget.existing?.id ?? const Uuid().v4()),
+        playbookId: Value(widget.playbookId),
+        name: Value(name),
+        description: Value(
+          _desc.text.trim().isEmpty ? null : _desc.text.trim(),
+        ),
+        sortOrder: Value(widget.existing?.sortOrder ?? widget.nextSortOrder),
+        approverRole: Value(
+          _approver.text.trim().isEmpty ? null : _approver.text.trim(),
+        ),
+        gateCondition: Value(
+          _gate.text.trim().isEmpty ? null : _gate.text.trim(),
+        ),
+        notes: Value(_notes.text.trim().isEmpty ? null : _notes.text.trim()),
+        createdAt: Value(widget.existing?.createdAt ?? now),
+        updatedAt: Value(now),
+      ),
+    );
     if (mounted) Navigator.pop(context);
   }
 }
@@ -840,14 +909,14 @@ class _ListHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: KColors.border)),
       ),
       child: Row(
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               color: KColors.textDim,
               fontSize: 10,
               fontWeight: FontWeight.w700,
@@ -857,7 +926,7 @@ class _ListHeader extends StatelessWidget {
           const Spacer(),
           GestureDetector(
             onTap: onAdd,
-            child: const Icon(Icons.add, size: 16, color: KColors.amber),
+            child: Icon(Icons.add, size: 16, color: KColors.amber),
           ),
         ],
       ),
@@ -887,7 +956,7 @@ class _SidebarItem extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: selected ? KColors.amberDim : Colors.transparent,
-        border: const Border(bottom: BorderSide(color: KColors.border)),
+        border: Border(bottom: BorderSide(color: KColors.border)),
       ),
       child: InkWell(
         onTap: onTap,
@@ -904,19 +973,21 @@ class _SidebarItem extends StatelessWidget {
                       style: TextStyle(
                         color: selected ? KColors.amber : KColors.text,
                         fontSize: 12,
-                        fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                        fontWeight: selected
+                            ? FontWeight.w600
+                            : FontWeight.normal,
                       ),
                     ),
                     if (sublabel != null && sublabel!.isNotEmpty)
                       Text(
                         sublabel!,
-                        style: const TextStyle(color: KColors.textDim, fontSize: 10),
+                        style: TextStyle(color: KColors.textDim, fontSize: 10),
                       ),
                   ],
                 ),
               ),
               PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, size: 14, color: KColors.textMuted),
+                icon: Icon(Icons.more_vert, size: 14, color: KColors.textMuted),
                 onSelected: (v) {
                   if (v == 'edit') onEdit();
                   if (v == 'delete') onDelete();

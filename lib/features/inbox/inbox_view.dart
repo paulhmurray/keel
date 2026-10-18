@@ -140,7 +140,10 @@ class _InboxBodyState extends State<_InboxBody> {
     }
   }
 
-  Future<void> _saveDrafts(List<InboxItemDraft> drafts, String sourceType) async {
+  Future<void> _saveDrafts(
+    List<InboxItemDraft> drafts,
+    String sourceType,
+  ) async {
     for (final draft in drafts) {
       await widget.db.inboxDao.insertInboxItem(
         InboxItemsCompanion(
@@ -151,7 +154,9 @@ class _InboxBodyState extends State<_InboxBody> {
           status: const Value('unprocessed'),
           tags: Value(draft.parsedType),
           linkedItemId: const Value(null),
-          linkedItemType: Value(draft.parsedData.isNotEmpty ? draft.toJsonString() : null),
+          linkedItemType: Value(
+            draft.parsedData.isNotEmpty ? draft.toJsonString() : null,
+          ),
         ),
       );
     }
@@ -167,12 +172,14 @@ class _InboxBodyState extends State<_InboxBody> {
           // Page header
           Row(
             children: [
-              const Icon(Icons.inbox, color: KColors.amber, size: 22),
+              Icon(Icons.inbox, color: KColors.amber, size: 22),
               const SizedBox(width: 10),
               Flexible(
-                child: Text('Inbox',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                    overflow: TextOverflow.ellipsis),
+                child: Text(
+                  'Inbox',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
@@ -192,10 +199,7 @@ class _InboxBodyState extends State<_InboxBody> {
 
           // Inbox queue
           Expanded(
-            child: _InboxQueue(
-              projectId: widget.projectId,
-              db: widget.db,
-            ),
+            child: _InboxQueue(projectId: widget.projectId, db: widget.db),
           ),
         ],
       ),
@@ -234,13 +238,12 @@ class _QuickEntryCard extends StatelessWidget {
           children: [
             Text(
               'Quick Entry',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(color: KColors.amber),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(color: KColors.amber),
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               'Paste or type notes. Lines starting with TODO:, RISK:, DECISION:, ACTION: are auto-detected.',
               style: TextStyle(color: KColors.textDim, fontSize: 12),
             ),
@@ -256,8 +259,10 @@ class _QuickEntryCard extends StatelessWidget {
             ),
             if (parseError != null) ...[
               const SizedBox(height: 6),
-              Text(parseError!,
-                  style: const TextStyle(color: KColors.red, fontSize: 12)),
+              Text(
+                parseError!,
+                style: TextStyle(color: KColors.red, fontSize: 12),
+              ),
             ],
             const SizedBox(height: 10),
             Row(
@@ -278,10 +283,9 @@ class _QuickEntryCard extends StatelessWidget {
             const Divider(height: 24),
             Text(
               'Load from file',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleSmall
-                  ?.copyWith(color: KColors.textDim),
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(color: KColors.textDim),
             ),
             const SizedBox(height: 8),
             Row(
@@ -290,7 +294,8 @@ class _QuickEntryCard extends StatelessWidget {
                   child: TextField(
                     controller: filePathCtrl,
                     decoration: const InputDecoration(
-                      hintText: '/path/to/notes.org  or  notes.md  or  tasks.txt',
+                      hintText:
+                          '/path/to/notes.org  or  notes.md  or  tasks.txt',
                       border: OutlineInputBorder(),
                       isDense: true,
                     ),
@@ -442,20 +447,24 @@ class _InboxQueueState extends State<_InboxQueue> {
             ),
             const SizedBox(width: 8),
             StreamBuilder<List<InboxItem>>(
-              stream: widget.db.inboxDao.watchUnprocessedForProject(widget.projectId),
+              stream: widget.db.inboxDao.watchUnprocessedForProject(
+                widget.projectId,
+              ),
               builder: (_, snap) {
                 final count = snap.data?.length ?? 0;
                 if (count == 0) return const SizedBox.shrink();
                 return Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: KColors.amber.withAlpha(40),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
                     '$count',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: KColors.amber,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
@@ -478,11 +487,13 @@ class _InboxQueueState extends State<_InboxQueue> {
               const SizedBox(width: 12),
               _KeyHint('N', 'reject'),
               const Spacer(),
-              const Flexible(
-                child: Text('Click list to enable shortcuts',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: KColors.textMuted, fontSize: 10)),
+              Flexible(
+                child: Text(
+                  'Click list to enable shortcuts',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: KColors.textMuted, fontSize: 10),
+                ),
               ),
             ],
           ),
@@ -494,14 +505,16 @@ class _InboxQueueState extends State<_InboxQueue> {
               focusNode: _focusNode,
               onKeyEvent: _handleKeyEvent,
               child: StreamBuilder<List<InboxItem>>(
-                stream: widget.db.inboxDao.watchInboxForProject(widget.projectId),
+                stream: widget.db.inboxDao.watchInboxForProject(
+                  widget.projectId,
+                ),
                 builder: (context, snap) {
                   if (!snap.hasData) {
                     return const Center(child: CircularProgressIndicator());
                   }
                   _items = snap.data!;
                   if (_items.isEmpty) {
-                    return const Center(
+                    return Center(
                       child: Text(
                         'Inbox is empty.',
                         style: TextStyle(color: KColors.textDim),
@@ -609,8 +622,7 @@ class _InboxItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isProcessed =
-        item.status == 'accepted' || item.status == 'rejected';
+    final isProcessed = item.status == 'accepted' || item.status == 'rejected';
     final typeColor = _typeColor(_parsedType);
 
     final card = Card(
@@ -650,9 +662,7 @@ class _InboxItemCard extends StatelessWidget {
                         : item.content,
                     style: TextStyle(
                       fontSize: 13,
-                      color: isProcessed
-                          ? KColors.textDim
-                          : null,
+                      color: isProcessed ? KColors.textDim : null,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -664,10 +674,7 @@ class _InboxItemCard extends StatelessWidget {
                       const Spacer(),
                       Text(
                         item.createdAt.toLocal().toString().substring(0, 16),
-                        style: const TextStyle(
-                          color: KColors.textDim,
-                          fontSize: 11,
-                        ),
+                        style: TextStyle(color: KColors.textDim, fontSize: 11),
                       ),
                     ],
                   ),
@@ -846,12 +853,16 @@ class _ReviewDialogState extends State<_ReviewDialog> {
     super.initState();
     _formKey = GlobalKey<FormState>();
 
-    _descCtrl = TextEditingController(text: d['description'] as String? ?? widget.item.content);
+    _descCtrl = TextEditingController(
+      text: d['description'] as String? ?? widget.item.content,
+    );
 
     // Risk
     _likelihood = normaliseLikelihood(d['likelihood'] as String?);
     _impact = normaliseConsequence(d['impact'] as String?);
-    _mitigationCtrl = TextEditingController(text: d['mitigation'] as String? ?? '');
+    _mitigationCtrl = TextEditingController(
+      text: d['mitigation'] as String? ?? '',
+    );
     _riskStatus = d['status'] as String? ?? 'open';
 
     // Action
@@ -861,13 +872,19 @@ class _ReviewDialogState extends State<_ReviewDialog> {
     _priority = d['priority'] as String? ?? 'medium';
 
     // Decision
-    _decisionMakerCtrl = TextEditingController(text: d['decision_maker'] as String? ?? '');
+    _decisionMakerCtrl = TextEditingController(
+      text: d['decision_maker'] as String? ?? '',
+    );
     _decisionDueDate = d['due_date'] as String?;
     _decisionStatus = d['status'] as String? ?? 'pending';
 
     // Note/context
-    _titleCtrl = TextEditingController(text: d['title'] as String? ?? widget.item.content.split('\n').first);
-    _bodyCtrl = TextEditingController(text: d['body'] as String? ?? widget.item.content);
+    _titleCtrl = TextEditingController(
+      text: d['title'] as String? ?? widget.item.content.split('\n').first,
+    );
+    _bodyCtrl = TextEditingController(
+      text: d['body'] as String? ?? widget.item.content,
+    );
     _entryType = d['entry_type'] as String? ?? 'observation';
 
     // Dependency
@@ -878,7 +895,9 @@ class _ReviewDialogState extends State<_ReviewDialog> {
   }
 
   Future<void> _loadPersons() async {
-    final list = await widget.db.peopleDao.getPersonsForProject(widget.projectId);
+    final list = await widget.db.peopleDao.getPersonsForProject(
+      widget.projectId,
+    );
     if (mounted) setState(() => _persons = list);
   }
 
@@ -904,9 +923,9 @@ class _ReviewDialogState extends State<_ReviewDialog> {
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error saving: $e')));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -918,66 +937,94 @@ class _ReviewDialogState extends State<_ReviewDialog> {
     final type = widget.parsedType;
 
     if (type == 'risk') {
-      await widget.db.raidDao.insertRisk(RisksCompanion(
-        id: Value(id),
-        projectId: Value(widget.projectId),
-        description: Value(_descCtrl.text.trim()),
-        likelihood: Value(_likelihood),
-        impact: Value(_impact),
-        mitigation: Value(_mitigationCtrl.text.trim().isEmpty
-            ? null
-            : _mitigationCtrl.text.trim()),
-        status: Value(_riskStatus),
-        source: const Value('inbox'),
-        sourceNote: Value(widget.item.id),
-      ));
+      await widget.db.raidDao.insertRisk(
+        RisksCompanion(
+          id: Value(id),
+          projectId: Value(widget.projectId),
+          description: Value(_descCtrl.text.trim()),
+          likelihood: Value(_likelihood),
+          impact: Value(_impact),
+          mitigation: Value(
+            _mitigationCtrl.text.trim().isEmpty
+                ? null
+                : _mitigationCtrl.text.trim(),
+          ),
+          status: Value(_riskStatus),
+          source: const Value('inbox'),
+          sourceNote: Value(widget.item.id),
+        ),
+      );
     } else if (type == 'action' || type == 'todo') {
-      await widget.db.actionsDao.insertAction(ProjectActionsCompanion(
-        id: Value(id),
-        projectId: Value(widget.projectId),
-        description: Value(_descCtrl.text.trim()),
-        owner: Value(_ownerCtrl.text.trim().isEmpty ? null : _ownerCtrl.text.trim()),
-        dueDate: Value(_dueDate),
-        status: Value(_actionStatus),
-        priority: Value(_priority),
-        source: const Value('inbox'),
-        sourceNote: Value(widget.item.id),
-      ));
+      await widget.db.actionsDao.insertAction(
+        ProjectActionsCompanion(
+          id: Value(id),
+          projectId: Value(widget.projectId),
+          description: Value(_descCtrl.text.trim()),
+          owner: Value(
+            _ownerCtrl.text.trim().isEmpty ? null : _ownerCtrl.text.trim(),
+          ),
+          dueDate: Value(_dueDate),
+          status: Value(_actionStatus),
+          priority: Value(_priority),
+          source: const Value('inbox'),
+          sourceNote: Value(widget.item.id),
+        ),
+      );
     } else if (type == 'decision') {
-      await widget.db.decisionsDao.insertDecision(DecisionsCompanion(
-        id: Value(id),
-        projectId: Value(widget.projectId),
-        description: Value(_descCtrl.text.trim()),
-        status: Value(_decisionStatus),
-        decisionMaker: Value(_decisionMakerCtrl.text.trim().isEmpty
-            ? null
-            : _decisionMakerCtrl.text.trim()),
-        dueDate: Value(_decisionDueDate),
-        source: const Value('inbox'),
-        sourceNote: Value(widget.item.id),
-      ));
+      await widget.db.decisionsDao.insertDecision(
+        DecisionsCompanion(
+          id: Value(id),
+          projectId: Value(widget.projectId),
+          description: Value(_descCtrl.text.trim()),
+          status: Value(_decisionStatus),
+          decisionMaker: Value(
+            _decisionMakerCtrl.text.trim().isEmpty
+                ? null
+                : _decisionMakerCtrl.text.trim(),
+          ),
+          dueDate: Value(_decisionDueDate),
+          source: const Value('inbox'),
+          sourceNote: Value(widget.item.id),
+        ),
+      );
     } else if (type == 'dependency') {
-      await widget.db.raidDao.insertDependency(ProgramDependenciesCompanion(
-        id: Value(id),
-        projectId: Value(widget.projectId),
-        description: Value(_descCtrl.text.trim()),
-        dependencyType: Value(_dependencyType),
-        owner: Value(_depOwnerCtrl.text.trim().isEmpty ? null : _depOwnerCtrl.text.trim()),
-        dueDate: Value(_depDueDate),
-        status: const Value('open'),
-        source: const Value('inbox'),
-        sourceNote: Value(widget.item.id),
-      ));
+      await widget.db.raidDao.insertDependency(
+        ProgramDependenciesCompanion(
+          id: Value(id),
+          projectId: Value(widget.projectId),
+          description: Value(_descCtrl.text.trim()),
+          dependencyType: Value(_dependencyType),
+          owner: Value(
+            _depOwnerCtrl.text.trim().isEmpty
+                ? null
+                : _depOwnerCtrl.text.trim(),
+          ),
+          dueDate: Value(_depDueDate),
+          status: const Value('open'),
+          source: const Value('inbox'),
+          sourceNote: Value(widget.item.id),
+        ),
+      );
     } else {
       // note, context, or anything else → ContextEntry
-      await widget.db.contextDao.insertEntry(ContextEntriesCompanion(
-        id: Value(id),
-        projectId: Value(widget.projectId),
-        title: Value(_titleCtrl.text.trim().isEmpty ? widget.item.content.split('\n').first : _titleCtrl.text.trim()),
-        content: Value(_bodyCtrl.text.trim().isEmpty ? widget.item.content : _bodyCtrl.text.trim()),
-        entryType: Value(_entryType),
-        source: const Value('inbox'),
-      ));
+      await widget.db.contextDao.insertEntry(
+        ContextEntriesCompanion(
+          id: Value(id),
+          projectId: Value(widget.projectId),
+          title: Value(
+            _titleCtrl.text.trim().isEmpty
+                ? widget.item.content.split('\n').first
+                : _titleCtrl.text.trim(),
+          ),
+          content: Value(
+            _bodyCtrl.text.trim().isEmpty
+                ? widget.item.content
+                : _bodyCtrl.text.trim(),
+          ),
+          entryType: Value(_entryType),
+          source: const Value('inbox'),
+        ),
+      );
     }
   }
 
@@ -987,7 +1034,7 @@ class _ReviewDialogState extends State<_ReviewDialog> {
     return AlertDialog(
       title: Row(
         children: [
-          const Icon(Icons.check_circle_outline, color: KColors.phosphor, size: 20),
+          Icon(Icons.check_circle_outline, color: KColors.phosphor, size: 20),
           const SizedBox(width: 8),
           Text('Review & Accept — ${_typeLabel(type)}'),
         ],
@@ -1017,8 +1064,10 @@ class _ReviewDialogState extends State<_ReviewDialog> {
                           widget.item.content.length > 80
                               ? '${widget.item.content.substring(0, 80)}...'
                               : widget.item.content,
-                          style: const TextStyle(
-                              fontSize: 11, color: KColors.textDim),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: KColors.textDim,
+                          ),
                         ),
                       ),
                     ],
@@ -1031,8 +1080,18 @@ class _ReviewDialogState extends State<_ReviewDialog> {
                 if (type == 'action' || type == 'todo') ..._buildActionFields(),
                 if (type == 'decision') ..._buildDecisionFields(),
                 if (type == 'dependency') ..._buildDependencyFields(),
-                if (type == 'note' || type == 'context' || type == 'document') ..._buildNoteFields(),
-                if (!const ['risk', 'action', 'todo', 'decision', 'dependency', 'note', 'context', 'document'].contains(type))
+                if (type == 'note' || type == 'context' || type == 'document')
+                  ..._buildNoteFields(),
+                if (!const [
+                  'risk',
+                  'action',
+                  'todo',
+                  'decision',
+                  'dependency',
+                  'note',
+                  'context',
+                  'document',
+                ].contains(type))
                   ..._buildNoteFields(),
               ],
             ),
@@ -1054,184 +1113,177 @@ class _ReviewDialogState extends State<_ReviewDialog> {
                 )
               : const Icon(Icons.check, size: 16),
           label: const Text('Accept & Save'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: KColors.phosphor,
-          ),
+          style: ElevatedButton.styleFrom(backgroundColor: KColors.phosphor),
         ),
       ],
     );
   }
 
   List<Widget> _buildRiskFields() => [
-        TextFormField(
-          controller: _descCtrl,
-          maxLines: 3,
-          decoration: const InputDecoration(labelText: 'Description *'),
-          validator: (v) =>
-              v == null || v.trim().isEmpty ? 'Required' : null,
-        ),
-        const SizedBox(height: 12),
-        DropdownField(
-          label: 'Likelihood',
-          value: _likelihood,
-          items: kLikelihoodScale,
-          labelOverrides: kLikelihoodLabels,
-          onChanged: (v) => setState(() => _likelihood = v!),
-        ),
-        const SizedBox(height: 12),
-        DropdownField(
-          label: 'Consequence',
-          value: _impact,
-          items: kConsequenceScale,
-          labelOverrides: kConsequenceLabels,
-          onChanged: (v) => setState(() => _impact = v!),
-        ),
-        const SizedBox(height: 12),
-        TextFormField(
-          controller: _mitigationCtrl,
-          maxLines: 2,
-          decoration: const InputDecoration(labelText: 'Mitigation'),
-        ),
-        const SizedBox(height: 12),
-        DropdownField(
-          label: 'Status',
-          value: _riskStatus,
-          items: const ['open', 'mitigated', 'closed'],
-          onChanged: (v) => setState(() => _riskStatus = v!),
-        ),
-      ];
+    TextFormField(
+      controller: _descCtrl,
+      maxLines: 3,
+      decoration: const InputDecoration(labelText: 'Description *'),
+      validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+    ),
+    const SizedBox(height: 12),
+    DropdownField(
+      label: 'Likelihood',
+      value: _likelihood,
+      items: kLikelihoodScale,
+      labelOverrides: kLikelihoodLabels,
+      onChanged: (v) => setState(() => _likelihood = v!),
+    ),
+    const SizedBox(height: 12),
+    DropdownField(
+      label: 'Consequence',
+      value: _impact,
+      items: kConsequenceScale,
+      labelOverrides: kConsequenceLabels,
+      onChanged: (v) => setState(() => _impact = v!),
+    ),
+    const SizedBox(height: 12),
+    TextFormField(
+      controller: _mitigationCtrl,
+      maxLines: 2,
+      decoration: const InputDecoration(labelText: 'Mitigation'),
+    ),
+    const SizedBox(height: 12),
+    DropdownField(
+      label: 'Status',
+      value: _riskStatus,
+      items: const ['open', 'mitigated', 'closed'],
+      onChanged: (v) => setState(() => _riskStatus = v!),
+    ),
+  ];
 
   List<Widget> _buildActionFields() => [
-        TextFormField(
-          controller: _descCtrl,
-          maxLines: 3,
-          decoration: const InputDecoration(labelText: 'Description *'),
-          validator: (v) =>
-              v == null || v.trim().isEmpty ? 'Required' : null,
-        ),
-        const SizedBox(height: 12),
-        PersonPickerField(
-          controller: _ownerCtrl,
-          label: 'Owner',
-          persons: _persons,
-          db: widget.db,
-          projectId: widget.projectId,
-          onPersonCreated: _loadPersons,
-        ),
-        const SizedBox(height: 12),
-        DatePickerField(
-          label: 'Due Date',
-          isoValue: _dueDate,
-          onChanged: (v) => setState(() => _dueDate = v),
-        ),
-        const SizedBox(height: 12),
-        DropdownField(
-          label: 'Priority',
-          value: _priority,
-          items: const ['low', 'medium', 'high'],
-          onChanged: (v) => setState(() => _priority = v!),
-        ),
-        const SizedBox(height: 12),
-        DropdownField(
-          label: 'Status',
-          value: _actionStatus,
-          items: const ['open', 'in_progress', 'done', 'cancelled'],
-          onChanged: (v) => setState(() => _actionStatus = v!),
-        ),
-      ];
+    TextFormField(
+      controller: _descCtrl,
+      maxLines: 3,
+      decoration: const InputDecoration(labelText: 'Description *'),
+      validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+    ),
+    const SizedBox(height: 12),
+    PersonPickerField(
+      controller: _ownerCtrl,
+      label: 'Owner',
+      persons: _persons,
+      db: widget.db,
+      projectId: widget.projectId,
+      onPersonCreated: _loadPersons,
+    ),
+    const SizedBox(height: 12),
+    DatePickerField(
+      label: 'Due Date',
+      isoValue: _dueDate,
+      onChanged: (v) => setState(() => _dueDate = v),
+    ),
+    const SizedBox(height: 12),
+    DropdownField(
+      label: 'Priority',
+      value: _priority,
+      items: const ['low', 'medium', 'high'],
+      onChanged: (v) => setState(() => _priority = v!),
+    ),
+    const SizedBox(height: 12),
+    DropdownField(
+      label: 'Status',
+      value: _actionStatus,
+      items: const ['open', 'in_progress', 'done', 'cancelled'],
+      onChanged: (v) => setState(() => _actionStatus = v!),
+    ),
+  ];
 
   List<Widget> _buildDecisionFields() => [
-        TextFormField(
-          controller: _descCtrl,
-          maxLines: 3,
-          decoration: const InputDecoration(labelText: 'Description *'),
-          validator: (v) =>
-              v == null || v.trim().isEmpty ? 'Required' : null,
-        ),
-        const SizedBox(height: 12),
-        PersonPickerField(
-          controller: _decisionMakerCtrl,
-          label: 'Decision Maker',
-          persons: _persons,
-          db: widget.db,
-          projectId: widget.projectId,
-          onPersonCreated: _loadPersons,
-        ),
-        const SizedBox(height: 12),
-        DatePickerField(
-          label: 'Due Date',
-          isoValue: _decisionDueDate,
-          onChanged: (v) => setState(() => _decisionDueDate = v),
-        ),
-        const SizedBox(height: 12),
-        DropdownField(
-          label: 'Status',
-          value: _decisionStatus,
-          items: const ['pending', 'decided', 'deferred', 'cancelled'],
-          onChanged: (v) => setState(() => _decisionStatus = v!),
-        ),
-      ];
+    TextFormField(
+      controller: _descCtrl,
+      maxLines: 3,
+      decoration: const InputDecoration(labelText: 'Description *'),
+      validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+    ),
+    const SizedBox(height: 12),
+    PersonPickerField(
+      controller: _decisionMakerCtrl,
+      label: 'Decision Maker',
+      persons: _persons,
+      db: widget.db,
+      projectId: widget.projectId,
+      onPersonCreated: _loadPersons,
+    ),
+    const SizedBox(height: 12),
+    DatePickerField(
+      label: 'Due Date',
+      isoValue: _decisionDueDate,
+      onChanged: (v) => setState(() => _decisionDueDate = v),
+    ),
+    const SizedBox(height: 12),
+    DropdownField(
+      label: 'Status',
+      value: _decisionStatus,
+      items: const ['pending', 'decided', 'deferred', 'cancelled'],
+      onChanged: (v) => setState(() => _decisionStatus = v!),
+    ),
+  ];
 
   List<Widget> _buildNoteFields() => [
-        TextFormField(
-          controller: _titleCtrl,
-          decoration: const InputDecoration(labelText: 'Title *'),
-          validator: (v) =>
-              v == null || v.trim().isEmpty ? 'Required' : null,
-        ),
-        const SizedBox(height: 12),
-        TextFormField(
-          controller: _bodyCtrl,
-          maxLines: 4,
-          decoration: const InputDecoration(labelText: 'Body'),
-        ),
-        const SizedBox(height: 12),
-        DropdownField(
-          label: 'Entry Type',
-          value: _entryType,
-          items: const [
-            'observation',
-            'meeting_note',
-            'decision',
-            'context',
-            'background',
-            'other',
-          ],
-          onChanged: (v) => setState(() => _entryType = v!),
-        ),
-      ];
+    TextFormField(
+      controller: _titleCtrl,
+      decoration: const InputDecoration(labelText: 'Title *'),
+      validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+    ),
+    const SizedBox(height: 12),
+    TextFormField(
+      controller: _bodyCtrl,
+      maxLines: 4,
+      decoration: const InputDecoration(labelText: 'Body'),
+    ),
+    const SizedBox(height: 12),
+    DropdownField(
+      label: 'Entry Type',
+      value: _entryType,
+      items: const [
+        'observation',
+        'meeting_note',
+        'decision',
+        'context',
+        'background',
+        'other',
+      ],
+      onChanged: (v) => setState(() => _entryType = v!),
+    ),
+  ];
 
   List<Widget> _buildDependencyFields() => [
-        TextFormField(
-          controller: _descCtrl,
-          maxLines: 3,
-          decoration: const InputDecoration(labelText: 'Description *'),
-          validator: (v) =>
-              v == null || v.trim().isEmpty ? 'Required' : null,
-        ),
-        const SizedBox(height: 12),
-        DropdownField(
-          label: 'Dependency Type',
-          value: _dependencyType,
-          items: const ['inbound', 'outbound'],
-          onChanged: (v) => setState(() => _dependencyType = v!),
-        ),
-        const SizedBox(height: 12),
-        PersonPickerField(
-          controller: _depOwnerCtrl,
-          label: 'Owner',
-          persons: _persons,
-          db: widget.db,
-          projectId: widget.projectId,
-          onPersonCreated: _loadPersons,
-        ),
-        const SizedBox(height: 12),
-        DatePickerField(
-          label: 'Due Date',
-          isoValue: _depDueDate,
-          onChanged: (v) => setState(() => _depDueDate = v),
-        ),
-      ];
+    TextFormField(
+      controller: _descCtrl,
+      maxLines: 3,
+      decoration: const InputDecoration(labelText: 'Description *'),
+      validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+    ),
+    const SizedBox(height: 12),
+    DropdownField(
+      label: 'Dependency Type',
+      value: _dependencyType,
+      items: const ['inbound', 'outbound'],
+      onChanged: (v) => setState(() => _dependencyType = v!),
+    ),
+    const SizedBox(height: 12),
+    PersonPickerField(
+      controller: _depOwnerCtrl,
+      label: 'Owner',
+      persons: _persons,
+      db: widget.db,
+      projectId: widget.projectId,
+      onPersonCreated: _loadPersons,
+    ),
+    const SizedBox(height: 12),
+    DatePickerField(
+      label: 'Due Date',
+      isoValue: _depDueDate,
+      onChanged: (v) => setState(() => _depDueDate = v),
+    ),
+  ];
 
   String _typeLabel(String type) {
     switch (type) {
@@ -1273,10 +1325,17 @@ class _KeyHint extends StatelessWidget {
             border: Border.all(color: KColors.border2),
             borderRadius: BorderRadius.circular(2),
           ),
-          child: Text(keyLabel, style: const TextStyle(color: KColors.textDim, fontSize: 10, fontWeight: FontWeight.w600)),
+          child: Text(
+            keyLabel,
+            style: TextStyle(
+              color: KColors.textDim,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
         const SizedBox(width: 4),
-        Text(hint, style: const TextStyle(color: KColors.textMuted, fontSize: 10)),
+        Text(hint, style: TextStyle(color: KColors.textMuted, fontSize: 10)),
       ],
     );
   }

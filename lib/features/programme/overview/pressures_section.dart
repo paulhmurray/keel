@@ -66,7 +66,9 @@ class _PressuresSectionState extends State<PressuresSection> {
   }
 
   static Future<List<_Pressure>> _buildPressures(
-      AppDatabase db, String projectId) async {
+    AppDatabase db,
+    String projectId,
+  ) async {
     final today = DateTime.now();
     final todayIso =
         '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
@@ -82,48 +84,54 @@ class _PressuresSectionState extends State<PressuresSection> {
           daysBlocked = today.difference(due).inDays;
         }
       }
-      all.add(_Pressure(
-        icon: _PressureIcon.warning,
-        title: d.description,
-        subtitle: daysBlocked != null
-            ? 'At-risk dependency · overdue ${daysBlocked}d'
-            : 'At-risk dependency · ${d.owner ?? 'no owner'}',
-        priority: 1,
-      ));
+      all.add(
+        _Pressure(
+          icon: _PressureIcon.warning,
+          title: d.description,
+          subtitle: daysBlocked != null
+              ? 'At-risk dependency · overdue ${daysBlocked}d'
+              : 'At-risk dependency · ${d.owner ?? 'no owner'}',
+          priority: 1,
+        ),
+      );
     }
 
     // Priority 2: forecast variance beyond tolerance (Finance v2 — slots
     // between blocked dependencies and stakeholder gaps per the spec).
-    final approvedBudget =
-        await db.financeDao.getApprovedBudget(projectId);
+    final approvedBudget = await db.financeDao.getApprovedBudget(projectId);
     if (approvedBudget != null) {
       final snapshots = await db.financeDao.getSnapshots(projectId);
       final snapshot =
           snapshots.where((s) => s.status == 'working').firstOrNull ??
-              snapshots.firstOrNull;
+          snapshots.firstOrNull;
       if (snapshot != null) {
-        final budgetTotals =
-            await db.financeDao.getTotals(approvedBudget.id);
-        final forecastTotals =
-            await db.financeDao.getForecastTotals(snapshot.id);
+        final budgetTotals = await db.financeDao.getTotals(approvedBudget.id);
+        final forecastTotals = await db.financeDao.getForecastTotals(
+          snapshot.id,
+        );
         final bp = VarianceRow.bpOf(
-            forecastTotals.totalMinor - budgetTotals.totalMinor,
-            budgetTotals.totalMinor);
+          forecastTotals.totalMinor - budgetTotals.totalMinor,
+          budgetTotals.totalMinor,
+        );
         final tol = approvedBudget.varianceToleranceBp;
         if (bp != null && bp.abs() > tol) {
           final cur = approvedBudget.currency;
-          all.add(_Pressure(
-            icon: _PressureIcon.finance,
-            title: 'Forecast '
-                '${Money.formatMinorCompact(forecastTotals.totalMinor, cur)} '
-                'vs budget '
-                '${Money.formatMinorCompact(budgetTotals.totalMinor, cur)} '
-                '(${Money.formatBp(bp)})',
-            subtitle: 'Forecast variance beyond tolerance '
-                '±${Money.formatBp(tol).replaceAll('+', '')} '
-                '· ${snapshot.period} snapshot',
-            priority: 2,
-          ));
+          all.add(
+            _Pressure(
+              icon: _PressureIcon.finance,
+              title:
+                  'Forecast '
+                  '${Money.formatMinorCompact(forecastTotals.totalMinor, cur)} '
+                  'vs budget '
+                  '${Money.formatMinorCompact(budgetTotals.totalMinor, cur)} '
+                  '(${Money.formatBp(bp)})',
+              subtitle:
+                  'Forecast variance beyond tolerance '
+                  '±${Money.formatBp(tol).replaceAll('+', '')} '
+                  '· ${snapshot.period} snapshot',
+              priority: 2,
+            ),
+          );
         }
       }
     }
@@ -145,17 +153,21 @@ class _PressuresSectionState extends State<PressuresSection> {
       for (final r in rollup.breaches) {
         final source = await db.projectDao.getProjectById(r.sourceId);
         final cur = r.currency ?? rollup.currency ?? 'AUD';
-        all.add(_Pressure(
-          icon: _PressureIcon.finance,
-          title: 'PROJ · ${source?.name ?? 'Linked project'}: forecast '
-              '${Money.formatMinorCompact(r.forecastMinor, cur)} vs budget '
-              '${Money.formatMinorCompact(r.budgetMinor, cur)} '
-              '(${Money.formatBp(r.varianceBp)})',
-          subtitle: 'Linked project forecast beyond its tolerance '
-              '±${Money.formatBp(r.toleranceBp).replaceAll('+', '')}'
-              '${r.latestSnapshot != null ? ' · ${r.latestSnapshot!.period} snapshot' : ''}',
-          priority: 2,
-        ));
+        all.add(
+          _Pressure(
+            icon: _PressureIcon.finance,
+            title:
+                'PROJ · ${source?.name ?? 'Linked project'}: forecast '
+                '${Money.formatMinorCompact(r.forecastMinor, cur)} vs budget '
+                '${Money.formatMinorCompact(r.budgetMinor, cur)} '
+                '(${Money.formatBp(r.varianceBp)})',
+            subtitle:
+                'Linked project forecast beyond its tolerance '
+                '±${Money.formatBp(r.toleranceBp).replaceAll('+', '')}'
+                '${r.latestSnapshot != null ? ' · ${r.latestSnapshot!.period} snapshot' : ''}',
+            priority: 2,
+          ),
+        );
       }
     }
 
@@ -163,97 +175,113 @@ class _PressuresSectionState extends State<PressuresSection> {
     final funding = await db.financeDao.getFunding(projectId);
     if (funding.isNotEmpty) {
       final ledger = computeLedger(
-          approvals: funding,
-          movements: await db.financeDao.getMovements(projectId));
+        approvals: funding,
+        movements: await db.financeDao.getMovements(projectId),
+      );
       final warnBp =
-          (await db.financeDao.getFinanceSettings(projectId))?.contingencyWarnBp ?? 2000;
+          (await db.financeDao.getFinanceSettings(
+            projectId,
+          ))?.contingencyWarnBp ??
+          2000;
       if (ledger.belowThreshold(warnBp)) {
         final cur = ledger.currency ?? 'AUD';
-        all.add(_Pressure(
-          icon: _PressureIcon.finance,
-          title: ledger.balanceMinor < 0
-              ? 'Over-allocated by ${Money.formatMinorCompact(-ledger.balanceMinor, cur)}'
-              : 'Contingency ${Money.formatMinorCompact(ledger.balanceMinor, cur)} '
-                  '(${Money.formatBp(ledger.balanceBp).replaceAll('+', '')} of funding)',
-          subtitle: 'Below the ${Money.formatBp(warnBp).replaceAll('+', '')} threshold '
-              '· ${Money.formatMinorCompact(ledger.drawnMinor, cur)} drawn to date',
-          priority: 2,
-        ));
+        all.add(
+          _Pressure(
+            icon: _PressureIcon.finance,
+            title: ledger.balanceMinor < 0
+                ? 'Over-allocated by ${Money.formatMinorCompact(-ledger.balanceMinor, cur)}'
+                : 'Contingency ${Money.formatMinorCompact(ledger.balanceMinor, cur)} '
+                      '(${Money.formatBp(ledger.balanceBp).replaceAll('+', '')} of funding)',
+            subtitle:
+                'Below the ${Money.formatBp(warnBp).replaceAll('+', '')} threshold '
+                '· ${Money.formatMinorCompact(ledger.drawnMinor, cur)} drawn to date',
+            priority: 2,
+          ),
+        );
       }
     }
 
     // Priority 2: critical stakeholder gaps
-    final stakeholders =
-        await db.stakeholderRoleDao.getForProject(projectId);
+    final stakeholders = await db.stakeholderRoleDao.getForProject(projectId);
     for (final s in stakeholders) {
       final isCritical = s.priority == 'critical';
       final hasGap = s.gapFlag;
-      final notEngaged = s.engagementStatus == 'not_started' ||
+      final notEngaged =
+          s.engagementStatus == 'not_started' ||
           s.engagementStatus == 'not_engaged';
       if (isCritical && (hasGap || notEngaged) && s.personId == null) {
-        all.add(_Pressure(
-          icon: _PressureIcon.warning,
-          title: 'Stakeholder gap: ${s.roleName}',
-          subtitle: 'Critical role · not yet engaged',
-          priority: 2,
-        ));
+        all.add(
+          _Pressure(
+            icon: _PressureIcon.warning,
+            title: 'Stakeholder gap: ${s.roleName}',
+            subtitle: 'Critical role · not yet engaged',
+            priority: 2,
+          ),
+        );
       }
     }
 
     // Priority 3: overdue decisions
-    final decisions =
-        await db.decisionsDao.getDecisionsForProject(projectId);
-    for (final d in decisions.where((d) =>
-        d.status == 'pending' &&
-        d.dueDate != null &&
-        d.dueDate!.isNotEmpty &&
-        d.dueDate!.compareTo(todayIso) < 0)) {
+    final decisions = await db.decisionsDao.getDecisionsForProject(projectId);
+    for (final d in decisions.where(
+      (d) =>
+          d.status == 'pending' &&
+          d.dueDate != null &&
+          d.dueDate!.isNotEmpty &&
+          d.dueDate!.compareTo(todayIso) < 0,
+    )) {
       final due = DateTime.tryParse(d.dueDate!)!;
       final daysOverdue = today.difference(due).inDays;
-      all.add(_Pressure(
-        icon: _PressureIcon.decision,
-        title: d.description,
-        subtitle:
-            'Decision overdue ${daysOverdue}d · ${d.decisionMaker ?? 'no owner'}',
-        priority: 3,
-      ));
+      all.add(
+        _Pressure(
+          icon: _PressureIcon.decision,
+          title: d.description,
+          subtitle:
+              'Decision overdue ${daysOverdue}d · ${d.decisionMaker ?? 'no owner'}',
+          priority: 3,
+        ),
+      );
     }
 
     // Priority 4: upcoming milestones within 14 days
-    final milestones =
-        await db.milestonesDao.getForProject(projectId);
+    final milestones = await db.milestonesDao.getForProject(projectId);
     for (final m in milestones.where((m) => m.status == 'upcoming')) {
       final due = DateTime.tryParse(m.date);
       if (due == null) continue;
       final daysUntil = due.difference(today).inDays;
       if (daysUntil >= 0 && daysUntil <= 14) {
-        all.add(_Pressure(
-          icon: _PressureIcon.milestone,
-          title: m.name,
-          subtitle: daysUntil == 0
-              ? 'Milestone · due today'
-              : 'Milestone · due in ${daysUntil}d',
-          priority: m.isHardDeadline ? 3 : 4,
-        ));
+        all.add(
+          _Pressure(
+            icon: _PressureIcon.milestone,
+            title: m.name,
+            subtitle: daysUntil == 0
+                ? 'Milestone · due today'
+                : 'Milestone · due in ${daysUntil}d',
+            priority: m.isHardDeadline ? 3 : 4,
+          ),
+        );
       }
     }
 
     // Priority 5: stalled playbook stage (no change in 14+ days)
     final pp = await db.playbookDao.getProjectPlaybook(projectId);
     if (pp != null) {
-      final progresses =
-          await db.playbookDao.getProgressForProjectPlaybook(pp.id);
+      final progresses = await db.playbookDao.getProgressForProjectPlaybook(
+        pp.id,
+      );
       for (final p in progresses.where((p) => p.status == 'in_progress')) {
         final staleDays = today.difference(p.updatedAt).inDays;
         if (staleDays >= 14) {
           final stage = await db.playbookDao.getStageById(p.stageId);
           if (stage != null) {
-            all.add(_Pressure(
-              icon: _PressureIcon.stalled,
-              title: 'Stalled playbook stage: ${stage.name}',
-              subtitle: 'In progress · no change in ${staleDays}d',
-              priority: 5,
-            ));
+            all.add(
+              _Pressure(
+                icon: _PressureIcon.stalled,
+                title: 'Stalled playbook stage: ${stage.name}',
+                subtitle: 'In progress · no change in ${staleDays}d',
+                priority: 5,
+              ),
+            );
           }
         }
       }
@@ -277,7 +305,7 @@ class _PressuresSectionState extends State<PressuresSection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'PRESSURES',
             style: TextStyle(
               fontSize: 10,
@@ -299,7 +327,7 @@ class _PressuresSectionState extends State<PressuresSection> {
               ),
             )
           else if (ps.isEmpty)
-            const Text(
+            Text(
               'No pressures detected. The programme is running clean.',
               style: TextStyle(
                 color: KColors.textDim,
@@ -309,8 +337,7 @@ class _PressuresSectionState extends State<PressuresSection> {
             )
           else
             for (int i = 0; i < ps.length; i++) ...[
-              if (i > 0)
-                const Divider(height: 16, color: KColors.border),
+              if (i > 0) Divider(height: 16, color: KColors.border),
               _PressureRow(pressure: ps[i]),
             ],
         ],
@@ -366,18 +393,12 @@ class _PressureRow extends StatelessWidget {
             children: [
               Text(
                 pressure.title,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: KColors.text,
-                ),
+                style: TextStyle(fontSize: 13, color: KColors.text),
               ),
               const SizedBox(height: 2),
               Text(
                 pressure.subtitle,
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: KColors.textDim,
-                ),
+                style: TextStyle(fontSize: 11, color: KColors.textDim),
               ),
             ],
           ),

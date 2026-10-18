@@ -89,7 +89,7 @@ class _TeamGroup extends StatelessWidget {
             children: [
               Text(
                 groupLabel,
-                style: const TextStyle(
+                style: TextStyle(
                   color: KColors.textDim,
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
@@ -102,16 +102,13 @@ class _TeamGroup extends StatelessWidget {
                   '$_filledCount of $_applicableCount filled',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: KColors.textMuted,
-                    fontSize: 10,
-                  ),
+                  style: TextStyle(color: KColors.textMuted, fontSize: 10),
                 ),
               ),
             ],
           ),
         ),
-        const Divider(color: KColors.border, height: 8),
+        Divider(color: KColors.border, height: 8),
 
         for (final role in visible)
           _TeamRoleRow(
@@ -146,24 +143,25 @@ class _TeamGroup extends StatelessWidget {
     if (name == null || name.isEmpty) return;
     final uuid = const Uuid();
     final now = DateTime.now();
-    await db.teamRoleDao.upsert(TeamRolesCompanion.insert(
-      id: uuid.v4(),
-      projectId: projectId,
-      roleName: name,
-      teamGroup: groupKey,
-      isScaffold: const Value(false),
-      isApplicable: const Value(true),
-      sortOrder: Value(
-          roles.fold(0, (m, r) => r.sortOrder > m ? r.sortOrder : m) + 1),
-      createdAt: Value(now),
-      updatedAt: Value(now),
-    ));
+    await db.teamRoleDao.upsert(
+      TeamRolesCompanion.insert(
+        id: uuid.v4(),
+        projectId: projectId,
+        roleName: name,
+        teamGroup: groupKey,
+        isScaffold: const Value(false),
+        isApplicable: const Value(true),
+        sortOrder: Value(
+          roles.fold(0, (m, r) => r.sortOrder > m ? r.sortOrder : m) + 1,
+        ),
+        createdAt: Value(now),
+        updatedAt: Value(now),
+      ),
+    );
   }
 
   Future<String?> _promptRoleName(BuildContext context) async {
-    final existing = roles
-        .map((r) => r.roleName.toLowerCase().trim())
-        .toSet();
+    final existing = roles.map((r) => r.roleName.toLowerCase().trim()).toSet();
     final suggestions = (teamSuggestions[groupKey] ?? const <String>[])
         .where((s) => !existing.contains(s.toLowerCase().trim()))
         .toList();
@@ -205,9 +203,7 @@ class _TeamRoleRow extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: KColors.surface,
-        border: Border.all(
-          color: _filled ? KColors.border2 : KColors.border,
-        ),
+        border: Border.all(color: _filled ? KColors.border2 : KColors.border),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Row(
@@ -236,18 +232,18 @@ class _TeamRoleRow extends StatelessWidget {
                 if (_filled && _person != null) ...[
                   const SizedBox(height: 2),
                   Text(
-                    [_person!.name, _person!.role, _person!.organisation]
-                        .where((s) => s != null && s.isNotEmpty)
-                        .join(' · '),
-                    style: const TextStyle(
-                        color: KColors.textDim, fontSize: 11),
+                    [
+                      _person!.name,
+                      _person!.role,
+                      _person!.organisation,
+                    ].where((s) => s != null && s.isNotEmpty).join(' · '),
+                    style: TextStyle(color: KColors.textDim, fontSize: 11),
                   ),
                 ] else if (hint.isNotEmpty) ...[
                   const SizedBox(height: 2),
                   Text(
                     hint,
-                    style: const TextStyle(
-                        color: KColors.textMuted, fontSize: 11),
+                    style: TextStyle(color: KColors.textMuted, fontSize: 11),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -260,8 +256,7 @@ class _TeamRoleRow extends StatelessWidget {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                RoleSmallButton(
-                    label: 'Assign', onTap: () => _assign(context)),
+                RoleSmallButton(label: 'Assign', onTap: () => _assign(context)),
                 const SizedBox(width: 6),
                 RoleMoreMenu(
                   onMarkNA: () => _markNA(),
@@ -275,8 +270,7 @@ class _TeamRoleRow extends StatelessWidget {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                RoleSmallButton(
-                    label: 'Change', onTap: () => _assign(context)),
+                RoleSmallButton(label: 'Change', onTap: () => _assign(context)),
                 const SizedBox(width: 6),
                 RoleMoreMenu(
                   onMarkNA: () => _markNA(),
@@ -300,38 +294,46 @@ class _TeamRoleRow extends StatelessWidget {
       title: 'Assign Team Member',
     );
     if (person != null) {
-      await db.teamRoleDao.updateRole(TeamRolesCompanion(
-        id: Value(role.id),
-        personId: Value(person.id),
-        updatedAt: Value(DateTime.now()),
-      ));
+      await db.teamRoleDao.updateRole(
+        TeamRolesCompanion(
+          id: Value(role.id),
+          personId: Value(person.id),
+          updatedAt: Value(DateTime.now()),
+        ),
+      );
     }
   }
 
   Future<void> _markNA() async {
-    await db.teamRoleDao.updateRole(TeamRolesCompanion(
-      id: Value(role.id),
-      isApplicable: const Value(false),
-      updatedAt: Value(DateTime.now()),
-    ));
+    await db.teamRoleDao.updateRole(
+      TeamRolesCompanion(
+        id: Value(role.id),
+        isApplicable: const Value(false),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
   }
 
   Future<void> _removePerson() async {
-    await db.teamRoleDao.updateRole(TeamRolesCompanion(
-      id: Value(role.id),
-      personId: const Value(null),
-      updatedAt: Value(DateTime.now()),
-    ));
+    await db.teamRoleDao.updateRole(
+      TeamRolesCompanion(
+        id: Value(role.id),
+        personId: const Value(null),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
   }
 
   Future<void> _rename(BuildContext context) async {
     final name = await promptRenameRole(context, role.roleName);
     if (name == null || name.isEmpty || name == role.roleName) return;
-    await db.teamRoleDao.updateRole(TeamRolesCompanion(
-      id: Value(role.id),
-      roleName: Value(name),
-      updatedAt: Value(DateTime.now()),
-    ));
+    await db.teamRoleDao.updateRole(
+      TeamRolesCompanion(
+        id: Value(role.id),
+        roleName: Value(name),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
   }
 
   Future<void> _delete(BuildContext context) async {

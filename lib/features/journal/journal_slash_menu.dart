@@ -28,7 +28,8 @@ const kSlashCommands = [
   SlashCommand(
     command: '/day',
     description: 'Daily note structure',
-    template: '## {{today}}\n'
+    template:
+        '## {{today}}\n'
         '\n'
         '**Top 3 today**\n'
         '1. ⟨first⟩\n'
@@ -60,7 +61,8 @@ const kSlashCommands = [
   SlashCommand(
     command: '/risk',
     description: 'Risk',
-    template: '**Risk:** ⟨description⟩\nLikelihood: ⟨medium⟩ | Impact: ⟨medium⟩\n',
+    template:
+        '**Risk:** ⟨description⟩\nLikelihood: ⟨medium⟩ | Impact: ⟨medium⟩\n',
     icon: Icons.shield_outlined,
   ),
   SlashCommand(
@@ -93,9 +95,11 @@ List<SlashCommand> filteredSlashCommands(String query) {
   final q = query.toLowerCase();
   if (q.isEmpty) return kSlashCommands;
   return kSlashCommands
-      .where((c) =>
-          c.command.toLowerCase().contains(q) ||
-          c.description.toLowerCase().contains(q))
+      .where(
+        (c) =>
+            c.command.toLowerCase().contains(q) ||
+            c.description.toLowerCase().contains(q),
+      )
       .toList();
 }
 
@@ -140,7 +144,7 @@ class JournalSlashMenu extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             child: Row(
               children: [
-                const Text(
+                Text(
                   'COMMANDS',
                   style: TextStyle(
                     color: KColors.textDim,
@@ -150,14 +154,14 @@ class JournalSlashMenu extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                const Text(
+                Text(
                   '↑↓ navigate  ↵ select  Esc dismiss',
                   style: TextStyle(color: KColors.textMuted, fontSize: 9),
                 ),
               ],
             ),
           ),
-          const Divider(color: KColors.border, height: 1),
+          Divider(color: KColors.border, height: 1),
           Flexible(
             child: ListView(
               shrinkWrap: true,
@@ -169,13 +173,18 @@ class JournalSlashMenu extends StatelessWidget {
                 return InkWell(
                   onTap: () => onSelect(cmd),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     color: isSelected ? KColors.amberDim : Colors.transparent,
                     child: Row(
                       children: [
-                        Icon(cmd.icon,
-                            size: 14,
-                            color: isSelected ? KColors.amber : KColors.textDim),
+                        Icon(
+                          cmd.icon,
+                          size: 14,
+                          color: isSelected ? KColors.amber : KColors.textDim,
+                        ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Column(
@@ -184,14 +193,16 @@ class JournalSlashMenu extends StatelessWidget {
                               Text(
                                 cmd.command,
                                 style: TextStyle(
-                                  color: isSelected ? KColors.amber : KColors.text,
+                                  color: isSelected
+                                      ? KColors.amber
+                                      : KColors.text,
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
                               Text(
                                 cmd.description,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: KColors.textDim,
                                   fontSize: 10,
                                 ),

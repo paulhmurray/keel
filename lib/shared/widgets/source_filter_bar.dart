@@ -54,14 +54,17 @@ class SourceFilterBar extends StatelessWidget {
             runSpacing: 6,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              const Padding(
+              Padding(
                 padding: EdgeInsets.only(right: 2),
-                child: Text('SHOW',
-                    style: TextStyle(
-                        color: KColors.textMuted,
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.2)),
+                child: Text(
+                  'SHOW',
+                  style: TextStyle(
+                    color: KColors.textMuted,
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2,
+                  ),
+                ),
               ),
               _Chip(
                 label: 'All',
@@ -72,7 +75,8 @@ class SourceFilterBar extends StatelessWidget {
                 label: 'This programme',
                 selected: filter.sourceId == SourceFilter.kProgrammeOnly,
                 onTap: () => onChanged(
-                    filter.copyWith(sourceId: SourceFilter.kProgrammeOnly)),
+                  filter.copyWith(sourceId: SourceFilter.kProgrammeOnly),
+                ),
               ),
               for (final s in sources)
                 _Chip(
@@ -89,11 +93,12 @@ class SourceFilterBar extends StatelessWidget {
                 accent: KColors.amber,
                 tooltip: filter.escalatedOnly
                     ? 'Showing only items the project PMs chose to share. '
-                        'Click to see the full registers.'
+                          'Click to see the full registers.'
                     : 'Full-detail links carry every item. Click to keep '
-                        'only what the project PMs chose to share.',
+                          'only what the project PMs chose to share.',
                 onTap: () => onChanged(
-                    filter.copyWith(escalatedOnly: !filter.escalatedOnly)),
+                  filter.copyWith(escalatedOnly: !filter.escalatedOnly),
+                ),
               ),
             ],
           ),
@@ -108,7 +113,7 @@ class _Chip extends StatelessWidget {
   final IconData? icon;
   final bool selected;
   final VoidCallback onTap;
-  final Color accent;
+  final Color? _accent;
   final String? tooltip;
 
   const _Chip({
@@ -116,9 +121,11 @@ class _Chip extends StatelessWidget {
     required this.selected,
     required this.onTap,
     this.icon,
-    this.accent = KColors.phosphor,
+    Color? accent,
     this.tooltip,
-  });
+  }) : _accent = accent;
+
+  Color get accent => _accent ?? KColors.phosphor;
 
   @override
   Widget build(BuildContext context) {
@@ -134,17 +141,23 @@ class _Chip extends StatelessWidget {
           border: Border.all(color: selected ? accent : KColors.border2),
           borderRadius: BorderRadius.circular(3),
         ),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          if (icon != null) ...[
-            Icon(icon, size: 11, color: fg),
-            const SizedBox(width: 4),
-          ],
-          Text(label,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 11, color: fg),
+              const SizedBox(width: 4),
+            ],
+            Text(
+              label,
               style: TextStyle(
-                  color: fg,
-                  fontSize: 11,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
-        ]),
+                color: fg,
+                fontSize: 11,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
     return tooltip == null
@@ -152,6 +165,7 @@ class _Chip extends StatelessWidget {
         : Tooltip(
             message: tooltip!,
             waitDuration: const Duration(milliseconds: 350),
-            child: chip);
+            child: chip,
+          );
   }
 }

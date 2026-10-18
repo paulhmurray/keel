@@ -38,13 +38,15 @@ class _SyncPasswordDialogState extends State<_SyncPasswordDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: KColors.surface,
-      title: const Text('Sync Password',
-          style: TextStyle(color: KColors.text, fontSize: 15)),
+      title: Text(
+        'Sync Password',
+        style: TextStyle(color: KColors.text, fontSize: 15),
+      ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Enter your sync password to encrypt/decrypt data.\n'
             'This can be the same as your account password.',
             style: TextStyle(color: KColors.textDim, fontSize: 12),
@@ -65,13 +67,9 @@ class _SyncPasswordDialogState extends State<_SyncPasswordDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(null),
-          child: const Text('Cancel',
-              style: TextStyle(color: KColors.textDim)),
+          child: Text('Cancel', style: TextStyle(color: KColors.textDim)),
         ),
-        ElevatedButton(
-          onPressed: _submit,
-          child: const Text('Continue'),
-        ),
+        ElevatedButton(onPressed: _submit, child: const Text('Continue')),
       ],
     );
   }

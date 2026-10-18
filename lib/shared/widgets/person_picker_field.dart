@@ -53,9 +53,10 @@ class PersonPickerField extends StatelessWidget {
       textStyle: textStyle,
       labelStyle: labelStyle,
       contentPadding: contentPadding,
-      secondaryLine: (p) => [p.role, p.organisation]
-          .where((s) => s != null && s.isNotEmpty)
-          .join(' · '),
+      secondaryLine: (p) => [
+        p.role,
+        p.organisation,
+      ].where((s) => s != null && s.isNotEmpty).join(' · '),
       itemIcon: Icons.person_outline,
       addNewSuffix: 'as new person',
       shortcut: myName.isEmpty
@@ -83,17 +84,19 @@ class PersonPickerField extends StatelessWidget {
         if (result == null) return null;
         final now = DateTime.now();
         final id = const Uuid().v4();
-        await db.peopleDao.upsertPerson(PersonsCompanion(
-          id: Value(id),
-          projectId: Value(projectId),
-          name: Value(result.name),
-          role: Value(result.role),
-          organisation: Value(result.organisation),
-          personType: Value(result.personType),
-          isStakeholder: Value(result.isStakeholder),
-          createdAt: Value(now),
-          updatedAt: Value(now),
-        ));
+        await db.peopleDao.upsertPerson(
+          PersonsCompanion(
+            id: Value(id),
+            projectId: Value(projectId),
+            name: Value(result.name),
+            role: Value(result.role),
+            organisation: Value(result.organisation),
+            personType: Value(result.personType),
+            isStakeholder: Value(result.isStakeholder),
+            createdAt: Value(now),
+            updatedAt: Value(now),
+          ),
+        );
         onPersonCreated();
         // Refetch so the returned object has the freshly-persisted id.
         final fetched = await db.peopleDao.getPersonsForProject(projectId);
@@ -131,9 +134,10 @@ Future<Person?> showPersonPicker({
     title: title,
     items: persons,
     displayName: (p) => p.name,
-    secondaryLine: (p) => [p.role, p.organisation]
-        .where((s) => s != null && s.isNotEmpty)
-        .join(' · '),
+    secondaryLine: (p) => [
+      p.role,
+      p.organisation,
+    ].where((s) => s != null && s.isNotEmpty).join(' · '),
     itemIcon: Icons.person_outline,
     itemIconColor: KColors.textDim,
     addNewLabel: 'Add new person',
@@ -147,17 +151,19 @@ Future<Person?> showPersonPicker({
       if (result == null) return null;
       final now = DateTime.now();
       final id = const Uuid().v4();
-      await db.peopleDao.upsertPerson(PersonsCompanion(
-        id: Value(id),
-        projectId: Value(projectId),
-        name: Value(result.name),
-        role: Value(result.role),
-        organisation: Value(result.organisation),
-        personType: Value(result.personType),
-        isStakeholder: Value(result.isStakeholder),
-        createdAt: Value(now),
-        updatedAt: Value(now),
-      ));
+      await db.peopleDao.upsertPerson(
+        PersonsCompanion(
+          id: Value(id),
+          projectId: Value(projectId),
+          name: Value(result.name),
+          role: Value(result.role),
+          organisation: Value(result.organisation),
+          personType: Value(result.personType),
+          isStakeholder: Value(result.isStakeholder),
+          createdAt: Value(now),
+          updatedAt: Value(now),
+        ),
+      );
       return Person(
         id: id,
         projectId: projectId,
@@ -253,23 +259,31 @@ class _AddPersonDialogState extends State<AddPersonDialog> {
   void _submit() {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) return;
-    Navigator.of(context).pop(NewPersonResult(
-      name: name,
-      role: _roleCtrl.text.trim().isEmpty ? null : _roleCtrl.text.trim(),
-      organisation: _orgCtrl.text.trim().isEmpty ? null : _orgCtrl.text.trim(),
-      personType: _personType,
-      isStakeholder: _isStakeholder
-          // Auto-flip on if the caller asked for a stakeholder by legacy default.
-          || widget.initialType == 'stakeholder',
-    ));
+    Navigator.of(context).pop(
+      NewPersonResult(
+        name: name,
+        role: _roleCtrl.text.trim().isEmpty ? null : _roleCtrl.text.trim(),
+        organisation: _orgCtrl.text.trim().isEmpty
+            ? null
+            : _orgCtrl.text.trim(),
+        personType: _personType,
+        isStakeholder:
+            _isStakeholder
+            // Auto-flip on if the caller asked for a stakeholder by legacy default.
+            ||
+            widget.initialType == 'stakeholder',
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: KColors.surface,
-      title: const Text('Add New Person',
-          style: TextStyle(color: KColors.text, fontSize: 14)),
+      title: Text(
+        'Add New Person',
+        style: TextStyle(color: KColors.text, fontSize: 14),
+      ),
       content: SizedBox(
         width: 360,
         child: Column(
@@ -279,7 +293,7 @@ class _AddPersonDialogState extends State<AddPersonDialog> {
             TextField(
               controller: _nameCtrl,
               autofocus: true,
-              style: const TextStyle(color: KColors.text, fontSize: 13),
+              style: TextStyle(color: KColors.text, fontSize: 13),
               decoration: const InputDecoration(labelText: 'Name *'),
               onSubmitted: (_) => _submit(),
             ),
@@ -293,18 +307,22 @@ class _AddPersonDialogState extends State<AddPersonDialog> {
             const SizedBox(height: 10),
             TextField(
               controller: _orgCtrl,
-              style: const TextStyle(color: KColors.text, fontSize: 13),
-              decoration:
-                  const InputDecoration(labelText: 'Organisation (optional)'),
+              style: TextStyle(color: KColors.text, fontSize: 13),
+              decoration: const InputDecoration(
+                labelText: 'Organisation (optional)',
+              ),
               onSubmitted: (_) => _submit(),
             ),
             const SizedBox(height: 14),
-            const Text('CATEGORY',
-                style: TextStyle(
-                    color: KColors.textMuted,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.1)),
+            Text(
+              'CATEGORY',
+              style: TextStyle(
+                color: KColors.textMuted,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.1,
+              ),
+            ),
             const SizedBox(height: 6),
             Wrap(
               spacing: 8,
@@ -312,15 +330,19 @@ class _AddPersonDialogState extends State<AddPersonDialog> {
                 final (value, label) = t;
                 final selected = _personType == value;
                 return ChoiceChip(
-                  label: Text(label,
-                      style: TextStyle(
-                          fontSize: 11,
-                          color: selected ? KColors.bg : KColors.textDim)),
+                  label: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: selected ? KColors.bg : KColors.textDim,
+                    ),
+                  ),
                   selected: selected,
                   selectedColor: KColors.amber,
                   backgroundColor: KColors.surface2,
                   side: BorderSide(
-                      color: selected ? KColors.amber : KColors.border2),
+                    color: selected ? KColors.amber : KColors.border2,
+                  ),
                   onSelected: (_) => setState(() => _personType = value),
                 );
               }).toList(),
@@ -329,8 +351,7 @@ class _AddPersonDialogState extends State<AddPersonDialog> {
             // Stakeholder is orthogonal to category — anyone (colleague, exec
             // or vendor) can additionally be tracked as a project stakeholder.
             InkWell(
-              onTap: () =>
-                  setState(() => _isStakeholder = !_isStakeholder),
+              onTap: () => setState(() => _isStakeholder = !_isStakeholder),
               child: Row(
                 children: [
                   Checkbox(
@@ -340,7 +361,7 @@ class _AddPersonDialogState extends State<AddPersonDialog> {
                     activeColor: KColors.amber,
                     checkColor: KColors.bg,
                   ),
-                  const Text(
+                  Text(
                     'Track as project stakeholder',
                     style: TextStyle(color: KColors.text, fontSize: 12),
                   ),
@@ -353,8 +374,10 @@ class _AddPersonDialogState extends State<AddPersonDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel',
-              style: TextStyle(color: KColors.textDim, fontSize: 12)),
+          child: Text(
+            'Cancel',
+            style: TextStyle(color: KColors.textDim, fontSize: 12),
+          ),
         ),
         ElevatedButton(onPressed: _submit, child: const Text('Add Person')),
       ],

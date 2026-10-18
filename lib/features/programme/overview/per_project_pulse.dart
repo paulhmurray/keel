@@ -32,7 +32,7 @@ class PerProjectPulse extends StatelessWidget {
         final data = snap.data;
         if (data == null || data.rows.isEmpty) return const SizedBox.shrink();
         final projectsById = {
-          for (final p in context.watch<ProjectProvider>().projects) p.id: p
+          for (final p in context.watch<ProjectProvider>().projects) p.id: p,
         };
         String nameFor(String id) => projectsById[id]?.name ?? 'Linked project';
 
@@ -43,9 +43,9 @@ class PerProjectPulse extends StatelessWidget {
             if (r != 0) return r;
             final o = b.overdue.compareTo(a.overdue);
             if (o != 0) return o;
-            return nameFor(a.sourceId)
-                .toLowerCase()
-                .compareTo(nameFor(b.sourceId).toLowerCase());
+            return nameFor(
+              a.sourceId,
+            ).toLowerCase().compareTo(nameFor(b.sourceId).toLowerCase());
           });
 
         return Container(
@@ -57,16 +57,19 @@ class PerProjectPulse extends StatelessWidget {
           ),
           child: Column(
             children: [
-              const Padding(
+              Padding(
                 padding: EdgeInsets.fromLTRB(14, 10, 14, 6),
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: Text('BY PROJECT',
-                      style: TextStyle(
-                          color: KColors.textMuted,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.4)),
+                  child: Text(
+                    'BY PROJECT',
+                    style: TextStyle(
+                      color: KColors.textMuted,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.4,
+                    ),
+                  ),
                 ),
               ),
               for (var i = 0; i < rows.length; i++)
@@ -83,23 +86,26 @@ class PerProjectPulse extends StatelessWidget {
   }
 
   static int _ragWeight(Rag r) => switch (r) {
-        Rag.red => 3,
-        Rag.amber => 2,
-        Rag.green => 1,
-        Rag.notStarted => 0,
-      };
+    Rag.red => 3,
+    Rag.amber => 2,
+    Rag.green => 1,
+    Rag.notStarted => 0,
+  };
 
   Future<_PulseData> _load() async {
     final rows = computePerProjectPulse(
       workPackages: workPackages,
       risks: await db.raidDao.getRisksForProject(programmeId),
       issues: await db.raidDao.getIssuesForProject(programmeId),
-      overdueActions:
-          await db.actionsDao.getOverdueCascadedActionsForProgramme(programmeId),
+      overdueActions: await db.actionsDao.getOverdueCascadedActionsForProgramme(
+        programmeId,
+      ),
       overdueDecisions: await db.decisionsDao
           .getOverdueCascadedDecisionsForProgramme(programmeId),
       reports: await db.reportsDao.getReportsForProject(programmeId),
-      activities: await db.programmeGanttDao.getActivitiesForProject(programmeId),
+      activities: await db.programmeGanttDao.getActivitiesForProject(
+        programmeId,
+      ),
       links: await db.programmeLinksDao.getLinksForEntity(programmeId),
     );
     return _PulseData(rows);
@@ -121,7 +127,8 @@ List<ProjectPulseStat> computePerProjectPulse({
   DateTime? today,
 }) {
   final now = today ?? DateTime.now();
-  final todayIso = '${now.year.toString().padLeft(4, '0')}-'
+  final todayIso =
+      '${now.year.toString().padLeft(4, '0')}-'
       '${now.month.toString().padLeft(2, '0')}-'
       '${now.day.toString().padLeft(2, '0')}';
   // Share level per source: the programme-side link row for that partner.
@@ -149,6 +156,7 @@ List<ProjectPulseStat> computePerProjectPulse({
     }
     return best;
   }
+
   final wpsBySource = <String, List<TimelineWorkPackage>>{};
   for (final wp in workPackages) {
     final src = wp.sourceProjectId;
@@ -157,8 +165,12 @@ List<ProjectPulseStat> computePerProjectPulse({
   }
 
   int riskCount(String src) =>
-      risks.where((r) => r.sourceProjectId == src && r.status != 'closed').length +
-      issues.where((i) => i.sourceProjectId == src && i.status != 'closed').length;
+      risks
+          .where((r) => r.sourceProjectId == src && r.status != 'closed')
+          .length +
+      issues
+          .where((i) => i.sourceProjectId == src && i.status != 'closed')
+          .length;
   int overdueCount(String src) =>
       overdueActions.where((a) => a.sourceProjectId == src).length +
       overdueDecisions.where((d) => d.sourceProjectId == src).length;
@@ -166,7 +178,8 @@ List<ProjectPulseStat> computePerProjectPulse({
     DateTime? latest;
     for (final r in reports) {
       if (r.sourceProjectId != src || r.reportDate == null) continue;
-      if (latest == null || r.reportDate!.isAfter(latest)) latest = r.reportDate;
+      if (latest == null || r.reportDate!.isAfter(latest))
+        latest = r.reportDate;
     }
     return latest;
   }
@@ -214,6 +227,7 @@ class ProjectPulseStat {
   final int risks;
   final int overdue;
   final DateTime? lastStatus;
+
   /// 'full' | 'escalated' | null when the link isn't local.
   final String? shareLevel;
   final TimelineActivity? nextMilestone;
@@ -248,88 +262,124 @@ class _ProjectPulseRow extends StatelessWidget {
       decoration: BoxDecoration(
         border: isLast
             ? null
-            : const Border(bottom: BorderSide(color: KColors.border)),
+            : Border(bottom: BorderSide(color: KColors.border)),
       ),
-      child: Row(children: [
-        _RagChip(row.rag),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(children: [
-                Flexible(
-                  child: Text(label,
-                      style: const TextStyle(
+      child: Row(
+        children: [
+          _RagChip(row.rag),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        label,
+                        style: TextStyle(
                           color: KColors.text,
                           fontSize: 13,
-                          fontWeight: FontWeight.w600),
-                      overflow: TextOverflow.ellipsis),
+                          fontWeight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (row.shareLevel != null) ...[
+                      const SizedBox(width: 8),
+                      _ShareTag(full: row.isFullShare),
+                    ],
+                  ],
                 ),
-                if (row.shareLevel != null) ...[
-                  const SizedBox(width: 8),
-                  _ShareTag(full: row.isFullShare),
-                ],
-              ]),
-              if (row.nextMilestone != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Text(
-                    '◆ ${row.nextMilestone!.name} · '
-                    '${_shortDate(row.nextMilestone!.startDate ?? row.nextMilestone!.endDate)}',
-                    style: const TextStyle(
-                        color: KColors.textDim, fontSize: 10.5),
-                    overflow: TextOverflow.ellipsis,
+                if (row.nextMilestone != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      '◆ ${row.nextMilestone!.name} · '
+                      '${_shortDate(row.nextMilestone!.startDate ?? row.nextMilestone!.endDate)}',
+                      style: TextStyle(color: KColors.textDim, fontSize: 10.5),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
-        ),
-        _metric('▲', '${row.risks}',
+          _metric(
+            '▲',
+            '${row.risks}',
             row.isFullShare
                 ? 'open ${row.risks == 1 ? 'risk' : 'risks'}'
                 : 'shared',
-            row.risks > 0 ? KColors.amber : KColors.textMuted),
-        const SizedBox(width: 14),
-        _metric('⏰', '${row.overdue}', 'overdue',
-            row.overdue > 0 ? KColors.red : KColors.textMuted),
-        const SizedBox(width: 14),
-        SizedBox(
-          width: 62,
-          child: Text(_ago(row.lastStatus),
+            row.risks > 0 ? KColors.amber : KColors.textMuted,
+          ),
+          const SizedBox(width: 14),
+          _metric(
+            '⏰',
+            '${row.overdue}',
+            'overdue',
+            row.overdue > 0 ? KColors.red : KColors.textMuted,
+          ),
+          const SizedBox(width: 14),
+          SizedBox(
+            width: 62,
+            child: Text(
+              _ago(row.lastStatus),
               textAlign: TextAlign.right,
-              style: const TextStyle(
-                  color: KColors.textMuted, fontSize: 11)),
-        ),
-      ]),
+              style: TextStyle(color: KColors.textMuted, fontSize: 11),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _metric(String icon, String value, String unit, Color color) {
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      Text('$icon$value',
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          '$icon$value',
           style: TextStyle(
-              color: color, fontSize: 12, fontWeight: FontWeight.w700)),
-      const SizedBox(width: 3),
-      Text(unit,
-          style: const TextStyle(color: KColors.textMuted, fontSize: 10)),
-    ]);
+            color: color,
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(width: 3),
+        Text(unit, style: TextStyle(color: KColors.textMuted, fontSize: 10)),
+      ],
+    );
   }
 
   static String _shortDate(String? iso) {
     final d = iso == null ? null : DateTime.tryParse(iso);
     if (d == null) return '';
-    const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const m = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return '${d.day} ${m[d.month - 1]}';
   }
 
   static String _ago(DateTime? d) {
     if (d == null) return 'no status';
     final now = DateTime.now();
-    final days = DateTime(now.year, now.month, now.day)
-        .difference(DateTime(d.year, d.month, d.day))
-        .inDays;
+    final days = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).difference(DateTime(d.year, d.month, d.day)).inDays;
     if (days <= 0) return 'today';
     if (days == 1) return '1d ago';
     return '${days}d ago';
@@ -356,10 +406,11 @@ class _RagChip extends StatelessWidget {
         border: Border.all(color: fg, width: 1),
         borderRadius: BorderRadius.circular(3),
       ),
-      child: Text(rag.label.toUpperCase(),
-          textAlign: TextAlign.center,
-          style: TextStyle(
-              color: fg, fontSize: 9, fontWeight: FontWeight.w800)),
+      child: Text(
+        rag.label.toUpperCase(),
+        textAlign: TextAlign.center,
+        style: TextStyle(color: fg, fontSize: 9, fontWeight: FontWeight.w800),
+      ),
     );
   }
 }
@@ -375,7 +426,7 @@ class _ShareTag extends StatelessWidget {
     return Tooltip(
       message: full
           ? 'Full detail: whole RAID, all actions and decisions, plan to '
-              'task level'
+                'task level'
           : 'Shared items only: the project PM chooses what you see',
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
@@ -384,12 +435,15 @@ class _ShareTag extends StatelessWidget {
           border: Border.all(color: colour.withValues(alpha: 0.6), width: 0.5),
           borderRadius: BorderRadius.circular(2),
         ),
-        child: Text(full ? 'FULL' : 'SHARED',
-            style: TextStyle(
-                color: colour,
-                fontSize: 8.5,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.6)),
+        child: Text(
+          full ? 'FULL' : 'SHARED',
+          style: TextStyle(
+            color: colour,
+            fontSize: 8.5,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.6,
+          ),
+        ),
       ),
     );
   }

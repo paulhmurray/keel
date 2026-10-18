@@ -56,7 +56,9 @@ class _SwotViewState extends State<SwotView> {
     for (final q in SwotQuadrant.all) {
       for (final item in _content.itemsFor(q)) {
         _ctrls.putIfAbsent(
-            item.id, () => TextEditingController(text: item.text));
+          item.id,
+          () => TextEditingController(text: item.text),
+        );
       }
     }
   }
@@ -127,8 +129,7 @@ class _SwotViewState extends State<SwotView> {
     if (idx < 0) return;
     final moving = source.removeAt(idx);
     final renumberedSource = [
-      for (var i = 0; i < source.length; i++)
-        source[i].copyWith(sortOrder: i),
+      for (var i = 0; i < source.length; i++) source[i].copyWith(sortOrder: i),
     ];
     final target = [..._content.itemsFor(targetQuadrant)];
     target.add(moving.copyWith(sortOrder: target.length));
@@ -143,14 +144,17 @@ class _SwotViewState extends State<SwotView> {
     if (item.promotedToType != null || item.text.trim().isEmpty) return;
     final db = context.read<AppDatabase>();
     final newId = const Uuid().v4();
-    await db.raidDao.insertRisk(RisksCompanion.insert(
-      id: newId,
-      projectId: widget.template.projectId,
-      description: item.text,
-      source: const Value('swot'),
-      sourceNote: Value(
-          'SWOT: ${widget.template.name} (${SwotQuadrant.label(quadrant)})'),
-    ));
+    await db.raidDao.insertRisk(
+      RisksCompanion.insert(
+        id: newId,
+        projectId: widget.template.projectId,
+        description: item.text,
+        source: const Value('swot'),
+        sourceNote: Value(
+          'SWOT: ${widget.template.name} (${SwotQuadrant.label(quadrant)})',
+        ),
+      ),
+    );
     _stampPromotion(quadrant, item.id, 'risk', newId);
     _snack('Promoted to Risk.');
   }
@@ -159,20 +163,27 @@ class _SwotViewState extends State<SwotView> {
     if (item.promotedToType != null || item.text.trim().isEmpty) return;
     final db = context.read<AppDatabase>();
     final newId = const Uuid().v4();
-    await db.actionsDao.insertAction(ProjectActionsCompanion.insert(
-      id: newId,
-      projectId: widget.template.projectId,
-      description: item.text,
-      source: const Value('swot'),
-      sourceNote: Value(
-          'SWOT: ${widget.template.name} (${SwotQuadrant.label(quadrant)})'),
-    ));
+    await db.actionsDao.insertAction(
+      ProjectActionsCompanion.insert(
+        id: newId,
+        projectId: widget.template.projectId,
+        description: item.text,
+        source: const Value('swot'),
+        sourceNote: Value(
+          'SWOT: ${widget.template.name} (${SwotQuadrant.label(quadrant)})',
+        ),
+      ),
+    );
     _stampPromotion(quadrant, item.id, 'action', newId);
     _snack('Promoted to Action.');
   }
 
   void _stampPromotion(
-      String quadrant, String itemId, String type, String newId) {
+    String quadrant,
+    String itemId,
+    String type,
+    String newId,
+  ) {
     final updated = _content.itemsFor(quadrant).map((it) {
       return it.id == itemId
           ? it.copyWith(promotedToType: type, promotedToId: newId)
@@ -183,10 +194,9 @@ class _SwotViewState extends State<SwotView> {
 
   void _snack(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(message),
-      duration: const Duration(seconds: 2),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
+    );
   }
 
   // ---- UI -----------------------------------------------------------------
@@ -199,7 +209,7 @@ class _SwotViewState extends State<SwotView> {
         children: [
           // Internal / External axis labels.
           Row(
-            children: const [
+            children: [
               SizedBox(width: 36),
               Expanded(
                 child: Center(
@@ -247,50 +257,62 @@ class _SwotViewState extends State<SwotView> {
                             Expanded(
                               child: _Quadrant(
                                 quadrant: SwotQuadrant.strengths,
-                                items:
-                                    _content.itemsFor(SwotQuadrant.strengths),
+                                items: _content.itemsFor(
+                                  SwotQuadrant.strengths,
+                                ),
                                 accent: KColors.phosphor,
                                 ctrls: _ctrls,
-                                onAdd: () =>
-                                    _addItem(SwotQuadrant.strengths),
+                                onAdd: () => _addItem(SwotQuadrant.strengths),
                                 onTextChanged: (id, v) => _editItemText(
-                                    SwotQuadrant.strengths, id, v),
+                                  SwotQuadrant.strengths,
+                                  id,
+                                  v,
+                                ),
                                 onDelete: (id) =>
                                     _deleteItem(SwotQuadrant.strengths, id),
                                 onPromoteToAction: (it) => _promoteToAction(
-                                    SwotQuadrant.strengths, it),
+                                  SwotQuadrant.strengths,
+                                  it,
+                                ),
                                 onPromoteToRisk: null,
                                 onDropFrom: (sourceQ, id) =>
                                     _moveBetweenQuadrants(
-                                  id: id,
-                                  sourceQuadrant: sourceQ,
-                                  targetQuadrant: SwotQuadrant.strengths,
-                                ),
+                                      id: id,
+                                      sourceQuadrant: sourceQ,
+                                      targetQuadrant: SwotQuadrant.strengths,
+                                    ),
                               ),
                             ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: _Quadrant(
                                 quadrant: SwotQuadrant.opportunities,
-                                items: _content
-                                    .itemsFor(SwotQuadrant.opportunities),
+                                items: _content.itemsFor(
+                                  SwotQuadrant.opportunities,
+                                ),
                                 accent: KColors.blue,
                                 ctrls: _ctrls,
                                 onAdd: () =>
                                     _addItem(SwotQuadrant.opportunities),
                                 onTextChanged: (id, v) => _editItemText(
-                                    SwotQuadrant.opportunities, id, v),
-                                onDelete: (id) => _deleteItem(
-                                    SwotQuadrant.opportunities, id),
+                                  SwotQuadrant.opportunities,
+                                  id,
+                                  v,
+                                ),
+                                onDelete: (id) =>
+                                    _deleteItem(SwotQuadrant.opportunities, id),
                                 onPromoteToAction: (it) => _promoteToAction(
-                                    SwotQuadrant.opportunities, it),
+                                  SwotQuadrant.opportunities,
+                                  it,
+                                ),
                                 onPromoteToRisk: null,
                                 onDropFrom: (sourceQ, id) =>
                                     _moveBetweenQuadrants(
-                                  id: id,
-                                  sourceQuadrant: sourceQ,
-                                  targetQuadrant: SwotQuadrant.opportunities,
-                                ),
+                                      id: id,
+                                      sourceQuadrant: sourceQ,
+                                      targetQuadrant:
+                                          SwotQuadrant.opportunities,
+                                    ),
                               ),
                             ),
                           ],
@@ -305,52 +327,55 @@ class _SwotViewState extends State<SwotView> {
                             Expanded(
                               child: _Quadrant(
                                 quadrant: SwotQuadrant.weaknesses,
-                                items: _content
-                                    .itemsFor(SwotQuadrant.weaknesses),
+                                items: _content.itemsFor(
+                                  SwotQuadrant.weaknesses,
+                                ),
                                 accent: KColors.amber,
                                 ctrls: _ctrls,
-                                onAdd: () =>
-                                    _addItem(SwotQuadrant.weaknesses),
+                                onAdd: () => _addItem(SwotQuadrant.weaknesses),
                                 onTextChanged: (id, v) => _editItemText(
-                                    SwotQuadrant.weaknesses, id, v),
-                                onDelete: (id) => _deleteItem(
-                                    SwotQuadrant.weaknesses, id),
+                                  SwotQuadrant.weaknesses,
+                                  id,
+                                  v,
+                                ),
+                                onDelete: (id) =>
+                                    _deleteItem(SwotQuadrant.weaknesses, id),
                                 onPromoteToAction: (it) => _promoteToAction(
-                                    SwotQuadrant.weaknesses, it),
-                                onPromoteToRisk: (it) => _promoteToRisk(
-                                    SwotQuadrant.weaknesses, it),
+                                  SwotQuadrant.weaknesses,
+                                  it,
+                                ),
+                                onPromoteToRisk: (it) =>
+                                    _promoteToRisk(SwotQuadrant.weaknesses, it),
                                 onDropFrom: (sourceQ, id) =>
                                     _moveBetweenQuadrants(
-                                  id: id,
-                                  sourceQuadrant: sourceQ,
-                                  targetQuadrant: SwotQuadrant.weaknesses,
-                                ),
+                                      id: id,
+                                      sourceQuadrant: sourceQ,
+                                      targetQuadrant: SwotQuadrant.weaknesses,
+                                    ),
                               ),
                             ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: _Quadrant(
                                 quadrant: SwotQuadrant.threats,
-                                items:
-                                    _content.itemsFor(SwotQuadrant.threats),
+                                items: _content.itemsFor(SwotQuadrant.threats),
                                 accent: KColors.red,
                                 ctrls: _ctrls,
-                                onAdd: () =>
-                                    _addItem(SwotQuadrant.threats),
-                                onTextChanged: (id, v) => _editItemText(
-                                    SwotQuadrant.threats, id, v),
+                                onAdd: () => _addItem(SwotQuadrant.threats),
+                                onTextChanged: (id, v) =>
+                                    _editItemText(SwotQuadrant.threats, id, v),
                                 onDelete: (id) =>
                                     _deleteItem(SwotQuadrant.threats, id),
-                                onPromoteToAction: (it) => _promoteToAction(
-                                    SwotQuadrant.threats, it),
+                                onPromoteToAction: (it) =>
+                                    _promoteToAction(SwotQuadrant.threats, it),
                                 onPromoteToRisk: (it) =>
                                     _promoteToRisk(SwotQuadrant.threats, it),
                                 onDropFrom: (sourceQ, id) =>
                                     _moveBetweenQuadrants(
-                                  id: id,
-                                  sourceQuadrant: sourceQ,
-                                  targetQuadrant: SwotQuadrant.threats,
-                                ),
+                                      id: id,
+                                      sourceQuadrant: sourceQ,
+                                      targetQuadrant: SwotQuadrant.threats,
+                                    ),
                               ),
                             ),
                           ],
@@ -382,7 +407,7 @@ class _AxisLabelV extends StatelessWidget {
         child: Center(
           child: Text(
             'POSITIVE         NEGATIVE',
-            style: const TextStyle(
+            style: TextStyle(
               color: KColors.textMuted,
               fontSize: 10,
               fontWeight: FontWeight.w700,
@@ -456,9 +481,7 @@ class _Quadrant extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: accent.withValues(alpha: 0.15),
                   border: Border(
-                    bottom: BorderSide(
-                      color: accent.withValues(alpha: 0.4),
-                    ),
+                    bottom: BorderSide(color: accent.withValues(alpha: 0.4)),
                   ),
                 ),
                 child: Row(
@@ -511,8 +534,9 @@ class _Quadrant extends StatelessWidget {
                         onTextChanged: (v) => onTextChanged(item.id, v),
                         onDelete: () => onDelete(item.id),
                         onPromoteToAction: () => onPromoteToAction(item),
-                        onPromoteToRisk:
-                            onPromoteToRisk == null ? null : () => onPromoteToRisk!(item),
+                        onPromoteToRisk: onPromoteToRisk == null
+                            ? null
+                            : () => onPromoteToRisk!(item),
                       );
                     }),
                     Align(
@@ -523,11 +547,9 @@ class _Quadrant extends StatelessWidget {
                         label: const Text('Add'),
                         style: TextButton.styleFrom(
                           foregroundColor: accent,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
                           minimumSize: const Size(0, 28),
-                          tapTargetSize:
-                              MaterialTapTargetSize.shrinkWrap,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           textStyle: const TextStyle(fontSize: 12),
                         ),
                       ),
@@ -572,24 +594,26 @@ class _SwotItemRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
+          Padding(
             padding: EdgeInsets.only(top: 8, left: 4, right: 4),
-            child: Icon(Icons.drag_indicator,
-                size: 12, color: KColors.textMuted),
+            child: Icon(
+              Icons.drag_indicator,
+              size: 12,
+              color: KColors.textMuted,
+            ),
           ),
           Expanded(
             child: TextField(
               controller: ctrl,
               maxLines: null,
-              style: const TextStyle(
+              style: TextStyle(
                 color: KColors.text,
                 fontSize: 12.5,
                 height: 1.35,
               ),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'Add an item',
-                hintStyle:
-                    TextStyle(color: KColors.textMuted, fontSize: 12),
+                hintStyle: TextStyle(color: KColors.textMuted, fontSize: 12),
                 isDense: true,
                 contentPadding: EdgeInsets.symmetric(vertical: 4),
                 border: InputBorder.none,
@@ -616,8 +640,7 @@ class _SwotItemRow extends StatelessWidget {
             ),
           PopupMenuButton<String>(
             tooltip: 'Item actions',
-            icon: const Icon(Icons.more_horiz,
-                size: 14, color: KColors.textMuted),
+            icon: Icon(Icons.more_horiz, size: 14, color: KColors.textMuted),
             onSelected: (v) {
               switch (v) {
                 case 'promote_action':
@@ -635,11 +658,13 @@ class _SwotItemRow extends StatelessWidget {
               if (item.promotedToType == null) ...[
                 if (onPromoteToRisk != null)
                   const PopupMenuItem(
-                      value: 'promote_risk',
-                      child: Text('Promote to Risk')),
+                    value: 'promote_risk',
+                    child: Text('Promote to Risk'),
+                  ),
                 const PopupMenuItem(
-                    value: 'promote_action',
-                    child: Text('Promote to Action')),
+                  value: 'promote_action',
+                  child: Text('Promote to Action'),
+                ),
               ],
               const PopupMenuItem(value: 'delete', child: Text('Delete')),
             ],
@@ -655,8 +680,7 @@ class _SwotItemRow extends StatelessWidget {
         color: Colors.transparent,
         child: Container(
           constraints: const BoxConstraints(maxWidth: 240),
-          padding:
-              const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
             color: KColors.surface,
             border: Border.all(color: accent, width: 1),

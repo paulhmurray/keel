@@ -6,9 +6,11 @@ List<Person> filteredPersons(List<Person> persons, String query) {
   final q = query.toLowerCase();
   if (q.isEmpty) return persons.take(6).toList();
   return persons
-      .where((p) =>
-          p.name.toLowerCase().contains(q) ||
-          (p.role?.toLowerCase().contains(q) ?? false))
+      .where(
+        (p) =>
+            p.name.toLowerCase().contains(q) ||
+            (p.role?.toLowerCase().contains(q) ?? false),
+      )
       .take(6)
       .toList();
 }
@@ -60,7 +62,7 @@ class JournalPersonMention extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             child: Row(
               children: [
-                const Text(
+                Text(
                   'PEOPLE',
                   style: TextStyle(
                     color: KColors.textDim,
@@ -70,14 +72,14 @@ class JournalPersonMention extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                const Text(
+                Text(
                   '↑↓ navigate  ↵ select',
                   style: TextStyle(color: KColors.textMuted, fontSize: 9),
                 ),
               ],
             ),
           ),
-          const Divider(color: KColors.border, height: 1),
+          Divider(color: KColors.border, height: 1),
           Flexible(
             child: ListView(
               shrinkWrap: true,
@@ -91,21 +93,30 @@ class JournalPersonMention extends StatelessWidget {
                     onTap: () => onSelect(p),
                     child: Container(
                       color: isSelected ? KColors.amberDim : Colors.transparent,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       child: Row(
                         children: [
                           Container(
                             width: 24,
                             height: 24,
                             decoration: BoxDecoration(
-                              color: isSelected ? KColors.amber : KColors.amberDim,
+                              color: isSelected
+                                  ? KColors.amber
+                                  : KColors.amberDim,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Center(
                               child: Text(
-                                p.name.isNotEmpty ? p.name[0].toUpperCase() : '?',
+                                p.name.isNotEmpty
+                                    ? p.name[0].toUpperCase()
+                                    : '?',
                                 style: TextStyle(
-                                  color: isSelected ? KColors.bg : KColors.amber,
+                                  color: isSelected
+                                      ? KColors.bg
+                                      : KColors.amber,
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -120,7 +131,9 @@ class JournalPersonMention extends StatelessWidget {
                                 Text(
                                   p.name,
                                   style: TextStyle(
-                                    color: isSelected ? KColors.amber : KColors.text,
+                                    color: isSelected
+                                        ? KColors.amber
+                                        : KColors.text,
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -129,7 +142,7 @@ class JournalPersonMention extends StatelessWidget {
                                 if (p.role != null)
                                   Text(
                                     p.role!,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       color: KColors.textDim,
                                       fontSize: 10,
                                     ),
@@ -152,7 +165,9 @@ class JournalPersonMention extends StatelessWidget {
                           ? KColors.phosDim
                           : Colors.transparent,
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       child: Row(
                         children: [
                           Container(

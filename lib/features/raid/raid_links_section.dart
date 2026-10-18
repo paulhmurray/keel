@@ -25,7 +25,9 @@ class RaidLinkTarget {
 
 /// Every linkable item in the project, across all five registers.
 Future<List<RaidLinkTarget>> loadRaidLinkTargets(
-    AppDatabase db, String projectId) async {
+  AppDatabase db,
+  String projectId,
+) async {
   final risks = await db.raidDao.getRisksForProject(projectId);
   final assumptions = await db.raidDao.getAssumptionsForProject(projectId);
   final issues = await db.raidDao.getIssuesForProject(projectId);
@@ -34,31 +36,39 @@ Future<List<RaidLinkTarget>> loadRaidLinkTargets(
   return [
     for (final r in risks)
       RaidLinkTarget(
-          type: 'risk', id: r.id, ref: r.ref, description: r.description),
+        type: 'risk',
+        id: r.id,
+        ref: r.ref,
+        description: r.description,
+      ),
     for (final a in assumptions)
       RaidLinkTarget(
-          type: 'assumption',
-          id: a.id,
-          ref: a.ref,
-          description: a.description),
+        type: 'assumption',
+        id: a.id,
+        ref: a.ref,
+        description: a.description,
+      ),
     for (final i in issues)
       RaidLinkTarget(
-          type: 'issue',
-          id: i.id,
-          ref: i.ref,
-          description: i.title ?? i.description),
+        type: 'issue',
+        id: i.id,
+        ref: i.ref,
+        description: i.title ?? i.description,
+      ),
     for (final d in deps)
       RaidLinkTarget(
-          type: 'dependency',
-          id: d.id,
-          ref: d.ref,
-          description: d.description),
+        type: 'dependency',
+        id: d.id,
+        ref: d.ref,
+        description: d.description,
+      ),
     for (final d in decisions)
       RaidLinkTarget(
-          type: 'decision',
-          id: d.id,
-          ref: d.ref,
-          description: d.description),
+        type: 'decision',
+        id: d.id,
+        ref: d.ref,
+        description: d.description,
+      ),
   ];
 }
 
@@ -97,8 +107,7 @@ class _RaidLinksSectionState extends State<RaidLinksSection> {
 
   Future<void> _load() async {
     final links = await widget.db.raidDao.getLinksForItem(widget.itemId);
-    final targets =
-        await loadRaidLinkTargets(widget.db, widget.projectId);
+    final targets = await loadRaidLinkTargets(widget.db, widget.projectId);
     if (!mounted) return;
     setState(() {
       _links = links;
@@ -112,23 +121,24 @@ class _RaidLinksSectionState extends State<RaidLinksSection> {
 
   Future<void> _addLink() async {
     final linkedIds = {for (final l in _links) _otherId(l), widget.itemId};
-    final candidates = _targetsById.values
-        .where((t) => !linkedIds.contains(t.id))
-        .toList()
-      ..sort((a, b) => (a.ref ?? '').compareTo(b.ref ?? ''));
+    final candidates =
+        _targetsById.values.where((t) => !linkedIds.contains(t.id)).toList()
+          ..sort((a, b) => (a.ref ?? '').compareTo(b.ref ?? ''));
     final chosen = await showDialog<RaidLinkTarget>(
       context: context,
       builder: (_) => _LinkPickerDialog(candidates: candidates),
     );
     if (chosen == null) return;
-    await widget.db.raidDao.insertItemLink(RaidItemLinksCompanion(
-      id: Value(const Uuid().v4()),
-      projectId: Value(widget.projectId),
-      fromType: Value(widget.itemType.name),
-      fromId: Value(widget.itemId),
-      toType: Value(chosen.type),
-      toId: Value(chosen.id),
-    ));
+    await widget.db.raidDao.insertItemLink(
+      RaidItemLinksCompanion(
+        id: Value(const Uuid().v4()),
+        projectId: Value(widget.projectId),
+        fromType: Value(widget.itemType.name),
+        fromId: Value(widget.itemId),
+        toType: Value(chosen.type),
+        toId: Value(chosen.id),
+      ),
+    );
     await _load();
   }
 
@@ -151,7 +161,7 @@ class _RaidLinksSectionState extends State<RaidLinksSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'RELATED ITEMS',
           style: TextStyle(
             color: KColors.textMuted,
@@ -167,8 +177,7 @@ class _RaidLinksSectionState extends State<RaidLinksSection> {
           children: [
             for (final r in resolved)
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: KColors.surface2,
                   border: Border.all(color: KColors.border2),
@@ -179,10 +188,11 @@ class _RaidLinksSectionState extends State<RaidLinksSection> {
                   children: [
                     Text(
                       r.target.ref ?? r.target.type,
-                      style: const TextStyle(
-                          color: KColors.amber,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700),
+                      style: TextStyle(
+                        color: KColors.amber,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     const SizedBox(width: 5),
                     ConstrainedBox(
@@ -190,16 +200,18 @@ class _RaidLinksSectionState extends State<RaidLinksSection> {
                       child: Text(
                         r.target.description,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            color: KColors.textDim, fontSize: 10),
+                        style: TextStyle(color: KColors.textDim, fontSize: 10),
                       ),
                     ),
                     if (!widget.readOnly) ...[
                       const SizedBox(width: 5),
                       InkWell(
                         onTap: () => _removeLink(r.link),
-                        child: const Icon(Icons.close,
-                            size: 11, color: KColors.textMuted),
+                        child: Icon(
+                          Icons.close,
+                          size: 11,
+                          color: KColors.textMuted,
+                        ),
                       ),
                     ],
                   ],
@@ -211,19 +223,22 @@ class _RaidLinksSectionState extends State<RaidLinksSection> {
                 borderRadius: BorderRadius.circular(3),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 4),
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     border: Border.all(color: KColors.border2),
                     borderRadius: BorderRadius.circular(3),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.add_link, size: 12, color: KColors.phosphor),
                       SizedBox(width: 4),
-                      Text('Link item',
-                          style: TextStyle(
-                              color: KColors.phosphor, fontSize: 10)),
+                      Text(
+                        'Link item',
+                        style: TextStyle(color: KColors.phosphor, fontSize: 10),
+                      ),
                     ],
                   ),
                 ),
@@ -251,10 +266,12 @@ class _LinkPickerDialogState extends State<_LinkPickerDialog> {
   Widget build(BuildContext context) {
     final q = _query.toLowerCase();
     final visible = widget.candidates
-        .where((t) =>
-            q.isEmpty ||
-            (t.ref?.toLowerCase().contains(q) ?? false) ||
-            t.description.toLowerCase().contains(q))
+        .where(
+          (t) =>
+              q.isEmpty ||
+              (t.ref?.toLowerCase().contains(q) ?? false) ||
+              t.description.toLowerCase().contains(q),
+        )
         .toList();
 
     return AlertDialog(
@@ -277,10 +294,15 @@ class _LinkPickerDialogState extends State<_LinkPickerDialog> {
             const SizedBox(height: 8),
             Expanded(
               child: visible.isEmpty
-                  ? const Center(
-                      child: Text('No matching items',
-                          style: TextStyle(
-                              color: KColors.textMuted, fontSize: 12)))
+                  ? Center(
+                      child: Text(
+                        'No matching items',
+                        style: TextStyle(
+                          color: KColors.textMuted,
+                          fontSize: 12,
+                        ),
+                      ),
+                    )
                   : ListView.builder(
                       itemCount: visible.length,
                       itemBuilder: (ctx, i) {
@@ -290,22 +312,24 @@ class _LinkPickerDialogState extends State<_LinkPickerDialog> {
                           onTap: () => Navigator.of(context).pop(t),
                           leading: Text(
                             t.ref ?? '—',
-                            style: const TextStyle(
-                                color: KColors.amber,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700),
+                            style: TextStyle(
+                              color: KColors.amber,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                           title: Text(
                             t.description,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                color: KColors.text, fontSize: 12),
+                            style: TextStyle(color: KColors.text, fontSize: 12),
                           ),
                           subtitle: Text(
                             t.type,
-                            style: const TextStyle(
-                                color: KColors.textMuted, fontSize: 10),
+                            style: TextStyle(
+                              color: KColors.textMuted,
+                              fontSize: 10,
+                            ),
                           ),
                         );
                       },

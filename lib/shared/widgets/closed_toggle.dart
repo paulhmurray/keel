@@ -25,9 +25,9 @@ class ClosedToggle extends StatelessWidget {
       message: showClosed
           ? 'Click to hide items closed more than 2 weeks ago'
           : hiddenCount == 0
-              ? 'No aged-out closed items to show'
-              : 'Click to show $hiddenCount closed item${hiddenCount == 1 ? '' : 's'} '
-                  'hidden because they closed more than 2 weeks ago',
+          ? 'No aged-out closed items to show'
+          : 'Click to show $hiddenCount closed item${hiddenCount == 1 ? '' : 's'} '
+                'hidden because they closed more than 2 weeks ago',
       waitDuration: const Duration(milliseconds: 350),
       child: InkWell(
         onTap: onTap,
@@ -64,17 +64,22 @@ class ClosedToggle extends StatelessWidget {
               if (!showClosed && hiddenCount > 0) ...[
                 const SizedBox(width: 6),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 5,
+                    vertical: 1,
+                  ),
                   decoration: BoxDecoration(
                     color: KColors.border2,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text('$hiddenCount',
-                      style: const TextStyle(
-                          color: KColors.textDim,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700)),
+                  child: Text(
+                    '$hiddenCount',
+                    style: TextStyle(
+                      color: KColors.textDim,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
               ],
             ],
@@ -91,8 +96,11 @@ class HiddenClosedNotice extends StatelessWidget {
   final int hiddenCount;
   final VoidCallback onShow;
 
-  const HiddenClosedNotice(
-      {super.key, required this.hiddenCount, required this.onShow});
+  const HiddenClosedNotice({
+    super.key,
+    required this.hiddenCount,
+    required this.onShow,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -100,15 +108,14 @@ class HiddenClosedNotice extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.inventory_2_outlined,
-              size: 32, color: KColors.textMuted),
+          Icon(Icons.inventory_2_outlined, size: 32, color: KColors.textMuted),
           const SizedBox(height: 10),
           Text(
             '$hiddenCount closed item${hiddenCount == 1 ? '' : 's'} hidden',
-            style: const TextStyle(color: KColors.textDim, fontSize: 13),
+            style: TextStyle(color: KColors.textDim, fontSize: 13),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Nothing open. Closed items are kept for the audit trail.',
             style: TextStyle(color: KColors.textMuted, fontSize: 11),
           ),

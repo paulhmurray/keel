@@ -47,13 +47,12 @@ class _UsmStoryPanelState extends State<UsmStoryPanel> {
   void initState() {
     super.initState();
     _titleCtrl = TextEditingController(text: widget.story.title);
-    _descCtrl =
-        TextEditingController(text: widget.story.description ?? '');
-    _estimateCtrl =
-        TextEditingController(text: widget.story.estimate ?? '');
+    _descCtrl = TextEditingController(text: widget.story.description ?? '');
+    _estimateCtrl = TextEditingController(text: widget.story.estimate ?? '');
     _tagInputCtrl = TextEditingController();
     _acCtrl = TextEditingController(
-        text: widget.story.acceptanceCriteria.join('\n'));
+      text: widget.story.acceptanceCriteria.join('\n'),
+    );
   }
 
   @override
@@ -97,18 +96,16 @@ class _UsmStoryPanelState extends State<UsmStoryPanel> {
   }
 
   void _removeTag(String tag) {
-    widget.onTagsChanged(
-        widget.story.tags.where((t) => t != tag).toList());
+    widget.onTagsChanged(widget.story.tags.where((t) => t != tag).toList());
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: 340,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: KColors.surface,
-        border:
-            Border(left: BorderSide(color: KColors.border, width: 1)),
+        border: Border(left: BorderSide(color: KColors.border, width: 1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -116,14 +113,14 @@ class _UsmStoryPanelState extends State<UsmStoryPanel> {
           // Header.
           Container(
             padding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(color: KColors.border, width: 0.5),
               ),
             ),
             child: Row(
               children: [
-                const Text(
+                Text(
                   'STORY',
                   style: TextStyle(
                     color: KColors.textDim,
@@ -136,8 +133,7 @@ class _UsmStoryPanelState extends State<UsmStoryPanel> {
                 IconButton(
                   visualDensity: VisualDensity.compact,
                   onPressed: widget.onClose,
-                  icon: const Icon(Icons.close,
-                      size: 16, color: KColors.textDim),
+                  icon: Icon(Icons.close, size: 16, color: KColors.textDim),
                   tooltip: 'Close',
                 ),
               ],
@@ -154,7 +150,7 @@ class _UsmStoryPanelState extends State<UsmStoryPanel> {
                     child: TextField(
                       controller: _titleCtrl,
                       maxLines: null,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: KColors.text,
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
@@ -170,7 +166,7 @@ class _UsmStoryPanelState extends State<UsmStoryPanel> {
                       controller: _descCtrl,
                       maxLines: 6,
                       minLines: 3,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: KColors.text,
                         fontSize: 12.5,
                         height: 1.4,
@@ -184,12 +180,10 @@ class _UsmStoryPanelState extends State<UsmStoryPanel> {
                   _outlinedField(
                     child: TextField(
                       controller: _estimateCtrl,
-                      style: const TextStyle(
-                        color: KColors.text,
-                        fontSize: 13,
+                      style: TextStyle(color: KColors.text, fontSize: 13),
+                      decoration: _fieldDecoration(
+                        'e.g. S / M / L · or "3 days"',
                       ),
-                      decoration:
-                          _fieldDecoration('e.g. S / M / L · or "3 days"'),
                       onChanged: widget.onEstimateChanged,
                     ),
                   ),
@@ -203,22 +197,17 @@ class _UsmStoryPanelState extends State<UsmStoryPanel> {
                         runSpacing: 4,
                         children: [
                           for (final tag in widget.story.tags)
-                            _TagChip(
-                              tag: tag,
-                              onRemove: () => _removeTag(tag),
-                            ),
+                            _TagChip(tag: tag, onRemove: () => _removeTag(tag)),
                         ],
                       ),
                     ),
                   _outlinedField(
                     child: TextField(
                       controller: _tagInputCtrl,
-                      style: const TextStyle(
-                        color: KColors.text,
-                        fontSize: 12.5,
-                      ),
+                      style: TextStyle(color: KColors.text, fontSize: 12.5),
                       decoration: _fieldDecoration(
-                          'Add tag (Enter or comma to commit)'),
+                        'Add tag (Enter or comma to commit)',
+                      ),
                       onSubmitted: (_) => _commitTagInput(),
                       onChanged: (v) {
                         // Auto-commit on comma typing for the
@@ -234,13 +223,14 @@ class _UsmStoryPanelState extends State<UsmStoryPanel> {
                       controller: _acCtrl,
                       maxLines: 8,
                       minLines: 4,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: KColors.text,
                         fontSize: 12.5,
                         height: 1.45,
                       ),
                       decoration: _fieldDecoration(
-                          'One acceptance criterion per line'),
+                        'One acceptance criterion per line',
+                      ),
                       onChanged: (v) {
                         final lines = v
                             .split('\n')
@@ -258,7 +248,7 @@ class _UsmStoryPanelState extends State<UsmStoryPanel> {
                     label: const Text('Delete story'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: KColors.red,
-                      side: const BorderSide(color: KColors.red),
+                      side: BorderSide(color: KColors.red),
                     ),
                   ),
                 ],
@@ -275,7 +265,7 @@ class _UsmStoryPanelState extends State<UsmStoryPanel> {
       padding: const EdgeInsets.only(bottom: 6),
       child: Text(
         label.toUpperCase(),
-        style: const TextStyle(
+        style: TextStyle(
           color: KColors.textMuted,
           fontSize: 10.5,
           fontWeight: FontWeight.w700,
@@ -300,8 +290,7 @@ class _UsmStoryPanelState extends State<UsmStoryPanel> {
   InputDecoration _fieldDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
-      hintStyle:
-          const TextStyle(color: KColors.textMuted, fontSize: 12),
+      hintStyle: TextStyle(color: KColors.textMuted, fontSize: 12),
       isDense: true,
       contentPadding: EdgeInsets.zero,
       border: InputBorder.none,
@@ -324,15 +313,17 @@ class _TagChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: KColors.amberDim.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(3),
-        border:
-            Border.all(color: KColors.amber.withValues(alpha: 0.4), width: 0.5),
+        border: Border.all(
+          color: KColors.amber.withValues(alpha: 0.4),
+          width: 0.5,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             '#$tag',
-            style: const TextStyle(
+            style: TextStyle(
               color: KColors.amber,
               fontSize: 11,
               fontWeight: FontWeight.w700,
@@ -340,7 +331,7 @@ class _TagChip extends StatelessWidget {
           ),
           InkWell(
             onTap: onRemove,
-            child: const Padding(
+            child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 2),
               child: Icon(Icons.close, size: 12, color: KColors.amber),
             ),

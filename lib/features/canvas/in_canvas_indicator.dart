@@ -50,11 +50,10 @@ class InCanvasIndicator extends StatelessWidget {
                   width: 0.5,
                 ),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.bubble_chart,
-                      size: 11, color: KColors.amber),
+                  Icon(Icons.bubble_chart, size: 11, color: KColors.amber),
                   SizedBox(width: 4),
                   Text(
                     'Canvas',

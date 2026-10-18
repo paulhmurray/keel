@@ -71,7 +71,9 @@ class _ActionsViewState extends State<ActionsView> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('keel_actions_view_board_$projectId', _showBoard);
     await prefs.setBool(
-        'keel_actions_show_old_closed_$projectId', _showOldClosed);
+      'keel_actions_show_old_closed_$projectId',
+      _showOldClosed,
+    );
   }
 
   bool _isOldClosed(ProjectAction a) =>
@@ -102,8 +104,10 @@ class _ActionsViewState extends State<ActionsView> {
     return all.where((a) {
       if (retired.contains(topRootOf(a))) return false;
       if (!_isOldClosed(a)) return true;
-      return actionDescendantIds(a.id, part.childrenByParent)
-          .any((id) => byId[id] != null && !_isOldClosed(byId[id]!));
+      return actionDescendantIds(
+        a.id,
+        part.childrenByParent,
+      ).any((id) => byId[id] != null && !_isOldClosed(byId[id]!));
     }).toList();
   }
 
@@ -119,9 +123,13 @@ class _ActionsViewState extends State<ActionsView> {
     if (!mounted) return;
     final tagMap = <String, String>{};
     for (final act in acts) {
-      final wp = wps.cast<TimelineWorkPackage?>()
-          .firstWhere((w) => w?.id == act.workPackageId, orElse: () => null);
-      final label = wp != null ? '[${wp.shortCode ?? wp.name}] ${act.name}' : act.name;
+      final wp = wps.cast<TimelineWorkPackage?>().firstWhere(
+        (w) => w?.id == act.workPackageId,
+        orElse: () => null,
+      );
+      final label = wp != null
+          ? '[${wp.shortCode ?? wp.name}] ${act.name}'
+          : act.name;
       tagMap[act.id] = label;
     }
     setState(() => _planTagMap = tagMap);
@@ -150,21 +158,23 @@ class _ActionsViewState extends State<ActionsView> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.check_circle_outline,
-                size: 40, color: KColors.textMuted),
+            Icon(
+              Icons.check_circle_outline,
+              size: 40,
+              color: KColors.textMuted,
+            ),
             const SizedBox(height: 12),
             Text(
               _ownerFilter == null
                   ? 'No actions yet.'
                   : 'No actions for this filter.',
-              style: const TextStyle(color: KColors.textDim),
+              style: TextStyle(color: KColors.textDim),
             ),
             const SizedBox(height: 12),
             ElevatedButton.icon(
               onPressed: () => showDialog(
                 context: context,
-                builder: (_) =>
-                    ActionFormDialog(projectId: projectId, db: db),
+                builder: (_) => ActionFormDialog(projectId: projectId, db: db),
               ),
               icon: const Icon(Icons.add, size: 14),
               label: const Text('Add Action'),
@@ -194,30 +204,30 @@ class _ActionsViewState extends State<ActionsView> {
         return Padding(
           padding: EdgeInsets.only(left: entry.depth >= 2 ? 26.0 : 0),
           child: _ActionCard(
-          action: entry.action,
-          db: db,
-          projectId: projectId,
-          category: entry.action.categoryId != null
-              ? catMap[entry.action.categoryId!]
-              : null,
-          planTag: entry.action.planActivityId != null
-              ? _planTagMap[entry.action.planActivityId!]
-              : null,
-          isParent: entry.isParent,
-          isChild: entry.isChild,
-          rollup: entry.rollup,
-          isExpanded: entry.isParent
-              ? !_collapsedParents.contains(entry.action.id)
-              : null,
-          onToggleExpand: entry.isParent
-              ? () => setState(() {
+            action: entry.action,
+            db: db,
+            projectId: projectId,
+            category: entry.action.categoryId != null
+                ? catMap[entry.action.categoryId!]
+                : null,
+            planTag: entry.action.planActivityId != null
+                ? _planTagMap[entry.action.planActivityId!]
+                : null,
+            isParent: entry.isParent,
+            isChild: entry.isChild,
+            rollup: entry.rollup,
+            isExpanded: entry.isParent
+                ? !_collapsedParents.contains(entry.action.id)
+                : null,
+            onToggleExpand: entry.isParent
+                ? () => setState(() {
                     if (_collapsedParents.contains(entry.action.id)) {
                       _collapsedParents.remove(entry.action.id);
                     } else {
                       _collapsedParents.add(entry.action.id);
                     }
                   })
-              : null,
+                : null,
           ),
         );
       },
@@ -231,14 +241,14 @@ class _ActionsViewState extends State<ActionsView> {
   List<_ListEntry> _visibleListItems(
     ({
       List<ProjectAction> roots,
-      Map<String, List<ProjectAction>> childrenByParent
-    }) part,
+      Map<String, List<ProjectAction>> childrenByParent,
+    })
+    part,
   ) {
     final out = <_ListEntry>[];
     for (final root in part.roots) {
       final allChildren = part.childrenByParent[root.id] ?? const [];
-      final matchingChildren =
-          allChildren.where(_matchesOwnerFilter).toList();
+      final matchingChildren = allChildren.where(_matchesOwnerFilter).toList();
       final rootMatches = _matchesOwnerFilter(root);
       final isParent = allChildren.isNotEmpty;
       // Parent visible if it matches OR has any matching children.
@@ -251,25 +261,31 @@ class _ActionsViewState extends State<ActionsView> {
         for (final c in allChildren)
           c.id: part.childrenByParent[c.id] ?? const <ProjectAction>[],
       };
-      out.add(_ListEntry(
-        action: root,
-        isParent: isParent,
-        isChild: false,
-        rollup: isParent
-            ? rollupFor([
-                ...allChildren,
-                ...subTasksByTask.values.expand((s) => s),
-              ])
-            : null,
-      ));
+      out.add(
+        _ListEntry(
+          action: root,
+          isParent: isParent,
+          isChild: false,
+          rollup: isParent
+              ? rollupFor([
+                  ...allChildren,
+                  ...subTasksByTask.values.expand((s) => s),
+                ])
+              : null,
+        ),
+      );
       if (isParent && !_collapsedParents.contains(root.id)) {
         for (final c in matchingChildren) {
-          out.add(_ListEntry(
-              action: c, isParent: false, isChild: true, depth: 1));
-          for (final s in (subTasksByTask[c.id] ?? const <ProjectAction>[])
-              .where(_matchesOwnerFilter)) {
-            out.add(_ListEntry(
-                action: s, isParent: false, isChild: true, depth: 2));
+          out.add(
+            _ListEntry(action: c, isParent: false, isChild: true, depth: 1),
+          );
+          for (final s
+              in (subTasksByTask[c.id] ?? const <ProjectAction>[]).where(
+                _matchesOwnerFilter,
+              )) {
+            out.add(
+              _ListEntry(action: s, isParent: false, isChild: true, depth: 2),
+            );
           }
         }
       }
@@ -286,9 +302,12 @@ class _ActionsViewState extends State<ActionsView> {
   Widget build(BuildContext context) {
     final projectId = context.watch<ProjectProvider>().currentProjectId;
     if (projectId == null) {
-      return const Center(
-          child: Text('Select a project to view actions.',
-              style: TextStyle(color: KColors.textDim)));
+      return Center(
+        child: Text(
+          'Select a project to view actions.',
+          style: TextStyle(color: KColors.textDim),
+        ),
+      );
     }
 
     final db = context.read<AppDatabase>();
@@ -301,12 +320,14 @@ class _ActionsViewState extends State<ActionsView> {
           // Header
           Row(
             children: [
-              const Icon(Icons.check_circle, color: KColors.amber, size: 18),
+              Icon(Icons.check_circle, color: KColors.amber, size: 18),
               const SizedBox(width: 8),
               Flexible(
-                child: Text('ACTIONS',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                    overflow: TextOverflow.ellipsis),
+                child: Text(
+                  'ACTIONS',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               const Spacer(),
               ElevatedButton.icon(
@@ -336,7 +357,7 @@ class _ActionsViewState extends State<ActionsView> {
               stream: db.actionCategoriesDao.watchForProject(projectId),
               builder: (context, catSnap) {
                 final catMap = <String, ActionCategory>{
-                  for (final c in catSnap.data ?? []) c.id: c
+                  for (final c in catSnap.data ?? []) c.id: c,
                 };
                 return StreamBuilder<List<ProjectAction>>(
                   stream: db.actionsDao.watchActionsForProject(projectId),
@@ -344,11 +365,12 @@ class _ActionsViewState extends State<ActionsView> {
                     if (!snap.hasData) {
                       return const Center(child: CircularProgressIndicator());
                     }
-                    final all = _sourceFilter.apply(snap.data!,
-                        sourceProjectId: (a) => a.sourceProjectId,
-                        escalatedAt: (a) => a.escalatedAt);
-                    final visible =
-                        _showOldClosed ? all : _visibleActions(all);
+                    final all = _sourceFilter.apply(
+                      snap.data!,
+                      sourceProjectId: (a) => a.sourceProjectId,
+                      escalatedAt: (a) => a.escalatedAt,
+                    );
+                    final visible = _showOldClosed ? all : _visibleActions(all);
                     final hiddenOldClosed = all.length - visible.length;
 
                     return Column(
@@ -420,8 +442,8 @@ class _ClosedToggle extends StatelessWidget {
       message: showOld
           ? 'Click to hide closed groups and closed actions older than 2 weeks'
           : hiddenCount == 0
-              ? 'No old closed actions to show'
-              : 'Click to show $hiddenCount hidden closed action${hiddenCount == 1 ? '' : 's'} (closed groups and actions older than 2 weeks)',
+          ? 'No old closed actions to show'
+          : 'Click to show $hiddenCount hidden closed action${hiddenCount == 1 ? '' : 's'} (closed groups and actions older than 2 weeks)',
       waitDuration: const Duration(milliseconds: 350),
       child: InkWell(
         onTap: onTap,
@@ -452,22 +474,23 @@ class _ClosedToggle extends StatelessWidget {
                 style: TextStyle(
                   color: activeColor,
                   fontSize: 11,
-                  fontWeight:
-                      showOld ? FontWeight.w600 : FontWeight.normal,
+                  fontWeight: showOld ? FontWeight.w600 : FontWeight.normal,
                 ),
               ),
               if (!showOld && hiddenCount > 0) ...[
                 const SizedBox(width: 6),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 5, vertical: 1),
+                    horizontal: 5,
+                    vertical: 1,
+                  ),
                   decoration: BoxDecoration(
                     color: KColors.border2,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     '$hiddenCount',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: KColors.textMuted,
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
@@ -556,8 +579,11 @@ class _ToggleButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon,
-                size: 13, color: active ? KColors.amber : KColors.textDim),
+            Icon(
+              icon,
+              size: 13,
+              color: active ? KColors.amber : KColors.textDim,
+            ),
             const SizedBox(width: 4),
             Text(
               label,
@@ -633,7 +659,8 @@ class _OwnerAvatarFilter extends StatelessWidget {
               count: unassigned,
               isSelected: selected == _kUnassignedKey,
               onTap: () => onChanged(
-                  selected == _kUnassignedKey ? null : _kUnassignedKey),
+                selected == _kUnassignedKey ? null : _kUnassignedKey,
+              ),
             ),
           ],
         ],
@@ -734,7 +761,7 @@ class _OwnerAvatarBubble extends StatelessWidget {
           alignment: Alignment.center,
           child: Text(
             initialsFromName(name),
-            style: const TextStyle(
+            style: TextStyle(
               color: KColors.text,
               fontSize: 10,
               fontWeight: FontWeight.w700,
@@ -781,7 +808,7 @@ class _UnassignedBubble extends StatelessWidget {
             ),
           ),
           alignment: Alignment.center,
-          child: const Icon(
+          child: Icon(
             Icons.person_off_outlined,
             size: 14,
             color: KColors.textMuted,
@@ -816,10 +843,12 @@ class _ListEntry {
 Color _actionBarColor(ProjectAction action, ActionCategory? category) {
   if (category != null) return parseHexColor(category.color);
   if (action.status == 'closed') return KColors.phosphor;
-  final isOverdue = action.dueDate != null &&
+  final isOverdue =
+      action.dueDate != null &&
       action.status != 'closed' &&
-      action.dueDate!
-              .compareTo(DateTime.now().toIso8601String().substring(0, 10)) <
+      action.dueDate!.compareTo(
+            DateTime.now().toIso8601String().substring(0, 10),
+          ) <
           0;
   if (isOverdue) return KColors.red;
   return KColors.amber;
@@ -864,7 +893,9 @@ class _ActionCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: KColors.surface,
         border: Border.all(
-          color: isParent ? KColors.phosphor.withValues(alpha: 0.5) : KColors.border,
+          color: isParent
+              ? KColors.phosphor.withValues(alpha: 0.5)
+              : KColors.border,
           width: isParent ? 1.3 : 1.0,
         ),
         borderRadius: BorderRadius.circular(4),
@@ -873,10 +904,11 @@ class _ActionCard extends StatelessWidget {
         onTap: () => showDialog(
           context: context,
           builder: (_) => ActionFormDialog(
-              projectId: projectId,
-              db: db,
-              action: action,
-              startInViewMode: true),
+            projectId: projectId,
+            db: db,
+            action: action,
+            startInViewMode: true,
+          ),
         ),
         borderRadius: BorderRadius.circular(4),
         child: Padding(
@@ -890,7 +922,9 @@ class _ActionCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(2),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 2, vertical: 2),
+                      horizontal: 2,
+                      vertical: 2,
+                    ),
                     child: Icon(
                       (isExpanded ?? true)
                           ? Icons.expand_more
@@ -916,26 +950,35 @@ class _ActionCard extends StatelessWidget {
                     Row(
                       children: [
                         if (isParent) ...[
-                          const Icon(Icons.account_tree_outlined,
-                              size: 12, color: KColors.phosphor),
+                          Icon(
+                            Icons.account_tree_outlined,
+                            size: 12,
+                            color: KColors.phosphor,
+                          ),
                           const SizedBox(width: 5),
                         ],
                         if (action.ref != null) ...[
-                          Text(action.ref!,
-                              style: const TextStyle(
-                                  color: KColors.amber,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold)),
+                          Text(
+                            action.ref!,
+                            style: TextStyle(
+                              color: KColors.amber,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                           const SizedBox(width: 6),
                         ],
                         // Category pill
                         if (category != null) ...[
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 1),
+                              horizontal: 6,
+                              vertical: 1,
+                            ),
                             decoration: BoxDecoration(
-                              color: parseHexColor(category!.color)
-                                  .withAlpha(35),
+                              color: parseHexColor(
+                                category!.color,
+                              ).withAlpha(35),
                               borderRadius: BorderRadius.circular(3),
                             ),
                             child: Text(
@@ -951,19 +994,25 @@ class _ActionCard extends StatelessWidget {
                         ],
                         // Recurrence icon
                         if (action.recurrenceGroupId != null) ...[
-                          const Tooltip(
+                          Tooltip(
                             message: 'Recurring',
-                            child: Icon(Icons.repeat,
-                                size: 12, color: KColors.textDim),
+                            child: Icon(
+                              Icons.repeat,
+                              size: 12,
+                              color: KColors.textDim,
+                            ),
                           ),
                           const SizedBox(width: 6),
                         ],
                         Expanded(
-                          child: Text(action.description,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 12,
-                                  color: KColors.text)),
+                          child: Text(
+                            action.description,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w500,
+                              fontSize: 12,
+                              color: KColors.text,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -978,14 +1027,21 @@ class _ActionCard extends StatelessWidget {
                             children: [
                               if (action.owner != null &&
                                   action.owner!.isNotEmpty) ...[
-                                const Icon(Icons.person_outline,
-                                    size: 11, color: KColors.textDim),
+                                Icon(
+                                  Icons.person_outline,
+                                  size: 11,
+                                  color: KColors.textDim,
+                                ),
                                 const SizedBox(width: 3),
                                 Flexible(
-                                  child: Text(action.owner!,
-                                      style: const TextStyle(
-                                          color: KColors.textDim, fontSize: 11),
-                                      overflow: TextOverflow.ellipsis),
+                                  child: Text(
+                                    action.owner!,
+                                    style: TextStyle(
+                                      color: KColors.textDim,
+                                      fontSize: 11,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                               ],
@@ -1038,22 +1094,28 @@ class _ActionCard extends StatelessWidget {
                 CascadedSourceBadge(sourceProjectId: action.sourceProjectId)
               else
                 PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert,
-                      size: 16, color: KColors.textMuted),
+                  icon: Icon(
+                    Icons.more_vert,
+                    size: 16,
+                    color: KColors.textMuted,
+                  ),
                   onSelected: (val) async {
                     if (val == 'edit') {
                       await showDialog(
                         context: context,
                         builder: (_) => ActionFormDialog(
-                            projectId: projectId, db: db, action: action),
+                          projectId: projectId,
+                          db: db,
+                          action: action,
+                        ),
                       );
                       // Re-push after edit; the service decides per link.
                       if (context.mounted) {
-                        final fresh =
-                            await db.actionsDao.getActionById(action.id);
+                        final fresh = await db.actionsDao.getActionById(
+                          action.id,
+                        );
                         if (fresh != null && context.mounted) {
-                          await _cascadeFor(context, db)
-                              .pushAction(fresh);
+                          await _cascadeFor(context, db).pushAction(fresh);
                         }
                       }
                     } else if (val == 'close') {
@@ -1067,29 +1129,31 @@ class _ActionCard extends StatelessWidget {
                         ),
                       );
                       if (context.mounted) {
-                        final fresh =
-                            await db.actionsDao.getActionById(action.id);
+                        final fresh = await db.actionsDao.getActionById(
+                          action.id,
+                        );
                         if (fresh != null && context.mounted) {
-                          await _cascadeFor(context, db)
-                              .pushAction(fresh);
+                          await _cascadeFor(context, db).pushAction(fresh);
                         }
                       }
                     } else if (val == 'escalate') {
-                      await db.actionsDao
-                          .setActionEscalated(action.id, true);
-                      final fresh =
-                          await db.actionsDao.getActionById(action.id);
+                      await db.actionsDao.setActionEscalated(action.id, true);
+                      final fresh = await db.actionsDao.getActionById(
+                        action.id,
+                      );
                       if (fresh != null && context.mounted) {
                         await _cascadeFor(context, db).pushAction(fresh);
                       }
                     } else if (val == 'unescalate') {
                       await db.actionsDao.setActionEscalated(action.id, false);
-                          // Re-push with the flag off: full-detail links keep
-                          // the row unflagged, escalated-only links get a tombstone.
-                          final fresh = await db.actionsDao.getActionById(action.id);
-                          if (fresh != null && context.mounted) {
-                            await _cascadeFor(context, db).pushAction(fresh);
-                          }
+                      // Re-push with the flag off: full-detail links keep
+                      // the row unflagged, escalated-only links get a tombstone.
+                      final fresh = await db.actionsDao.getActionById(
+                        action.id,
+                      );
+                      if (fresh != null && context.mounted) {
+                        await _cascadeFor(context, db).pushAction(fresh);
+                      }
                     } else if (val == 'delete') {
                       if (context.mounted) {
                         await _cascadeFor(context, db).tombstoneRaidItem(
@@ -1101,37 +1165,48 @@ class _ActionCard extends StatelessWidget {
                       if (isParent) {
                         if (!context.mounted) return;
                         final ok = await _confirmDeleteParent(
-                            context, action, rollup?.total ?? 0);
+                          context,
+                          action,
+                          rollup?.total ?? 0,
+                        );
                         if (!ok) return;
-                        await db.actionsDao
-                            .deleteParentAndOrphanChildren(action.id);
+                        await db.actionsDao.deleteParentAndOrphanChildren(
+                          action.id,
+                        );
                       } else {
                         await db.actionsDao.deleteAction(action.id);
                       }
                     } else if (val == 'delete_series') {
-                      db.actionsDao
-                          .deleteByRecurrenceGroup(
-                              action.recurrenceGroupId!);
+                      db.actionsDao.deleteByRecurrenceGroup(
+                        action.recurrenceGroupId!,
+                      );
                     }
                   },
                   itemBuilder: (_) => [
                     const PopupMenuItem(value: 'edit', child: Text('Edit')),
                     const PopupMenuItem(
-                        value: 'close', child: Text('Mark Closed')),
+                      value: 'close',
+                      child: Text('Mark Closed'),
+                    ),
                     if (action.escalatedAt == null)
                       const PopupMenuItem(
-                          value: 'escalate',
-                          child: Text('Share with programme'))
+                        value: 'escalate',
+                        child: Text('Share with programme'),
+                      )
                     else
                       const PopupMenuItem(
-                          value: 'unescalate',
-                          child: Text('Stop sharing')),
+                        value: 'unescalate',
+                        child: Text('Stop sharing'),
+                      ),
                     const PopupMenuItem(
-                        value: 'delete', child: Text('Delete this')),
+                      value: 'delete',
+                      child: Text('Delete this'),
+                    ),
                     if (action.recurrenceGroupId != null)
                       const PopupMenuItem(
-                          value: 'delete_series',
-                          child: Text('Delete all in series')),
+                        value: 'delete_series',
+                        child: Text('Delete all in series'),
+                      ),
                   ],
                 ),
             ],
@@ -1184,11 +1259,14 @@ class _GroupRollupChip extends StatelessWidget {
       if (rollup.done > 0) ('${rollup.done} done', KColors.phosphor),
     ];
     if (parts.isEmpty) {
-      return const Text('no children',
-          style: TextStyle(color: KColors.textMuted, fontSize: 10));
+      return Text(
+        'no children',
+        style: TextStyle(color: KColors.textMuted, fontSize: 10),
+      );
     }
     return Tooltip(
-      message: '${rollup.total} child action${rollup.total == 1 ? '' : 's'}'
+      message:
+          '${rollup.total} child action${rollup.total == 1 ? '' : 's'}'
           ' · ${rollup.done}/${rollup.total} done',
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -1202,13 +1280,18 @@ class _GroupRollupChip extends StatelessWidget {
           children: [
             for (var i = 0; i < parts.length; i++) ...[
               if (i > 0)
-                const Text(' · ',
-                    style: TextStyle(color: KColors.textMuted, fontSize: 10)),
-              Text(parts[i].$1,
-                  style: TextStyle(
-                      color: parts[i].$2,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600)),
+                Text(
+                  ' · ',
+                  style: TextStyle(color: KColors.textMuted, fontSize: 10),
+                ),
+              Text(
+                parts[i].$1,
+                style: TextStyle(
+                  color: parts[i].$2,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ],
           ],
         ),
@@ -1224,7 +1307,10 @@ CascadeService _cascadeFor(BuildContext context, AppDatabase db) =>
     buildCascadeService(context);
 
 Future<bool> _confirmDeleteParent(
-    BuildContext context, ProjectAction parent, int childCount) async {
+  BuildContext context,
+  ProjectAction parent,
+  int childCount,
+) async {
   final result = await showDialog<bool>(
     context: context,
     builder: (_) => AlertDialog(
@@ -1233,9 +1319,9 @@ Future<bool> _confirmDeleteParent(
         childCount == 0
             ? 'Delete "${parent.description}"? This cannot be undone.'
             : 'Delete "${parent.description}"? Its $childCount child '
-                'action${childCount == 1 ? '' : 's'} will be kept and '
-                'moved to top-level.',
-        style: const TextStyle(color: KColors.textDim, fontSize: 12),
+                  'action${childCount == 1 ? '' : 's'} will be kept and '
+                  'moved to top-level.',
+        style: TextStyle(color: KColors.textDim, fontSize: 12),
       ),
       actions: [
         TextButton(
@@ -1273,18 +1359,18 @@ class _PlanTag extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.account_tree_outlined,
-                size: 9, color: KColors.phosphor),
+            Icon(Icons.account_tree_outlined, size: 9, color: KColors.phosphor),
             const SizedBox(width: 3),
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 100),
               child: Text(
                 label,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                    color: KColors.phosphor,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: KColors.phosphor,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],

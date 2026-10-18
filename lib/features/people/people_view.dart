@@ -63,18 +63,25 @@ class _PeopleViewState extends State<PeopleView>
           padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
           child: Row(
             children: [
-              const Icon(Icons.group, color: KColors.amber, size: 22),
+              Icon(Icons.group, color: KColors.amber, size: 22),
               const SizedBox(width: 10),
               Flexible(
-                child: Text('People',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                    overflow: TextOverflow.ellipsis),
+                child: Text(
+                  'People',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               const SizedBox(width: 8),
               ElevatedButton.icon(
                 onPressed: () => _showPersonForm(
-                    context, projectId, db, null, null,
-                    defaultIsStakeholder: false),
+                  context,
+                  projectId,
+                  db,
+                  null,
+                  null,
+                  defaultIsStakeholder: false,
+                ),
                 icon: const Icon(Icons.person_add_outlined, size: 16),
                 label: const Text('Add Person'),
               ),
@@ -84,7 +91,7 @@ class _PeopleViewState extends State<PeopleView>
         const SizedBox(height: 12),
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             border: Border(bottom: BorderSide(color: KColors.border)),
           ),
           child: TabBar(
@@ -113,11 +120,22 @@ class _PeopleViewState extends State<PeopleView>
                 db: db,
                 source: _PersonSource.stakeholderFlag,
                 emptyMessage: 'No stakeholders flagged yet.',
-                onEdit: (p) => _showPersonForm(context, projectId, db, p,
-                    p.personType,
-                    defaultIsStakeholder: true),
-                onAdd: () => _showPersonForm(context, projectId, db, null, null,
-                    defaultIsStakeholder: true),
+                onEdit: (p) => _showPersonForm(
+                  context,
+                  projectId,
+                  db,
+                  p,
+                  p.personType,
+                  defaultIsStakeholder: true,
+                ),
+                onAdd: () => _showPersonForm(
+                  context,
+                  projectId,
+                  db,
+                  null,
+                  null,
+                  defaultIsStakeholder: true,
+                ),
               ),
               _PersonsList(
                 projectId: projectId,
@@ -125,11 +143,21 @@ class _PeopleViewState extends State<PeopleView>
                 source: _PersonSource.type('colleague'),
                 emptyMessage: 'No team members added yet.',
                 onEdit: (p) => _showPersonForm(
-                    context, projectId, db, p, 'colleague',
-                    defaultIsStakeholder: p.isStakeholder),
+                  context,
+                  projectId,
+                  db,
+                  p,
+                  'colleague',
+                  defaultIsStakeholder: p.isStakeholder,
+                ),
                 onAdd: () => _showPersonForm(
-                    context, projectId, db, null, 'colleague',
-                    defaultIsStakeholder: false),
+                  context,
+                  projectId,
+                  db,
+                  null,
+                  'colleague',
+                  defaultIsStakeholder: false,
+                ),
               ),
               _PersonsList(
                 projectId: projectId,
@@ -137,11 +165,21 @@ class _PeopleViewState extends State<PeopleView>
                 source: _PersonSource.type('exec'),
                 emptyMessage: 'No executives added yet.',
                 onEdit: (p) => _showPersonForm(
-                    context, projectId, db, p, 'exec',
-                    defaultIsStakeholder: p.isStakeholder),
+                  context,
+                  projectId,
+                  db,
+                  p,
+                  'exec',
+                  defaultIsStakeholder: p.isStakeholder,
+                ),
                 onAdd: () => _showPersonForm(
-                    context, projectId, db, null, 'exec',
-                    defaultIsStakeholder: false),
+                  context,
+                  projectId,
+                  db,
+                  null,
+                  'exec',
+                  defaultIsStakeholder: false,
+                ),
               ),
               _PersonsList(
                 projectId: projectId,
@@ -149,11 +187,21 @@ class _PeopleViewState extends State<PeopleView>
                 source: _PersonSource.type('vendor'),
                 emptyMessage: 'No vendors added yet.',
                 onEdit: (p) => _showPersonForm(
-                    context, projectId, db, p, 'vendor',
-                    defaultIsStakeholder: p.isStakeholder),
+                  context,
+                  projectId,
+                  db,
+                  p,
+                  'vendor',
+                  defaultIsStakeholder: p.isStakeholder,
+                ),
                 onAdd: () => _showPersonForm(
-                    context, projectId, db, null, 'vendor',
-                    defaultIsStakeholder: false),
+                  context,
+                  projectId,
+                  db,
+                  null,
+                  'vendor',
+                  defaultIsStakeholder: false,
+                ),
               ),
             ],
           ),
@@ -222,10 +270,10 @@ class _PeopleOverviewTab extends StatelessWidget {
                 final teamRoles = trSnap.data ?? [];
                 final persons = pSnap.data ?? [];
 
-                final stakeholderCoverage =
-                    CoverageCalculator.forStakeholders(stakeholderRoles);
-                final teamCoverage =
-                    CoverageCalculator.forTeam(teamRoles);
+                final stakeholderCoverage = CoverageCalculator.forStakeholders(
+                  stakeholderRoles,
+                );
+                final teamCoverage = CoverageCalculator.forTeam(teamRoles);
 
                 return SingleChildScrollView(
                   padding: const EdgeInsets.all(24),
@@ -273,7 +321,7 @@ class _OverviewSectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         color: KColors.textDim,
         fontSize: 11,
         fontWeight: FontWeight.w600,
@@ -321,10 +369,7 @@ class _PersonsList extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  emptyMessage,
-                  style: const TextStyle(color: KColors.textDim),
-                ),
+                Text(emptyMessage, style: TextStyle(color: KColors.textDim)),
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
                   onPressed: onAdd,
@@ -382,11 +427,8 @@ class _PersonCard extends StatelessWidget {
       child: InkWell(
         onTap: () => showDialog(
           context: context,
-          builder: (_) => PersonDetailDialog(
-            person: person,
-            db: db,
-            projectId: projectId,
-          ),
+          builder: (_) =>
+              PersonDetailDialog(person: person, db: db, projectId: projectId),
         ),
         borderRadius: BorderRadius.circular(8),
         child: Padding(
@@ -398,7 +440,7 @@ class _PersonCard extends StatelessWidget {
                 radius: 22,
                 child: Text(
                   _initials(person.name),
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: KColors.amber,
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
@@ -416,51 +458,55 @@ class _PersonCard extends StatelessWidget {
                           child: Text(
                             person.name,
                             style: const TextStyle(
-                                fontWeight: FontWeight.w600, fontSize: 14),
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        Builder(builder: (ctx) {
-                          final myName = ctx
-                              .read<SettingsProvider>()
-                              .settings
-                              .myName;
-                          if (myName.isEmpty || person.name != myName) {
-                            return const SizedBox.shrink();
-                          }
-                          return Container(
-                            margin: const EdgeInsets.only(left: 8),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: KColors.phosDim,
-                              borderRadius: BorderRadius.circular(3),
-                            ),
-                            child: const Text(
-                              'YOU',
-                              style: TextStyle(
-                                color: KColors.phosphor,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.5,
+                        Builder(
+                          builder: (ctx) {
+                            final myName = ctx
+                                .read<SettingsProvider>()
+                                .settings
+                                .myName;
+                            if (myName.isEmpty || person.name != myName) {
+                              return const SizedBox.shrink();
+                            }
+                            return Container(
+                              margin: const EdgeInsets.only(left: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
                               ),
-                            ),
-                          );
-                        }),
+                              decoration: BoxDecoration(
+                                color: KColors.phosDim,
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                              child: Text(
+                                'YOU',
+                                style: TextStyle(
+                                  color: KColors.phosphor,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                       ],
                     ),
                     if (person.role != null && person.role!.isNotEmpty)
                       Text(
                         person.role!,
-                        style: const TextStyle(
-                            color: KColors.textDim, fontSize: 12),
+                        style: TextStyle(color: KColors.textDim, fontSize: 12),
                       ),
                     if (person.organisation != null &&
                         person.organisation!.isNotEmpty)
                       Text(
                         person.organisation!,
-                        style: const TextStyle(
-                            color: KColors.textDim, fontSize: 12),
+                        style: TextStyle(color: KColors.textDim, fontSize: 12),
                       ),
                   ],
                 ),
@@ -495,8 +541,7 @@ class _PersonCard extends StatelessWidget {
                 Flexible(
                   child: Text(
                     person.email!,
-                    style: const TextStyle(
-                        color: KColors.textDim, fontSize: 12),
+                    style: TextStyle(color: KColors.textDim, fontSize: 12),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -511,18 +556,19 @@ class _PersonCard extends StatelessWidget {
                       'Cascaded from ${person.sourceProjectName ?? "a linked project"} — read-only',
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 6, vertical: 2),
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: KColors.surface2,
-                      border: Border.all(
-                          color: KColors.border2, width: 0.5),
+                      border: Border.all(color: KColors.border2, width: 0.5),
                       borderRadius: BorderRadius.circular(3),
                     ),
                     child: Text(
                       person.sourceProjectName != null
                           ? 'PROJ · ${person.sourceProjectName}'
                           : 'PROJ',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: KColors.textMuted,
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
@@ -537,8 +583,11 @@ class _PersonCard extends StatelessWidget {
                   onPressed: onEdit,
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete_outline,
-                      size: 18, color: KColors.red),
+                  icon: Icon(
+                    Icons.delete_outline,
+                    size: 18,
+                    color: KColors.red,
+                  ),
                   onPressed: () async {
                     // Tombstone the cascade copies first so the
                     // programme sees the removal reliably.
@@ -601,7 +650,10 @@ class _Badge extends StatelessWidget {
       child: Text(
         label,
         style: TextStyle(
-            color: color, fontSize: 11, fontWeight: FontWeight.w600),
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -693,8 +745,7 @@ class _PersonFormDialogState extends State<_PersonFormDialog> {
   }
 
   Future<void> _loadProfile(String personId) async {
-    final sp =
-        await widget.db.peopleDao.getStakeholderByPersonId(personId);
+    final sp = await widget.db.peopleDao.getStakeholderByPersonId(personId);
     final cp = await widget.db.peopleDao.getColleagueByPersonId(personId);
     if (!mounted) return;
     setState(() {
@@ -739,17 +790,21 @@ class _PersonFormDialogState extends State<_PersonFormDialog> {
         id: Value(id),
         projectId: Value(widget.projectId),
         name: Value(_nameCtrl.text.trim()),
-        email: Value(_emailCtrl.text.trim().isEmpty
-            ? null
-            : _emailCtrl.text.trim()),
+        email: Value(
+          _emailCtrl.text.trim().isEmpty ? null : _emailCtrl.text.trim(),
+        ),
         role: Value(
-            _roleCtrl.text.trim().isEmpty ? null : _roleCtrl.text.trim()),
+          _roleCtrl.text.trim().isEmpty ? null : _roleCtrl.text.trim(),
+        ),
         organisation: Value(
-            _orgCtrl.text.trim().isEmpty ? null : _orgCtrl.text.trim()),
+          _orgCtrl.text.trim().isEmpty ? null : _orgCtrl.text.trim(),
+        ),
         phone: Value(
-            _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim()),
+          _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
+        ),
         teamsHandle: Value(
-            _teamsCtrl.text.trim().isEmpty ? null : _teamsCtrl.text.trim()),
+          _teamsCtrl.text.trim().isEmpty ? null : _teamsCtrl.text.trim(),
+        ),
         personType: Value(_personType),
         isStakeholder: Value(_isStakeholder),
         updatedAt: Value(DateTime.now()),
@@ -757,8 +812,7 @@ class _PersonFormDialogState extends State<_PersonFormDialog> {
     );
 
     if (_isStakeholder) {
-      final existing =
-          await widget.db.peopleDao.getStakeholderByPersonId(id);
+      final existing = await widget.db.peopleDao.getStakeholderByPersonId(id);
       final spId = existing?.id ?? const Uuid().v4();
       await widget.db.peopleDao.upsertStakeholder(
         StakeholderProfilesCompanion(
@@ -768,19 +822,22 @@ class _PersonFormDialogState extends State<_PersonFormDialog> {
           influence: Value(_influence),
           interest: Value(_interest),
           stance: Value(_stance),
-          engagementStrategy: Value(_engagementCtrl.text.trim().isEmpty
-              ? null
-              : _engagementCtrl.text.trim()),
-          notes: Value(_stakeholderNotesCtrl.text.trim().isEmpty
-              ? null
-              : _stakeholderNotesCtrl.text.trim()),
+          engagementStrategy: Value(
+            _engagementCtrl.text.trim().isEmpty
+                ? null
+                : _engagementCtrl.text.trim(),
+          ),
+          notes: Value(
+            _stakeholderNotesCtrl.text.trim().isEmpty
+                ? null
+                : _stakeholderNotesCtrl.text.trim(),
+          ),
           updatedAt: Value(DateTime.now()),
         ),
       );
     }
     if (_personType == 'colleague') {
-      final existing =
-          await widget.db.peopleDao.getColleagueByPersonId(id);
+      final existing = await widget.db.peopleDao.getColleagueByPersonId(id);
       final cpId = existing?.id ?? const Uuid().v4();
       await widget.db.peopleDao.upsertColleague(
         ColleagueProfilesCompanion(
@@ -788,14 +845,19 @@ class _PersonFormDialogState extends State<_PersonFormDialog> {
           projectId: Value(widget.projectId),
           personId: Value(id),
           team: Value(
-              _teamCtrl.text.trim().isEmpty ? null : _teamCtrl.text.trim()),
+            _teamCtrl.text.trim().isEmpty ? null : _teamCtrl.text.trim(),
+          ),
           directReport: Value(_directReport),
-          workingStyle: Value(_workingStyleCtrl.text.trim().isEmpty
-              ? null
-              : _workingStyleCtrl.text.trim()),
-          notes: Value(_colleagueNotesCtrl.text.trim().isEmpty
-              ? null
-              : _colleagueNotesCtrl.text.trim()),
+          workingStyle: Value(
+            _workingStyleCtrl.text.trim().isEmpty
+                ? null
+                : _workingStyleCtrl.text.trim(),
+          ),
+          notes: Value(
+            _colleagueNotesCtrl.text.trim().isEmpty
+                ? null
+                : _colleagueNotesCtrl.text.trim(),
+          ),
           updatedAt: Value(DateTime.now()),
         ),
       );
@@ -804,17 +866,13 @@ class _PersonFormDialogState extends State<_PersonFormDialog> {
     // Cascade to active programme links — auto-publish on save.
     if (mounted) {
       final fresh = await widget.db.peopleDao.getPersonById(id);
-      final projectName = context
-              .read<ProjectProvider>()
-              .currentProject
-              ?.name ??
-          'project';
+      final projectName =
+          context.read<ProjectProvider>().currentProject?.name ?? 'project';
       if (fresh != null && mounted) {
         // ignore: use_build_context_synchronously
-        await _cascadeFor(context).pushPerson(
-          fresh,
-          sourceProjectName: projectName,
-        );
+        await _cascadeFor(
+          context,
+        ).pushPerson(fresh, sourceProjectName: projectName);
       }
     }
 
@@ -850,13 +908,12 @@ class _PersonFormDialogState extends State<_PersonFormDialog> {
                 // Stakeholder is orthogonal to category — anyone can be one.
                 CheckboxListTile(
                   value: _isStakeholder,
-                  onChanged: (v) =>
-                      setState(() => _isStakeholder = v ?? false),
+                  onChanged: (v) => setState(() => _isStakeholder = v ?? false),
                   title: const Text(
                     'Track as project stakeholder',
                     style: TextStyle(fontSize: 13),
                   ),
-                  subtitle: const Text(
+                  subtitle: Text(
                     'Shows on the Stakeholders tab and unlocks influence / stance fields.',
                     style: TextStyle(fontSize: 11, color: KColors.textDim),
                   ),
@@ -878,8 +935,7 @@ class _PersonFormDialogState extends State<_PersonFormDialog> {
                     Expanded(
                       child: TextFormField(
                         controller: _roleCtrl,
-                        decoration:
-                            const InputDecoration(labelText: 'Role'),
+                        decoration: const InputDecoration(labelText: 'Role'),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -887,7 +943,8 @@ class _PersonFormDialogState extends State<_PersonFormDialog> {
                       child: TextFormField(
                         controller: _orgCtrl,
                         decoration: const InputDecoration(
-                            labelText: 'Organisation'),
+                          labelText: 'Organisation',
+                        ),
                       ),
                     ),
                   ],
@@ -898,8 +955,7 @@ class _PersonFormDialogState extends State<_PersonFormDialog> {
                     Expanded(
                       child: TextFormField(
                         controller: _emailCtrl,
-                        decoration:
-                            const InputDecoration(labelText: 'Email'),
+                        decoration: const InputDecoration(labelText: 'Email'),
                         keyboardType: TextInputType.emailAddress,
                       ),
                     ),
@@ -907,8 +963,7 @@ class _PersonFormDialogState extends State<_PersonFormDialog> {
                     Expanded(
                       child: TextFormField(
                         controller: _phoneCtrl,
-                        decoration:
-                            const InputDecoration(labelText: 'Phone'),
+                        decoration: const InputDecoration(labelText: 'Phone'),
                       ),
                     ),
                   ],
@@ -917,18 +972,22 @@ class _PersonFormDialogState extends State<_PersonFormDialog> {
                 TextFormField(
                   controller: _teamsCtrl,
                   decoration: const InputDecoration(
-                      labelText: 'Teams handle / Slack'),
+                    labelText: 'Teams handle / Slack',
+                  ),
                 ),
                 // Stakeholder-specific fields
                 if (_isStakeholder) ...[
                   const SizedBox(height: 16),
-                  const Divider(color: KColors.border),
+                  Divider(color: KColors.border),
                   const SizedBox(height: 8),
-                  const Text('Stakeholder profile',
-                      style: TextStyle(
-                          color: KColors.amber,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold)),
+                  Text(
+                    'Stakeholder profile',
+                    style: TextStyle(
+                      color: KColors.amber,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   Row(
                     children: [
@@ -937,8 +996,7 @@ class _PersonFormDialogState extends State<_PersonFormDialog> {
                           label: 'Influence',
                           value: _influence,
                           items: _influences,
-                          onChanged: (v) =>
-                              setState(() => _influence = v!),
+                          onChanged: (v) => setState(() => _influence = v!),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -947,8 +1005,7 @@ class _PersonFormDialogState extends State<_PersonFormDialog> {
                           label: 'Interest',
                           value: _interest,
                           items: _interests,
-                          onChanged: (v) =>
-                              setState(() => _interest = v!),
+                          onChanged: (v) => setState(() => _interest = v!),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -967,7 +1024,8 @@ class _PersonFormDialogState extends State<_PersonFormDialog> {
                     controller: _engagementCtrl,
                     maxLines: 2,
                     decoration: const InputDecoration(
-                        labelText: 'Engagement strategy'),
+                      labelText: 'Engagement strategy',
+                    ),
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
@@ -979,31 +1037,34 @@ class _PersonFormDialogState extends State<_PersonFormDialog> {
                 // Colleague-specific fields
                 if (_personType == 'colleague') ...[
                   const SizedBox(height: 16),
-                  const Divider(color: KColors.border),
+                  Divider(color: KColors.border),
                   const SizedBox(height: 8),
-                  const Text('Colleague profile',
-                      style: TextStyle(
-                          color: KColors.amber,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold)),
+                  Text(
+                    'Colleague profile',
+                    style: TextStyle(
+                      color: KColors.amber,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   Row(
                     children: [
                       Expanded(
                         child: TextFormField(
                           controller: _teamCtrl,
-                          decoration:
-                              const InputDecoration(labelText: 'Team'),
+                          decoration: const InputDecoration(labelText: 'Team'),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: SwitchListTile(
-                          title: const Text('Direct report',
-                              style: TextStyle(fontSize: 13)),
+                          title: const Text(
+                            'Direct report',
+                            style: TextStyle(fontSize: 13),
+                          ),
                           value: _directReport,
-                          onChanged: (v) =>
-                              setState(() => _directReport = v),
+                          onChanged: (v) => setState(() => _directReport = v),
                           contentPadding: EdgeInsets.zero,
                         ),
                       ),
@@ -1014,14 +1075,16 @@ class _PersonFormDialogState extends State<_PersonFormDialog> {
                     controller: _workingStyleCtrl,
                     maxLines: 2,
                     decoration: const InputDecoration(
-                        labelText: 'Working style'),
+                      labelText: 'Working style',
+                    ),
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _colleagueNotesCtrl,
                     maxLines: 2,
                     decoration: const InputDecoration(
-                        labelText: 'Notes (private)'),
+                      labelText: 'Notes (private)',
+                    ),
                   ),
                 ],
               ],
@@ -1083,16 +1146,19 @@ class _ProgrammePeopleView extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
-          child: Row(children: [
-            const Icon(Icons.groups_2_outlined,
-                color: KColors.amber, size: 22),
-            const SizedBox(width: 10),
-            Flexible(
-              child: Text('People',
+          child: Row(
+            children: [
+              Icon(Icons.groups_2_outlined, color: KColors.amber, size: 22),
+              const SizedBox(width: 10),
+              Flexible(
+                child: Text(
+                  'People',
                   style: Theme.of(context).textTheme.headlineSmall,
-                  overflow: TextOverflow.ellipsis),
-            ),
-          ]),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
         ),
         Expanded(
           child: StreamBuilder<List<StakeholderRole>>(
@@ -1102,11 +1168,9 @@ class _ProgrammePeopleView extends StatelessWidget {
                 stream: db.teamRoleDao.watchForProject(programmeId),
                 builder: (context, trSnap) {
                   return StreamBuilder<List<Person>>(
-                    stream:
-                        db.peopleDao.watchPersonsForProject(programmeId),
+                    stream: db.peopleDao.watchPersonsForProject(programmeId),
                     builder: (context, pSnap) {
-                      final sRoles =
-                          srSnap.data ?? const <StakeholderRole>[];
+                      final sRoles = srSnap.data ?? const <StakeholderRole>[];
                       final tRoles = trSnap.data ?? const <TeamRole>[];
                       final persons = pSnap.data ?? const <Person>[];
 
@@ -1126,16 +1190,19 @@ class _ProgrammePeopleView extends StatelessWidget {
                         final fromPerson = persons
                             .cast<Person?>()
                             .firstWhere(
-                                (p) => p!.sourceProjectId == id,
-                                orElse: () => null)
+                              (p) => p!.sourceProjectId == id,
+                              orElse: () => null,
+                            )
                             ?.sourceProjectName;
                         return fromPerson ?? 'Linked project';
                       }
 
                       final orderedIds = sourceIds.toList()
-                        ..sort((a, b) => nameFor(a)
-                            .toLowerCase()
-                            .compareTo(nameFor(b).toLowerCase()));
+                        ..sort(
+                          (a, b) => nameFor(
+                            a,
+                          ).toLowerCase().compareTo(nameFor(b).toLowerCase()),
+                        );
 
                       final nativeS = sRoles
                           .where((r) => r.sourceProjectId == null)
@@ -1147,14 +1214,15 @@ class _ProgrammePeopleView extends StatelessWidget {
                           nativeS.isNotEmpty || nativeT.isNotEmpty;
 
                       if (orderedIds.isEmpty && !hasNative) {
-                        return const Center(
+                        return Center(
                           child: Padding(
                             padding: EdgeInsets.all(32),
                             child: Text(
-                                'Link a project and its People overview '
-                                'appears here.',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(color: KColors.textDim)),
+                              'Link a project and its People overview '
+                              'appears here.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: KColors.textDim),
+                            ),
                           ),
                         );
                       }
@@ -1167,8 +1235,11 @@ class _ProgrammePeopleView extends StatelessWidget {
                       // that actually have role slots configured.
                       ({String label, double pct})? worst;
                       var ranked = 0;
-                      void consider(String label,
-                          List<StakeholderRole> s, List<TeamRole> t) {
+                      void consider(
+                        String label,
+                        List<StakeholderRole> s,
+                        List<TeamRole> t,
+                      ) {
                         final sc = CoverageCalculator.forStakeholders(s);
                         final tc = CoverageCalculator.forTeam(t);
                         final applicable = sc.applicable + tc.applicable;
@@ -1186,26 +1257,23 @@ class _ProgrammePeopleView extends StatelessWidget {
                       for (final id in orderedIds) {
                         consider(
                           nameFor(id),
-                          sRoles
-                              .where((r) => r.sourceProjectId == id)
-                              .toList(),
-                          tRoles
-                              .where((r) => r.sourceProjectId == id)
-                              .toList(),
+                          sRoles.where((r) => r.sourceProjectId == id).toList(),
+                          tRoles.where((r) => r.sourceProjectId == id).toList(),
                         );
                       }
 
                       return Column(
                         children: [
                           _PortfolioCoverageStrip(
-                            stakeholders:
-                                CoverageCalculator.forStakeholders(sRoles),
+                            stakeholders: CoverageCalculator.forStakeholders(
+                              sRoles,
+                            ),
                             team: CoverageCalculator.forTeam(tRoles),
                             projectCount: projectCount,
-                            stakeholderCount:
-                                persons.where((p) => p.isStakeholder).length,
-                            gapCount:
-                                sRoles.where((r) => r.gapFlag).length,
+                            stakeholderCount: persons
+                                .where((p) => p.isStakeholder)
+                                .length,
+                            gapCount: sRoles.where((r) => r.gapFlag).length,
                             // Only worth calling out when ≥2 projects have
                             // matrices to compare.
                             worstLabel: ranked >= 2 ? worst?.label : null,
@@ -1213,8 +1281,7 @@ class _ProgrammePeopleView extends StatelessWidget {
                           ),
                           Expanded(
                             child: ListView(
-                              padding:
-                                  const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                               children: [
                                 if (hasNative)
                                   _ProjectOverviewPanel(
@@ -1236,8 +1303,7 @@ class _ProgrammePeopleView extends StatelessWidget {
                                         .where((r) => r.sourceProjectId == id)
                                         .toList(),
                                     persons: persons,
-                                    initiallyExpanded:
-                                        orderedIds.length == 1,
+                                    initiallyExpanded: orderedIds.length == 1,
                                   ),
                               ],
                             ),
@@ -1291,25 +1357,30 @@ class _PortfolioCoverageStrip extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            const Text('PORTFOLIO COVERAGE',
+          Row(
+            children: [
+              Text(
+                'PORTFOLIO COVERAGE',
                 style: TextStyle(
-                    color: KColors.textDim,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.4)),
-            const Spacer(),
-            Flexible(
-              child: Text(
+                  color: KColors.textDim,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.4,
+                ),
+              ),
+              const Spacer(),
+              Flexible(
+                child: Text(
                   '$projectCount project${projectCount == 1 ? '' : 's'}'
                   ' · $stakeholderCount stakeholder${stakeholderCount == 1 ? '' : 's'}'
                   '${gapCount > 0 ? ' · $gapCount gap${gapCount == 1 ? '' : 's'}' : ''}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                      color: KColors.textMuted, fontSize: 11)),
-            ),
-          ]),
+                  style: TextStyle(color: KColors.textMuted, fontSize: 11),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 12),
           _PortfolioBar(label: 'Stakeholders', result: stakeholders),
           const SizedBox(height: 8),
@@ -1317,40 +1388,49 @@ class _PortfolioCoverageStrip extends StatelessWidget {
           if (worstLabel != null && worstPct != null) ...[
             const SizedBox(height: 10),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: KColors.amberDim.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(4),
               ),
-              child: Row(children: [
-                const Icon(Icons.trending_down,
-                    size: 13, color: KColors.amber),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text.rich(
-                    TextSpan(children: [
-                      const TextSpan(
-                          text: 'Lowest coverage: ',
-                          style: TextStyle(
-                              color: KColors.textDim, fontSize: 11)),
+              child: Row(
+                children: [
+                  Icon(Icons.trending_down, size: 13, color: KColors.amber),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text.rich(
                       TextSpan(
-                          text: worstLabel!,
-                          style: const TextStyle(
+                        children: [
+                          TextSpan(
+                            text: 'Lowest coverage: ',
+                            style: TextStyle(
+                              color: KColors.textDim,
+                              fontSize: 11,
+                            ),
+                          ),
+                          TextSpan(
+                            text: worstLabel!,
+                            style: TextStyle(
                               color: KColors.text,
                               fontSize: 11,
-                              fontWeight: FontWeight.w700)),
-                      TextSpan(
-                          text: '  ${(worstPct! * 100).round()}%',
-                          style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          TextSpan(
+                            text: '  ${(worstPct! * 100).round()}%',
+                            style: TextStyle(
                               color: KColors.amber,
                               fontSize: 11,
-                              fontWeight: FontWeight.w700)),
-                    ]),
-                    overflow: TextOverflow.ellipsis,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                ),
-              ]),
+                ],
+              ),
             ),
           ],
         ],
@@ -1368,36 +1448,43 @@ class _PortfolioBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final pct = result.percentage;
     final color = result.isFull ? KColors.phosphor : KColors.amber;
-    return Row(children: [
-      SizedBox(
+    return Row(
+      children: [
+        SizedBox(
           width: 84,
-          child: Text(label,
-              style: const TextStyle(color: KColors.text, fontSize: 12))),
-      Expanded(
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(2),
-          child: LinearProgressIndicator(
-            value: pct,
-            backgroundColor: KColors.surface2,
-            valueColor: AlwaysStoppedAnimation<Color>(color),
-            minHeight: 6,
+          child: Text(
+            label,
+            style: TextStyle(color: KColors.text, fontSize: 12),
           ),
         ),
-      ),
-      const SizedBox(width: 10),
-      SizedBox(
-        width: 78,
-        child: Text(
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(2),
+            child: LinearProgressIndicator(
+              value: pct,
+              backgroundColor: KColors.surface2,
+              valueColor: AlwaysStoppedAnimation<Color>(color),
+              minHeight: 6,
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        SizedBox(
+          width: 78,
+          child: Text(
             result.applicable == 0
                 ? 'no roles'
                 : '${(pct * 100).round()}%  ${result.filled}/${result.applicable}',
             textAlign: TextAlign.right,
             style: TextStyle(
-                color: result.applicable == 0 ? KColors.textMuted : color,
-                fontSize: 11,
-                fontWeight: FontWeight.w600)),
-      ),
-    ]);
+              color: result.applicable == 0 ? KColors.textMuted : color,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -1430,34 +1517,40 @@ class _ProjectOverviewPanel extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(top: 8),
       child: Theme(
-        data: Theme.of(context)
-            .copyWith(dividerColor: Colors.transparent),
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
           initiallyExpanded: initiallyExpanded,
-          tilePadding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+          tilePadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
           childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          leading: Icon(isCascaded ? Icons.link : Icons.workspaces_outlined,
-              size: 16, color: KColors.textDim),
-          title: Text(label,
-              style: const TextStyle(
-                  color: KColors.text,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700),
-              overflow: TextOverflow.ellipsis),
+          leading: Icon(
+            isCascaded ? Icons.link : Icons.workspaces_outlined,
+            size: 16,
+            color: KColors.textDim,
+          ),
+          title: Text(
+            label,
+            style: TextStyle(
+              color: KColors.text,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
           subtitle: Text(
-              'Stakeholders $sPct% · Team $tPct%'
-              '${gaps > 0 ? ' · $gaps gap${gaps == 1 ? '' : 's'}' : ''}',
-              style: const TextStyle(color: KColors.textDim, fontSize: 11)),
+            'Stakeholders $sPct% · Team $tPct%'
+            '${gaps > 0 ? ' · $gaps gap${gaps == 1 ? '' : 's'}' : ''}',
+            style: TextStyle(color: KColors.textDim, fontSize: 11),
+          ),
           children: [
             CoverageIndicator(stakeholders: sCov, team: tCov),
             const SizedBox(height: 4),
             if (stakeholderRoles.isEmpty && teamRoles.isEmpty)
-              const Padding(
+              Padding(
                 padding: EdgeInsets.symmetric(vertical: 12),
                 child: Text(
-                    'No coverage matrix defined in this project yet.',
-                    style: TextStyle(color: KColors.textMuted, fontSize: 12)),
+                  'No coverage matrix defined in this project yet.',
+                  style: TextStyle(color: KColors.textMuted, fontSize: 12),
+                ),
               ),
             if (stakeholderRoles.isNotEmpty) ...[
               const _OverviewSectionLabel('STAKEHOLDERS'),
@@ -1495,8 +1588,11 @@ class _ReadOnlyTier extends StatelessWidget {
   final List<StakeholderRole> roles;
   final List<Person> persons;
 
-  const _ReadOnlyTier(
-      {required this.label, required this.roles, required this.persons});
+  const _ReadOnlyTier({
+    required this.label,
+    required this.roles,
+    required this.persons,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1507,22 +1603,28 @@ class _ReadOnlyTier extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.only(top: 10, bottom: 2),
-          child: Row(children: [
-            Text(label,
-                style: const TextStyle(
-                    color: KColors.textDim,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.15)),
-            const Spacer(),
-            Flexible(
-              child: Text('$filled of ${roles.length} filled',
+          child: Row(
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: KColors.textDim,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.15,
+                ),
+              ),
+              const Spacer(),
+              Flexible(
+                child: Text(
+                  '$filled of ${roles.length} filled',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                      color: KColors.textMuted, fontSize: 10)),
-            ),
-          ]),
+                  style: TextStyle(color: KColors.textMuted, fontSize: 10),
+                ),
+              ),
+            ],
+          ),
         ),
         for (final role in roles)
           _ReadOnlyRoleRow(
@@ -1544,8 +1646,11 @@ class _ReadOnlyTeamGroup extends StatelessWidget {
   final List<TeamRole> roles;
   final List<Person> persons;
 
-  const _ReadOnlyTeamGroup(
-      {required this.label, required this.roles, required this.persons});
+  const _ReadOnlyTeamGroup({
+    required this.label,
+    required this.roles,
+    required this.persons,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1555,12 +1660,15 @@ class _ReadOnlyTeamGroup extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.only(top: 10, bottom: 2),
-          child: Text(label,
-              style: const TextStyle(
-                  color: KColors.textDim,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.15)),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: KColors.textDim,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.15,
+            ),
+          ),
         ),
         for (final role in roles)
           _ReadOnlyRoleRow(
@@ -1574,9 +1682,10 @@ class _ReadOnlyTeamGroup extends StatelessWidget {
 
 Person? _personFor(String? personId, List<Person> persons) {
   if (personId == null) return null;
-  return persons
-      .cast<Person?>()
-      .firstWhere((p) => p!.id == personId, orElse: () => null);
+  return persons.cast<Person?>().firstWhere(
+    (p) => p!.id == personId,
+    orElse: () => null,
+  );
 }
 
 /// A single read-only role slot: filled indicator + role + assignee +
@@ -1602,9 +1711,13 @@ class _ReadOnlyRoleRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final filled = person != null;
     final chips = <Widget>[
-      if (priority != null) _miniChip(_priorityLabel(priority!), _priorityColor(priority!)),
+      if (priority != null)
+        _miniChip(_priorityLabel(priority!), _priorityColor(priority!)),
       if (engagementStatus != null)
-        _miniChip(_engagementLabel(engagementStatus!), _engagementColor(engagementStatus!)),
+        _miniChip(
+          _engagementLabel(engagementStatus!),
+          _engagementColor(engagementStatus!),
+        ),
       if (gapFlag) _miniChip('⚠ GAP', KColors.red),
     ];
     return Container(
@@ -1615,80 +1728,99 @@ class _ReadOnlyRoleRow extends StatelessWidget {
         border: Border.all(color: filled ? KColors.border2 : KColors.border),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 2, right: 8),
-          child: Icon(filled ? Icons.circle : Icons.circle_outlined,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 2, right: 8),
+            child: Icon(
+              filled ? Icons.circle : Icons.circle_outlined,
               size: 9,
-              color: filled ? KColors.phosphor : KColors.textMuted),
-        ),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(roleName,
-                style: TextStyle(
+              color: filled ? KColors.phosphor : KColors.textMuted,
+            ),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  roleName,
+                  style: TextStyle(
                     color: filled ? KColors.text : KColors.textDim,
                     fontSize: 12,
-                    fontWeight: FontWeight.w500)),
-            if (filled) ...[
-              const SizedBox(height: 1),
-              Text(
-                  [person!.name, person!.role, person!.organisation]
-                      .where((s) => s != null && s.isNotEmpty)
-                      .join(' · '),
-                  style: const TextStyle(color: KColors.textDim, fontSize: 11),
-                  overflow: TextOverflow.ellipsis),
-            ] else
-              const Text('Unfilled',
-                  style: TextStyle(color: KColors.textMuted, fontSize: 11)),
-            if (chips.isNotEmpty) ...[
-              const SizedBox(height: 5),
-              Wrap(spacing: 5, runSpacing: 4, children: chips),
-            ],
-            if (gapFlag && gapDescription != null) ...[
-              const SizedBox(height: 3),
-              Text(gapDescription!,
-                  style: const TextStyle(color: KColors.red, fontSize: 10)),
-            ],
-          ]),
-        ),
-      ]),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                if (filled) ...[
+                  const SizedBox(height: 1),
+                  Text(
+                    [
+                      person!.name,
+                      person!.role,
+                      person!.organisation,
+                    ].where((s) => s != null && s.isNotEmpty).join(' · '),
+                    style: TextStyle(color: KColors.textDim, fontSize: 11),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ] else
+                  Text(
+                    'Unfilled',
+                    style: TextStyle(color: KColors.textMuted, fontSize: 11),
+                  ),
+                if (chips.isNotEmpty) ...[
+                  const SizedBox(height: 5),
+                  Wrap(spacing: 5, runSpacing: 4, children: chips),
+                ],
+                if (gapFlag && gapDescription != null) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    gapDescription!,
+                    style: TextStyle(color: KColors.red, fontSize: 10),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   static Widget _miniChip(String label, Color color) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.14),
-          borderRadius: BorderRadius.circular(3),
-        ),
-        child: Text(label,
-            style: TextStyle(
-                color: color, fontSize: 9, fontWeight: FontWeight.w700)),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.14),
+      borderRadius: BorderRadius.circular(3),
+    ),
+    child: Text(
+      label,
+      style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w700),
+    ),
+  );
 
   static String _priorityLabel(String p) => switch (p) {
-        'critical' => '● Critical',
-        'high' => '▲ High',
-        'medium' => '◆ Medium',
-        _ => '○ Low',
-      };
+    'critical' => '● Critical',
+    'high' => '▲ High',
+    'medium' => '◆ Medium',
+    _ => '○ Low',
+  };
   static Color _priorityColor(String p) => switch (p) {
-        'critical' => KColors.red,
-        'high' => KColors.amber,
-        'medium' => KColors.phosphor,
-        _ => KColors.textMuted,
-      };
+    'critical' => KColors.red,
+    'high' => KColors.amber,
+    'medium' => KColors.phosphor,
+    _ => KColors.textMuted,
+  };
   static String _engagementLabel(String s) => switch (s) {
-        'engaged' => '● Engaged',
-        'gap_action_required' => '⚠ Gap',
-        'not_engaged' => '○ Not engaged',
-        'complete' => '✓ Complete',
-        _ => '— Not started',
-      };
+    'engaged' => '● Engaged',
+    'gap_action_required' => '⚠ Gap',
+    'not_engaged' => '○ Not engaged',
+    'complete' => '✓ Complete',
+    _ => '— Not started',
+  };
   static Color _engagementColor(String s) => switch (s) {
-        'engaged' || 'complete' => KColors.phosphor,
-        'gap_action_required' => KColors.red,
-        'not_engaged' => KColors.amber,
-        _ => KColors.textMuted,
-      };
+    'engaged' || 'complete' => KColors.phosphor,
+    'gap_action_required' => KColors.red,
+    'not_engaged' => KColors.amber,
+    _ => KColors.textMuted,
+  };
 }

@@ -32,7 +32,8 @@ class FinanceView extends StatefulWidget {
 class _FinanceViewState extends State<FinanceView> {
   String? _selectedBudgetId;
   List<TimelineWorkPackage> _workPackages = [];
-  int _tab = 0; // 0 = budget, 1 = forecast, 2 = actuals, 3/4/5 = programme lenses
+  int _tab =
+      0; // 0 = budget, 1 = forecast, 2 = actuals, 3/4/5 = programme lenses
 
   /// The project the view is currently initialised for. Seeding and
   /// workstream loading re-run whenever the user switches project WHILE
@@ -48,8 +49,10 @@ class _FinanceViewState extends State<FinanceView> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       final db = context.read<AppDatabase>();
-      await db.financeDao
-          .seedDefaultCategories(projectId, changedBy: financeActor(context));
+      await db.financeDao.seedDefaultCategories(
+        projectId,
+        changedBy: financeActor(context),
+      );
       final wps = await db.programmeGanttDao.getWorkPackages(projectId);
       if (mounted) setState(() => _workPackages = wps);
       if (widget.triggerNew && !_triggerNewConsumed && mounted) {
@@ -92,9 +95,12 @@ class _FinanceViewState extends State<FinanceView> {
     final provider = context.watch<ProjectProvider>();
     final projectId = provider.currentProjectId;
     if (projectId == null) {
-      return const Center(
-          child: Text('Select a project to view finance.',
-              style: TextStyle(color: KColors.textDim)));
+      return Center(
+        child: Text(
+          'Select a project to view finance.',
+          style: TextStyle(color: KColors.textDim),
+        ),
+      );
     }
     _ensureInitedFor(projectId);
     final db = context.read<AppDatabase>();
@@ -108,14 +114,19 @@ class _FinanceViewState extends State<FinanceView> {
         children: [
           Row(
             children: [
-              const Icon(Icons.account_balance_outlined,
-                  color: KColors.amber, size: 18),
+              Icon(
+                Icons.account_balance_outlined,
+                color: KColors.amber,
+                size: 18,
+              ),
               const SizedBox(width: 8),
               Flexible(
-                child: Text('FINANCE',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.headlineSmall),
+                child: Text(
+                  'FINANCE',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
               ),
               const SizedBox(width: 24),
               Flexible(
@@ -125,17 +136,20 @@ class _FinanceViewState extends State<FinanceView> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       _TabChip(
-                          label: 'BUDGET',
-                          selected: _tab == 0,
-                          onTap: () => setState(() => _tab = 0)),
+                        label: 'BUDGET',
+                        selected: _tab == 0,
+                        onTap: () => setState(() => _tab = 0),
+                      ),
                       _TabChip(
-                          label: 'FORECAST',
-                          selected: _tab == 1,
-                          onTap: () => setState(() => _tab = 1)),
+                        label: 'FORECAST',
+                        selected: _tab == 1,
+                        onTap: () => setState(() => _tab = 1),
+                      ),
                       _TabChip(
-                          label: 'ACTUALS',
-                          selected: _tab == 2,
-                          onTap: () => setState(() => _tab = 2)),
+                        label: 'ACTUALS',
+                        selected: _tab == 2,
+                        onTap: () => setState(() => _tab = 2),
+                      ),
                       // Programme lenses over linked projects' finance.
                       if (isProgramme) ...[
                         Container(
@@ -145,17 +159,20 @@ class _FinanceViewState extends State<FinanceView> {
                           color: KColors.border,
                         ),
                         _TabChip(
-                            label: 'BY PROJECT',
-                            selected: _tab == 3,
-                            onTap: () => setState(() => _tab = 3)),
+                          label: 'BY PROJECT',
+                          selected: _tab == 3,
+                          onTap: () => setState(() => _tab = 3),
+                        ),
                         _TabChip(
-                            label: 'BY CATEGORY',
-                            selected: _tab == 4,
-                            onTap: () => setState(() => _tab = 4)),
+                          label: 'BY CATEGORY',
+                          selected: _tab == 4,
+                          onTap: () => setState(() => _tab = 4),
+                        ),
                         _TabChip(
-                            label: 'ENVELOPE',
-                            selected: _tab == 5,
-                            onTap: () => setState(() => _tab = 5)),
+                          label: 'ENVELOPE',
+                          selected: _tab == 5,
+                          onTap: () => setState(() => _tab = 5),
+                        ),
                       ],
                     ],
                   ),
@@ -168,29 +185,29 @@ class _FinanceViewState extends State<FinanceView> {
             child: switch (_tab) {
               5 => EnvelopeTab(db: db, programmeId: projectId),
               3 => ProgrammeFinanceTab(
-                  db: db,
-                  programmeId: projectId,
-                  lens: ProgrammeFinanceLens.byProject,
-                  actor: financeActor(context),
-                ),
+                db: db,
+                programmeId: projectId,
+                lens: ProgrammeFinanceLens.byProject,
+                actor: financeActor(context),
+              ),
               4 => ProgrammeFinanceTab(
-                  db: db,
-                  programmeId: projectId,
-                  lens: ProgrammeFinanceLens.byCategory,
-                  actor: financeActor(context),
-                ),
+                db: db,
+                programmeId: projectId,
+                lens: ProgrammeFinanceLens.byCategory,
+                actor: financeActor(context),
+              ),
               1 => ForecastTab(
-                  db: db,
-                  projectId: projectId,
-                  workPackages: _workPackages,
-                  actor: financeActor(context),
-                ),
+                db: db,
+                projectId: projectId,
+                workPackages: _workPackages,
+                actor: financeActor(context),
+              ),
               2 => ActualsTab(
-                  db: db,
-                  projectId: projectId,
-                  workPackages: _workPackages,
-                  actor: financeActor(context),
-                ),
+                db: db,
+                projectId: projectId,
+                workPackages: _workPackages,
+                actor: financeActor(context),
+              ),
               _ => _budgetTab(db, projectId),
             },
           ),
@@ -207,9 +224,8 @@ class _FinanceViewState extends State<FinanceView> {
           return const Center(child: CircularProgressIndicator());
         }
         final budgets = snap.data!;
-        final selected = budgets
-                .where((b) => b.id == _selectedBudgetId)
-                .firstOrNull ??
+        final selected =
+            budgets.where((b) => b.id == _selectedBudgetId).firstOrNull ??
             budgets.where((b) => b.status == 'approved').firstOrNull ??
             budgets.firstOrNull;
 
@@ -220,17 +236,23 @@ class _FinanceViewState extends State<FinanceView> {
             // What a linked programme has allocated to this project
             // (nothing shows on a project with no programme).
             FutureBuilder<int?>(
-              key: ValueKey('alloc-${budgets.where((b) => b.status == 'approved').firstOrNull?.id}'),
+              key: ValueKey(
+                'alloc-${budgets.where((b) => b.status == 'approved').firstOrNull?.id}',
+              ),
               future: () async {
-                final approved =
-                    budgets.where((b) => b.status == 'approved').firstOrNull;
+                final approved = budgets
+                    .where((b) => b.status == 'approved')
+                    .firstOrNull;
                 if (approved == null) return null;
                 return (await db.financeDao.getTotals(approved.id)).totalMinor;
               }(),
               builder: (context, snap) => Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: ReceivedAllocationChip(
-                    db: db, projectId: projectId, approvedBudgetMinor: snap.data),
+                  db: db,
+                  projectId: projectId,
+                  approvedBudgetMinor: snap.data,
+                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -254,8 +276,13 @@ class _FinanceViewState extends State<FinanceView> {
     );
   }
 
-  Widget _header(BuildContext context, AppDatabase db, String projectId,
-      List<ProjectBudget> budgets, ProjectBudget? selected) {
+  Widget _header(
+    BuildContext context,
+    AppDatabase db,
+    String projectId,
+    List<ProjectBudget> budgets,
+    ProjectBudget? selected,
+  ) {
     return Row(
       children: [
         if (budgets.length > 1)
@@ -270,12 +297,14 @@ class _FinanceViewState extends State<FinanceView> {
               child: DropdownButton<String>(
                 value: selected?.id,
                 dropdownColor: KColors.surface2,
-                style: const TextStyle(color: KColors.text, fontSize: 12),
+                style: TextStyle(color: KColors.text, fontSize: 12),
                 items: budgets
-                    .map((b) => DropdownMenuItem(
-                          value: b.id,
-                          child: Text('${b.name}  ·  ${b.status}'),
-                        ))
+                    .map(
+                      (b) => DropdownMenuItem(
+                        value: b.id,
+                        child: Text('${b.name}  ·  ${b.status}'),
+                      ),
+                    )
                     .toList(),
                 onChanged: (v) => setState(() => _selectedBudgetId = v),
               ),
@@ -294,7 +323,10 @@ class _FinanceViewState extends State<FinanceView> {
                     onPressed: () => showDialog(
                       context: context,
                       builder: (_) => ApproveBudgetDialog(
-                          projectId: projectId, db: db, budget: selected),
+                        projectId: projectId,
+                        db: db,
+                        budget: selected,
+                      ),
                     ),
                     icon: const Icon(Icons.check, size: 14),
                     label: const Text('Approve…'),
@@ -305,8 +337,9 @@ class _FinanceViewState extends State<FinanceView> {
                   OutlinedButton.icon(
                     onPressed: () async {
                       final newId = await db.financeDao.createDraftFrom(
-                          selected.id,
-                          changedBy: financeActor(context));
+                        selected.id,
+                        changedBy: financeActor(context),
+                      );
                       setState(() => _selectedBudgetId = newId);
                     },
                     icon: const Icon(Icons.copy_outlined, size: 14),
@@ -325,25 +358,35 @@ class _FinanceViewState extends State<FinanceView> {
                 ),
                 if (selected != null && selected.status == 'draft')
                   PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert,
-                        size: 18, color: KColors.textMuted),
+                    icon: Icon(
+                      Icons.more_vert,
+                      size: 18,
+                      color: KColors.textMuted,
+                    ),
                     onSelected: (val) async {
                       if (val == 'edit') {
                         await showDialog(
                           context: context,
                           builder: (_) => BudgetFormDialog(
-                              projectId: projectId, db: db, budget: selected),
+                            projectId: projectId,
+                            db: db,
+                            budget: selected,
+                          ),
                         );
                       } else if (val == 'delete') {
-                        await db.financeDao.deleteDraftBudget(selected.id,
-                            changedBy: financeActor(context));
+                        await db.financeDao.deleteDraftBudget(
+                          selected.id,
+                          changedBy: financeActor(context),
+                        );
                         setState(() => _selectedBudgetId = null);
                       }
                     },
                     itemBuilder: (_) => const [
                       PopupMenuItem(value: 'edit', child: Text('Edit details')),
                       PopupMenuItem(
-                          value: 'delete', child: Text('Delete draft')),
+                        value: 'delete',
+                        child: Text('Delete draft'),
+                      ),
                     ],
                   ),
               ],
@@ -359,16 +402,19 @@ class _FinanceViewState extends State<FinanceView> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.account_balance_outlined,
-              size: 40, color: KColors.textMuted),
+          Icon(
+            Icons.account_balance_outlined,
+            size: 40,
+            color: KColors.textMuted,
+          ),
           const SizedBox(height: 12),
-          const Text('No budget yet.',
-              style: TextStyle(color: KColors.textDim)),
+          Text('No budget yet.', style: TextStyle(color: KColors.textDim)),
           const SizedBox(height: 4),
-          const Text(
-              'Create a draft, build the lines, then approve it as the '
-              'baseline.',
-              style: TextStyle(color: KColors.textMuted, fontSize: 11)),
+          Text(
+            'Create a draft, build the lines, then approve it as the '
+            'baseline.',
+            style: TextStyle(color: KColors.textMuted, fontSize: 11),
+          ),
           const SizedBox(height: 12),
           ElevatedButton.icon(
             onPressed: () => showDialog(
@@ -389,8 +435,11 @@ class _TabChip extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  const _TabChip(
-      {required this.label, required this.selected, required this.onTap});
+  const _TabChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -474,7 +523,10 @@ class _BudgetDetail extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   _AuditTrailPanel(
-                      db: db, projectId: projectId, currency: budget.currency),
+                    db: db,
+                    projectId: projectId,
+                    currency: budget.currency,
+                  ),
                 ],
               ),
             );
@@ -490,17 +542,21 @@ class _BudgetDetail extends StatelessWidget {
     final actor = financeActor(context);
     final messenger = ScaffoldMessenger.of(context);
     messenger.hideCurrentSnackBar();
-    messenger.showSnackBar(SnackBar(
-      content: Text('"${budget.name}" is ${budget.status} — read-only.'),
-      action: SnackBarAction(
-        label: 'NEW DRAFT',
-        onPressed: () async {
-          final id = await db.financeDao
-              .createDraftFrom(budget.id, changedBy: actor);
-          onDraftCreated(id);
-        },
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text('"${budget.name}" is ${budget.status} — read-only.'),
+        action: SnackBarAction(
+          label: 'NEW DRAFT',
+          onPressed: () async {
+            final id = await db.financeDao.createDraftFrom(
+              budget.id,
+              changedBy: actor,
+            );
+            onDraftCreated(id);
+          },
+        ),
       ),
-    ));
+    );
   }
 
   Widget _readOnlyBanner() {
@@ -514,14 +570,14 @@ class _BudgetDetail extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.lock_outline, size: 13, color: KColors.amber),
+          Icon(Icons.lock_outline, size: 13, color: KColors.amber),
           const SizedBox(width: 8),
           Text(
             budget.status == 'approved'
                 ? 'This is the approved budget — read-only. '
-                    'Use "New Draft From This" to propose changes.'
+                      'Use "New Draft From This" to propose changes.'
                 : 'This budget was superseded — read-only history.',
-            style: const TextStyle(color: KColors.amber, fontSize: 11),
+            style: TextStyle(color: KColors.amber, fontSize: 11),
           ),
         ],
       ),
@@ -545,12 +601,15 @@ class _BudgetDetail extends StatelessWidget {
                 Row(
                   children: [
                     Flexible(
-                      child: Text(budget.name,
-                          style: const TextStyle(
-                              color: KColors.text,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14),
-                          overflow: TextOverflow.ellipsis),
+                      child: Text(
+                        budget.name,
+                        style: TextStyle(
+                          color: KColors.text,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     _statusChip(budget.status),
@@ -568,8 +627,7 @@ class _BudgetDetail extends StatelessWidget {
                       'approved ${DateFormat('d MMM yyyy').format(budget.approvedAt!)}'
                           '${budget.approvedBy == null ? '' : ' by ${budget.approvedBy}'}',
                   ].join(' · '),
-                  style:
-                      const TextStyle(color: KColors.textDim, fontSize: 11),
+                  style: TextStyle(color: KColors.textDim, fontSize: 11),
                 ),
               ],
             ),
@@ -577,17 +635,21 @@ class _BudgetDetail extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              const Text('TOTAL',
-                  style: TextStyle(
-                      color: KColors.textMuted,
-                      fontSize: 10,
-                      letterSpacing: 0.5)),
+              Text(
+                'TOTAL',
+                style: TextStyle(
+                  color: KColors.textMuted,
+                  fontSize: 10,
+                  letterSpacing: 0.5,
+                ),
+              ),
               Text(
                 Money.formatMinorCompact(totals.totalMinor, budget.currency),
-                style: const TextStyle(
-                    color: KColors.amber,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700),
+                style: TextStyle(
+                  color: KColors.amber,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),
@@ -608,15 +670,17 @@ class _BudgetDetail extends StatelessWidget {
         color: dim,
         borderRadius: BorderRadius.circular(3),
       ),
-      child: Text(status.toUpperCase(),
-          style: TextStyle(
-              color: color,
-              fontSize: 9,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.4)),
+      child: Text(
+        status.toUpperCase(),
+        style: TextStyle(
+          color: color,
+          fontSize: 9,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.4,
+        ),
+      ),
     );
   }
-
 }
 
 // ---------------------------------------------------------------------------
@@ -628,8 +692,11 @@ class _AuditTrailPanel extends StatelessWidget {
   final String projectId;
   final String currency;
 
-  const _AuditTrailPanel(
-      {required this.db, required this.projectId, required this.currency});
+  const _AuditTrailPanel({
+    required this.db,
+    required this.projectId,
+    required this.currency,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -642,32 +709,37 @@ class _AuditTrailPanel extends StatelessWidget {
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
-          title: const Text('AUDIT TRAIL',
-              style: TextStyle(
-                  color: KColors.textDim,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.5)),
-          leading: const Icon(Icons.history,
-              size: 16, color: KColors.textMuted),
-          childrenPadding:
-              const EdgeInsets.only(left: 16, right: 16, bottom: 12),
+          title: Text(
+            'AUDIT TRAIL',
+            style: TextStyle(
+              color: KColors.textDim,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
+            ),
+          ),
+          leading: Icon(Icons.history, size: 16, color: KColors.textMuted),
+          childrenPadding: const EdgeInsets.only(
+            left: 16,
+            right: 16,
+            bottom: 12,
+          ),
           children: [
             StreamBuilder<List<FinancialAuditLogData>>(
               stream: db.financeDao.watchAuditLog(projectId),
               builder: (context, snap) {
                 final entries = snap.data ?? [];
                 if (entries.isEmpty) {
-                  return const Padding(
+                  return Padding(
                     padding: EdgeInsets.all(8),
-                    child: Text('No changes recorded yet.',
-                        style: TextStyle(
-                            color: KColors.textMuted, fontSize: 11)),
+                    child: Text(
+                      'No changes recorded yet.',
+                      style: TextStyle(color: KColors.textMuted, fontSize: 11),
+                    ),
                   );
                 }
                 return Column(
-                  children:
-                      entries.take(100).map(_entryRow).toList(),
+                  children: entries.take(100).map(_entryRow).toList(),
                 );
               },
             ),
@@ -687,23 +759,27 @@ class _AuditTrailPanel extends StatelessWidget {
             width: 110,
             child: Text(
               DateFormat('d MMM yy HH:mm').format(e.changedAt),
-              style: const TextStyle(color: KColors.textMuted, fontSize: 10),
+              style: TextStyle(color: KColors.textMuted, fontSize: 10),
             ),
           ),
           SizedBox(
             width: 100,
-            child: Text(e.entityType,
-                style:
-                    const TextStyle(color: KColors.textDim, fontSize: 10)),
+            child: Text(
+              e.entityType,
+              style: TextStyle(color: KColors.textDim, fontSize: 10),
+            ),
           ),
           Expanded(
-            child: Text(_describe(e),
-                style: const TextStyle(color: KColors.text, fontSize: 11)),
+            child: Text(
+              _describe(e),
+              style: TextStyle(color: KColors.text, fontSize: 11),
+            ),
           ),
           if (e.changedBy != null)
-            Text(e.changedBy!,
-                style:
-                    const TextStyle(color: KColors.textDim, fontSize: 10)),
+            Text(
+              e.changedBy!,
+              style: TextStyle(color: KColors.textDim, fontSize: 10),
+            ),
         ],
       ),
     );
@@ -712,16 +788,26 @@ class _AuditTrailPanel extends StatelessWidget {
   String _describe(FinancialAuditLogData e) {
     String amount(String? v) {
       final minor = v == null ? null : int.tryParse(v);
-      return minor == null ? (v ?? '—') : Money.formatMinorCompact(minor, currency);
+      return minor == null
+          ? (v ?? '—')
+          : Money.formatMinorCompact(minor, currency);
     }
 
     switch (e.field) {
       case 'created':
         return 'created'
-            '${e.entityType == 'BudgetLine' ? ' at ${amount(e.newValue)}' : e.newValue == null ? '' : ' "${e.newValue}"'}';
+            '${e.entityType == 'BudgetLine'
+                ? ' at ${amount(e.newValue)}'
+                : e.newValue == null
+                ? ''
+                : ' "${e.newValue}"'}';
       case 'deleted':
         return 'deleted'
-            '${e.entityType == 'BudgetLine' ? ' (was ${amount(e.oldValue)})' : e.oldValue == null ? '' : ' "${e.oldValue}"'}';
+            '${e.entityType == 'BudgetLine'
+                ? ' (was ${amount(e.oldValue)})'
+                : e.oldValue == null
+                ? ''
+                : ' "${e.oldValue}"'}';
       case 'amountMinor':
         return 'amount ${amount(e.oldValue)} → ${amount(e.newValue)}';
       default:

@@ -46,9 +46,8 @@ class _ForecastTabState extends State<ForecastTab> {
           return const Center(child: CircularProgressIndicator());
         }
         final snapshots = snapSnap.data!;
-        final selected = snapshots
-                .where((s) => s.id == _selectedSnapshotId)
-                .firstOrNull ??
+        final selected =
+            snapshots.where((s) => s.id == _selectedSnapshotId).firstOrNull ??
             snapshots.where((s) => s.status == 'working').firstOrNull ??
             snapshots.firstOrNull;
 
@@ -56,8 +55,9 @@ class _ForecastTabState extends State<ForecastTab> {
           stream: db.financeDao.watchBudgets(widget.projectId),
           builder: (context, budgetSnap) {
             final budgets = budgetSnap.data ?? [];
-            final approved =
-                budgets.where((b) => b.status == 'approved').firstOrNull;
+            final approved = budgets
+                .where((b) => b.status == 'approved')
+                .firstOrNull;
             final currency =
                 approved?.currency ?? budgets.firstOrNull?.currency ?? 'AUD';
 
@@ -90,8 +90,12 @@ class _ForecastTabState extends State<ForecastTab> {
     );
   }
 
-  Widget _controls(BuildContext context, List<ForecastSnapshot> snapshots,
-      ForecastSnapshot? selected, ProjectBudget? approved) {
+  Widget _controls(
+    BuildContext context,
+    List<ForecastSnapshot> snapshots,
+    ForecastSnapshot? selected,
+    ProjectBudget? approved,
+  ) {
     return Row(
       children: [
         if (snapshots.isNotEmpty)
@@ -106,15 +110,16 @@ class _ForecastTabState extends State<ForecastTab> {
               child: DropdownButton<String>(
                 value: selected?.id,
                 dropdownColor: KColors.surface2,
-                style: const TextStyle(color: KColors.text, fontSize: 12),
+                style: TextStyle(color: KColors.text, fontSize: 12),
                 items: snapshots
-                    .map((s) => DropdownMenuItem(
-                          value: s.id,
-                          child: Text('${s.period}  ·  ${s.status}'),
-                        ))
+                    .map(
+                      (s) => DropdownMenuItem(
+                        value: s.id,
+                        child: Text('${s.period}  ·  ${s.status}'),
+                      ),
+                    )
                     .toList(),
-                onChanged: (v) =>
-                    setState(() => _selectedSnapshotId = v),
+                onChanged: (v) => setState(() => _selectedSnapshotId = v),
               ),
             ),
           ),
@@ -129,12 +134,15 @@ class _ForecastTabState extends State<ForecastTab> {
                 if (selected != null && selected.status == 'working') ...[
                   OutlinedButton.icon(
                     onPressed: () async {
-                      await db.financeDao
-                          .submitSnapshot(selected.id, changedBy: widget.actor);
+                      await db.financeDao.submitSnapshot(
+                        selected.id,
+                        changedBy: widget.actor,
+                      );
                       // Submitting is the publish moment for the month.
                       if (context.mounted) {
-                        await buildCascadeService(context)
-                            .pushForecastSnapshot(selected.id);
+                        await buildCascadeService(
+                          context,
+                        ).pushForecastSnapshot(selected.id);
                       }
                     },
                     icon: const Icon(Icons.check, size: 14),
@@ -149,33 +157,45 @@ class _ForecastTabState extends State<ForecastTab> {
                 ),
                 if (selected != null)
                   PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert,
-                        size: 18, color: KColors.textMuted),
+                    icon: Icon(
+                      Icons.more_vert,
+                      size: 18,
+                      color: KColors.textMuted,
+                    ),
                     onSelected: (val) async {
                       if (val == 'reopen') {
-                        await db.financeDao.reopenSnapshot(selected.id,
-                            changedBy: widget.actor);
+                        await db.financeDao.reopenSnapshot(
+                          selected.id,
+                          changedBy: widget.actor,
+                        );
                         // A working month is the PM's own again.
                         if (context.mounted) {
-                          await buildCascadeService(context)
-                              .deleteForecastSnapshot(
-                                  projectId: widget.projectId,
-                                  snapshotId: selected.id);
+                          await buildCascadeService(
+                            context,
+                          ).deleteForecastSnapshot(
+                            projectId: widget.projectId,
+                            snapshotId: selected.id,
+                          );
                         }
                       } else if (val == 'delete') {
-                        await db.financeDao.deleteWorkingSnapshot(selected.id,
-                            changedBy: widget.actor);
+                        await db.financeDao.deleteWorkingSnapshot(
+                          selected.id,
+                          changedBy: widget.actor,
+                        );
                         setState(() => _selectedSnapshotId = null);
                       }
                     },
                     itemBuilder: (_) => [
                       if (selected.status == 'submitted')
                         const PopupMenuItem(
-                            value: 'reopen', child: Text('Reopen for editing')),
+                          value: 'reopen',
+                          child: Text('Reopen for editing'),
+                        ),
                       if (selected.status == 'working')
                         const PopupMenuItem(
-                            value: 'delete',
-                            child: Text('Delete working snapshot')),
+                          value: 'delete',
+                          child: Text('Delete working snapshot'),
+                        ),
                     ],
                   ),
               ],
@@ -186,25 +206,27 @@ class _ForecastTabState extends State<ForecastTab> {
     );
   }
 
-  Widget _emptyState(BuildContext context, List<ForecastSnapshot> snapshots,
-      ProjectBudget? approved) {
+  Widget _emptyState(
+    BuildContext context,
+    List<ForecastSnapshot> snapshots,
+    ProjectBudget? approved,
+  ) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.trending_up, size: 40, color: KColors.textMuted),
+          Icon(Icons.trending_up, size: 40, color: KColors.textMuted),
           const SizedBox(height: 12),
-          const Text('No forecast yet.',
-              style: TextStyle(color: KColors.textDim)),
+          Text('No forecast yet.', style: TextStyle(color: KColors.textDim)),
           const SizedBox(height: 4),
           Text(
-              approved == null
-                  ? 'Approve a budget first — the forecast is compared '
+            approved == null
+                ? 'Approve a budget first — the forecast is compared '
                       'against it.'
-                  : 'Start this month\'s forecast from the approved budget, '
+                : 'Start this month\'s forecast from the approved budget, '
                       'then update it as the picture changes.',
-              style:
-                  const TextStyle(color: KColors.textMuted, fontSize: 11)),
+            style: TextStyle(color: KColors.textMuted, fontSize: 11),
+          ),
           const SizedBox(height: 12),
           ElevatedButton.icon(
             onPressed: () => _newMonth(context, snapshots, approved),
@@ -216,8 +238,11 @@ class _ForecastTabState extends State<ForecastTab> {
     );
   }
 
-  Future<void> _newMonth(BuildContext context,
-      List<ForecastSnapshot> snapshots, ProjectBudget? approved) async {
+  Future<void> _newMonth(
+    BuildContext context,
+    List<ForecastSnapshot> snapshots,
+    ProjectBudget? approved,
+  ) async {
     final latest = snapshots.firstOrNull; // sorted period desc
     final defaultPeriod = latest == null
         ? currentPeriodLabel()
@@ -243,8 +268,9 @@ class _ForecastTabState extends State<ForecastTab> {
       setState(() => _selectedSnapshotId = id);
     } on StateError catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(e.message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
     }
   }
 
@@ -311,18 +337,21 @@ class _ForecastDetail extends StatelessWidget {
                 children: [
                   if (!isWorking) _frozenBanner(),
                   MoneyGrid(
-                    cells: dao.watchForecastLines(snapshot.id).map(
-                        (ls) => [
-                              for (final l in ls)
-                                MoneyCell(
-                                  id: l.id,
-                                  categoryId: l.costCategoryId,
-                                  workstreamId: l.workstreamId,
-                                  columnKey: l.financialYear,
-                                  amountMinor: l.amountMinor,
-                                  notes: l.notes,
-                                ),
-                            ]),
+                    cells: dao
+                        .watchForecastLines(snapshot.id)
+                        .map(
+                          (ls) => [
+                            for (final l in ls)
+                              MoneyCell(
+                                id: l.id,
+                                categoryId: l.costCategoryId,
+                                workstreamId: l.workstreamId,
+                                columnKey: l.financialYear,
+                                amountMinor: l.amountMinor,
+                                notes: l.notes,
+                              ),
+                          ],
+                        ),
                     categories: categories,
                     workPackages: workPackages,
                     currency: currency,
@@ -330,28 +359,27 @@ class _ForecastDetail extends StatelessWidget {
                     columnNoun: 'Financial Year',
                     columnHint: 'e.g. FY28',
                     defaultColumnKey: defaultFyLabel(),
-                    onCommit: ({
-                      required existing,
-                      required categoryId,
-                      required workstreamId,
-                      required columnKey,
-                      required amountMinor,
-                    }) =>
-                        dao.upsertForecastLine(
-                      id: existing?.id ?? const Uuid().v4(),
-                      projectId: projectId,
-                      snapshotId: snapshot.id,
-                      costCategoryId: categoryId,
-                      workstreamId: existing?.workstreamId ?? workstreamId,
-                      financialYear: columnKey,
-                      amountMinor: amountMinor,
-                      notes: existing?.notes,
-                      changedBy: actor,
-                    ),
+                    onCommit:
+                        ({
+                          required existing,
+                          required categoryId,
+                          required workstreamId,
+                          required columnKey,
+                          required amountMinor,
+                        }) => dao.upsertForecastLine(
+                          id: existing?.id ?? const Uuid().v4(),
+                          projectId: projectId,
+                          snapshotId: snapshot.id,
+                          costCategoryId: categoryId,
+                          workstreamId: existing?.workstreamId ?? workstreamId,
+                          financialYear: columnKey,
+                          amountMinor: amountMinor,
+                          notes: existing?.notes,
+                          changedBy: actor,
+                        ),
                     onDelete: (cells) async {
                       for (final c in cells) {
-                        await dao.deleteForecastLine(c.id,
-                            changedBy: actor);
+                        await dao.deleteForecastLine(c.id, changedBy: actor);
                       }
                     },
                   ),
@@ -366,13 +394,16 @@ class _ForecastDetail extends StatelessWidget {
                       actor: actor,
                     )
                   else
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.symmetric(vertical: 4),
                       child: Text(
-                          'No approved budget — approve one on the Budget '
-                          'tab to see variance.',
-                          style: TextStyle(
-                              color: KColors.textMuted, fontSize: 11)),
+                        'No approved budget — approve one on the Budget '
+                        'tab to see variance.',
+                        style: TextStyle(
+                          color: KColors.textMuted,
+                          fontSize: 11,
+                        ),
+                      ),
                     ),
                   const SizedBox(height: 16),
                   _TrendSection(
@@ -405,12 +436,12 @@ class _ForecastDetail extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.ac_unit, size: 13, color: KColors.blue),
+          Icon(Icons.ac_unit, size: 13, color: KColors.blue),
           const SizedBox(width: 8),
           Text(
             '${snapshot.period} was submitted — frozen monthly record. '
             'Reopen from the menu if it needs correcting.',
-            style: const TextStyle(color: KColors.blue, fontSize: 11),
+            style: TextStyle(color: KColors.blue, fontSize: 11),
           ),
         ],
       ),
@@ -446,8 +477,11 @@ class _VarianceSection extends StatelessWidget {
       builder: (context, snap) {
         if (!snap.hasData) return const SizedBox.shrink();
         final budgetTotals = BudgetTotals.fromLines(snap.data!);
-        final rows = computeVariance(budgetTotals, forecastTotals,
-            categories.map((c) => c.id).toList());
+        final rows = computeVariance(
+          budgetTotals,
+          forecastTotals,
+          categories.map((c) => c.id).toList(),
+        );
         final catNames = {for (final c in categories) c.id: c.name};
         final total = rows.last;
         final tolBp = approved.varianceToleranceBp;
@@ -466,21 +500,25 @@ class _VarianceSection extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Text('VARIANCE VS APPROVED BUDGET',
-                      style: TextStyle(
-                          color: KColors.textDim,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5)),
+                  Text(
+                    'VARIANCE VS APPROVED BUDGET',
+                    style: TextStyle(
+                      color: KColors.textDim,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
                   const Spacer(),
                   InkWell(
                     onTap: () => _editTolerance(context),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
-                        color:
-                            breach ? KColors.redDim : KColors.surface2,
+                        color: breach ? KColors.redDim : KColors.surface2,
                         borderRadius: BorderRadius.circular(3),
                       ),
                       child: Row(
@@ -489,16 +527,16 @@ class _VarianceSection extends StatelessWidget {
                           Text(
                             'tolerance ±${Money.formatBp(tolBp).replaceAll('+', '')}',
                             style: TextStyle(
-                                color: breach
-                                    ? KColors.red
-                                    : KColors.textDim,
-                                fontSize: 10),
+                              color: breach ? KColors.red : KColors.textDim,
+                              fontSize: 10,
+                            ),
                           ),
                           const SizedBox(width: 4),
-                          Icon(Icons.edit_outlined,
-                              size: 10,
-                              color:
-                                  breach ? KColors.red : KColors.textMuted),
+                          Icon(
+                            Icons.edit_outlined,
+                            size: 10,
+                            color: breach ? KColors.red : KColors.textMuted,
+                          ),
                         ],
                       ),
                     ),
@@ -509,9 +547,13 @@ class _VarianceSection extends StatelessWidget {
               _headerRow(),
               for (final r in rows.take(rows.length - 1))
                 _row(catNames[r.key] ?? 'Unknown', r, false),
-              const Divider(height: 12, color: KColors.border),
-              _row('TOTAL — FORECAST AT COMPLETION', total, true,
-                  breach: breach),
+              Divider(height: 12, color: KColors.border),
+              _row(
+                'TOTAL — FORECAST AT COMPLETION',
+                total,
+                true,
+                breach: breach,
+              ),
             ],
           ),
         );
@@ -520,43 +562,49 @@ class _VarianceSection extends StatelessWidget {
   }
 
   Widget _headerRow() {
-    const style = TextStyle(
-        color: KColors.textMuted,
-        fontSize: 10,
-        fontWeight: FontWeight.w700,
-        letterSpacing: 0.4);
-    return const Padding(
+    final style = TextStyle(
+      color: KColors.textMuted,
+      fontSize: 10,
+      fontWeight: FontWeight.w700,
+      letterSpacing: 0.4,
+    );
+    return Padding(
       padding: EdgeInsets.only(bottom: 4),
       child: Row(
         children: [
           Expanded(child: SizedBox()),
           SizedBox(
-              width: 120,
-              child:
-                  Text('BUDGET', textAlign: TextAlign.right, style: style)),
+            width: 120,
+            child: Text('BUDGET', textAlign: TextAlign.right, style: style),
+          ),
           SizedBox(
-              width: 120,
-              child: Text('FORECAST',
-                  textAlign: TextAlign.right, style: style)),
+            width: 120,
+            child: Text('FORECAST', textAlign: TextAlign.right, style: style),
+          ),
           SizedBox(
-              width: 120,
-              child: Text('VARIANCE',
-                  textAlign: TextAlign.right, style: style)),
+            width: 120,
+            child: Text('VARIANCE', textAlign: TextAlign.right, style: style),
+          ),
           SizedBox(
-              width: 70,
-              child: Text('VAR %', textAlign: TextAlign.right, style: style)),
+            width: 70,
+            child: Text('VAR %', textAlign: TextAlign.right, style: style),
+          ),
         ],
       ),
     );
   }
 
-  Widget _row(String label, VarianceRow r, bool emphasize,
-      {bool breach = false}) {
+  Widget _row(
+    String label,
+    VarianceRow r,
+    bool emphasize, {
+    bool breach = false,
+  }) {
     final varColor = r.varianceMinor > 0
         ? (breach ? KColors.red : KColors.amber)
         : r.varianceMinor < 0
-            ? KColors.phosphor
-            : KColors.textDim;
+        ? KColors.phosphor
+        : KColors.textDim;
     final base = TextStyle(
       color: emphasize ? KColors.text : KColors.textDim,
       fontSize: emphasize ? 12 : 11,
@@ -567,18 +615,23 @@ class _VarianceSection extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-              child: Text(label, style: base, overflow: TextOverflow.ellipsis)),
-          SizedBox(
-            width: 120,
-            child: Text(Money.formatMinorCompact(r.budgetMinor, currency),
-                textAlign: TextAlign.right, style: base),
+            child: Text(label, style: base, overflow: TextOverflow.ellipsis),
           ),
           SizedBox(
             width: 120,
             child: Text(
-                Money.formatMinorCompact(r.forecastMinor, currency),
-                textAlign: TextAlign.right,
-                style: base),
+              Money.formatMinorCompact(r.budgetMinor, currency),
+              textAlign: TextAlign.right,
+              style: base,
+            ),
+          ),
+          SizedBox(
+            width: 120,
+            child: Text(
+              Money.formatMinorCompact(r.forecastMinor, currency),
+              textAlign: TextAlign.right,
+              style: base,
+            ),
           ),
           SizedBox(
             width: 120,
@@ -603,7 +656,8 @@ class _VarianceSection extends StatelessWidget {
 
   Future<void> _editTolerance(BuildContext context) async {
     final ctrl = TextEditingController(
-        text: (approved.varianceToleranceBp / 100).toStringAsFixed(1));
+      text: (approved.varianceToleranceBp / 100).toStringAsFixed(1),
+    );
     final result = await showDialog<int>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -623,8 +677,9 @@ class _VarianceSection extends StatelessWidget {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
             onPressed: () {
               final pct = double.tryParse(ctrl.text.trim());
@@ -637,8 +692,11 @@ class _VarianceSection extends StatelessWidget {
       ),
     );
     if (result != null) {
-      await db.financeDao
-          .setVarianceTolerance(approved.id, result, changedBy: actor);
+      await db.financeDao.setVarianceTolerance(
+        approved.id,
+        result,
+        changedBy: actor,
+      );
     }
   }
 }
@@ -665,14 +723,16 @@ class _TrendSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<
-        (List<({String period, int totalMinor, bool submitted})>, int?)>(
+      (List<({String period, int totalMinor, bool submitted})>, int?)
+    >(
       key: ValueKey(refreshKey),
       future: () async {
         final trend = await db.financeDao.getForecastTrend(projectId);
         int? budgetTotal;
         if (approved != null) {
-          budgetTotal =
-              (await db.financeDao.getTotals(approved!.id)).totalMinor;
+          budgetTotal = (await db.financeDao.getTotals(
+            approved!.id,
+          )).totalMinor;
         }
         return (trend, budgetTotal);
       }(),
@@ -680,12 +740,13 @@ class _TrendSection extends StatelessWidget {
         if (!snap.hasData) return const SizedBox.shrink();
         final (trend, budgetTotal) = snap.data!;
         if (trend.length < 2) {
-          return const Padding(
+          return Padding(
             padding: EdgeInsets.symmetric(vertical: 4),
             child: Text(
-                'The forecast-at-completion trend appears once two or '
-                'more months exist.',
-                style: TextStyle(color: KColors.textMuted, fontSize: 11)),
+              'The forecast-at-completion trend appears once two or '
+              'more months exist.',
+              style: TextStyle(color: KColors.textMuted, fontSize: 11),
+            ),
           );
         }
         return Container(
@@ -698,12 +759,15 @@ class _TrendSection extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('FORECAST AT COMPLETION — TREND',
-                  style: TextStyle(
-                      color: KColors.textDim,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5)),
+              Text(
+                'FORECAST AT COMPLETION — TREND',
+                style: TextStyle(
+                  color: KColors.textDim,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                ),
+              ),
               const SizedBox(height: 12),
               SizedBox(
                 height: 160,
@@ -784,11 +848,14 @@ class _TrendPainter extends CustomPainter {
         ..color = KColors.amber
         ..strokeWidth = 1;
       for (var dx = leftPad; dx < leftPad + plotW; dx += 8) {
-        canvas.drawLine(
-            Offset(dx, budgetY), Offset(dx + 4, budgetY), dash);
+        canvas.drawLine(Offset(dx, budgetY), Offset(dx + 4, budgetY), dash);
       }
-      _label(canvas, 'budget ${Money.formatMinorCompact(budgetTotal!, currency)}',
-          Offset(leftPad + plotW + 6, budgetY - 6), KColors.amber);
+      _label(
+        canvas,
+        'budget ${Money.formatMinorCompact(budgetTotal!, currency)}',
+        Offset(leftPad + plotW + 6, budgetY - 6),
+        KColors.amber,
+      );
     }
 
     // FAC polyline + points.
@@ -810,40 +877,53 @@ class _TrendPainter extends CustomPainter {
       final t = trend[i];
       final p = Offset(x(i), y(t.totalMinor));
       canvas.drawCircle(
+        p,
+        3,
+        Paint()
+          ..color = t.submitted ? KColors.phosphor : KColors.surface
+          ..style = PaintingStyle.fill,
+      );
+      if (!t.submitted) {
+        canvas.drawCircle(
           p,
           3,
           Paint()
-            ..color = t.submitted ? KColors.phosphor : KColors.surface
-            ..style = PaintingStyle.fill);
-      if (!t.submitted) {
-        canvas.drawCircle(
-            p,
-            3,
-            Paint()
-              ..color = KColors.phosphor
-              ..strokeWidth = 1.2
-              ..style = PaintingStyle.stroke);
+            ..color = KColors.phosphor
+            ..strokeWidth = 1.2
+            ..style = PaintingStyle.stroke,
+        );
       }
     }
     final last = trend.last;
     _label(
-        canvas,
-        Money.formatMinorCompact(last.totalMinor, currency),
-        Offset(leftPad + plotW + 6, y(last.totalMinor) + 2),
-        KColors.phosphor);
+      canvas,
+      Money.formatMinorCompact(last.totalMinor, currency),
+      Offset(leftPad + plotW + 6, y(last.totalMinor) + 2),
+      KColors.phosphor,
+    );
 
     // X labels: first, last, and middle when room allows.
-    _label(canvas, trend.first.period,
-        Offset(leftPad, size.height - 14), KColors.textMuted);
+    _label(
+      canvas,
+      trend.first.period,
+      Offset(leftPad, size.height - 14),
+      KColors.textMuted,
+    );
     final lastLabelX = leftPad + plotW - 44;
-    _label(canvas, trend.last.period, Offset(lastLabelX, size.height - 14),
-        KColors.textMuted);
+    _label(
+      canvas,
+      trend.last.period,
+      Offset(lastLabelX, size.height - 14),
+      KColors.textMuted,
+    );
   }
 
   void _label(Canvas canvas, String text, Offset at, Color color) {
     final tp = TextPainter(
       text: TextSpan(
-          text: text, style: TextStyle(color: color, fontSize: 9)),
+        text: text,
+        style: TextStyle(color: color, fontSize: 9),
+      ),
       textDirection: TextDirection.ltr,
     )..layout();
     tp.paint(canvas, at);
@@ -876,13 +956,14 @@ class _NewSnapshotDialog extends StatefulWidget {
 }
 
 class _NewSnapshotDialogState extends State<_NewSnapshotDialog> {
-  late final TextEditingController _periodCtrl =
-      TextEditingController(text: widget.defaultPeriod);
+  late final TextEditingController _periodCtrl = TextEditingController(
+    text: widget.defaultPeriod,
+  );
   late String _source = widget.hasPrevious
       ? 'previous'
       : widget.hasBudget
-          ? 'budget'
-          : 'empty';
+      ? 'budget'
+      : 'empty';
 
   @override
   void dispose() {
@@ -904,23 +985,27 @@ class _NewSnapshotDialogState extends State<_NewSnapshotDialog> {
               controller: _periodCtrl,
               autofocus: true,
               decoration: const InputDecoration(
-                  labelText: 'Month', hintText: 'YYYY-MM'),
+                labelText: 'Month',
+                hintText: 'YYYY-MM',
+              ),
             ),
             const SizedBox(height: 12),
-            const Text('Start from',
-                style: TextStyle(color: KColors.textDim, fontSize: 11)),
+            Text(
+              'Start from',
+              style: TextStyle(color: KColors.textDim, fontSize: 11),
+            ),
             if (widget.hasPrevious)
               _sourceOption('previous', 'Last month\'s forecast'),
-            if (widget.hasBudget)
-              _sourceOption('budget', 'Approved budget'),
+            if (widget.hasBudget) _sourceOption('budget', 'Approved budget'),
             _sourceOption('empty', 'Empty'),
           ],
         ),
       ),
       actions: [
         TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel')),
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
         ElevatedButton(
           onPressed: () {
             final period = _periodCtrl.text.trim();

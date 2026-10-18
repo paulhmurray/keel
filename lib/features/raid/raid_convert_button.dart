@@ -40,11 +40,13 @@ class RaidConvertButton extends StatelessWidget {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Convert')),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Convert'),
+          ),
         ],
       ),
     );
@@ -53,11 +55,12 @@ class RaidConvertButton extends StatelessWidget {
     final messenger = ScaffoldMessenger.maybeOf(context);
     final navigator = Navigator.of(context);
     try {
-      final newRef = await RaidConversionService(db)
-          .convert(id: itemId, from: from, to: to);
-      messenger?.showSnackBar(SnackBar(
-        content: Text('Converted $refLabel to ${to.label} $newRef'),
-      ));
+      final newRef = await RaidConversionService(
+        db,
+      ).convert(id: itemId, from: from, to: to);
+      messenger?.showSnackBar(
+        SnackBar(content: Text('Converted $refLabel to ${to.label} $newRef')),
+      );
     } on StateError catch (e) {
       messenger?.showSnackBar(SnackBar(content: Text(e.message)));
     }
@@ -68,8 +71,9 @@ class RaidConvertButton extends StatelessWidget {
   Widget build(BuildContext context) {
     if (sourceProjectId != null) return const SizedBox.shrink();
 
-    final targets =
-        RaidKind.values.where((k) => k != from && k != RaidKind.decision);
+    final targets = RaidKind.values.where(
+      (k) => k != from && k != RaidKind.decision,
+    );
 
     return PopupMenuButton<RaidKind>(
       tooltip: 'Convert to another type',
@@ -79,15 +83,19 @@ class RaidConvertButton extends StatelessWidget {
           PopupMenuItem(
             value: k,
             height: 32,
-            child: Text('Convert to ${k.label}',
-                style: const TextStyle(fontSize: 12)),
+            child: Text(
+              'Convert to ${k.label}',
+              style: const TextStyle(fontSize: 12),
+            ),
           ),
         const PopupMenuDivider(),
         PopupMenuItem(
           value: RaidKind.decision,
           height: 32,
-          child: Text('Convert to ${RaidKind.decision.label}',
-              style: const TextStyle(fontSize: 12)),
+          child: Text(
+            'Convert to ${RaidKind.decision.label}',
+            style: const TextStyle(fontSize: 12),
+          ),
         ),
       ],
       child: Container(
@@ -97,13 +105,15 @@ class RaidConvertButton extends StatelessWidget {
           border: Border.all(color: KColors.border2),
           borderRadius: BorderRadius.circular(3),
         ),
-        child: const Row(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.swap_horiz, size: 13, color: KColors.textDim),
             SizedBox(width: 4),
-            Text('Convert',
-                style: TextStyle(color: KColors.textDim, fontSize: 11)),
+            Text(
+              'Convert',
+              style: TextStyle(color: KColors.textDim, fontSize: 11),
+            ),
             Icon(Icons.arrow_drop_down, size: 14, color: KColors.textDim),
           ],
         ),

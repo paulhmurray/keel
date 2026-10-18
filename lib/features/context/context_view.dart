@@ -93,14 +93,15 @@ class _ContextViewState extends State<ContextView>
           padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
           child: Row(
             children: [
-              const Icon(Icons.library_books,
-                  color: KColors.amber, size: 22),
+              Icon(Icons.library_books, color: KColors.amber, size: 22),
               const SizedBox(width: 10),
               Flexible(
-                child: Text('Context',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.headlineSmall),
+                child: Text(
+                  'Context',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
               ),
             ],
           ),
@@ -108,7 +109,7 @@ class _ContextViewState extends State<ContextView>
         const SizedBox(height: 12),
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             border: Border(bottom: BorderSide(color: KColors.border)),
           ),
           child: TabBar(
@@ -180,10 +181,8 @@ class _EntriesTabState extends State<_EntriesTab> {
         if (mounted) {
           showDialog(
             context: context,
-            builder: (_) => _EntryFormDialog(
-              projectId: widget.projectId,
-              db: widget.db,
-            ),
+            builder: (_) =>
+                _EntryFormDialog(projectId: widget.projectId, db: widget.db),
           );
         }
       });
@@ -224,13 +223,18 @@ class _EntriesTabState extends State<_EntriesTab> {
               Expanded(
                 child: TextField(
                   controller: _quickObsCtrl,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'Capture observation…',
-                    prefixIcon: Icon(Icons.visibility_outlined,
-                        size: 18, color: KColors.phosphor),
+                    prefixIcon: Icon(
+                      Icons.visibility_outlined,
+                      size: 18,
+                      color: KColors.phosphor,
+                    ),
                     isDense: true,
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                   ),
                   style: const TextStyle(fontSize: 13),
                   onSubmitted: (_) => _captureObservation(),
@@ -241,8 +245,10 @@ class _EntriesTabState extends State<_EntriesTab> {
                 onPressed: _captureObservation,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: KColors.phosphor,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                 ),
                 child: const Text('Capture', style: TextStyle(fontSize: 13)),
               ),
@@ -251,7 +257,9 @@ class _EntriesTabState extends State<_EntriesTab> {
                 onPressed: () => showDialog(
                   context: context,
                   builder: (_) => _EntryFormDialog(
-                      projectId: widget.projectId, db: widget.db),
+                    projectId: widget.projectId,
+                    db: widget.db,
+                  ),
                 ),
                 icon: const Icon(Icons.add, size: 16),
                 label: const Text('Add Entry'),
@@ -261,15 +269,16 @@ class _EntriesTabState extends State<_EntriesTab> {
           const SizedBox(height: 12),
           Expanded(
             child: StreamBuilder<List<ContextEntry>>(
-              stream:
-                  widget.db.contextDao.watchEntriesForProject(widget.projectId),
+              stream: widget.db.contextDao.watchEntriesForProject(
+                widget.projectId,
+              ),
               builder: (context, snap) {
                 if (!snap.hasData) {
                   return const Center(child: CircularProgressIndicator());
                 }
                 final items = snap.data!;
                 if (items.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Text(
                       'No context entries yet.\nCapture an observation or add an entry.',
                       textAlign: TextAlign.center,
@@ -307,15 +316,22 @@ class _EntryCard extends StatelessWidget {
   final AppDatabase db;
   final String projectId;
 
-  const _EntryCard(
-      {required this.entry, required this.db, required this.projectId});
+  const _EntryCard({
+    required this.entry,
+    required this.db,
+    required this.projectId,
+  });
 
   @override
   Widget build(BuildContext context) {
     final e = entry;
     final typeColor = _entryTypeColor(e.entryType);
     final tags = e.tags != null && e.tags!.isNotEmpty
-        ? e.tags!.split(',').map((t) => t.trim()).where((t) => t.isNotEmpty).toList()
+        ? e.tags!
+              .split(',')
+              .map((t) => t.trim())
+              .where((t) => t.isNotEmpty)
+              .toList()
         : <String>[];
 
     return Card(
@@ -323,11 +339,8 @@ class _EntryCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         onTap: () => showDialog(
           context: context,
-          builder: (_) => _EntryFormDialog(
-            projectId: projectId,
-            db: db,
-            entry: e,
-          ),
+          builder: (_) =>
+              _EntryFormDialog(projectId: projectId, db: db, entry: e),
         ),
         child: Padding(
           padding: const EdgeInsets.all(14),
@@ -342,14 +355,18 @@ class _EntryCard extends StatelessWidget {
                     child: Text(
                       e.title,
                       style: const TextStyle(
-                          fontWeight: FontWeight.w600, fontSize: 14),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
                   // Entry type badge
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 7, vertical: 3),
+                      horizontal: 7,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: typeColor.withAlpha(30),
                       borderRadius: BorderRadius.circular(4),
@@ -358,19 +375,21 @@ class _EntryCard extends StatelessWidget {
                     child: Text(
                       e.entryType,
                       style: TextStyle(
-                          color: typeColor,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600),
+                        color: typeColor,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 6),
                   PopupMenuButton<String>(
                     icon: const Icon(Icons.more_vert, size: 18),
                     itemBuilder: (_) => [
+                      const PopupMenuItem(value: 'edit', child: Text('Edit')),
                       const PopupMenuItem(
-                          value: 'edit', child: Text('Edit')),
-                      const PopupMenuItem(
-                          value: 'delete', child: Text('Delete')),
+                        value: 'delete',
+                        child: Text('Delete'),
+                      ),
                     ],
                     onSelected: (val) {
                       if (val == 'delete') {
@@ -395,8 +414,7 @@ class _EntryCard extends StatelessWidget {
                 e.content,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                    color: KColors.textDim, fontSize: 12),
+                style: TextStyle(color: KColors.textDim, fontSize: 12),
               ),
               const SizedBox(height: 8),
               // Footer row: source badge + tags + date
@@ -409,7 +427,9 @@ class _EntryCard extends StatelessWidget {
                   ...tags.map(
                     (tag) => Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: KColors.surface2,
                         borderRadius: BorderRadius.circular(4),
@@ -417,15 +437,13 @@ class _EntryCard extends StatelessWidget {
                       ),
                       child: Text(
                         '#$tag',
-                        style: const TextStyle(
-                            color: KColors.textDim, fontSize: 11),
+                        style: TextStyle(color: KColors.textDim, fontSize: 11),
                       ),
                     ),
                   ),
                   Text(
                     du.toDisplayDate(e.createdAt),
-                    style: const TextStyle(
-                        color: KColors.textDim, fontSize: 11),
+                    style: TextStyle(color: KColors.textDim, fontSize: 11),
                   ),
                 ],
               ),
@@ -446,8 +464,11 @@ class _EntryFormDialog extends StatefulWidget {
   final AppDatabase db;
   final ContextEntry? entry; // null = new entry
 
-  const _EntryFormDialog(
-      {required this.projectId, required this.db, this.entry});
+  const _EntryFormDialog({
+    required this.projectId,
+    required this.db,
+    this.entry,
+  });
 
   @override
   State<_EntryFormDialog> createState() => _EntryFormDialogState();
@@ -530,8 +551,9 @@ class _EntryFormDialogState extends State<_EntryFormDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title:
-          Text(widget.entry == null ? 'New Context Entry' : 'Edit Context Entry'),
+      title: Text(
+        widget.entry == null ? 'New Context Entry' : 'Edit Context Entry',
+      ),
       content: SizedBox(
         width: 480,
         child: Form(
@@ -655,7 +677,9 @@ class _DocumentsTabState extends State<_DocumentsTab> {
                 onPressed: () => showDialog(
                   context: context,
                   builder: (_) => _DocumentUploadDialog(
-                      projectId: widget.projectId, db: widget.db),
+                    projectId: widget.projectId,
+                    db: widget.db,
+                  ),
                 ),
                 icon: const Icon(Icons.upload_file, size: 16),
                 label: const Text('Upload Document'),
@@ -665,15 +689,16 @@ class _DocumentsTabState extends State<_DocumentsTab> {
           const SizedBox(height: 12),
           Expanded(
             child: StreamBuilder<List<Document>>(
-              stream: widget.db.contextDao
-                  .watchDocumentsForProject(widget.projectId),
+              stream: widget.db.contextDao.watchDocumentsForProject(
+                widget.projectId,
+              ),
               builder: (context, snap) {
                 if (!snap.hasData) {
                   return const Center(child: CircularProgressIndicator());
                 }
                 final items = snap.data!;
                 if (items.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Text(
                       'No documents yet.\nUpload a document to extract text and generate a summary.',
                       textAlign: TextAlign.center,
@@ -687,9 +712,10 @@ class _DocumentsTabState extends State<_DocumentsTab> {
                   itemBuilder: (ctx, i) {
                     final d = items[i];
                     return _DocumentCard(
-                        document: d,
-                        db: widget.db,
-                        projectId: widget.projectId);
+                      document: d,
+                      db: widget.db,
+                      projectId: widget.projectId,
+                    );
                   },
                 );
               },
@@ -710,8 +736,11 @@ class _DocumentCard extends StatelessWidget {
   final AppDatabase db;
   final String projectId;
 
-  const _DocumentCard(
-      {required this.document, required this.db, required this.projectId});
+  const _DocumentCard({
+    required this.document,
+    required this.db,
+    required this.projectId,
+  });
 
   String? get _summary {
     final tags = document.tags;
@@ -743,8 +772,7 @@ class _DocumentCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.description_outlined,
-                  color: KColors.blue, size: 28),
+              Icon(Icons.description_outlined, color: KColors.blue, size: 28),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -756,24 +784,29 @@ class _DocumentCard extends StatelessWidget {
                           child: Text(
                             d.title,
                             style: const TextStyle(
-                                fontWeight: FontWeight.w600, fontSize: 14),
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
                           ),
                         ),
                         if (d.documentType != null &&
                             d.documentType!.isNotEmpty)
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: KColors.surface2,
                               borderRadius: BorderRadius.circular(4),
-                              border:
-                                  Border.all(color: KColors.border),
+                              border: Border.all(color: KColors.border),
                             ),
                             child: Text(
                               d.documentType!,
-                              style: const TextStyle(
-                                  color: KColors.textDim, fontSize: 11),
+                              style: TextStyle(
+                                color: KColors.textDim,
+                                fontSize: 11,
+                              ),
                             ),
                           ),
                       ],
@@ -784,38 +817,43 @@ class _DocumentCard extends StatelessWidget {
                         summary,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            color: KColors.textDim, fontSize: 12),
+                        style: TextStyle(color: KColors.textDim, fontSize: 12),
                       )
                     else if (d.content != null && d.content!.isNotEmpty)
                       Text(
                         d.content!,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            color: KColors.textDim, fontSize: 12),
+                        style: TextStyle(color: KColors.textDim, fontSize: 12),
                       ),
                     const SizedBox(height: 6),
                     Row(
                       children: [
                         Text(
                           'Added ${du.toDisplayDate(d.createdAt)}',
-                          style: const TextStyle(
-                              color: KColors.textDim, fontSize: 11),
+                          style: TextStyle(
+                            color: KColors.textDim,
+                            fontSize: 11,
+                          ),
                         ),
                         const SizedBox(width: 8),
                         if (summary != null)
-                          const _StatusChip(
-                              label: 'Summarised', color: KColors.phosphor),
+                          _StatusChip(
+                            label: 'Summarised',
+                            color: KColors.phosphor,
+                          ),
                         if (d.content != null &&
                             d.content!.isNotEmpty &&
                             summary == null)
-                          const _StatusChip(
-                              label: 'Text extracted',
-                              color: KColors.blue),
+                          _StatusChip(
+                            label: 'Text extracted',
+                            color: KColors.blue,
+                          ),
                         if (d.content == null || d.content!.isEmpty)
-                          const _StatusChip(
-                              label: 'No content', color: KColors.textDim),
+                          _StatusChip(
+                            label: 'No content',
+                            color: KColors.textDim,
+                          ),
                       ],
                     ),
                   ],
@@ -856,7 +894,10 @@ class _StatusChip extends StatelessWidget {
       child: Text(
         label,
         style: TextStyle(
-            color: color, fontSize: 10, fontWeight: FontWeight.w600),
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -870,8 +911,7 @@ class _DocumentUploadDialog extends StatefulWidget {
   final String projectId;
   final AppDatabase db;
 
-  const _DocumentUploadDialog(
-      {required this.projectId, required this.db});
+  const _DocumentUploadDialog({required this.projectId, required this.db});
 
   @override
   State<_DocumentUploadDialog> createState() => _DocumentUploadDialogState();
@@ -966,10 +1006,12 @@ class _DocumentUploadDialogState extends State<_DocumentUploadDialog> {
         projectId: Value(widget.projectId),
         title: Value(_titleCtrl.text.trim()),
         documentType: Value(
-            _typeCtrl.text.trim().isEmpty ? null : _typeCtrl.text.trim()),
+          _typeCtrl.text.trim().isEmpty ? null : _typeCtrl.text.trim(),
+        ),
         content: Value(content.isEmpty ? null : content),
         filePath: Value(
-            _pathCtrl.text.trim().isEmpty ? null : _pathCtrl.text.trim()),
+          _pathCtrl.text.trim().isEmpty ? null : _pathCtrl.text.trim(),
+        ),
       ),
     );
 
@@ -1027,15 +1069,22 @@ class _DocumentUploadDialogState extends State<_DocumentUploadDialog> {
                     children: [
                       Expanded(
                         child: _pathCtrl.text.isEmpty
-                            ? const Text(
+                            ? Text(
                                 'No file selected',
                                 style: TextStyle(
-                                    color: KColors.textDim, fontSize: 13),
+                                  color: KColors.textDim,
+                                  fontSize: 13,
+                                ),
                               )
                             : Text(
-                                _pathCtrl.text.replaceAll('\\', '/').split('/').last,
-                                style: const TextStyle(
-                                    color: KColors.text, fontSize: 13),
+                                _pathCtrl.text
+                                    .replaceAll('\\', '/')
+                                    .split('/')
+                                    .last,
+                                style: TextStyle(
+                                  color: KColors.text,
+                                  fontSize: 13,
+                                ),
                                 overflow: TextOverflow.ellipsis,
                               ),
                       ),
@@ -1054,7 +1103,8 @@ class _DocumentUploadDialogState extends State<_DocumentUploadDialog> {
                                   width: 16,
                                   height: 16,
                                   child: CircularProgressIndicator(
-                                      strokeWidth: 2),
+                                    strokeWidth: 2,
+                                  ),
                                 )
                               : const Text('Re-extract'),
                         ),
@@ -1065,8 +1115,7 @@ class _DocumentUploadDialogState extends State<_DocumentUploadDialog> {
                     const SizedBox(height: 8),
                     Text(
                       'Error: $_extractError',
-                      style: const TextStyle(
-                          color: KColors.red, fontSize: 12),
+                      style: TextStyle(color: KColors.red, fontSize: 12),
                     ),
                   ],
                   if (_extractedText != null) ...[
@@ -1076,29 +1125,36 @@ class _DocumentUploadDialogState extends State<_DocumentUploadDialog> {
                       decoration: BoxDecoration(
                         color: KColors.surface,
                         borderRadius: BorderRadius.circular(6),
-                        border:
-                            Border.all(color: KColors.phosphor.withAlpha(80)),
+                        border: Border.all(
+                          color: KColors.phosphor.withAlpha(80),
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.check_circle_outline,
-                                  color: KColors.phosphor, size: 14),
+                              Icon(
+                                Icons.check_circle_outline,
+                                color: KColors.phosphor,
+                                size: 14,
+                              ),
                               const SizedBox(width: 6),
-                              const Text(
+                              Text(
                                 'Text extracted',
                                 style: TextStyle(
-                                    color: KColors.phosphor,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600),
+                                  color: KColors.phosphor,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                               const Spacer(),
                               Text(
                                 '${_extractedText!.length} characters',
-                                style: const TextStyle(
-                                    color: KColors.textDim, fontSize: 11),
+                                style: TextStyle(
+                                  color: KColors.textDim,
+                                  fontSize: 11,
+                                ),
                               ),
                             ],
                           ),
@@ -1107,8 +1163,10 @@ class _DocumentUploadDialogState extends State<_DocumentUploadDialog> {
                             _extractedText!.length > 200
                                 ? '${_extractedText!.substring(0, 200)}…'
                                 : _extractedText!,
-                            style: const TextStyle(
-                                color: KColors.textDim, fontSize: 11),
+                            style: TextStyle(
+                              color: KColors.textDim,
+                              fontSize: 11,
+                            ),
                           ),
                         ],
                       ),
@@ -1134,10 +1192,7 @@ class _DocumentUploadDialogState extends State<_DocumentUploadDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
-        ElevatedButton(
-          onPressed: _save,
-          child: const Text('Save'),
-        ),
+        ElevatedButton(onPressed: _save, child: const Text('Save')),
       ],
     );
   }
@@ -1152,8 +1207,11 @@ class _DocumentDetailDialog extends StatefulWidget {
   final AppDatabase db;
   final String projectId;
 
-  const _DocumentDetailDialog(
-      {required this.document, required this.db, required this.projectId});
+  const _DocumentDetailDialog({
+    required this.document,
+    required this.db,
+    required this.projectId,
+  });
 
   @override
   State<_DocumentDetailDialog> createState() => _DocumentDetailDialogState();
@@ -1167,15 +1225,18 @@ class _DocumentDetailDialogState extends State<_DocumentDetailDialog> {
   Future<void> _generateSummary(BuildContext ctx) async {
     final settings = ctx.read<SettingsProvider>();
     if (!settings.hasApiKey) {
-      setState(() =>
-          _summaryError = 'No API key configured. Go to Settings → LLM Settings.');
+      setState(
+        () => _summaryError =
+            'No API key configured. Go to Settings → LLM Settings.',
+      );
       return;
     }
 
     final content = widget.document.content;
     if (content == null || content.isEmpty) {
       setState(
-          () => _summaryError = 'No extracted text available to summarise.');
+        () => _summaryError = 'No extracted text available to summarise.',
+      );
       return;
     }
 
@@ -1252,7 +1313,8 @@ class _DocumentDetailDialogState extends State<_DocumentDetailDialog> {
           id: Value(const Uuid().v4()),
           projectId: Value(widget.projectId),
           content: Value(
-              'Document: ${widget.document.title}\n\n${content.length > 1000 ? '${content.substring(0, 1000)}…' : content}'),
+            'Document: ${widget.document.title}\n\n${content.length > 1000 ? '${content.substring(0, 1000)}…' : content}',
+          ),
           source: const Value('document'),
           status: const Value('unprocessed'),
         ),
@@ -1297,12 +1359,11 @@ class _DocumentDetailDialogState extends State<_DocumentDetailDialog> {
         return AlertDialog(
           title: Row(
             children: [
-              const Icon(Icons.description_outlined,
-                  color: KColors.blue, size: 20),
+              Icon(Icons.description_outlined, color: KColors.blue, size: 20),
               const SizedBox(width: 8),
               Expanded(
-                  child: Text(doc.title,
-                      style: const TextStyle(fontSize: 16))),
+                child: Text(doc.title, style: const TextStyle(fontSize: 16)),
+              ),
             ],
           ),
           content: SizedBox(
@@ -1318,24 +1379,25 @@ class _DocumentDetailDialogState extends State<_DocumentDetailDialog> {
                       if (doc.documentType != null &&
                           doc.documentType!.isNotEmpty) ...[
                         _StatusChip(
-                            label: doc.documentType!,
-                            color: KColors.blue),
+                          label: doc.documentType!,
+                          color: KColors.blue,
+                        ),
                         const SizedBox(width: 8),
                       ],
                       Text(
                         'Added ${du.toDisplayDate(doc.createdAt)}',
-                        style: const TextStyle(
-                            color: KColors.textDim, fontSize: 12),
+                        style: TextStyle(color: KColors.textDim, fontSize: 12),
                       ),
-                      if (doc.filePath != null &&
-                          doc.filePath!.isNotEmpty) ...[
+                      if (doc.filePath != null && doc.filePath!.isNotEmpty) ...[
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             doc.filePath!,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                color: KColors.textDim, fontSize: 11),
+                            style: TextStyle(
+                              color: KColors.textDim,
+                              fontSize: 11,
+                            ),
                           ),
                         ),
                       ],
@@ -1349,7 +1411,9 @@ class _DocumentDetailDialogState extends State<_DocumentDetailDialog> {
                       const Text(
                         'Summary',
                         style: TextStyle(
-                            fontWeight: FontWeight.w600, fontSize: 13),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
                       ),
                       const Spacer(),
                       TextButton.icon(
@@ -1361,9 +1425,10 @@ class _DocumentDetailDialogState extends State<_DocumentDetailDialog> {
                                 width: 12,
                                 height: 12,
                                 child: CircularProgressIndicator(
-                                    strokeWidth: 2))
-                            : const Icon(Icons.auto_awesome_outlined,
-                                size: 14),
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.auto_awesome_outlined, size: 14),
                         label: Text(
                           liveSummary != null
                               ? 'Regenerate Summary'
@@ -1376,8 +1441,7 @@ class _DocumentDetailDialogState extends State<_DocumentDetailDialog> {
                   if (_summaryError != null) ...[
                     Text(
                       _summaryError!,
-                      style: const TextStyle(
-                          color: KColors.red, fontSize: 12),
+                      style: TextStyle(color: KColors.red, fontSize: 12),
                     ),
                     const SizedBox(height: 8),
                   ],
@@ -1389,12 +1453,12 @@ class _DocumentDetailDialogState extends State<_DocumentDetailDialog> {
                         color: KColors.surface,
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(
-                            color: KColors.phosphor.withAlpha(80)),
+                          color: KColors.phosphor.withAlpha(80),
+                        ),
                       ),
                       child: Text(
                         liveSummary,
-                        style: const TextStyle(
-                            fontSize: 13, color: KColors.text),
+                        style: TextStyle(fontSize: 13, color: KColors.text),
                       ),
                     )
                   else
@@ -1406,10 +1470,9 @@ class _DocumentDetailDialogState extends State<_DocumentDetailDialog> {
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(color: KColors.border),
                       ),
-                      child: const Text(
+                      child: Text(
                         'No summary yet. Click "Generate Summary" to have Claude summarise this document.',
-                        style: TextStyle(
-                            color: KColors.textDim, fontSize: 12),
+                        style: TextStyle(color: KColors.textDim, fontSize: 12),
                       ),
                     ),
                   const SizedBox(height: 16),
@@ -1417,8 +1480,7 @@ class _DocumentDetailDialogState extends State<_DocumentDetailDialog> {
                   // Extracted text section
                   const Text(
                     'Extracted Text',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w600, fontSize: 13),
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                   ),
                   const SizedBox(height: 8),
                   if (doc.content != null && doc.content!.isNotEmpty)
@@ -1434,10 +1496,11 @@ class _DocumentDetailDialogState extends State<_DocumentDetailDialog> {
                       child: SingleChildScrollView(
                         child: Text(
                           doc.content!,
-                          style: const TextStyle(
-                              color: KColors.textDim,
-                              fontSize: 12,
-                              fontFamily: 'monospace'),
+                          style: TextStyle(
+                            color: KColors.textDim,
+                            fontSize: 12,
+                            fontFamily: 'monospace',
+                          ),
                         ),
                       ),
                     )
@@ -1450,10 +1513,9 @@ class _DocumentDetailDialogState extends State<_DocumentDetailDialog> {
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(color: KColors.border),
                       ),
-                      child: const Text(
+                      child: Text(
                         'No extracted text available.',
-                        style: TextStyle(
-                            color: KColors.textDim, fontSize: 12),
+                        style: TextStyle(color: KColors.textDim, fontSize: 12),
                       ),
                     ),
                 ],
@@ -1466,7 +1528,9 @@ class _DocumentDetailDialogState extends State<_DocumentDetailDialog> {
               child: const Text('Close'),
             ),
             ElevatedButton.icon(
-              onPressed: (doc.content == null || doc.content!.isEmpty ||
+              onPressed:
+                  (doc.content == null ||
+                      doc.content!.isEmpty ||
                       _sendingToInbox)
                   ? null
                   : () => _sendToInbox(ctx),
@@ -1474,7 +1538,8 @@ class _DocumentDetailDialogState extends State<_DocumentDetailDialog> {
                   ? const SizedBox(
                       width: 12,
                       height: 12,
-                      child: CircularProgressIndicator(strokeWidth: 2))
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
                   : const Icon(Icons.inbox_outlined, size: 14),
               label: const Text('Send to Inbox'),
             ),
@@ -1546,7 +1611,7 @@ class _GlossaryTabState extends State<_GlossaryTab> {
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 12),
               child: Row(
                 children: [
-                  const Flexible(
+                  Flexible(
                     child: Text(
                       'SYSTEMS & TERMS',
                       maxLines: 1,
@@ -1570,20 +1635,27 @@ class _GlossaryTabState extends State<_GlossaryTab> {
             ),
             Expanded(
               child: entries.isEmpty
-                  ? const Center(
+                  ? Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.menu_book_outlined,
-                              size: 36, color: KColors.textMuted),
+                          Icon(
+                            Icons.menu_book_outlined,
+                            size: 36,
+                            color: KColors.textMuted,
+                          ),
                           SizedBox(height: 12),
-                          Text('No glossary entries yet.',
-                              style: TextStyle(color: KColors.textDim)),
+                          Text(
+                            'No glossary entries yet.',
+                            style: TextStyle(color: KColors.textDim),
+                          ),
                           SizedBox(height: 4),
                           Text(
                             'Add systems, acronyms and project terms.',
                             style: TextStyle(
-                                color: KColors.textMuted, fontSize: 11),
+                              color: KColors.textMuted,
+                              fontSize: 11,
+                            ),
                           ),
                         ],
                       ),
@@ -1598,11 +1670,13 @@ class _GlossaryTabState extends State<_GlossaryTab> {
                             color: KColors.phosphor,
                           ),
                           const SizedBox(height: 6),
-                          ...systems.map((e) => _GlossaryRow(
-                                entry: e,
-                                onEdit: () => _openForm(context, entry: e),
-                                onDelete: () => _delete(e),
-                              )),
+                          ...systems.map(
+                            (e) => _GlossaryRow(
+                              entry: e,
+                              onEdit: () => _openForm(context, entry: e),
+                              onDelete: () => _delete(e),
+                            ),
+                          ),
                           const SizedBox(height: 20),
                         ],
                         if (terms.isNotEmpty) ...[
@@ -1612,11 +1686,13 @@ class _GlossaryTabState extends State<_GlossaryTab> {
                             color: KColors.amber,
                           ),
                           const SizedBox(height: 6),
-                          ...terms.map((e) => _GlossaryRow(
-                                entry: e,
-                                onEdit: () => _openForm(context, entry: e),
-                                onDelete: () => _delete(e),
-                              )),
+                          ...terms.map(
+                            (e) => _GlossaryRow(
+                              entry: e,
+                              onEdit: () => _openForm(context, entry: e),
+                              onDelete: () => _delete(e),
+                            ),
+                          ),
                         ],
                       ],
                     ),
@@ -1725,7 +1801,7 @@ class _GlossaryRow extends StatelessWidget {
                 children: [
                   Text(
                     entry.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: KColors.text,
@@ -1735,7 +1811,7 @@ class _GlossaryRow extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       entry.description!,
-                      style: const TextStyle(fontSize: 11, color: KColors.textDim),
+                      style: TextStyle(fontSize: 11, color: KColors.textDim),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1745,8 +1821,7 @@ class _GlossaryRow extends StatelessWidget {
                     Wrap(
                       spacing: 6,
                       children: [
-                        if (entry.owner != null)
-                          _MetaChip(label: entry.owner!),
+                        if (entry.owner != null) _MetaChip(label: entry.owner!),
                         if (entry.environment != null)
                           _MetaChip(label: entry.environment!),
                         if (entry.status != null)
@@ -1797,7 +1872,7 @@ class _MetaChip extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: const TextStyle(fontSize: 10, color: KColors.textDim),
+        style: TextStyle(fontSize: 10, color: KColors.textDim),
       ),
     );
   }
@@ -1824,7 +1899,11 @@ class _GlossaryStatusChip extends StatelessWidget {
       ),
       child: Text(
         status,
-        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color),
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
       ),
     );
   }

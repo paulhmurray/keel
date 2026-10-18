@@ -258,16 +258,12 @@ class _HelmViewState extends State<HelmView> {
           ),
           child: Row(
             children: [
-              const Icon(
-                Icons.view_week_outlined,
-                size: 14,
-                color: KColors.amber,
-              ),
+              Icon(Icons.view_week_outlined, size: 14, color: KColors.amber),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   text,
-                  style: const TextStyle(color: KColors.text, fontSize: 12),
+                  style: TextStyle(color: KColors.text, fontSize: 12),
                 ),
               ),
               TextButton(
@@ -282,15 +278,11 @@ class _HelmViewState extends State<HelmView> {
                 ),
                 child: Text(
                   action,
-                  style: const TextStyle(color: KColors.amber, fontSize: 12),
+                  style: TextStyle(color: KColors.amber, fontSize: 12),
                 ),
               ),
               IconButton(
-                icon: const Icon(
-                  Icons.close,
-                  size: 14,
-                  color: KColors.textMuted,
-                ),
+                icon: Icon(Icons.close, size: 14, color: KColors.textMuted),
                 tooltip: 'Not now',
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
@@ -637,7 +629,7 @@ class _HelmHeader extends StatelessWidget {
     return Container(
       height: 56,
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: KColors.surface,
         border: Border(bottom: BorderSide(color: KColors.border)),
       ),
@@ -688,7 +680,7 @@ class _HelmHeader extends StatelessWidget {
               ],
               const SizedBox(width: 12),
               IconButton(
-                icon: const Icon(
+                icon: Icon(
                   Icons.chevron_left,
                   size: 18,
                   color: KColors.textDim,
@@ -713,7 +705,7 @@ class _HelmHeader extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: const Icon(
+                icon: Icon(
                   Icons.chevron_right,
                   size: 18,
                   color: KColors.textDim,
@@ -728,14 +720,11 @@ class _HelmHeader extends StatelessWidget {
               if (!isCurrent)
                 TextButton(
                   onPressed: onToday,
-                  child: Text(
-                    switch (scale) {
-                      HelmScale.day => 'Today',
-                      HelmScale.week => 'This week',
-                      HelmScale.quarter => 'This quarter',
-                    },
-                    style: const TextStyle(color: KColors.amber, fontSize: 12),
-                  ),
+                  child: Text(switch (scale) {
+                    HelmScale.day => 'Today',
+                    HelmScale.week => 'This week',
+                    HelmScale.quarter => 'This quarter',
+                  }, style: TextStyle(color: KColors.amber, fontSize: 12)),
                 ),
               const Spacer(),
               if (onFocus != null)
@@ -767,10 +756,7 @@ class _HelmHeader extends StatelessWidget {
                   const SizedBox(width: 4),
                   Text(
                     label,
-                    style: const TextStyle(
-                      color: KColors.textDim,
-                      fontSize: 11,
-                    ),
+                    style: TextStyle(color: KColors.textDim, fontSize: 11),
                   ),
                   const SizedBox(width: 12),
                 ],
@@ -798,11 +784,7 @@ class _EmptyDay extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Icons.explore_outlined,
-            size: 48,
-            color: KColors.textMuted,
-          ),
+          Icon(Icons.explore_outlined, size: 48, color: KColors.textMuted),
           const SizedBox(height: 16),
           Text(
             isToday ? 'Chart your day' : 'No plan for this day',
@@ -813,7 +795,7 @@ class _EmptyDay extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          const SizedBox(
+          SizedBox(
             width: 380,
             child: Text(
               'Block the day in 30-minute slots — meetings, focus work on '
@@ -877,7 +859,7 @@ class _TimeGrid extends StatelessWidget {
           child: Row(
             children: [
               if (mission != null) ...[
-                const Icon(Icons.flag, size: 12, color: KColors.amber),
+                Icon(Icons.flag, size: 12, color: KColors.amber),
                 const SizedBox(width: 5),
                 Flexible(
                   flex: 2,
@@ -885,7 +867,7 @@ class _TimeGrid extends StatelessWidget {
                     mission!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: KColors.text,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -903,17 +885,13 @@ class _TimeGrid extends StatelessWidget {
                       'new column — the original plan stays as the record.',
                   child: OutlinedButton.icon(
                     onPressed: () => _reviseFromNow(context, starts),
-                    icon: const Icon(
-                      Icons.alt_route,
-                      size: 14,
-                      color: KColors.amber,
-                    ),
-                    label: const Text(
+                    icon: Icon(Icons.alt_route, size: 14, color: KColors.amber),
+                    label: Text(
                       'Revise from now',
                       style: TextStyle(color: KColors.amber, fontSize: 12),
                     ),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: KColors.amber, width: 1),
+                      side: BorderSide(color: KColors.amber, width: 1),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 8,
@@ -1515,7 +1493,7 @@ class _BlockDialogState extends State<_BlockDialog> {
                 deleted: true,
               ),
             ),
-            child: const Text('Delete', style: TextStyle(color: KColors.red)),
+            child: Text('Delete', style: TextStyle(color: KColors.red)),
           ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
@@ -1670,15 +1648,11 @@ class _PlannedForDay extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.view_week_outlined,
-                size: 12,
-                color: KColors.amber,
-              ),
+              Icon(Icons.view_week_outlined, size: 12, color: KColors.amber),
               const SizedBox(width: 6),
               Text(
                 isToday ? 'PLANNED FOR TODAY' : 'PLANNED FOR THIS DAY',
-                style: const TextStyle(
+                style: TextStyle(
                   color: KColors.textDim,
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
@@ -1717,11 +1691,11 @@ class _PlannedForDay extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 8,
                               ),
-                              side: const BorderSide(color: KColors.border2),
+                              side: BorderSide(color: KColors.border2),
                               visualDensity: VisualDensity.compact,
                             ),
                             onPressed: () => _placeRock(r.o, r.slots, starts),
-                            child: const Text(
+                            child: Text(
                               'Place',
                               style: TextStyle(
                                 color: KColors.amber,
@@ -1798,7 +1772,7 @@ class _RailStrip extends StatelessWidget {
                 quarterTurns: 3,
                 child: Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: KColors.textDim,
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
@@ -1970,7 +1944,7 @@ class _PlanningRailState extends State<_PlanningRail> {
                   Expanded(
                     child: Text(
                       today ? 'TODAY' : 'AHEAD',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: KColors.textDim,
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
@@ -2002,7 +1976,7 @@ class _PlanningRailState extends State<_PlanningRail> {
                 today
                     ? 'What the day is for. Drag onto the grid · click to open.'
                     : 'What is coming, and the full open books. Drag or click.',
-                style: const TextStyle(color: KColors.textMuted, fontSize: 11),
+                style: TextStyle(color: KColors.textMuted, fontSize: 11),
               ),
             ),
             if (today) ..._todaySections(yesterdayIso) else ..._aheadSections(),
@@ -2043,7 +2017,7 @@ class _PlanningRailState extends State<_PlanningRail> {
       cap: 5,
     ),
     _decisionSection(cap: 5),
-    const Padding(
+    Padding(
       padding: EdgeInsets.fromLTRB(14, 18, 14, 0),
       child: Text(
         'ALL OPEN ITEMS',
@@ -2158,7 +2132,7 @@ class _PlanningRailState extends State<_PlanningRail> {
                     padding: const EdgeInsets.fromLTRB(10, 4, 10, 6),
                     child: Text(
                       '$nextWeekCount more next week — see the horizon below',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: KColors.textMuted,
                         fontSize: 10.5,
                       ),
@@ -2657,7 +2631,7 @@ class _RailDayHeader extends StatelessWidget {
     color: KColors.surface2,
     child: Text(
       label.toUpperCase(),
-      style: const TextStyle(
+      style: TextStyle(
         color: KColors.textMuted,
         fontSize: 9,
         fontWeight: FontWeight.w700,
@@ -2738,7 +2712,7 @@ class _RailSection extends StatelessWidget {
               title.toUpperCase(),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: TextStyle(
                 color: KColors.textDim,
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
@@ -2795,7 +2769,7 @@ class _RailItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final card = Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: KColors.border)),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -2816,22 +2790,19 @@ class _RailItem extends StatelessWidget {
                   label,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: KColors.text, fontSize: 12),
+                  style: TextStyle(color: KColors.text, fontSize: 12),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   detail,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: KColors.textMuted,
-                    fontSize: 10,
-                  ),
+                  style: TextStyle(color: KColors.textMuted, fontSize: 10),
                 ),
               ],
             ),
           ),
-          const Icon(Icons.drag_indicator, size: 14, color: KColors.textMuted),
+          Icon(Icons.drag_indicator, size: 14, color: KColors.textMuted),
         ],
       ),
     );
@@ -2852,7 +2823,7 @@ class _RailItem extends StatelessWidget {
             label,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: KColors.text, fontSize: 12),
+            style: TextStyle(color: KColors.text, fontSize: 12),
           ),
         ),
       ),

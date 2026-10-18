@@ -76,7 +76,12 @@ class _DependencyFormDialogState extends State<DependencyFormDialog> {
   final _types = ['inbound', 'outbound', 'bilateral'];
   final _statuses = ['open', 'in progress', 'resolved', 'closed', 'blocked'];
   final _sources = [
-    'manual', 'inbox', 'document', 'observation', 'meeting', 'journal'
+    'manual',
+    'inbox',
+    'document',
+    'observation',
+    'meeting',
+    'journal',
   ];
 
   bool get _isEdit => widget.dependency != null;
@@ -101,8 +106,9 @@ class _DependencyFormDialogState extends State<DependencyFormDialog> {
   }
 
   Future<void> _loadPersons() async {
-    final list =
-        await widget.db.peopleDao.getPersonsForProject(widget.projectId);
+    final list = await widget.db.peopleDao.getPersonsForProject(
+      widget.projectId,
+    );
     if (mounted) setState(() => _persons = list);
   }
 
@@ -110,12 +116,16 @@ class _DependencyFormDialogState extends State<DependencyFormDialog> {
     final db = widget.db;
     final persons = await db.peopleDao.getPersonsForProject(widget.projectId);
     final wps = await db.programmeGanttDao.getWorkPackages(widget.projectId);
-    final acts =
-        await db.programmeGanttDao.getActivitiesForProject(widget.projectId);
+    final acts = await db.programmeGanttDao.getActivitiesForProject(
+      widget.projectId,
+    );
     final header = await db.programmeGanttDao.getHeader(widget.projectId);
     final planRow = widget.dependency != null
         ? await DependencyPlanLink.find(
-            db, widget.projectId, widget.dependency!.id)
+            db,
+            widget.projectId,
+            widget.dependency!.id,
+          )
         : null;
     if (!mounted) return;
     setState(() {
@@ -145,14 +155,17 @@ class _DependencyFormDialogState extends State<DependencyFormDialog> {
     if (!_formKey.currentState!.validate()) return;
 
     final isNew = widget.dependency == null;
-    final existing = await widget.db.raidDao.getDependenciesForProject(widget.projectId);
-    final nums = existing
-        .where((d) => d.ref != null && d.ref!.startsWith('D'))
-        .map((d) => int.tryParse(d.ref!.substring(1)) ?? 0)
-        .toList()
-      ..sort();
-    final String ref = widget.dependency?.ref ??
-        'D${(nums.isEmpty ? 0 : nums.last) + 1}';
+    final existing = await widget.db.raidDao.getDependenciesForProject(
+      widget.projectId,
+    );
+    final nums =
+        existing
+            .where((d) => d.ref != null && d.ref!.startsWith('D'))
+            .map((d) => int.tryParse(d.ref!.substring(1)) ?? 0)
+            .toList()
+          ..sort();
+    final String ref =
+        widget.dependency?.ref ?? 'D${(nums.isEmpty ? 0 : nums.last) + 1}';
 
     final id = widget.dependency?.id ?? const Uuid().v4();
     final description = _descCtrl.text.trim();
@@ -169,10 +182,13 @@ class _DependencyFormDialogState extends State<DependencyFormDialog> {
         planActivityId: Value(_planActivityId),
         owner: Value(_trimOrNull(_ownerCtrl)),
         status: Value(_status),
-        closedAt: Value(nextClosedAt(
+        closedAt: Value(
+          nextClosedAt(
             kind: RaidKind.dependency,
             newStatus: _status,
-            existing: widget.dependency?.closedAt)),
+            existing: widget.dependency?.closedAt,
+          ),
+        ),
         dueDate: Value(_dueDate),
         source: Value(_source),
         sourceNote: Value(_trimOrNull(_sourceNoteCtrl)),
@@ -218,8 +234,11 @@ class _DependencyFormDialogState extends State<DependencyFormDialog> {
 
   String? get _activityLabel => _planActivityId == null
       ? null
-      : PlanActivityPicker.labelFor(_planActivityId!,
-          workPackages: _workPackages, activities: _activities);
+      : PlanActivityPicker.labelFor(
+          _planActivityId!,
+          workPackages: _workPackages,
+          activities: _activities,
+        );
 
   DependencySlack? _slack({required String? dueDate, required String type}) {
     final a = _activity;
@@ -238,18 +257,18 @@ class _DependencyFormDialogState extends State<DependencyFormDialog> {
   /// One-line explanation of what linking to the plan means for this
   /// direction, so the PM knows which date the slack is measured to.
   String _timelineHint(String type) => switch (type) {
-        'outbound' =>
-          'Measured against the activity\'s end: we must deliver by then.',
-        _ =>
-          'Measured against the activity\'s start: it can\'t begin until '
-              'this lands.',
-      };
+    'outbound' =>
+      'Measured against the activity\'s end: we must deliver by then.',
+    _ =>
+      'Measured against the activity\'s start: it can\'t begin until '
+          'this lands.',
+  };
 
   Widget _timelineSummary({required bool editable}) {
     final a = _activity;
     final slack = _slack(dueDate: _dueDate, type: _dependencyType);
     if (a == null) {
-      return const Text(
+      return Text(
         'Not linked to a plan activity — the register can\'t tell whether '
         'this dependency threatens the schedule.',
         style: TextStyle(color: KColors.textMuted, fontSize: 11),
@@ -261,17 +280,19 @@ class _DependencyFormDialogState extends State<DependencyFormDialog> {
       children: [
         if (!editable) DetailField('Gates plan activity', _activityLabel),
         if (closed)
-          const Row(children: [
-            Icon(Icons.check_circle, size: 12, color: KColors.phosphor),
-            SizedBox(width: 5),
-            Flexible(
-              child: Text(
-                'Closed — no longer holding up the activity. The plan '
-                'arrow is removed while closed.',
-                style: TextStyle(color: KColors.phosphor, fontSize: 11),
+          Row(
+            children: [
+              Icon(Icons.check_circle, size: 12, color: KColors.phosphor),
+              SizedBox(width: 5),
+              Flexible(
+                child: Text(
+                  'Closed — no longer holding up the activity. The plan '
+                  'arrow is removed while closed.',
+                  style: TextStyle(color: KColors.phosphor, fontSize: 11),
+                ),
               ),
-            ),
-          ])
+            ],
+          )
         else if (slack != null)
           DependencySlackChip(slack: slack)
         else
@@ -279,12 +300,14 @@ class _DependencyFormDialogState extends State<DependencyFormDialog> {
             _dueDate == null
                 ? 'Set a needed-by date to see the slack against the plan.'
                 : 'The linked activity has no dates yet.',
-            style: const TextStyle(color: KColors.textMuted, fontSize: 11),
+            style: TextStyle(color: KColors.textMuted, fontSize: 11),
           ),
         if (!closed) ...[
           const SizedBox(height: 6),
-          Text(_timelineHint(_dependencyType),
-              style: const TextStyle(color: KColors.textMuted, fontSize: 10)),
+          Text(
+            _timelineHint(_dependencyType),
+            style: TextStyle(color: KColors.textMuted, fontSize: 10),
+          ),
         ],
       ],
     );
@@ -293,8 +316,9 @@ class _DependencyFormDialogState extends State<DependencyFormDialog> {
   // ── AI assist ──────────────────────────────────────────────────────────────
 
   Future<RaidAssistPrompt> _prompt(DependencyAssistField field) async {
-    final ctx =
-        await ContextBuilder(widget.db).buildSystemPrompt(widget.projectId);
+    final ctx = await ContextBuilder(
+      widget.db,
+    ).buildSystemPrompt(widget.projectId);
     return dependencyAssistPrompt(
       field: field,
       description: _descCtrl.text,
@@ -309,7 +333,7 @@ class _DependencyFormDialogState extends State<DependencyFormDialog> {
     );
   }
 
-  static const _accent = KColors.blue;
+  static final _accent = KColors.blue;
 
   // ── Read view ──────────────────────────────────────────────────────────────
 
@@ -318,19 +342,30 @@ class _DependencyFormDialogState extends State<DependencyFormDialog> {
     return DetailDialog(
       accent: _accent,
       title: [
-        if (d.ref != null) ...[DetailRefChip(d.ref!), const SizedBox(width: 10)],
+        if (d.ref != null) ...[
+          DetailRefChip(d.ref!),
+          const SizedBox(width: 10),
+        ],
         const Expanded(child: DetailTitle('Dependency')),
-        Text(d.dependencyType.toUpperCase(),
-            style: const TextStyle(
-                color: _accent, fontSize: 11, fontWeight: FontWeight.w700)),
+        Text(
+          d.dependencyType.toUpperCase(),
+          style: TextStyle(
+            color: _accent,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
       ],
       left: [
         DetailField('Description', d.description, large: true),
         Row(
           children: [
             Expanded(
-                child: DetailField(
-                    'Direction', kDependencyTypeLabels[d.dependencyType])),
+              child: DetailField(
+                'Direction',
+                kDependencyTypeLabels[d.dependencyType],
+              ),
+            ),
             Expanded(child: DetailField('Status', d.status)),
           ],
         ),
@@ -342,13 +377,18 @@ class _DependencyFormDialogState extends State<DependencyFormDialog> {
               Expanded(child: DetailField('Owner (our side)', d.owner)),
             if (d.dueDate != null)
               Expanded(
-                  child: DetailField('Needed by', du.formatDate(d.dueDate))),
+                child: DetailField('Needed by', du.formatDate(d.dueDate)),
+              ),
             if (isTerminalStatus(RaidKind.dependency, d.status))
               Expanded(
-                  child: DetailField(
-                      'Closed on',
-                      du.formatDate(d.closedAt ??
-                          d.updatedAt.toIso8601String().substring(0, 10)))),
+                child: DetailField(
+                  'Closed on',
+                  du.formatDate(
+                    d.closedAt ??
+                        d.updatedAt.toIso8601String().substring(0, 10),
+                  ),
+                ),
+              ),
           ],
         ),
         DetailField('Why this is a dependency', d.rationale),
@@ -360,12 +400,16 @@ class _DependencyFormDialogState extends State<DependencyFormDialog> {
         _timelineSummary(editable: false),
         if (_showOnPlan) ...[
           const SizedBox(height: 6),
-          const Row(children: [
-            Icon(Icons.timeline, size: 12, color: KColors.textDim),
-            SizedBox(width: 4),
-            Text('Shown on the plan as an external dependency',
-                style: TextStyle(color: KColors.textDim, fontSize: 10)),
-          ]),
+          Row(
+            children: [
+              Icon(Icons.timeline, size: 12, color: KColors.textDim),
+              SizedBox(width: 4),
+              Text(
+                'Shown on the plan as an external dependency',
+                style: TextStyle(color: KColors.textDim, fontSize: 10),
+              ),
+            ],
+          ),
         ],
         const DetailDivider(),
         Row(
@@ -382,7 +426,9 @@ class _DependencyFormDialogState extends State<DependencyFormDialog> {
           itemText: d.description,
         ),
         DetailField(
-            'Last updated', du.formatDate(d.updatedAt.toIso8601String())),
+          'Last updated',
+          du.formatDate(d.updatedAt.toIso8601String()),
+        ),
         RaidLinksSection(
           db: widget.db,
           projectId: widget.projectId,
@@ -395,8 +441,10 @@ class _DependencyFormDialogState extends State<DependencyFormDialog> {
         const Spacer(),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Close',
-              style: TextStyle(color: KColors.textDim, fontSize: 12)),
+          child: Text(
+            'Close',
+            style: TextStyle(color: KColors.textDim, fontSize: 12),
+          ),
         ),
         const SizedBox(width: 8),
         ElevatedButton.icon(
@@ -415,7 +463,8 @@ class _DependencyFormDialogState extends State<DependencyFormDialog> {
     if (_isViewing) return _readView();
 
     final isEdit = _isEdit;
-    final canShowOnPlan = _planActivityId != null &&
+    final canShowOnPlan =
+        _planActivityId != null &&
         DependencyPlanLink.canShowOnPlan(_dependencyType);
 
     return DetailDialog(
@@ -427,7 +476,8 @@ class _DependencyFormDialogState extends State<DependencyFormDialog> {
           const SizedBox(width: 10),
         ],
         Expanded(
-            child: DetailTitle(isEdit ? 'Edit Dependency' : 'New Dependency')),
+          child: DetailTitle(isEdit ? 'Edit Dependency' : 'New Dependency'),
+        ),
         if (isEdit)
           RaidConvertButton(
             db: widget.db,
@@ -441,7 +491,8 @@ class _DependencyFormDialogState extends State<DependencyFormDialog> {
         AiAssistedLabel(
           label: 'Description',
           target: _descCtrl,
-          tooltip: 'Rewrite as who must deliver what, by when, what it gates '
+          tooltip:
+              'Rewrite as who must deliver what, by when, what it gates '
               'and the cost of it slipping',
           buildPrompt: () => _prompt(DependencyAssistField.description),
         ),
@@ -451,7 +502,7 @@ class _DependencyFormDialogState extends State<DependencyFormDialog> {
           autofocus: !isEdit,
           minLines: 2,
           maxLines: 6,
-          style: const TextStyle(color: KColors.text, fontSize: 14),
+          style: TextStyle(color: KColors.text, fontSize: 14),
           decoration: InputDecoration(
             hintText: kRaidStatementPatterns[RaidKind.dependency],
             alignLabelWithHint: true,
@@ -553,7 +604,7 @@ class _DependencyFormDialogState extends State<DependencyFormDialog> {
         const DetailSectionLabel('Timeline'),
         const SizedBox(height: 8),
         if (_workPackages.isEmpty)
-          const Text(
+          Text(
             'No plan yet — build work packages and activities in Plan to '
             'link this dependency to the schedule.',
             style: TextStyle(color: KColors.textMuted, fontSize: 11),
@@ -575,32 +626,35 @@ class _DependencyFormDialogState extends State<DependencyFormDialog> {
         _timelineSummary(editable: true),
         if (canShowOnPlan) ...[
           const SizedBox(height: 8),
-          Row(children: [
-            SizedBox(
-              width: 18,
-              height: 18,
-              child: Checkbox(
-                value: _showOnPlan,
-                onChanged: (v) => setState(() => _showOnPlan = v ?? false),
+          Row(
+            children: [
+              SizedBox(
+                width: 18,
+                height: 18,
+                child: Checkbox(
+                  value: _showOnPlan,
+                  onChanged: (v) => setState(() => _showOnPlan = v ?? false),
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            const Icon(Icons.timeline, size: 13, color: KColors.blue),
-            const SizedBox(width: 5),
-            const Expanded(
-              child: Text(
-                'Show on the plan as an external dependency arrow into '
-                'this activity',
-                style: TextStyle(color: KColors.text, fontSize: 12),
+              const SizedBox(width: 8),
+              Icon(Icons.timeline, size: 13, color: KColors.blue),
+              const SizedBox(width: 5),
+              Expanded(
+                child: Text(
+                  'Show on the plan as an external dependency arrow into '
+                  'this activity',
+                  style: TextStyle(color: KColors.text, fontSize: 12),
+                ),
               ),
-            ),
-          ]),
+            ],
+          ),
         ],
         const DetailDivider(),
         AiAssistedLabel(
           label: 'Why this is a dependency',
           target: _rationaleCtrl,
-          tooltip: 'Draft what we need, why the work can\'t proceed without '
+          tooltip:
+              'Draft what we need, why the work can\'t proceed without '
               'it, and the timing assumption',
           buildPrompt: () => _prompt(DependencyAssistField.rationale),
         ),
@@ -609,9 +663,10 @@ class _DependencyFormDialogState extends State<DependencyFormDialog> {
           controller: _rationaleCtrl,
           minLines: 2,
           maxLines: 6,
-          style: const TextStyle(color: KColors.text, fontSize: 13),
+          style: TextStyle(color: KColors.text, fontSize: 13),
           decoration: const InputDecoration(
-            hintText: 'What we need from them, and why our work is blocked '
+            hintText:
+                'What we need from them, and why our work is blocked '
                 'until it lands',
             isDense: true,
           ),
@@ -620,7 +675,8 @@ class _DependencyFormDialogState extends State<DependencyFormDialog> {
         AiAssistedLabel(
           label: 'Impact if it slips',
           target: _impactCtrl,
-          tooltip: 'Draft what happens to the plan if this is late or never '
+          tooltip:
+              'Draft what happens to the plan if this is late or never '
               'lands',
           buildPrompt: () => _prompt(DependencyAssistField.impactStatement),
         ),
@@ -629,9 +685,10 @@ class _DependencyFormDialogState extends State<DependencyFormDialog> {
           controller: _impactCtrl,
           minLines: 2,
           maxLines: 6,
-          style: const TextStyle(color: KColors.text, fontSize: 13),
+          style: TextStyle(color: KColors.text, fontSize: 13),
           decoration: const InputDecoration(
-            hintText: 'Which activities or milestones move, by how much, '
+            hintText:
+                'Which activities or milestones move, by how much, '
                 'and any fallback',
             isDense: true,
           ),
@@ -659,20 +716,26 @@ class _DependencyFormDialogState extends State<DependencyFormDialog> {
         if (widget.startInViewMode)
           TextButton(
             onPressed: () => setState(() => _isViewing = true),
-            child: const Text('Cancel',
-                style: TextStyle(color: KColors.textDim, fontSize: 12)),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: KColors.textDim, fontSize: 12),
+            ),
           )
         else
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel',
-                style: TextStyle(color: KColors.textDim, fontSize: 12)),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: KColors.textDim, fontSize: 12),
+            ),
           ),
         const SizedBox(width: 8),
         ElevatedButton(
           onPressed: _save,
-          child: Text(isEdit ? 'Save' : 'Create',
-              style: const TextStyle(fontSize: 12)),
+          child: Text(
+            isEdit ? 'Save' : 'Create',
+            style: const TextStyle(fontSize: 12),
+          ),
         ),
       ],
     );

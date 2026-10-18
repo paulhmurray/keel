@@ -17,17 +17,38 @@ import '../../shared/theme/keel_colors.dart';
 // the block → objective → goal cascade.
 // ---------------------------------------------------------------------------
 
-String _isoDate(DateTime d) => '${d.year.toString().padLeft(4, '0')}-'
+String _isoDate(DateTime d) =>
+    '${d.year.toString().padLeft(4, '0')}-'
     '${d.month.toString().padLeft(2, '0')}-'
     '${d.day.toString().padLeft(2, '0')}';
 
 const _monthNames = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 const _monthShort = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
 ];
 
 class HelmQuarterView extends StatefulWidget {
@@ -58,10 +79,9 @@ class _HelmQuarterViewState extends State<HelmQuarterView> {
   Stream<List<QuarterGoal>>? _goalsStream;
   String? _goalsPlanId;
 
-  DateTime get _quarterStart =>
-      quarterStartOf(widget.date, widget.anchorMonth);
-  DateTime get _quarterEnd => DateTime(
-      _quarterStart.year, _quarterStart.month + 3, 0); // last day
+  DateTime get _quarterStart => quarterStartOf(widget.date, widget.anchorMonth);
+  DateTime get _quarterEnd =>
+      DateTime(_quarterStart.year, _quarterStart.month + 3, 0); // last day
 
   void _anchorStreams() {
     final startIso = _isoDate(_quarterStart);
@@ -69,12 +89,13 @@ class _HelmQuarterViewState extends State<HelmQuarterView> {
     _startIso = startIso;
     final endIso = _isoDate(_quarterEnd);
     _planStream = widget.db.quarterPlanDao.watchPlanForQuarter(startIso);
-    _objectivesStream = widget.db.quarterPlanDao
-        .watchObjectivesForQuarter(startIso, endIso);
+    _objectivesStream = widget.db.quarterPlanDao.watchObjectivesForQuarter(
+      startIso,
+      endIso,
+    );
     // Day blocks across the whole quarter — powers objectiveMet so goal
     // progress honours block targets, not just manual ticks.
-    _blocksStream =
-        widget.db.weekPlanDao.watchBlocksForWeek(startIso, endIso);
+    _blocksStream = widget.db.weekPlanDao.watchBlocksForWeek(startIso, endIso);
     _goalsPlanId = null;
     _goalsStream = null;
   }
@@ -95,7 +116,8 @@ class _HelmQuarterViewState extends State<HelmQuarterView> {
       builder: (context, planSnap) {
         if (planSnap.connectionState == ConnectionState.waiting) {
           return const Center(
-              child: CircularProgressIndicator(strokeWidth: 1.5));
+            child: CircularProgressIndicator(strokeWidth: 1.5),
+          );
         }
         final plan = planSnap.data;
         if (plan == null) return _emptyQuarter();
@@ -123,8 +145,7 @@ class _HelmQuarterViewState extends State<HelmQuarterView> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.landscape_outlined,
-              size: 48, color: KColors.textMuted),
+          Icon(Icons.landscape_outlined, size: 48, color: KColors.textMuted),
           const SizedBox(height: 16),
           Text(
             'Chart this quarter',
@@ -135,7 +156,7 @@ class _HelmQuarterViewState extends State<HelmQuarterView> {
             ),
           ),
           const SizedBox(height: 8),
-          const SizedBox(
+          SizedBox(
             width: 420,
             child: Text(
               'A handful of goals — each with its why — and a mission '
@@ -143,13 +164,17 @@ class _HelmQuarterViewState extends State<HelmQuarterView> {
               'dates stay in the Plan.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                  color: KColors.textDim, fontSize: 12, height: 1.5),
+                color: KColors.textDim,
+                fontSize: 12,
+                height: 1.5,
+              ),
             ),
           ),
           const SizedBox(height: 20),
           ElevatedButton.icon(
-            onPressed: () => widget.db.quarterPlanDao
-                .getOrCreatePlanForQuarter(_isoDate(_quarterStart)),
+            onPressed: () => widget.db.quarterPlanDao.getOrCreatePlanForQuarter(
+              _isoDate(_quarterStart),
+            ),
             icon: const Icon(Icons.landscape_outlined, size: 16),
             label: const Text('Plan this quarter'),
           ),
@@ -158,8 +183,11 @@ class _HelmQuarterViewState extends State<HelmQuarterView> {
     );
   }
 
-  Widget _quarterBody(QuarterPlan plan,
-      List<QuarterObjectiveRow> objectiveRows, List<WeekBlockRow> blockRows) {
+  Widget _quarterBody(
+    QuarterPlan plan,
+    List<QuarterObjectiveRow> objectiveRows,
+    List<WeekBlockRow> blockRows,
+  ) {
     final missions = parseDayMissions(plan.monthMissionsJson);
     final startsByPlanId = {
       for (final r in blockRows)
@@ -180,13 +208,16 @@ class _HelmQuarterViewState extends State<HelmQuarterView> {
               for (var m = 0; m < 3; m++)
                 _MonthCard(
                   month: DateTime(
-                      _quarterStart.year, _quarterStart.month + m, 1),
+                    _quarterStart.year,
+                    _quarterStart.month + m,
+                    1,
+                  ),
                   mission: missions[m],
                   onEdit: () => _editMission(plan, m, missions[m]),
                 ),
               const SizedBox(height: 8),
               // ── Week strip — the readout, never an editor ─────────
-              const Padding(
+              Padding(
                 padding: EdgeInsets.fromLTRB(2, 8, 2, 6),
                 child: Text(
                   'WEEKS',
@@ -201,11 +232,12 @@ class _HelmQuarterViewState extends State<HelmQuarterView> {
               for (final monday in _mondaysInQuarter())
                 _WeekStripRow(
                   monday: monday,
-                  isThisWeek: _isoDate(mondayOf(DateTime.now())) ==
-                      _isoDate(monday),
+                  isThisWeek:
+                      _isoDate(mondayOf(DateTime.now())) == _isoDate(monday),
                   objectives: objectiveRows
-                      .where((r) =>
-                          r.weekPlan.weekStartDate == _isoDate(monday))
+                      .where(
+                        (r) => r.weekPlan.weekStartDate == _isoDate(monday),
+                      )
                       .map((r) => r.objective)
                       .toList(),
                   isMet: isMet,
@@ -226,8 +258,7 @@ class _HelmQuarterViewState extends State<HelmQuarterView> {
                 db: widget.db,
                 plan: plan,
                 goals: goalSnap.data ?? const [],
-                objectives:
-                    objectiveRows.map((r) => r.objective).toList(),
+                objectives: objectiveRows.map((r) => r.objective).toList(),
                 isMet: isMet,
               );
             },
@@ -251,9 +282,15 @@ class _HelmQuarterViewState extends State<HelmQuarterView> {
   }
 
   Future<void> _editMission(
-      QuarterPlan plan, int monthIndex, String? current) async {
+    QuarterPlan plan,
+    int monthIndex,
+    String? current,
+  ) async {
     final month = DateTime(
-        _quarterStart.year, _quarterStart.month + monthIndex, 1);
+      _quarterStart.year,
+      _quarterStart.month + monthIndex,
+      1,
+    );
     final ctrl = TextEditingController(text: current ?? '');
     final result = await showDialog<String>(
       context: context,
@@ -284,8 +321,7 @@ class _HelmQuarterViewState extends State<HelmQuarterView> {
       ),
     );
     if (result == null) return;
-    await widget.db.quarterPlanDao
-        .setMonthMission(plan.id, monthIndex, result);
+    await widget.db.quarterPlanDao.setMonthMission(plan.id, monthIndex, result);
   }
 }
 
@@ -306,14 +342,14 @@ class _MonthCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isCurrent = month.year == DateTime.now().year &&
+    final isCurrent =
+        month.year == DateTime.now().year &&
         month.month == DateTime.now().month;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: isCurrent ? KColors.surface2 : KColors.surface,
-        border: Border.all(
-            color: isCurrent ? KColors.amber : KColors.border),
+        border: Border.all(color: isCurrent ? KColors.amber : KColors.border),
         borderRadius: BorderRadius.circular(6),
       ),
       child: InkWell(
@@ -326,8 +362,7 @@ class _MonthCard extends StatelessWidget {
               SizedBox(
                 width: 90,
                 child: Text(
-                  '${_monthNames[month.month - 1]} ${month.year}'
-                      .toUpperCase(),
+                  '${_monthNames[month.month - 1]} ${month.year}'.toUpperCase(),
                   maxLines: 2,
                   style: GoogleFonts.jetBrainsMono(
                     color: isCurrent ? KColors.amber : KColors.text,
@@ -337,10 +372,11 @@ class _MonthCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 10),
-              Icon(Icons.flag_outlined,
-                  size: 13,
-                  color:
-                      mission != null ? KColors.amber : KColors.textMuted),
+              Icon(
+                Icons.flag_outlined,
+                size: 13,
+                color: mission != null ? KColors.amber : KColors.textMuted,
+              ),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
@@ -348,8 +384,7 @@ class _MonthCard extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color:
-                        mission != null ? KColors.text : KColors.textMuted,
+                    color: mission != null ? KColors.text : KColors.textMuted,
                     fontSize: 12,
                     fontStyle: mission == null
                         ? FontStyle.italic
@@ -387,9 +422,7 @@ class _WeekStripRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final met = objectives.where(isMet).length;
-    final isPast = monday
-        .add(const Duration(days: 7))
-        .isBefore(DateTime.now());
+    final isPast = monday.add(const Duration(days: 7)).isBefore(DateTime.now());
     return InkWell(
       onTap: onOpen,
       child: Container(
@@ -398,8 +431,7 @@ class _WeekStripRow extends StatelessWidget {
           color: isThisWeek
               ? KColors.amber.withValues(alpha: 0.08)
               : Colors.transparent,
-          border: const Border(
-              bottom: BorderSide(color: KColors.border, width: 1)),
+          border: Border(bottom: BorderSide(color: KColors.border, width: 1)),
         ),
         child: Row(
           children: [
@@ -411,11 +443,10 @@ class _WeekStripRow extends StatelessWidget {
                   color: isThisWeek
                       ? KColors.amber
                       : isPast
-                          ? KColors.textMuted
-                          : KColors.textDim,
+                      ? KColors.textMuted
+                      : KColors.textDim,
                   fontSize: 11,
-                  fontWeight:
-                      isThisWeek ? FontWeight.w700 : FontWeight.w400,
+                  fontWeight: isThisWeek ? FontWeight.w700 : FontWeight.w400,
                 ),
               ),
             ),
@@ -425,8 +456,7 @@ class _WeekStripRow extends StatelessWidget {
               child: objectives.isEmpty
                   ? Text(
                       isPast ? 'no objectives' : '—',
-                      style: const TextStyle(
-                          color: KColors.textMuted, fontSize: 10),
+                      style: TextStyle(color: KColors.textMuted, fontSize: 10),
                     )
                   : Row(
                       children: [
@@ -461,8 +491,7 @@ class _WeekStripRow extends StatelessWidget {
                 ),
               ),
             const SizedBox(width: 4),
-            const Icon(Icons.chevron_right,
-                size: 13, color: KColors.textMuted),
+            Icon(Icons.chevron_right, size: 13, color: KColors.textMuted),
           ],
         ),
       ),
@@ -516,10 +545,9 @@ class _GoalsPanel extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(14, 14, 10, 4),
                 child: Row(
                   children: [
-                    const Icon(Icons.landscape,
-                        size: 13, color: KColors.amber),
+                    Icon(Icons.landscape, size: 13, color: KColors.amber),
                     const SizedBox(width: 6),
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'THIS QUARTER — GOALS',
                         maxLines: 1,
@@ -533,15 +561,14 @@ class _GoalsPanel extends StatelessWidget {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.add,
-                          size: 16, color: KColors.amber),
+                      icon: Icon(Icons.add, size: 16, color: KColors.amber),
                       tooltip: 'Add goal',
                       onPressed: () => _editGoal(context, null),
                     ),
                   ],
                 ),
               ),
-              const Padding(
+              Padding(
                 padding: EdgeInsets.fromLTRB(14, 0, 14, 8),
                 child: Text(
                   '3–5 goals with their why. Weekly objectives spawned '
@@ -551,7 +578,7 @@ class _GoalsPanel extends StatelessWidget {
               ),
               Expanded(
                 child: goals.isEmpty
-                    ? const Center(
+                    ? Center(
                         child: Padding(
                           padding: EdgeInsets.all(20),
                           child: Text(
@@ -559,7 +586,9 @@ class _GoalsPanel extends StatelessWidget {
                             'from a project here.',
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                                color: KColors.textMuted, fontSize: 11),
+                              color: KColors.textMuted,
+                              fontSize: 11,
+                            ),
                           ),
                         ),
                       )
@@ -569,9 +598,15 @@ class _GoalsPanel extends StatelessWidget {
                             _GoalRow(
                               goal: g,
                               metCount: goalMetObjectives(
-                                  g.id, objectives, isMet),
-                              onToggleDone: () => db.quarterPlanDao
-                                  .setGoalDone(plan.id, g.id, !g.done),
+                                g.id,
+                                objectives,
+                                isMet,
+                              ),
+                              onToggleDone: () => db.quarterPlanDao.setGoalDone(
+                                plan.id,
+                                g.id,
+                                !g.done,
+                              ),
                               onTap: () => _editGoal(context, g),
                             ),
                         ],
@@ -604,8 +639,7 @@ class _GoalsPanel extends StatelessWidget {
     }
   }
 
-  Future<void> _editGoal(
-      BuildContext context, QuarterGoal? existing) async {
+  Future<void> _editGoal(BuildContext context, QuarterGoal? existing) async {
     final result = await showDialog<_GoalDialogResult>(
       context: context,
       builder: (_) => _GoalDialog(existing: existing),
@@ -656,7 +690,7 @@ class _GoalRow extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           border: Border(bottom: BorderSide(color: KColors.border)),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -669,9 +703,7 @@ class _GoalRow extends StatelessWidget {
                 InkWell(
                   onTap: onToggleDone,
                   child: Icon(
-                    met
-                        ? Icons.check_circle
-                        : Icons.radio_button_unchecked,
+                    met ? Icons.check_circle : Icons.radio_button_unchecked,
                     size: 16,
                     color: met ? KColors.phosphor : KColors.textMuted,
                   ),
@@ -686,8 +718,7 @@ class _GoalRow extends StatelessWidget {
                       color: met ? KColors.textDim : KColors.text,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      decoration:
-                          goal.done ? TextDecoration.lineThrough : null,
+                      decoration: goal.done ? TextDecoration.lineThrough : null,
                       decorationColor: KColors.textMuted,
                     ),
                   ),
@@ -696,19 +727,20 @@ class _GoalRow extends StatelessWidget {
                   const SizedBox(width: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 5, vertical: 1),
+                      horizontal: 5,
+                      vertical: 1,
+                    ),
                     decoration: BoxDecoration(
                       color: met ? KColors.phosDim : KColors.surface2,
                       borderRadius: BorderRadius.circular(3),
                       border: Border.all(
-                          color:
-                              met ? KColors.phosphor : KColors.border2),
+                        color: met ? KColors.phosphor : KColors.border2,
+                      ),
                     ),
                     child: Text(
                       '$metCount/$target',
                       style: GoogleFonts.jetBrainsMono(
-                        color:
-                            met ? KColors.phosphor : KColors.textDim,
+                        color: met ? KColors.phosphor : KColors.textDim,
                         fontSize: 9,
                         fontWeight: FontWeight.w700,
                       ),
@@ -724,7 +756,7 @@ class _GoalRow extends StatelessWidget {
                   goal.why!,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: KColors.textMuted,
                     fontSize: 10,
                     fontStyle: FontStyle.italic,
@@ -783,18 +815,19 @@ class _GoalDialogState extends State<_GoalDialog> {
     final label = _labelCtrl.text.trim();
     if (label.isEmpty) return;
     final why = _whyCtrl.text.trim();
-    Navigator.of(context).pop(_GoalDialogResult(
-      label: label,
-      why: why.isEmpty ? null : why,
-      targetObjectives: _target,
-    ));
+    Navigator.of(context).pop(
+      _GoalDialogResult(
+        label: label,
+        why: why.isEmpty ? null : why,
+        targetObjectives: _target,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title:
-          Text(widget.existing == null ? 'New goal' : 'Edit goal'),
+      title: Text(widget.existing == null ? 'New goal' : 'Edit goal'),
       content: SizedBox(
         width: 400,
         child: Column(
@@ -825,12 +858,12 @@ class _GoalDialogState extends State<_GoalDialog> {
                 labelText: 'Target (weekly objectives this quarter)',
               ),
               items: [
-                const DropdownMenuItem(
-                    value: null, child: Text('No target')),
+                const DropdownMenuItem(value: null, child: Text('No target')),
                 for (var n = 1; n <= 20; n++)
                   DropdownMenuItem(
-                      value: n,
-                      child: Text('$n objective${n == 1 ? '' : 's'}')),
+                    value: n,
+                    child: Text('$n objective${n == 1 ? '' : 's'}'),
+                  ),
               ],
               onChanged: (v) => setState(() => _target = v),
             ),
@@ -840,10 +873,10 @@ class _GoalDialogState extends State<_GoalDialog> {
       actions: [
         if (widget.existing != null)
           TextButton(
-            onPressed: () => Navigator.of(context).pop(
-                const _GoalDialogResult(label: '', deleted: true)),
-            child:
-                const Text('Delete', style: TextStyle(color: KColors.red)),
+            onPressed: () => Navigator.of(
+              context,
+            ).pop(const _GoalDialogResult(label: '', deleted: true)),
+            child: Text('Delete', style: TextStyle(color: KColors.red)),
           ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),

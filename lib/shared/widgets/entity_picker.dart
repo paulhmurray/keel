@@ -51,7 +51,8 @@ class EntityPickerField<T> extends StatefulWidget {
   final String Function(T) displayName;
   final String Function(T)? secondaryLine;
   final IconData itemIcon;
-  final Color itemIconColor;
+  final Color? _itemIconColor;
+  Color get itemIconColor => _itemIconColor ?? KColors.textDim;
 
   /// Called when the user accepts the "Add new …" affordance.
   /// The returned entity (if any) is committed; otherwise selection is left
@@ -92,7 +93,7 @@ class EntityPickerField<T> extends StatefulWidget {
     required this.displayName,
     this.secondaryLine,
     this.itemIcon = Icons.circle_outlined,
-    this.itemIconColor = KColors.textDim,
+    Color? itemIconColor,
     this.onAddNew,
     this.addNewSuffix = '',
     this.onSelected,
@@ -101,7 +102,7 @@ class EntityPickerField<T> extends StatefulWidget {
     this.textStyle,
     this.labelStyle,
     this.contentPadding,
-  });
+  }) : _itemIconColor = itemIconColor;
 
   @override
   State<EntityPickerField<T>> createState() => _EntityPickerFieldState<T>();
@@ -181,15 +182,16 @@ class _EntityPickerFieldState<T> extends State<EntityPickerField<T>> {
       fieldViewBuilder: (ctx, ctrl, focusNode, onSubmitted) => TextFormField(
         controller: ctrl,
         focusNode: focusNode,
-        style: widget.textStyle ??
-            const TextStyle(color: KColors.text, fontSize: 12),
+        style: widget.textStyle ?? TextStyle(color: KColors.text, fontSize: 12),
         decoration: InputDecoration(
           labelText: widget.label,
-          labelStyle: widget.labelStyle ??
-              const TextStyle(color: KColors.textDim, fontSize: 11),
+          labelStyle:
+              widget.labelStyle ??
+              TextStyle(color: KColors.textDim, fontSize: 11),
           border: const OutlineInputBorder(),
           isDense: widget.contentPadding == null,
-          contentPadding: widget.contentPadding ??
+          contentPadding:
+              widget.contentPadding ??
               const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         ),
         onFieldSubmitted: (_) => onSubmitted(),
@@ -203,11 +205,10 @@ class _EntityPickerFieldState<T> extends State<EntityPickerField<T>> {
             elevation: 6,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(4),
-              side: const BorderSide(color: KColors.border2),
+              side: BorderSide(color: KColors.border2),
             ),
             child: ConstrainedBox(
-              constraints:
-                  const BoxConstraints(maxHeight: 260, maxWidth: 320),
+              constraints: const BoxConstraints(maxHeight: 260, maxWidth: 320),
               child: ListView(
                 shrinkWrap: true,
                 padding: EdgeInsets.zero,
@@ -238,13 +239,16 @@ class _EntityPickerFieldState<T> extends State<EntityPickerField<T>> {
                     return ListTile(
                       dense: true,
                       visualDensity: VisualDensity.compact,
-                      leading: const Icon(Icons.add_circle_outline,
-                          size: 14, color: KColors.phosphor),
+                      leading: Icon(
+                        Icons.add_circle_outline,
+                        size: 14,
+                        color: KColors.phosphor,
+                      ),
                       title: Text(
                         widget.addNewSuffix.isEmpty
                             ? 'Add "$query"'
                             : 'Add "$query" ${widget.addNewSuffix}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: KColors.phosphor,
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
@@ -263,15 +267,23 @@ class _EntityPickerFieldState<T> extends State<EntityPickerField<T>> {
                   return ListTile(
                     dense: true,
                     visualDensity: VisualDensity.compact,
-                    leading: Icon(widget.itemIcon,
-                        size: 14, color: widget.itemIconColor),
-                    title: Text(opt,
-                        style: const TextStyle(
-                            color: KColors.text, fontSize: 12)),
+                    leading: Icon(
+                      widget.itemIcon,
+                      size: 14,
+                      color: widget.itemIconColor,
+                    ),
+                    title: Text(
+                      opt,
+                      style: TextStyle(color: KColors.text, fontSize: 12),
+                    ),
                     subtitle: subtitle != null && subtitle.isNotEmpty
-                        ? Text(subtitle,
-                            style: const TextStyle(
-                                color: KColors.textMuted, fontSize: 10))
+                        ? Text(
+                            subtitle,
+                            style: TextStyle(
+                              color: KColors.textMuted,
+                              fontSize: 10,
+                            ),
+                          )
                         : null,
                     onTap: () => onSelected(opt),
                   );
@@ -302,7 +314,7 @@ Future<T?> showEntityPicker<T>({
   required String Function(T) displayName,
   String Function(T)? secondaryLine,
   IconData itemIcon = Icons.circle_outlined,
-  Color itemIconColor = KColors.textDim,
+  Color? itemIconColor,
   String addNewLabel = 'Add new…',
   Future<T?> Function(BuildContext, String query)? onAddNew,
   String searchHint = 'Search…',
@@ -315,7 +327,7 @@ Future<T?> showEntityPicker<T>({
       displayName: displayName,
       secondaryLine: secondaryLine,
       itemIcon: itemIcon,
-      itemIconColor: itemIconColor,
+      itemIconColor: itemIconColor ?? KColors.textDim,
       addNewLabel: addNewLabel,
       onAddNew: onAddNew,
       searchHint: searchHint,
@@ -373,17 +385,18 @@ class _EntityPickerDialogState<T> extends State<_EntityPickerDialog<T>> {
     final matches = q.isEmpty
         ? widget.items
         : widget.items
-            .where(
-              (it) => widget.displayName(it).toLowerCase().contains(q),
-            )
-            .toList();
-    final exactExists = matches
-        .any((it) => widget.displayName(it).toLowerCase().trim() == q);
+              .where((it) => widget.displayName(it).toLowerCase().contains(q))
+              .toList();
+    final exactExists = matches.any(
+      (it) => widget.displayName(it).toLowerCase().trim() == q,
+    );
 
     return AlertDialog(
       backgroundColor: KColors.surface,
-      title: Text(widget.title,
-          style: const TextStyle(color: KColors.text, fontSize: 14)),
+      title: Text(
+        widget.title,
+        style: TextStyle(color: KColors.text, fontSize: 14),
+      ),
       content: SizedBox(
         width: 360,
         child: Column(
@@ -392,11 +405,14 @@ class _EntityPickerDialogState<T> extends State<_EntityPickerDialog<T>> {
             TextField(
               controller: _ctrl,
               autofocus: true,
-              style: const TextStyle(color: KColors.text, fontSize: 13),
+              style: TextStyle(color: KColors.text, fontSize: 13),
               decoration: InputDecoration(
                 labelText: widget.searchHint,
-                prefixIcon: const Icon(Icons.search,
-                    size: 16, color: KColors.textDim),
+                prefixIcon: Icon(
+                  Icons.search,
+                  size: 16,
+                  color: KColors.textDim,
+                ),
               ),
               onChanged: (v) => setState(() => _query = v),
             ),
@@ -408,7 +424,7 @@ class _EntityPickerDialogState<T> extends State<_EntityPickerDialog<T>> {
                       padding: const EdgeInsets.all(12),
                       child: Text(
                         q.isEmpty ? 'Nothing yet.' : 'No matches.',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: KColors.textMuted,
                           fontSize: 12,
                           fontStyle: FontStyle.italic,
@@ -424,16 +440,23 @@ class _EntityPickerDialogState<T> extends State<_EntityPickerDialog<T>> {
                         return ListTile(
                           dense: true,
                           visualDensity: VisualDensity.compact,
-                          leading: Icon(widget.itemIcon,
-                              size: 14, color: widget.itemIconColor),
-                          title: Text(widget.displayName(it),
-                              style: const TextStyle(
-                                  color: KColors.text, fontSize: 12)),
+                          leading: Icon(
+                            widget.itemIcon,
+                            size: 14,
+                            color: widget.itemIconColor,
+                          ),
+                          title: Text(
+                            widget.displayName(it),
+                            style: TextStyle(color: KColors.text, fontSize: 12),
+                          ),
                           subtitle: sub != null && sub.isNotEmpty
-                              ? Text(sub,
-                                  style: const TextStyle(
-                                      color: KColors.textMuted,
-                                      fontSize: 10))
+                              ? Text(
+                                  sub,
+                                  style: TextStyle(
+                                    color: KColors.textMuted,
+                                    fontSize: 10,
+                                  ),
+                                )
                               : null,
                           onTap: () => Navigator.of(context).pop(it),
                         );
@@ -441,19 +464,21 @@ class _EntityPickerDialogState<T> extends State<_EntityPickerDialog<T>> {
                     ),
             ),
             if (widget.onAddNew != null && !exactExists) ...[
-              const Divider(color: KColors.border, height: 16),
+              Divider(color: KColors.border, height: 16),
               Align(
                 alignment: Alignment.centerLeft,
                 child: TextButton.icon(
                   onPressed: _addNew,
-                  icon: const Icon(Icons.add_circle_outline,
-                      size: 14, color: KColors.phosphor),
+                  icon: Icon(
+                    Icons.add_circle_outline,
+                    size: 14,
+                    color: KColors.phosphor,
+                  ),
                   label: Text(
                     q.isEmpty
                         ? widget.addNewLabel
                         : 'Add "${_ctrl.text.trim()}" ${widget.addNewLabel.toLowerCase()}',
-                    style: const TextStyle(
-                        color: KColors.phosphor, fontSize: 12),
+                    style: TextStyle(color: KColors.phosphor, fontSize: 12),
                   ),
                 ),
               ),
@@ -464,8 +489,10 @@ class _EntityPickerDialogState<T> extends State<_EntityPickerDialog<T>> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel',
-              style: TextStyle(color: KColors.textDim, fontSize: 12)),
+          child: Text(
+            'Cancel',
+            style: TextStyle(color: KColors.textDim, fontSize: 12),
+          ),
         ),
       ],
     );

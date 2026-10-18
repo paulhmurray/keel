@@ -6,11 +6,7 @@ class CompassEmptyState extends StatelessWidget {
   final String message;
   final String? subMessage;
 
-  const CompassEmptyState({
-    super.key,
-    required this.message,
-    this.subMessage,
-  });
+  const CompassEmptyState({super.key, required this.message, this.subMessage});
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +25,7 @@ class CompassEmptyState extends StatelessWidget {
           const SizedBox(height: 20),
           Text(
             message,
-            style: const TextStyle(
+            style: TextStyle(
               color: KColors.textDim,
               fontSize: 13,
               fontWeight: FontWeight.w500,
@@ -39,10 +35,7 @@ class CompassEmptyState extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               subMessage!,
-              style: const TextStyle(
-                color: KColors.textMuted,
-                fontSize: 11,
-              ),
+              style: TextStyle(color: KColors.textMuted, fontSize: 11),
             ),
           ],
         ],

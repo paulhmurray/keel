@@ -6,11 +6,7 @@ class PersonChip extends StatelessWidget {
   final String name;
   final VoidCallback? onTap;
 
-  const PersonChip({
-    super.key,
-    required this.name,
-    this.onTap,
-  });
+  const PersonChip({super.key, required this.name, this.onTap});
 
   String get _initials {
     final parts = name.trim().split(' ');
@@ -40,7 +36,7 @@ class PersonChip extends StatelessWidget {
               backgroundColor: KColors.amberDim,
               child: Text(
                 _initials,
-                style: const TextStyle(
+                style: TextStyle(
                   color: KColors.amber,
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
@@ -50,7 +46,7 @@ class PersonChip extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               name,
-              style: const TextStyle(
+              style: TextStyle(
                 color: KColors.text,
                 fontSize: 12,
                 fontWeight: FontWeight.w500,

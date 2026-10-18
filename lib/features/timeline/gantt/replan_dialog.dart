@@ -437,7 +437,7 @@ class _ReplanDialogState extends State<ReplanDialog> {
               children: [
                 Text(
                   c.pinned ? 'PROPOSED · SET BY YOU' : 'PROPOSED',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: KColors.amber,
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
@@ -452,10 +452,7 @@ class _ReplanDialogState extends State<ReplanDialog> {
                     padding: EdgeInsets.zero,
                     iconSize: 14,
                     tooltip: 'Edit the proposed dates',
-                    icon: const Icon(
-                      Icons.edit_outlined,
-                      color: KColors.textDim,
-                    ),
+                    icon: Icon(Icons.edit_outlined, color: KColors.textDim),
                     onPressed: () => _beginEdit(c),
                   ),
                 ),
@@ -467,7 +464,7 @@ class _ReplanDialogState extends State<ReplanDialog> {
                       padding: EdgeInsets.zero,
                       iconSize: 14,
                       tooltip: "Back to the engine's proposal",
-                      icon: const Icon(Icons.undo, color: KColors.textDim),
+                      icon: Icon(Icons.undo, color: KColors.textDim),
                       onPressed: () => _clearEdit(c),
                     ),
                   ),
@@ -476,7 +473,7 @@ class _ReplanDialogState extends State<ReplanDialog> {
             const SizedBox(height: 6),
             Text(
               to,
-              style: const TextStyle(
+              style: TextStyle(
                 color: KColors.amber,
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -497,7 +494,7 @@ class _ReplanDialogState extends State<ReplanDialog> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'PROPOSED · EDITING',
             style: TextStyle(
               color: KColors.amber,
@@ -699,9 +696,9 @@ class _ReplanDialogState extends State<ReplanDialog> {
       contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
       title: Row(
         children: [
-          const Icon(Icons.update, size: 16, color: KColors.amber),
+          Icon(Icons.update, size: 16, color: KColors.amber),
           const SizedBox(width: 8),
-          const Expanded(
+          Expanded(
             child: Text(
               'Re-plan slipped work',
               style: TextStyle(color: KColors.text, fontSize: 14),
@@ -710,10 +707,10 @@ class _ReplanDialogState extends State<ReplanDialog> {
           if (_phase == _Phase.review)
             Text(
               '${_index + 1} of ${_changes.length}',
-              style: const TextStyle(color: KColors.textMuted, fontSize: 11),
+              style: TextStyle(color: KColors.textMuted, fontSize: 11),
             ),
           IconButton(
-            icon: const Icon(Icons.close, size: 16, color: KColors.textMuted),
+            icon: Icon(Icons.close, size: 16, color: KColors.textMuted),
             tooltip: _phase == _Phase.review
                 ? 'Stop — what you accepted stays'
                 : 'Close',
@@ -806,7 +803,7 @@ class _ReplanDialogState extends State<ReplanDialog> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Work that has not started but whose start date has passed is '
           'slid forward to today, keeping its duration. Anything it gates '
           'through a dependency arrow moves with it. Started and complete '
@@ -821,7 +818,7 @@ class _ReplanDialogState extends State<ReplanDialog> {
         if (general.isNotEmpty)
           for (final w in general) _warningLine(w.message, KColors.red)
         else if (p.isEmpty)
-          const Text(
+          Text(
             'Nothing has slipped. Every not-started activity still '
             'starts this month or later.',
             style: TextStyle(color: KColors.phosphor, fontSize: 13),
@@ -843,7 +840,7 @@ class _ReplanDialogState extends State<ReplanDialog> {
             const SizedBox(height: 10),
             Text(
               '${collisions.length} ${collisions.length == 1 ? 'thing' : 'things'} to watch',
-              style: const TextStyle(
+              style: TextStyle(
                 color: KColors.red,
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
@@ -870,18 +867,18 @@ class _ReplanDialogState extends State<ReplanDialog> {
               dense: true,
               contentPadding: EdgeInsets.zero,
               controlAffinity: ListTileControlAffinity.leading,
-              title: const Text(
+              title: Text(
                 'Set a baseline first so the Gantt shows what moved',
                 style: TextStyle(color: KColors.text, fontSize: 13),
               ),
-              subtitle: const Text(
+              subtitle: Text(
                 'Snapshots the plan as it is now. Ghost bars then show the '
                 'original dates beside the re-planned ones.',
                 style: TextStyle(color: KColors.textMuted, fontSize: 11),
               ),
             )
           else
-            const Text(
+            Text(
               'The existing baseline is kept, so the Gantt will show the '
               'variance these moves create.',
               style: TextStyle(color: KColors.textMuted, fontSize: 11),
@@ -905,7 +902,7 @@ class _ReplanDialogState extends State<ReplanDialog> {
         Text(
           'Asking about $_advised of $_toAdvise slipped '
           '${_toAdvise == 1 ? 'activity' : 'activities'}…',
-          style: const TextStyle(color: KColors.textDim, fontSize: 12),
+          style: TextStyle(color: KColors.textDim, fontSize: 12),
         ),
         if (_adviceErrors.isNotEmpty)
           Padding(
@@ -913,7 +910,7 @@ class _ReplanDialogState extends State<ReplanDialog> {
             child: Text(
               '${_adviceErrors.length} could not be judged; those cards '
               'show the engine\'s move only.',
-              style: const TextStyle(color: KColors.amber, fontSize: 11),
+              style: TextStyle(color: KColors.amber, fontSize: 11),
             ),
           ),
         const SizedBox(height: 12),
@@ -940,7 +937,7 @@ class _ReplanDialogState extends State<ReplanDialog> {
               Expanded(
                 child: Text(
                   _subtaskError!,
-                  style: const TextStyle(color: KColors.amber, fontSize: 11),
+                  style: TextStyle(color: KColors.amber, fontSize: 11),
                 ),
               ),
             ],
@@ -949,7 +946,7 @@ class _ReplanDialogState extends State<ReplanDialog> {
       );
     }
     if (_subtasksLoading) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.only(top: 12),
         child: Row(
           children: [
@@ -980,7 +977,7 @@ class _ReplanDialogState extends State<ReplanDialog> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'SUGGESTED SUB-TASKS',
             style: TextStyle(
               color: KColors.textDim,
@@ -990,7 +987,7 @@ class _ReplanDialogState extends State<ReplanDialog> {
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Ticked tasks are created under this activity when you accept, '
             'sliced across its new window in this order.',
             style: TextStyle(color: KColors.textMuted, fontSize: 11),
@@ -1017,7 +1014,7 @@ class _ReplanDialogState extends State<ReplanDialog> {
                   controlAffinity: ListTileControlAffinity.leading,
                   title: Text(
                     _subtasks[i].name,
-                    style: const TextStyle(color: KColors.text, fontSize: 12),
+                    style: TextStyle(color: KColors.text, fontSize: 12),
                   ),
                   subtitle: span == null
                       ? null
@@ -1029,7 +1026,7 @@ class _ReplanDialogState extends State<ReplanDialog> {
                             endDate: span.endDate,
                             month0: _month0!,
                           ),
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: KColors.textMuted,
                             fontSize: 11,
                           ),
@@ -1065,9 +1062,9 @@ class _ReplanDialogState extends State<ReplanDialog> {
         children: [
           Row(
             children: [
-              const Icon(Icons.auto_awesome, size: 13, color: KColors.phosphor),
+              Icon(Icons.auto_awesome, size: 13, color: KColors.phosphor),
               const SizedBox(width: 6),
-              const Text(
+              Text(
                 'AI VIEW',
                 style: TextStyle(
                   color: KColors.phosphor,
@@ -1090,13 +1087,13 @@ class _ReplanDialogState extends State<ReplanDialog> {
           if (err != null)
             Text(
               'Could not judge this one: $err',
-              style: const TextStyle(color: KColors.textMuted, fontSize: 11),
+              style: TextStyle(color: KColors.textMuted, fontSize: 11),
             )
           else ...[
             if (a!.rationale.isNotEmpty)
               Text(
                 a.rationale,
-                style: const TextStyle(
+                style: TextStyle(
                   color: KColors.text,
                   fontSize: 12,
                   height: 1.4,
@@ -1107,7 +1104,7 @@ class _ReplanDialogState extends State<ReplanDialog> {
                 padding: const EdgeInsets.only(top: 3),
                 child: Text(
                   '• Watch: $w',
-                  style: const TextStyle(color: KColors.textDim, fontSize: 11),
+                  style: TextStyle(color: KColors.textDim, fontSize: 11),
                 ),
               ),
             if (!a.agrees)
@@ -1119,7 +1116,7 @@ class _ReplanDialogState extends State<ReplanDialog> {
                 controlAffinity: ListTileControlAffinity.leading,
                 title: Text(
                   'Add $extraLabel to the end. Anything this gates moves with it.',
-                  style: const TextStyle(color: KColors.text, fontSize: 12),
+                  style: TextStyle(color: KColors.text, fontSize: 12),
                 ),
               ),
           ],
@@ -1160,7 +1157,7 @@ class _ReplanDialogState extends State<ReplanDialog> {
                 Expanded(
                   child: Text(
                     c.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: KColors.text,
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -1184,7 +1181,7 @@ class _ReplanDialogState extends State<ReplanDialog> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(child: _spanBox('CURRENT', from, KColors.textDim)),
-                const Padding(
+                Padding(
                   padding: EdgeInsets.symmetric(horizontal: 12),
                   child: Icon(
                     Icons.arrow_forward,
@@ -1196,7 +1193,7 @@ class _ReplanDialogState extends State<ReplanDialog> {
               ],
             ),
             const SizedBox(height: 14),
-            const Text(
+            Text(
               'WHY',
               style: TextStyle(
                 color: KColors.textDim,
@@ -1211,7 +1208,7 @@ class _ReplanDialogState extends State<ReplanDialog> {
                 padding: const EdgeInsets.only(bottom: 3),
                 child: Text(
                   '• $r',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: KColors.text,
                     fontSize: 12,
                     height: 1.4,
@@ -1230,7 +1227,7 @@ class _ReplanDialogState extends State<ReplanDialog> {
             _subtaskPanel(c),
             if ((c.activity.notes ?? '').trim().isNotEmpty) ...[
               const SizedBox(height: 10),
-              const Text(
+              Text(
                 'NOTES',
                 style: TextStyle(
                   color: KColors.textDim,
@@ -1244,7 +1241,7 @@ class _ReplanDialogState extends State<ReplanDialog> {
                 c.activity.notes!.trim(),
                 maxLines: 4,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   color: KColors.textDim,
                   fontSize: 11,
                   height: 1.4,
@@ -1268,18 +1265,18 @@ class _ReplanDialogState extends State<ReplanDialog> {
               ? 'Nothing to re-plan.'
               : '$_accepted of $total ${total == 1 ? 'move' : 'moves'} applied'
                     '${_skipped > 0 ? ', $_skipped skipped' : ''}.',
-          style: const TextStyle(color: KColors.text, fontSize: 13),
+          style: TextStyle(color: KColors.text, fontSize: 13),
         ),
         if (_tasksAdded > 0) ...[
           const SizedBox(height: 4),
           Text(
             '$_tasksAdded ${_tasksAdded == 1 ? 'sub-task' : 'sub-tasks'} added.',
-            style: const TextStyle(color: KColors.text, fontSize: 13),
+            style: TextStyle(color: KColors.text, fontSize: 13),
           ),
         ],
         if (_accepted > 0) ...[
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Each re-planned row carries a note with its old dates and the '
             'reason. The Gantt reloads when you close this.',
             style: TextStyle(
@@ -1355,7 +1352,7 @@ class _ReplanDialogState extends State<ReplanDialog> {
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(color: KColors.text, fontSize: 13),
+            style: TextStyle(color: KColors.text, fontSize: 13),
           ),
         ),
       ],

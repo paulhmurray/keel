@@ -70,7 +70,7 @@ class _JournalSourceLinkState extends State<JournalSourceLink> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'FROM JOURNAL',
             style: TextStyle(
               color: KColors.textMuted,
@@ -100,34 +100,41 @@ class _JournalSourceLinkState extends State<JournalSourceLink> {
                     ),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: KColors.violetDim,
-                        border: Border.all(
-                            color: KColors.violet.withAlpha(90)),
+                        border: Border.all(color: KColors.violet.withAlpha(90)),
                         borderRadius: BorderRadius.circular(3),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.menu_book_outlined,
-                              size: 12, color: KColors.violet),
+                          Icon(
+                            Icons.menu_book_outlined,
+                            size: 12,
+                            color: KColors.violet,
+                          ),
                           const SizedBox(width: 5),
                           ConstrainedBox(
-                            constraints:
-                                const BoxConstraints(maxWidth: 260),
+                            constraints: const BoxConstraints(maxWidth: 260),
                             child: Text(
                               labelFor(e),
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                  color: KColors.violet,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600),
+                              style: TextStyle(
+                                color: KColors.violet,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 4),
-                          const Icon(Icons.open_in_new,
-                              size: 10, color: KColors.violet),
+                          Icon(
+                            Icons.open_in_new,
+                            size: 10,
+                            color: KColors.violet,
+                          ),
                         ],
                       ),
                     ),
@@ -175,10 +182,12 @@ class _JournalEntryPeekDialogState extends State<JournalEntryPeekDialog> {
   }
 
   Future<void> _load() async {
-    final persons =
-        await widget.db.peopleDao.getPersonsForProject(widget.projectId);
-    final glossary =
-        await widget.db.glossaryDao.getForProject(widget.projectId);
+    final persons = await widget.db.peopleDao.getPersonsForProject(
+      widget.projectId,
+    );
+    final glossary = await widget.db.glossaryDao.getForProject(
+      widget.projectId,
+    );
     if (mounted) {
       setState(() {
         _persons = persons;
@@ -215,19 +224,25 @@ class _JournalEntryPeekDialogState extends State<JournalEntryPeekDialog> {
 
     return AlertDialog(
       backgroundColor: KColors.surface,
-      title: Row(children: [
-        const Icon(Icons.menu_book_outlined, size: 16, color: KColors.violet),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            e.title?.trim().isNotEmpty == true ? e.title!.trim() : 'Journal entry',
-            style: const TextStyle(color: KColors.text, fontSize: 15),
-            overflow: TextOverflow.ellipsis,
+      title: Row(
+        children: [
+          Icon(Icons.menu_book_outlined, size: 16, color: KColors.violet),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              e.title?.trim().isNotEmpty == true
+                  ? e.title!.trim()
+                  : 'Journal entry',
+              style: TextStyle(color: KColors.text, fontSize: 15),
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-        ),
-        Text(du.formatDate(e.entryDate),
-            style: const TextStyle(color: KColors.textDim, fontSize: 12)),
-      ]),
+          Text(
+            du.formatDate(e.entryDate),
+            style: TextStyle(color: KColors.textDim, fontSize: 12),
+          ),
+        ],
+      ),
       content: SizedBox(
         width: (size.width * 0.7).clamp(360.0, 820.0),
         height: (size.height * 0.75).clamp(300.0, 760.0),
@@ -235,15 +250,18 @@ class _JournalEntryPeekDialogState extends State<JournalEntryPeekDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (e.meetingContext != null && e.meetingContext!.isNotEmpty) ...[
-              Text(e.meetingContext!,
-                  style: const TextStyle(
-                      color: KColors.textDim,
-                      fontSize: 11,
-                      fontStyle: FontStyle.italic)),
+              Text(
+                e.meetingContext!,
+                style: TextStyle(
+                  color: KColors.textDim,
+                  fontSize: 11,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
               const SizedBox(height: 8),
             ],
             if (match != null)
-              const Padding(
+              Padding(
                 padding: EdgeInsets.only(bottom: 8),
                 child: Text(
                   'Highlighted: the passage this item was most likely '
@@ -253,11 +271,14 @@ class _JournalEntryPeekDialogState extends State<JournalEntryPeekDialog> {
               ),
             Expanded(
               child: paragraphs.isEmpty
-                  ? const Text('(empty entry)',
+                  ? Text(
+                      '(empty entry)',
                       style: TextStyle(
-                          color: KColors.textMuted,
-                          fontSize: 12,
-                          fontStyle: FontStyle.italic))
+                        color: KColors.textMuted,
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    )
                   : ListView.builder(
                       itemCount: paragraphs.length,
                       itemBuilder: (_, i) {
@@ -272,8 +293,11 @@ class _JournalEntryPeekDialogState extends State<JournalEntryPeekDialog> {
                               ? BoxDecoration(
                                   color: KColors.amberDim,
                                   border: Border(
-                                      left: BorderSide(
-                                          color: KColors.amber, width: 2)),
+                                    left: BorderSide(
+                                      color: KColors.amber,
+                                      width: 2,
+                                    ),
+                                  ),
                                   borderRadius: BorderRadius.circular(3),
                                 )
                               : null,
@@ -292,8 +316,10 @@ class _JournalEntryPeekDialogState extends State<JournalEntryPeekDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Close',
-              style: TextStyle(color: KColors.textDim, fontSize: 12)),
+          child: Text(
+            'Close',
+            style: TextStyle(color: KColors.textDim, fontSize: 12),
+          ),
         ),
         ElevatedButton.icon(
           onPressed: _openInJournal,

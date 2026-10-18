@@ -24,13 +24,12 @@ class CanvasBand extends StatelessWidget {
 
   /// Called when an existing canvas card is dropped at [localOffset] in
   /// this band. The receiver moves it / repositions it.
-  final void Function(CanvasCardDragData drag, Offset localOffset)
-      onAcceptCard;
+  final void Function(CanvasCardDragData drag, Offset localOffset) onAcceptCard;
 
   /// Called when an external item (RAID, Action, etc) is dropped onto the
   /// band. Phase B — receiver creates a linked card.
   final void Function(ExternalItemDragData drag, Offset localOffset)
-      onAcceptExternal;
+  onAcceptExternal;
 
   /// Card-level callbacks plumbed up to canvas_view.
   final void Function(CanvasCard card) onTapCard;
@@ -69,9 +68,7 @@ class CanvasBand extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: CanvasBandTheme.backgroundFor(band),
-        border: const Border(
-          bottom: BorderSide(color: KColors.border, width: 1),
-        ),
+        border: Border(bottom: BorderSide(color: KColors.border, width: 1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -120,10 +117,8 @@ class _BandHeader extends StatelessWidget {
     return Container(
       height: 32,
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: KColors.border, width: 0.5),
-        ),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: KColors.border, width: 0.5)),
       ),
       child: Row(
         children: [
@@ -132,7 +127,7 @@ class _BandHeader extends StatelessWidget {
               title.toUpperCase(),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: TextStyle(
                 color: KColors.textDim,
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
@@ -143,7 +138,7 @@ class _BandHeader extends StatelessWidget {
           const SizedBox(width: 10),
           Text(
             '$count',
-            style: const TextStyle(
+            style: TextStyle(
               color: KColors.textMuted,
               fontSize: 10.5,
               fontWeight: FontWeight.w600,
@@ -158,7 +153,7 @@ class _BandHeader extends StatelessWidget {
                 borderRadius: BorderRadius.circular(4),
                 border: Border.all(color: KColors.amber, width: 0.5),
               ),
-              child: const Text(
+              child: Text(
                 'now',
                 style: TextStyle(
                   color: KColors.amber,
@@ -181,10 +176,9 @@ class _BandSurface extends StatelessWidget {
   final String? draggingCardId;
   final String? sequenceSourceCardId;
   final void Function(Offset localOffset) onTapEmpty;
-  final void Function(CanvasCardDragData drag, Offset localOffset)
-      onAcceptCard;
+  final void Function(CanvasCardDragData drag, Offset localOffset) onAcceptCard;
   final void Function(ExternalItemDragData drag, Offset localOffset)
-      onAcceptExternal;
+  onAcceptExternal;
   final void Function(CanvasCard card) onTapCard;
   final void Function(CanvasCard card) onEditCard;
   final void Function(CanvasCard card) onLongPressCard;
@@ -235,19 +229,17 @@ class _BandSurface extends StatelessWidget {
               Positioned.fill(
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
-                  onTapUp: (details) =>
-                      onTapEmpty(details.localPosition),
+                  onTapUp: (details) => onTapEmpty(details.localPosition),
                   child: isEmpty
                       ? Center(
                           child: ConstrainedBox(
-                            constraints:
-                                const BoxConstraints(maxWidth: 360),
+                            constraints: const BoxConstraints(maxWidth: 360),
                             child: Padding(
                               padding: const EdgeInsets.all(24),
                               child: Text(
                                 CanvasBandTheme.emptyHint(band),
                                 textAlign: TextAlign.center,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: KColors.textMuted,
                                   fontSize: 12,
                                   fontStyle: FontStyle.italic,
@@ -265,35 +257,38 @@ class _BandSurface extends StatelessWidget {
                   child: CustomPaint(
                     painter: CanvasSequencePainter(
                       cards: cards,
-                      sequences: sequences
-                          .where((s) {
-                            // Only draw if both endpoints exist in this band.
-                            final from = cards.where(
-                                (c) => c.id == s.fromCardId).firstOrNull;
-                            final to = cards.where(
-                                (c) => c.id == s.toCardId).firstOrNull;
-                            return from != null &&
-                                to != null &&
-                                from.band == band &&
-                                to.band == band;
-                          })
-                          .toList(),
+                      sequences: sequences.where((s) {
+                        // Only draw if both endpoints exist in this band.
+                        final from = cards
+                            .where((c) => c.id == s.fromCardId)
+                            .firstOrNull;
+                        final to = cards
+                            .where((c) => c.id == s.toCardId)
+                            .firstOrNull;
+                        return from != null &&
+                            to != null &&
+                            from.band == band &&
+                            to.band == band;
+                      }).toList(),
                       draggingCardId: draggingCardId,
                     ),
                   ),
                 ),
               ),
-              ...cards.map((card) => _PositionedCard(
-                    card: card,
-                    isDragging: draggingCardId == card.id,
-                    isSequenceTarget: sequenceSourceCardId != null &&
-                        sequenceSourceCardId != card.id,
-                    isSequenceSource: sequenceSourceCardId == card.id,
-                    onTap: () => onTapCard(card),
-                    onDoubleTap: () => onEditCard(card),
-                    onLongPress: () => onLongPressCard(card),
-                    onDraggingChanged: onDraggingCardChanged,
-                  )),
+              ...cards.map(
+                (card) => _PositionedCard(
+                  card: card,
+                  isDragging: draggingCardId == card.id,
+                  isSequenceTarget:
+                      sequenceSourceCardId != null &&
+                      sequenceSourceCardId != card.id,
+                  isSequenceSource: sequenceSourceCardId == card.id,
+                  onTap: () => onTapCard(card),
+                  onDoubleTap: () => onEditCard(card),
+                  onLongPress: () => onLongPressCard(card),
+                  onDraggingChanged: onDraggingCardChanged,
+                ),
+              ),
             ],
           ),
         );

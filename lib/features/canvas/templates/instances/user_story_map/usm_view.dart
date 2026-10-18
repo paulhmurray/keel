@@ -67,15 +67,18 @@ class _UsmViewState extends State<UsmView> {
   void _seedControllers() {
     for (final a in _content.activities) {
       _activityCtrls.putIfAbsent(
-          a.id, () => TextEditingController(text: a.name));
+        a.id,
+        () => TextEditingController(text: a.name),
+      );
       for (final t in a.tasks) {
-        _taskCtrls.putIfAbsent(
-            t.id, () => TextEditingController(text: t.name));
+        _taskCtrls.putIfAbsent(t.id, () => TextEditingController(text: t.name));
       }
     }
     for (final r in _content.releases) {
       _releaseCtrls.putIfAbsent(
-          r.id, () => TextEditingController(text: r.name));
+        r.id,
+        () => TextEditingController(text: r.name),
+      );
     }
   }
 
@@ -132,8 +135,7 @@ class _UsmViewState extends State<UsmView> {
   void _deleteActivity(String id) {
     final activity = _content.activities.firstWhere((a) => a.id == id);
     final taskIds = activity.tasks.map((t) => t.id).toSet();
-    final filtered =
-        _content.activities.where((a) => a.id != id).toList();
+    final filtered = _content.activities.where((a) => a.id != id).toList();
     final renumbered = [
       for (var i = 0; i < filtered.length; i++)
         filtered[i].copyWith(sortOrder: i),
@@ -143,8 +145,9 @@ class _UsmViewState extends State<UsmView> {
       _taskCtrls.remove(t.id)?.dispose();
     }
     _activityCtrls.remove(id)?.dispose();
-    final stories =
-        _content.stories.where((s) => !taskIds.contains(s.taskId)).toList();
+    final stories = _content.stories
+        .where((s) => !taskIds.contains(s.taskId))
+        .toList();
     _save(_content.copyWith(activities: renumbered, stories: stories));
   }
 
@@ -153,10 +156,12 @@ class _UsmViewState extends State<UsmView> {
     _taskCtrls[id] = TextEditingController();
     final updated = _content.activities.map((a) {
       if (a.id != activityId) return a;
-      return a.copyWith(tasks: [
-        ...a.tasks,
-        UsmTask(id: id, sortOrder: a.tasks.length),
-      ]);
+      return a.copyWith(
+        tasks: [
+          ...a.tasks,
+          UsmTask(id: id, sortOrder: a.tasks.length),
+        ],
+      );
     }).toList();
     _save(_content.copyWith(activities: updated));
   }
@@ -176,8 +181,7 @@ class _UsmViewState extends State<UsmView> {
   void _deleteTask(String activityId, String taskId) {
     final updated = _content.activities.map((a) {
       if (a.id != activityId) return a;
-      final filtered =
-          a.tasks.where((t) => t.id != taskId).toList();
+      final filtered = a.tasks.where((t) => t.id != taskId).toList();
       final renumbered = [
         for (var i = 0; i < filtered.length; i++)
           filtered[i].copyWith(sortOrder: i),
@@ -186,15 +190,15 @@ class _UsmViewState extends State<UsmView> {
     }).toList();
     _taskCtrls.remove(taskId)?.dispose();
     // Drop stories under the removed task.
-    final stories =
-        _content.stories.where((s) => s.taskId != taskId).toList();
+    final stories = _content.stories.where((s) => s.taskId != taskId).toList();
     _save(_content.copyWith(activities: updated, stories: stories));
   }
 
   void _addRelease() {
     final id = const Uuid().v4();
     _releaseCtrls[id] = TextEditingController(
-        text: 'Release ${_content.releases.length + 1}');
+      text: 'Release ${_content.releases.length + 1}',
+    );
     final next = [
       ..._content.releases,
       UsmRelease(
@@ -214,25 +218,19 @@ class _UsmViewState extends State<UsmView> {
   }
 
   void _deleteRelease(String id) {
-    final filtered =
-        _content.releases.where((r) => r.id != id).toList();
+    final filtered = _content.releases.where((r) => r.id != id).toList();
     final renumbered = [
       for (var i = 0; i < filtered.length; i++)
         filtered[i].copyWith(sortOrder: i),
     ];
     _releaseCtrls.remove(id)?.dispose();
-    final stories =
-        _content.stories.where((s) => s.releaseId != id).toList();
+    final stories = _content.stories.where((s) => s.releaseId != id).toList();
     _save(_content.copyWith(releases: renumbered, stories: stories));
   }
 
   void _addStory(String taskId, String releaseId) {
     final id = const Uuid().v4();
-    final story = UsmStory(
-      id: id,
-      taskId: taskId,
-      releaseId: releaseId,
-    );
+    final story = UsmStory(id: id, taskId: taskId, releaseId: releaseId);
     _save(_content.copyWith(stories: [..._content.stories, story]));
     setState(() => _selectedStoryId = id);
   }
@@ -252,11 +250,9 @@ class _UsmViewState extends State<UsmView> {
 
   void _moveStory(String id, String newTaskId, String newReleaseId) {
     _updateStory(
-        id,
-        (s) => s.copyWith(
-              taskId: newTaskId,
-              releaseId: newReleaseId,
-            ));
+      id,
+      (s) => s.copyWith(taskId: newTaskId, releaseId: newReleaseId),
+    );
   }
 
   void _selectStory(String id) {
@@ -274,9 +270,9 @@ class _UsmViewState extends State<UsmView> {
     final selectedStory = _selectedStoryId == null
         ? null
         : _content.stories
-            .where((s) => s.id == _selectedStoryId)
-            .cast<UsmStory?>()
-            .firstOrNull;
+              .where((s) => s.id == _selectedStoryId)
+              .cast<UsmStory?>()
+              .firstOrNull;
     return Row(
       children: [
         Expanded(child: _buildMap()),
@@ -286,16 +282,19 @@ class _UsmViewState extends State<UsmView> {
             onTitleChanged: (v) =>
                 _updateStory(selectedStory.id, (s) => s.copyWith(title: v)),
             onDescriptionChanged: (v) => _updateStory(
-                selectedStory.id,
-                (s) => s.copyWith(description: v.isEmpty ? null : v)),
+              selectedStory.id,
+              (s) => s.copyWith(description: v.isEmpty ? null : v),
+            ),
             onEstimateChanged: (v) => _updateStory(
-                selectedStory.id,
-                (s) => s.copyWith(estimate: v.isEmpty ? null : v)),
-            onTagsChanged: (tags) => _updateStory(
-                selectedStory.id, (s) => s.copyWith(tags: tags)),
+              selectedStory.id,
+              (s) => s.copyWith(estimate: v.isEmpty ? null : v),
+            ),
+            onTagsChanged: (tags) =>
+                _updateStory(selectedStory.id, (s) => s.copyWith(tags: tags)),
             onAcceptanceCriteriaChanged: (ac) => _updateStory(
-                selectedStory.id,
-                (s) => s.copyWith(acceptanceCriteria: ac)),
+              selectedStory.id,
+              (s) => s.copyWith(acceptanceCriteria: ac),
+            ),
             onDelete: () => _deleteStory(selectedStory.id),
             onClose: _closePanel,
           ),
@@ -312,8 +311,7 @@ class _UsmViewState extends State<UsmView> {
           _toolbar(),
           const SizedBox(height: 10),
           Expanded(
-            child: _content.activities.isEmpty &&
-                    _content.releases.isEmpty
+            child: _content.activities.isEmpty && _content.releases.isEmpty
                 ? _EmptyState(
                     onAddActivity: _addActivity,
                     onAddRelease: _addRelease,
@@ -328,7 +326,7 @@ class _UsmViewState extends State<UsmView> {
   Widget _toolbar() {
     return Row(
       children: [
-        const Text(
+        Text(
           'USER STORY MAP',
           style: TextStyle(
             color: KColors.amber,
@@ -343,10 +341,7 @@ class _UsmViewState extends State<UsmView> {
           '${_content.allTasks.length} tasks · '
           '${_content.releases.length} releases · '
           '${_content.stories.length} stories',
-          style: const TextStyle(
-            color: KColors.textMuted,
-            fontSize: 11,
-          ),
+          style: TextStyle(color: KColors.textMuted, fontSize: 11),
         ),
         const Spacer(),
         _toolbarButton(
@@ -375,7 +370,7 @@ class _UsmViewState extends State<UsmView> {
       label: Text(label),
       style: OutlinedButton.styleFrom(
         foregroundColor: KColors.amber,
-        side: const BorderSide(color: KColors.amber),
+        side: BorderSide(color: KColors.amber),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         textStyle: const TextStyle(fontSize: 12),
         minimumSize: const Size(0, 32),
@@ -403,9 +398,8 @@ class _UsmViewState extends State<UsmView> {
 
   Widget _scrollableMap() {
     final columns = _visibleColumns();
-    final gridWidth =
-        (_releaseLabelWidth + columns.length * _taskColWidth)
-            .clamp(_releaseLabelWidth.toDouble(), 99999.0);
+    final gridWidth = (_releaseLabelWidth + columns.length * _taskColWidth)
+        .clamp(_releaseLabelWidth.toDouble(), 99999.0);
     return Scrollbar(
       controller: _hScroll,
       thumbVisibility: true,
@@ -440,7 +434,7 @@ class _UsmViewState extends State<UsmView> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
+              Text(
                 'No releases yet.',
                 style: TextStyle(
                   color: KColors.textDim,
@@ -449,11 +443,10 @@ class _UsmViewState extends State<UsmView> {
                 ),
               ),
               const SizedBox(height: 6),
-              const Text(
+              Text(
                 'Add a release band to start placing stories.',
                 textAlign: TextAlign.center,
-                style:
-                    TextStyle(color: KColors.textMuted, fontSize: 12),
+                style: TextStyle(color: KColors.textMuted, fontSize: 12),
               ),
               const SizedBox(height: 10),
               OutlinedButton.icon(
@@ -462,7 +455,7 @@ class _UsmViewState extends State<UsmView> {
                 label: const Text('Add release'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: KColors.amber,
-                  side: const BorderSide(color: KColors.amber),
+                  side: BorderSide(color: KColors.amber),
                 ),
               ),
             ],
@@ -485,8 +478,7 @@ class _UsmViewState extends State<UsmView> {
             for (final a in activities)
               _ActivityHeader(
                 activity: a,
-                width: (a.tasks.isEmpty ? 1 : a.tasks.length) *
-                    _taskColWidth,
+                width: (a.tasks.isEmpty ? 1 : a.tasks.length) * _taskColWidth,
                 height: _activityHeaderHeight,
                 ctrl: _activityCtrls[a.id]!,
                 onRename: (v) => _renameActivity(a.id, v),
@@ -515,8 +507,7 @@ class _UsmViewState extends State<UsmView> {
                   ctrl: _taskCtrls[col.task!.id]!,
                   onRename: (v) =>
                       _renameTask(col.activity.id, col.task!.id, v),
-                  onDelete: () =>
-                      _deleteTask(col.activity.id, col.task!.id),
+                  onDelete: () => _deleteTask(col.activity.id, col.task!.id),
                 ),
           ],
         ),
@@ -526,43 +517,39 @@ class _UsmViewState extends State<UsmView> {
 
   Widget _releaseRow(UsmRelease release) {
     return Container(
-      decoration: const BoxDecoration(
-        border: Border(
-          top: BorderSide(color: KColors.border, width: 1),
-        ),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: KColors.border, width: 1)),
       ),
-      constraints:
-          const BoxConstraints(minHeight: _releaseRowMinHeight),
+      constraints: const BoxConstraints(minHeight: _releaseRowMinHeight),
       child: IntrinsicHeight(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-          _ReleaseLabel(
-            release: release,
-            width: _releaseLabelWidth,
-            ctrl: _releaseCtrls[release.id]!,
-            onRename: (v) => _renameRelease(release.id, v),
-            onDelete: () => _deleteRelease(release.id),
-          ),
-          // One cell per visible column — for activities without
-          // tasks we render an inert placeholder so widths line up
-          // with the header rows.
-          for (final col in _visibleColumns())
-            if (col.task == null)
-              SizedBox(width: _taskColWidth)
-            else
-              _StoryCell(
-                taskId: col.task!.id,
-                releaseId: release.id,
-                width: _taskColWidth,
-                stories: _content.storiesAt(col.task!.id, release.id),
-                selectedStoryId: _selectedStoryId,
-                onAddStory: () =>
-                    _addStory(col.task!.id, release.id),
-                onSelectStory: _selectStory,
-                onDropStory: (storyId) => _moveStory(
-                    storyId, col.task!.id, release.id),
-              ),
+            _ReleaseLabel(
+              release: release,
+              width: _releaseLabelWidth,
+              ctrl: _releaseCtrls[release.id]!,
+              onRename: (v) => _renameRelease(release.id, v),
+              onDelete: () => _deleteRelease(release.id),
+            ),
+            // One cell per visible column — for activities without
+            // tasks we render an inert placeholder so widths line up
+            // with the header rows.
+            for (final col in _visibleColumns())
+              if (col.task == null)
+                SizedBox(width: _taskColWidth)
+              else
+                _StoryCell(
+                  taskId: col.task!.id,
+                  releaseId: release.id,
+                  width: _taskColWidth,
+                  stories: _content.storiesAt(col.task!.id, release.id),
+                  selectedStoryId: _selectedStoryId,
+                  onAddStory: () => _addStory(col.task!.id, release.id),
+                  onSelectStory: _selectStory,
+                  onDropStory: (storyId) =>
+                      _moveStory(storyId, col.task!.id, release.id),
+                ),
           ],
         ),
       ),
@@ -617,16 +604,15 @@ class _ActivityHeader extends StatelessWidget {
           Expanded(
             child: TextField(
               controller: ctrl,
-              style: const TextStyle(
+              style: TextStyle(
                 color: KColors.amber,
                 fontSize: 13,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 0.4,
               ),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'Activity',
-                hintStyle:
-                    TextStyle(color: KColors.textMuted, fontSize: 12),
+                hintStyle: TextStyle(color: KColors.textMuted, fontSize: 12),
                 isDense: true,
                 contentPadding: EdgeInsets.zero,
                 border: InputBorder.none,
@@ -640,20 +626,17 @@ class _ActivityHeader extends StatelessWidget {
             tooltip: 'Add task',
             visualDensity: VisualDensity.compact,
             onPressed: onAddTask,
-            icon: const Icon(Icons.add, size: 14, color: KColors.amber),
+            icon: Icon(Icons.add, size: 14, color: KColors.amber),
             padding: EdgeInsets.zero,
-            constraints:
-                const BoxConstraints(minWidth: 22, minHeight: 22),
+            constraints: const BoxConstraints(minWidth: 22, minHeight: 22),
           ),
           IconButton(
             tooltip: 'Delete activity',
             visualDensity: VisualDensity.compact,
             onPressed: onDelete,
-            icon: const Icon(Icons.close,
-                size: 13, color: KColors.amber),
+            icon: Icon(Icons.close, size: 13, color: KColors.amber),
             padding: EdgeInsets.zero,
-            constraints:
-                const BoxConstraints(minWidth: 22, minHeight: 22),
+            constraints: const BoxConstraints(minWidth: 22, minHeight: 22),
           ),
         ],
       ),
@@ -734,15 +717,14 @@ class _TaskHeader extends StatelessWidget {
           Expanded(
             child: TextField(
               controller: ctrl,
-              style: const TextStyle(
+              style: TextStyle(
                 color: KColors.text,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'Task',
-                hintStyle: TextStyle(
-                    color: KColors.textMuted, fontSize: 11.5),
+                hintStyle: TextStyle(color: KColors.textMuted, fontSize: 11.5),
                 isDense: true,
                 contentPadding: EdgeInsets.zero,
                 border: InputBorder.none,
@@ -756,11 +738,9 @@ class _TaskHeader extends StatelessWidget {
             tooltip: 'Delete task',
             visualDensity: VisualDensity.compact,
             onPressed: onDelete,
-            icon: const Icon(Icons.close,
-                size: 12, color: KColors.textMuted),
+            icon: Icon(Icons.close, size: 12, color: KColors.textMuted),
             padding: EdgeInsets.zero,
-            constraints:
-                const BoxConstraints(minWidth: 22, minHeight: 22),
+            constraints: const BoxConstraints(minWidth: 22, minHeight: 22),
           ),
         ],
       ),
@@ -788,10 +768,8 @@ class _ReleaseLabel extends StatelessWidget {
     return Container(
       width: width,
       padding: const EdgeInsets.fromLTRB(8, 8, 4, 8),
-      decoration: const BoxDecoration(
-        border: Border(
-          right: BorderSide(color: KColors.border, width: 1),
-        ),
+      decoration: BoxDecoration(
+        border: Border(right: BorderSide(color: KColors.border, width: 1)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -800,16 +778,15 @@ class _ReleaseLabel extends StatelessWidget {
             child: TextField(
               controller: ctrl,
               maxLines: null,
-              style: const TextStyle(
+              style: TextStyle(
                 color: KColors.text,
                 fontSize: 12.5,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 0.4,
               ),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'Release',
-                hintStyle:
-                    TextStyle(color: KColors.textMuted, fontSize: 12),
+                hintStyle: TextStyle(color: KColors.textMuted, fontSize: 12),
                 isDense: true,
                 contentPadding: EdgeInsets.zero,
                 border: InputBorder.none,
@@ -823,11 +800,9 @@ class _ReleaseLabel extends StatelessWidget {
             tooltip: 'Delete release',
             visualDensity: VisualDensity.compact,
             onPressed: onDelete,
-            icon: const Icon(Icons.close,
-                size: 12, color: KColors.textMuted),
+            icon: Icon(Icons.close, size: 12, color: KColors.textMuted),
             padding: EdgeInsets.zero,
-            constraints:
-                const BoxConstraints(minWidth: 22, minHeight: 22),
+            constraints: const BoxConstraints(minWidth: 22, minHeight: 22),
           ),
         ],
       ),
@@ -885,12 +860,14 @@ class _StoryCell extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              ...stories.map((s) => _StoryCard(
-                    key: ValueKey(s.id),
-                    story: s,
-                    isSelected: selectedStoryId == s.id,
-                    onTap: () => onSelectStory(s.id),
-                  )),
+              ...stories.map(
+                (s) => _StoryCard(
+                  key: ValueKey(s.id),
+                  story: s,
+                  isSelected: selectedStoryId == s.id,
+                  onTap: () => onSelectStory(s.id),
+                ),
+              ),
               const SizedBox(height: 2),
               Align(
                 alignment: Alignment.centerLeft,
@@ -949,7 +926,7 @@ class _StoryCard extends StatelessWidget {
             story.title.isEmpty ? '(untitled story)' : story.title,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
               color: KColors.text,
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -960,15 +937,14 @@ class _StoryCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(top: 3),
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 5, vertical: 1),
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                 decoration: BoxDecoration(
                   color: KColors.blue.withValues(alpha: 0.25),
                   borderRadius: BorderRadius.circular(2),
                 ),
                 child: Text(
                   story.estimate!,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: KColors.blue,
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
@@ -987,8 +963,7 @@ class _StoryCard extends StatelessWidget {
         color: Colors.transparent,
         child: Container(
           constraints: const BoxConstraints(maxWidth: 200),
-          padding:
-              const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
           decoration: BoxDecoration(
             color: KColors.surface,
             border: Border.all(color: KColors.amber, width: 1),
@@ -998,7 +973,7 @@ class _StoryCard extends StatelessWidget {
             story.title.isEmpty ? '(untitled)' : story.title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
               color: KColors.amber,
               fontSize: 12,
               fontWeight: FontWeight.w700,
@@ -1007,10 +982,7 @@ class _StoryCard extends StatelessWidget {
         ),
       ),
       childWhenDragging: Opacity(opacity: 0.3, child: card),
-      child: InkWell(
-        onTap: onTap,
-        child: card,
-      ),
+      child: InkWell(onTap: onTap, child: card),
     );
   }
 }
@@ -1019,10 +991,7 @@ class _EmptyState extends StatelessWidget {
   final VoidCallback onAddActivity;
   final VoidCallback onAddRelease;
 
-  const _EmptyState({
-    required this.onAddActivity,
-    required this.onAddRelease,
-  });
+  const _EmptyState({required this.onAddActivity, required this.onAddRelease});
 
   @override
   Widget build(BuildContext context) {
@@ -1034,10 +1003,9 @@ class _EmptyState extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.view_week_outlined,
-                  size: 28, color: KColors.amber),
+              Icon(Icons.view_week_outlined, size: 28, color: KColors.amber),
               const SizedBox(height: 12),
-              const Text(
+              Text(
                 'Start mapping the user journey',
                 style: TextStyle(
                   color: KColors.text,
@@ -1046,7 +1014,7 @@ class _EmptyState extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 6),
-              const Text(
+              Text(
                 'List the high-level user activities along the top, then '
                 'break each one into tasks. Plot stories at each task '
                 '× release intersection.',
@@ -1071,8 +1039,7 @@ class _EmptyState extends StatelessWidget {
                       backgroundColor: KColors.amberDim,
                       foregroundColor: KColors.amber,
                       elevation: 0,
-                      side: const BorderSide(
-                          color: KColors.amber, width: 0.5),
+                      side: BorderSide(color: KColors.amber, width: 0.5),
                     ),
                   ),
                   OutlinedButton.icon(
@@ -1081,7 +1048,7 @@ class _EmptyState extends StatelessWidget {
                     label: const Text('Add release'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: KColors.amber,
-                      side: const BorderSide(color: KColors.amber),
+                      side: BorderSide(color: KColors.amber),
                     ),
                   ),
                 ],

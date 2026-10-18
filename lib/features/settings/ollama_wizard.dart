@@ -583,7 +583,7 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
       backgroundColor: KColors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(6),
-        side: const BorderSide(color: KColors.border2),
+        side: BorderSide(color: KColors.border2),
       ),
       child: SizedBox(
         width: 560,
@@ -592,7 +592,7 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
           children: [
             _buildHeader(),
             _buildStepIndicator(),
-            const Divider(color: KColors.border, height: 1),
+            Divider(color: KColors.border, height: 1),
             Flexible(child: SingleChildScrollView(child: _buildBody())),
           ],
         ),
@@ -611,9 +611,9 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       child: Row(
         children: [
-          const Icon(Icons.computer_outlined, size: 18, color: KColors.amber),
+          Icon(Icons.computer_outlined, size: 18, color: KColors.amber),
           const SizedBox(width: 10),
-          const Text(
+          Text(
             'LOCAL AI SETUP',
             style: TextStyle(
               color: KColors.amber,
@@ -627,7 +627,7 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
             InkWell(
               onTap: () => Navigator.of(context).pop(),
               borderRadius: BorderRadius.circular(3),
-              child: const Padding(
+              child: Padding(
                 padding: EdgeInsets.all(4),
                 child: Icon(Icons.close, size: 14, color: KColors.textMuted),
               ),
@@ -686,7 +686,7 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
                         ),
                         child: Center(
                           child: isDone
-                              ? const Icon(
+                              ? Icon(
                                   Icons.check,
                                   size: 12,
                                   color: KColors.phosphor,
@@ -751,7 +751,7 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
   // ---------------------------------------------------------------------------
 
   Widget _buildDetecting() {
-    return const Padding(
+    return Padding(
       padding: EdgeInsets.all(32),
       child: Column(
         children: [
@@ -775,7 +775,7 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
           Row(
             children: [
               if (!_setupFailed)
-                const SizedBox(
+                SizedBox(
                   width: 14,
                   height: 14,
                   child: CircularProgressIndicator(
@@ -784,7 +784,7 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
                   ),
                 )
               else
-                const Icon(Icons.error_outline, size: 14, color: KColors.red),
+                Icon(Icons.error_outline, size: 14, color: KColors.red),
               const SizedBox(width: 10),
               Text(
                 _setupFailed ? 'Setup failed' : 'Setting up local AI engine',
@@ -810,10 +810,10 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
             const SizedBox(height: 8),
             Text(
               _setupStatus,
-              style: const TextStyle(color: KColors.textDim, fontSize: 11),
+              style: TextStyle(color: KColors.textDim, fontSize: 11),
             ),
             const SizedBox(height: 24),
-            const Text(
+            Text(
               'This is a one-time setup. The AI engine runs entirely on your '
               'computer — no data is sent anywhere.',
               style: TextStyle(
@@ -826,7 +826,7 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
             const SizedBox(height: 8),
             Text(
               _setupStatus,
-              style: const TextStyle(
+              style: TextStyle(
                 color: KColors.textMuted,
                 fontSize: 11,
                 height: 1.5,
@@ -890,7 +890,7 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
             ),
           ),
           const SizedBox(height: 20),
-          const Text(
+          Text(
             'Choose a model to download',
             style: TextStyle(
               color: KColors.text,
@@ -899,7 +899,7 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Larger models produce better results but require more RAM and storage.',
             style: TextStyle(color: KColors.textDim, fontSize: 11),
           ),
@@ -953,11 +953,8 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
                         ? TextField(
                             controller: _customCtrl,
                             autofocus: true,
-                            style: const TextStyle(
-                              color: KColors.text,
-                              fontSize: 12,
-                            ),
-                            decoration: const InputDecoration(
+                            style: TextStyle(color: KColors.text, fontSize: 12),
+                            decoration: InputDecoration(
                               hintText: 'e.g. codellama:7b',
                               hintStyle: TextStyle(
                                 color: KColors.textMuted,
@@ -968,7 +965,7 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
                               contentPadding: EdgeInsets.zero,
                             ),
                           )
-                        : const Text(
+                        : Text(
                             'Custom model',
                             style: TextStyle(
                               color: KColors.textDim,
@@ -1022,7 +1019,7 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
           Row(
             children: [
               if (!_pullFailed && !_pullComplete)
-                const SizedBox(
+                SizedBox(
                   width: 14,
                   height: 14,
                   child: CircularProgressIndicator(
@@ -1031,13 +1028,9 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
                   ),
                 )
               else if (_pullComplete)
-                const Icon(
-                  Icons.check_circle,
-                  size: 14,
-                  color: KColors.phosphor,
-                )
+                Icon(Icons.check_circle, size: 14, color: KColors.phosphor)
               else
-                const Icon(Icons.error_outline, size: 14, color: KColors.red),
+                Icon(Icons.error_outline, size: 14, color: KColors.red),
               const SizedBox(width: 8),
               Text(
                 _pullFailed
@@ -1059,7 +1052,7 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
                 const Spacer(),
                 Text(
                   '$pct%',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: KColors.amber,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -1082,7 +1075,7 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
           const SizedBox(height: 4),
           Text(
             _pullStatus,
-            style: const TextStyle(color: KColors.textDim, fontSize: 11),
+            style: TextStyle(color: KColors.textDim, fontSize: 11),
           ),
           const SizedBox(height: 12),
 
@@ -1103,7 +1096,7 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
                     .map(
                       (l) => Text(
                         l,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: KColors.textDim,
                           fontSize: 10,
                           fontFamily: 'monospace',
@@ -1148,7 +1141,7 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Icon(Icons.check_circle, size: 20, color: KColors.phosphor),
               SizedBox(width: 10),
@@ -1163,7 +1156,7 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
             ],
           ),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             'Keel can now run fully offline. Everything stays on your computer.',
             style: TextStyle(color: KColors.textDim, fontSize: 12),
           ),
@@ -1177,7 +1170,7 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
+                Icon(
                   Icons.computer_outlined,
                   size: 13,
                   color: KColors.phosphor,
@@ -1185,7 +1178,7 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
                 const SizedBox(width: 6),
                 Text(
                   model,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: KColors.phosphor,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -1195,7 +1188,7 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'Local models are faster and private but may produce shorter '
             'or less nuanced responses than cloud models.',
             style: TextStyle(
@@ -1214,7 +1207,7 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: KColors.phosDim,
                   foregroundColor: KColors.phosphor,
-                  side: const BorderSide(color: KColors.phosphor, width: 0.5),
+                  side: BorderSide(color: KColors.phosphor, width: 0.5),
                 ),
               ),
               const SizedBox(width: 12),
@@ -1300,7 +1293,7 @@ class _ModelOption extends StatelessWidget {
                               color: KColors.amberDim,
                               borderRadius: BorderRadius.circular(2),
                             ),
-                            child: const Text(
+                            child: Text(
                               'RECOMMENDED',
                               style: TextStyle(
                                 color: KColors.amber,
@@ -1322,7 +1315,7 @@ class _ModelOption extends StatelessWidget {
                               color: KColors.phosDim,
                               borderRadius: BorderRadius.circular(2),
                             ),
-                            child: const Text(
+                            child: Text(
                               'INSTALLED',
                               style: TextStyle(
                                 color: KColors.phosphor,
@@ -1338,17 +1331,14 @@ class _ModelOption extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       model.description,
-                      style: const TextStyle(
-                        color: KColors.textDim,
-                        fontSize: 11,
-                      ),
+                      style: TextStyle(color: KColors.textDim, fontSize: 11),
                     ),
                   ],
                 ),
               ),
               Text(
                 model.size,
-                style: const TextStyle(color: KColors.textMuted, fontSize: 11),
+                style: TextStyle(color: KColors.textMuted, fontSize: 11),
               ),
             ],
           ),
@@ -1454,7 +1444,7 @@ class _OllamaModelPullButtonState extends State<OllamaModelPullButton> {
   @override
   Widget build(BuildContext context) {
     if (_done) {
-      return const Icon(Icons.check_circle, size: 16, color: KColors.phosphor);
+      return Icon(Icons.check_circle, size: 16, color: KColors.phosphor);
     }
 
     if (_pulling) {
@@ -1478,7 +1468,7 @@ class _OllamaModelPullButtonState extends State<OllamaModelPullButton> {
               _progress > 0
                   ? '${(_progress * 100).toStringAsFixed(0)}%'
                   : 'Pulling...',
-              style: const TextStyle(color: KColors.textDim, fontSize: 9),
+              style: TextStyle(color: KColors.textDim, fontSize: 9),
             ),
           ],
         ),

@@ -11,11 +11,7 @@ class RoleNaRow extends StatelessWidget {
   final String roleName;
   final VoidCallback onRestore;
 
-  const RoleNaRow({
-    super.key,
-    required this.roleName,
-    required this.onRestore,
-  });
+  const RoleNaRow({super.key, required this.roleName, required this.onRestore});
 
   @override
   Widget build(BuildContext context) {
@@ -23,21 +19,19 @@ class RoleNaRow extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 2, 0, 2),
       child: Row(
         children: [
-          const Text('—',
-              style: TextStyle(color: KColors.textMuted, fontSize: 12)),
+          Text('—', style: TextStyle(color: KColors.textMuted, fontSize: 12)),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               roleName,
-              style: const TextStyle(color: KColors.textMuted, fontSize: 12),
+              style: TextStyle(color: KColors.textMuted, fontSize: 12),
             ),
           ),
-          const Text('N/A',
-              style: TextStyle(color: KColors.textMuted, fontSize: 10)),
+          Text('N/A', style: TextStyle(color: KColors.textMuted, fontSize: 10)),
           const SizedBox(width: 8),
           GestureDetector(
             onTap: onRestore,
-            child: const Text(
+            child: Text(
               'Restore',
               style: TextStyle(
                 color: KColors.textDim,
@@ -60,11 +54,7 @@ class RoleAddButton extends StatelessWidget {
   final String label;
   final VoidCallback onAdd;
 
-  const RoleAddButton({
-    super.key,
-    required this.label,
-    required this.onAdd,
-  });
+  const RoleAddButton({super.key, required this.label, required this.onAdd});
 
   @override
   Widget build(BuildContext context) {
@@ -74,12 +64,9 @@ class RoleAddButton extends StatelessWidget {
         onTap: onAdd,
         child: Row(
           children: [
-            const Icon(Icons.add, size: 14, color: KColors.textDim),
+            Icon(Icons.add, size: 14, color: KColors.textDim),
             const SizedBox(width: 6),
-            Text(
-              label,
-              style: const TextStyle(color: KColors.textDim, fontSize: 11),
-            ),
+            Text(label, style: TextStyle(color: KColors.textDim, fontSize: 11)),
           ],
         ),
       ),
@@ -95,11 +82,7 @@ class RoleSmallButton extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  const RoleSmallButton({
-    super.key,
-    required this.label,
-    required this.onTap,
-  });
+  const RoleSmallButton({super.key, required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -114,7 +97,7 @@ class RoleSmallButton extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: const TextStyle(color: KColors.textDim, fontSize: 11),
+          style: TextStyle(color: KColors.textDim, fontSize: 11),
         ),
       ),
     );
@@ -146,7 +129,7 @@ class RoleMoreMenu extends StatelessWidget {
     return PopupMenuButton<String>(
       color: KColors.surface2,
       padding: EdgeInsets.zero,
-      icon: const Icon(Icons.more_horiz, size: 16, color: KColors.textDim),
+      icon: Icon(Icons.more_horiz, size: 16, color: KColors.textDim),
       iconSize: 16,
       constraints: const BoxConstraints(minWidth: 160),
       onSelected: (v) {
@@ -158,37 +141,47 @@ class RoleMoreMenu extends StatelessWidget {
       },
       itemBuilder: (_) => [
         if (onEditDetails != null)
-          const PopupMenuItem(
+          PopupMenuItem(
             value: 'details',
             height: 32,
-            child: Text('Edit details…',
-                style: TextStyle(color: KColors.text, fontSize: 12)),
+            child: Text(
+              'Edit details…',
+              style: TextStyle(color: KColors.text, fontSize: 12),
+            ),
           ),
         if (onRename != null)
-          const PopupMenuItem(
+          PopupMenuItem(
             value: 'rename',
             height: 32,
-            child: Text('Rename role…',
-                style: TextStyle(color: KColors.text, fontSize: 12)),
+            child: Text(
+              'Rename role…',
+              style: TextStyle(color: KColors.text, fontSize: 12),
+            ),
           ),
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'na',
           height: 32,
-          child: Text('Mark N/A',
-              style: TextStyle(color: KColors.text, fontSize: 12)),
+          child: Text(
+            'Mark N/A',
+            style: TextStyle(color: KColors.text, fontSize: 12),
+          ),
         ),
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'remove',
           height: 32,
-          child: Text('Remove person',
-              style: TextStyle(color: KColors.textDim, fontSize: 12)),
+          child: Text(
+            'Remove person',
+            style: TextStyle(color: KColors.textDim, fontSize: 12),
+          ),
         ),
         if (onDelete != null)
-          const PopupMenuItem(
+          PopupMenuItem(
             value: 'delete',
             height: 32,
-            child: Text('Delete role',
-                style: TextStyle(color: KColors.red, fontSize: 12)),
+            child: Text(
+              'Delete role',
+              style: TextStyle(color: KColors.red, fontSize: 12),
+            ),
           ),
       ],
     );
@@ -200,26 +193,32 @@ class RoleMoreMenu extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 Future<String?> promptRenameRole(
-    BuildContext context, String currentName) async {
+  BuildContext context,
+  String currentName,
+) async {
   final ctrl = TextEditingController(text: currentName);
   return showDialog<String>(
     context: context,
     builder: (_) => AlertDialog(
       backgroundColor: KColors.surface,
-      title: const Text('Rename Role',
-          style: TextStyle(color: KColors.text, fontSize: 14)),
+      title: Text(
+        'Rename Role',
+        style: TextStyle(color: KColors.text, fontSize: 14),
+      ),
       content: TextField(
         controller: ctrl,
         autofocus: true,
-        style: const TextStyle(color: KColors.text, fontSize: 13),
+        style: TextStyle(color: KColors.text, fontSize: 13),
         decoration: const InputDecoration(labelText: 'Role name'),
         onSubmitted: (v) => Navigator.of(context).pop(v.trim()),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel',
-              style: TextStyle(color: KColors.textDim, fontSize: 12)),
+          child: Text(
+            'Cancel',
+            style: TextStyle(color: KColors.textDim, fontSize: 12),
+          ),
         ),
         ElevatedButton(
           onPressed: () => Navigator.of(context).pop(ctrl.text.trim()),
@@ -249,10 +248,7 @@ class _RolePickerDialog extends StatefulWidget {
   final String title;
   final List<String> suggestions;
 
-  const _RolePickerDialog({
-    required this.title,
-    required this.suggestions,
-  });
+  const _RolePickerDialog({required this.title, required this.suggestions});
 
   @override
   State<_RolePickerDialog> createState() => _RolePickerDialogState();
@@ -279,8 +275,10 @@ class _RolePickerDialogState extends State<_RolePickerDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: KColors.surface,
-      title: Text(widget.title,
-          style: const TextStyle(color: KColors.text, fontSize: 14)),
+      title: Text(
+        widget.title,
+        style: TextStyle(color: KColors.text, fontSize: 14),
+      ),
       content: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 420),
         child: Column(
@@ -288,7 +286,7 @@ class _RolePickerDialogState extends State<_RolePickerDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (widget.suggestions.isNotEmpty) ...[
-              const Text(
+              Text(
                 'Common picks',
                 style: TextStyle(
                   color: KColors.textMuted,
@@ -310,7 +308,7 @@ class _RolePickerDialogState extends State<_RolePickerDialog> {
                 ],
               ),
               const SizedBox(height: 14),
-              const Text(
+              Text(
                 'Or enter your own',
                 style: TextStyle(
                   color: KColors.textMuted,
@@ -324,7 +322,7 @@ class _RolePickerDialogState extends State<_RolePickerDialog> {
             TextField(
               controller: _ctrl,
               autofocus: true,
-              style: const TextStyle(color: KColors.text, fontSize: 13),
+              style: TextStyle(color: KColors.text, fontSize: 13),
               decoration: const InputDecoration(labelText: 'Role name'),
               onSubmitted: (_) => _submit(),
             ),
@@ -334,13 +332,12 @@ class _RolePickerDialogState extends State<_RolePickerDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel',
-              style: TextStyle(color: KColors.textDim, fontSize: 12)),
+          child: Text(
+            'Cancel',
+            style: TextStyle(color: KColors.textDim, fontSize: 12),
+          ),
         ),
-        ElevatedButton(
-          onPressed: _submit,
-          child: const Text('Add'),
-        ),
+        ElevatedButton(onPressed: _submit, child: const Text('Add')),
       ],
     );
   }
@@ -367,12 +364,9 @@ class _SuggestionChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.add, size: 11, color: KColors.textDim),
+            Icon(Icons.add, size: 11, color: KColors.textDim),
             const SizedBox(width: 4),
-            Text(
-              label,
-              style: const TextStyle(color: KColors.text, fontSize: 11),
-            ),
+            Text(label, style: TextStyle(color: KColors.text, fontSize: 11)),
           ],
         ),
       ),
@@ -385,17 +379,21 @@ Future<bool> confirmDeleteRole(BuildContext context, String roleName) async {
     context: context,
     builder: (_) => AlertDialog(
       backgroundColor: KColors.surface,
-      title: const Text('Delete Role?',
-          style: TextStyle(color: KColors.text, fontSize: 14)),
+      title: Text(
+        'Delete Role?',
+        style: TextStyle(color: KColors.text, fontSize: 14),
+      ),
       content: Text(
         'Permanently delete "$roleName"? This cannot be undone.',
-        style: const TextStyle(color: KColors.textDim, fontSize: 12),
+        style: TextStyle(color: KColors.textDim, fontSize: 12),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Cancel',
-              style: TextStyle(color: KColors.textDim, fontSize: 12)),
+          child: Text(
+            'Cancel',
+            style: TextStyle(color: KColors.textDim, fontSize: 12),
+          ),
         ),
         ElevatedButton(
           style: ElevatedButton.styleFrom(backgroundColor: KColors.red),
@@ -413,17 +411,21 @@ Future<bool> confirmDeleteRole(BuildContext context, String roleName) async {
 // ---------------------------------------------------------------------------
 
 Future<void> restoreStakeholderRole(AppDatabase db, String roleId) async {
-  await db.stakeholderRoleDao.updateRole(StakeholderRolesCompanion(
-    id: Value(roleId),
-    isApplicable: const Value(true),
-    updatedAt: Value(DateTime.now()),
-  ));
+  await db.stakeholderRoleDao.updateRole(
+    StakeholderRolesCompanion(
+      id: Value(roleId),
+      isApplicable: const Value(true),
+      updatedAt: Value(DateTime.now()),
+    ),
+  );
 }
 
 Future<void> restoreTeamRole(AppDatabase db, String roleId) async {
-  await db.teamRoleDao.updateRole(TeamRolesCompanion(
-    id: Value(roleId),
-    isApplicable: const Value(true),
-    updatedAt: Value(DateTime.now()),
-  ));
+  await db.teamRoleDao.updateRole(
+    TeamRolesCompanion(
+      id: Value(roleId),
+      isApplicable: const Value(true),
+      updatedAt: Value(DateTime.now()),
+    ),
+  );
 }

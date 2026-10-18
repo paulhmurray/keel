@@ -49,16 +49,12 @@ class _UpdateBannerBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          const Icon(
-            Icons.warning_amber_rounded,
-            size: 14,
-            color: KColors.amber,
-          ),
+          Icon(Icons.warning_amber_rounded, size: 14, color: KColors.amber),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               'Critical update required — Keel ${info.version}. ${info.releaseNotes}',
-              style: const TextStyle(color: KColors.amber, fontSize: 12),
+              style: TextStyle(color: KColors.amber, fontSize: 12),
             ),
           ),
           _TextButton(
@@ -102,15 +98,11 @@ class _UpdatePanelNotice extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.system_update_alt,
-                size: 11,
-                color: KColors.amber,
-              ),
+              Icon(Icons.system_update_alt, size: 11, color: KColors.amber),
               const SizedBox(width: 5),
               Text(
                 'UPDATE AVAILABLE'.toUpperCase(),
-                style: const TextStyle(
+                style: TextStyle(
                   color: KColors.amber,
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
@@ -122,7 +114,7 @@ class _UpdatePanelNotice extends StatelessWidget {
           const SizedBox(height: 5),
           Text(
             'Keel ${info.version}',
-            style: const TextStyle(
+            style: TextStyle(
               color: KColors.text,
               fontSize: 11,
               fontWeight: FontWeight.w500,
@@ -132,7 +124,7 @@ class _UpdatePanelNotice extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               info.releaseNotes,
-              style: const TextStyle(color: KColors.textDim, fontSize: 10),
+              style: TextStyle(color: KColors.textDim, fontSize: 10),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -171,7 +163,7 @@ class _TextButton extends StatelessWidget {
       onTap: onTap,
       child: Text(
         label,
-        style: const TextStyle(
+        style: TextStyle(
           color: KColors.amber,
           fontSize: 12,
           decoration: TextDecoration.underline,
@@ -298,7 +290,7 @@ class _UpdateOverlayState extends State<UpdateOverlay> {
                         progress.phase == UpdatePhase.failed
                             ? 'Update failed'
                             : 'Updating Keel',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: KColors.text,
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -309,10 +301,7 @@ class _UpdateOverlayState extends State<UpdateOverlay> {
                   const SizedBox(height: 12),
                   Text(
                     progress.message,
-                    style: const TextStyle(
-                      color: KColors.textDim,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: KColors.textDim, fontSize: 12),
                   ),
                   if (progress.busy) ...[
                     const SizedBox(height: 12),
@@ -322,7 +311,7 @@ class _UpdateOverlayState extends State<UpdateOverlay> {
                       backgroundColor: KColors.surface2,
                     ),
                     const SizedBox(height: 8),
-                    const Text(
+                    Text(
                       'Keel will close and reopen as the new version.',
                       style: TextStyle(color: KColors.textMuted, fontSize: 11),
                     ),
@@ -333,7 +322,7 @@ class _UpdateOverlayState extends State<UpdateOverlay> {
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         if (stuck)
-                          const Expanded(
+                          Expanded(
                             child: Text(
                               'Still here? The hand-off did not complete. '
                               'Close this and try again, or install by hand.',

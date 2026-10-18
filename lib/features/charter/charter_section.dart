@@ -18,7 +18,8 @@ class CharterSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasContent = (value != null && value!.isNotEmpty) ||
+    final hasContent =
+        (value != null && value!.isNotEmpty) ||
         (subValue != null && subValue!.isNotEmpty);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -26,20 +27,14 @@ class CharterSection extends StatelessWidget {
         _SectionHeader(label: label),
         const SizedBox(height: 8),
         if (!hasContent)
-          const Text(
-            '—',
-            style: TextStyle(color: KColors.textMuted, fontSize: 13),
-          )
+          Text('—', style: TextStyle(color: KColors.textMuted, fontSize: 13))
         else ...[
-          if (value != null && value!.isNotEmpty)
-            _ProseText(value!),
-          if (subLabel != null &&
-              subValue != null &&
-              subValue!.isNotEmpty) ...[
+          if (value != null && value!.isNotEmpty) _ProseText(value!),
+          if (subLabel != null && subValue != null && subValue!.isNotEmpty) ...[
             const SizedBox(height: 10),
             Text(
               subLabel!,
-              style: const TextStyle(
+              style: TextStyle(
                 color: KColors.textDim,
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
@@ -66,7 +61,7 @@ class _SectionHeader extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             color: KColors.textMuted,
             fontSize: 10,
             fontWeight: FontWeight.w700,
@@ -74,9 +69,7 @@ class _SectionHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
-        Expanded(
-          child: Container(height: 1, color: KColors.border),
-        ),
+        Expanded(child: Container(height: 1, color: KColors.border)),
       ],
     );
   }
@@ -100,13 +93,18 @@ class _ProseText extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('•  ',
-                    style: TextStyle(color: KColors.textDim, fontSize: 13)),
+                Text(
+                  '•  ',
+                  style: TextStyle(color: KColors.textDim, fontSize: 13),
+                ),
                 Expanded(
                   child: Text(
                     trimmed.substring(2),
-                    style: const TextStyle(
-                        color: KColors.text, fontSize: 13, height: 1.6),
+                    style: TextStyle(
+                      color: KColors.text,
+                      fontSize: 13,
+                      height: 1.6,
+                    ),
                   ),
                 ),
               ],
@@ -118,8 +116,7 @@ class _ProseText extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 2),
           child: Text(
             trimmed,
-            style: const TextStyle(
-                color: KColors.text, fontSize: 13, height: 1.6),
+            style: TextStyle(color: KColors.text, fontSize: 13, height: 1.6),
           ),
         );
       }).toList(),
@@ -133,6 +130,7 @@ class CharterEditSection extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
   final int minLines;
+
   /// Sits at the right of the section header — the AI draft button.
   final Widget? trailing;
 
@@ -150,37 +148,39 @@ class CharterEditSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(children: [
-          Expanded(child: _SectionHeader(label: label)),
-          ?trailing,
-        ]),
+        Row(
+          children: [
+            Expanded(child: _SectionHeader(label: label)),
+            ?trailing,
+          ],
+        ),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
           minLines: minLines,
           maxLines: null,
-          style: const TextStyle(
-              color: KColors.text, fontSize: 13, height: 1.6),
+          style: TextStyle(color: KColors.text, fontSize: 13, height: 1.6),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: const TextStyle(
-                color: KColors.textMuted, fontSize: 13),
+            hintStyle: TextStyle(color: KColors.textMuted, fontSize: 13),
             filled: true,
             fillColor: KColors.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(4),
-              borderSide: const BorderSide(color: KColors.border),
+              borderSide: BorderSide(color: KColors.border),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(4),
-              borderSide: const BorderSide(color: KColors.border),
+              borderSide: BorderSide(color: KColors.border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(4),
-              borderSide: const BorderSide(color: KColors.amber),
+              borderSide: BorderSide(color: KColors.amber),
             ),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
           ),
         ),
         const SizedBox(height: 20),

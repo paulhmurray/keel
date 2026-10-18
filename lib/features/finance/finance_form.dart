@@ -38,8 +38,12 @@ class BudgetFormDialog extends StatefulWidget {
   final AppDatabase db;
   final ProjectBudget? budget;
 
-  const BudgetFormDialog(
-      {super.key, required this.projectId, required this.db, this.budget});
+  const BudgetFormDialog({
+    super.key,
+    required this.projectId,
+    required this.db,
+    this.budget,
+  });
 
   @override
   State<BudgetFormDialog> createState() => _BudgetFormDialogState();
@@ -74,10 +78,12 @@ class _BudgetFormDialogState extends State<BudgetFormDialog> {
     if (!_formKey.currentState!.validate()) return;
     final actor = financeActor(context);
     final name = _nameCtrl.text.trim();
-    final funding =
-        _fundingCtrl.text.trim().isEmpty ? null : _fundingCtrl.text.trim();
-    final notes =
-        _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim();
+    final funding = _fundingCtrl.text.trim().isEmpty
+        ? null
+        : _fundingCtrl.text.trim();
+    final notes = _notesCtrl.text.trim().isEmpty
+        ? null
+        : _notesCtrl.text.trim();
     if (widget.budget == null) {
       await widget.db.financeDao.createBudget(
         projectId: widget.projectId,
@@ -116,8 +122,9 @@ class _BudgetFormDialogState extends State<BudgetFormDialog> {
                 controller: _nameCtrl,
                 autofocus: true,
                 decoration: const InputDecoration(
-                    labelText: 'Name *',
-                    hintText: 'e.g. Approved Business Case v2'),
+                  labelText: 'Name *',
+                  hintText: 'e.g. Approved Business Case v2',
+                ),
                 validator: (v) =>
                     v == null || v.trim().isEmpty ? 'Required' : null,
               ),
@@ -137,8 +144,9 @@ class _BudgetFormDialogState extends State<BudgetFormDialog> {
                     child: TextFormField(
                       controller: _fundingCtrl,
                       decoration: const InputDecoration(
-                          labelText: 'Funding Source',
-                          hintText: 'e.g. Capex pool'),
+                        labelText: 'Funding Source',
+                        hintText: 'e.g. Capex pool',
+                      ),
                     ),
                   ),
                 ],
@@ -173,11 +181,12 @@ class ApproveBudgetDialog extends StatefulWidget {
   final AppDatabase db;
   final ProjectBudget budget;
 
-  const ApproveBudgetDialog(
-      {super.key,
-      required this.projectId,
-      required this.db,
-      required this.budget});
+  const ApproveBudgetDialog({
+    super.key,
+    required this.projectId,
+    required this.db,
+    required this.budget,
+  });
 
   @override
   State<ApproveBudgetDialog> createState() => _ApproveBudgetDialogState();
@@ -194,8 +203,9 @@ class _ApproveBudgetDialogState extends State<ApproveBudgetDialog> {
   }
 
   Future<void> _loadPersons() async {
-    final persons =
-        await widget.db.peopleDao.getPersonsForProject(widget.projectId);
+    final persons = await widget.db.peopleDao.getPersonsForProject(
+      widget.projectId,
+    );
     if (mounted) setState(() => _persons = persons);
   }
 
@@ -234,7 +244,7 @@ class _ApproveBudgetDialogState extends State<ApproveBudgetDialog> {
               '"${widget.budget.name}" becomes the approved budget. '
               'Any currently approved budget is superseded (history kept). '
               'Approved budgets are read-only.',
-              style: const TextStyle(color: KColors.textDim, fontSize: 12),
+              style: TextStyle(color: KColors.textDim, fontSize: 12),
             ),
             const SizedBox(height: 16),
             PersonPickerField(
@@ -307,11 +317,11 @@ class _BudgetLineFormDialogState extends State<BudgetLineFormDialog> {
     super.initState();
     final l = widget.line;
     _amountCtrl = TextEditingController(
-        text: l == null ? '' : Money.formatMinorPlain(l.amountMinor));
+      text: l == null ? '' : Money.formatMinorPlain(l.amountMinor),
+    );
     _fyCtrl = TextEditingController(
-        text: l?.financialYear ??
-            widget.initialFinancialYear ??
-            defaultFyLabel());
+      text: l?.financialYear ?? widget.initialFinancialYear ?? defaultFyLabel(),
+    );
     _notesCtrl = TextEditingController(text: l?.notes ?? '');
     _categoryId = l?.costCategoryId ?? widget.initialCategoryId;
     _workstreamId = l?.workstreamId ?? widget.initialWorkstreamId;
@@ -345,9 +355,7 @@ class _BudgetLineFormDialogState extends State<BudgetLineFormDialog> {
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.line != null;
-    final wpNames = {
-      for (final wp in widget.workPackages) wp.id: wp.name,
-    };
+    final wpNames = {for (final wp in widget.workPackages) wp.id: wp.name};
     return AlertDialog(
       title: Text(isEdit ? 'Edit Budget Line' : 'New Budget Line'),
       content: SizedBox(
@@ -362,11 +370,16 @@ class _BudgetLineFormDialogState extends State<BudgetLineFormDialog> {
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       initialValue: _categoryId,
-                      decoration:
-                          const InputDecoration(labelText: 'Category *'),
+                      decoration: const InputDecoration(
+                        labelText: 'Category *',
+                      ),
                       items: widget.categories
-                          .map((c) => DropdownMenuItem(
-                              value: c.id, child: Text(c.name)))
+                          .map(
+                            (c) => DropdownMenuItem(
+                              value: c.id,
+                              child: Text(c.name),
+                            ),
+                          )
                           .toList(),
                       onChanged: (v) => setState(() => _categoryId = v),
                       validator: (v) => v == null ? 'Required' : null,
@@ -377,7 +390,9 @@ class _BudgetLineFormDialogState extends State<BudgetLineFormDialog> {
                     child: TextFormField(
                       controller: _fyCtrl,
                       decoration: const InputDecoration(
-                          labelText: 'Financial Year *', hintText: 'FY27'),
+                        labelText: 'Financial Year *',
+                        hintText: 'FY27',
+                      ),
                       validator: (v) =>
                           v == null || v.trim().isEmpty ? 'Required' : null,
                     ),
@@ -401,15 +416,23 @@ class _BudgetLineFormDialogState extends State<BudgetLineFormDialog> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String?>(
-                initialValue:
-                    wpNames.containsKey(_workstreamId) ? _workstreamId : null,
+                initialValue: wpNames.containsKey(_workstreamId)
+                    ? _workstreamId
+                    : null,
                 decoration: const InputDecoration(
-                    labelText: 'Workstream (optional)'),
+                  labelText: 'Workstream (optional)',
+                ),
                 items: [
                   const DropdownMenuItem<String?>(
-                      value: null, child: Text('—')),
-                  ...widget.workPackages.map((wp) => DropdownMenuItem<String?>(
-                      value: wp.id, child: Text(wp.name))),
+                    value: null,
+                    child: Text('—'),
+                  ),
+                  ...widget.workPackages.map(
+                    (wp) => DropdownMenuItem<String?>(
+                      value: wp.id,
+                      child: Text(wp.name),
+                    ),
+                  ),
                 ],
                 onChanged: (v) => setState(() => _workstreamId = v),
               ),

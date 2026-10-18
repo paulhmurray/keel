@@ -49,9 +49,13 @@ class _RetroViewState extends State<RetroView> {
     for (final col in RetroColumn.all) {
       for (final item in _content.itemsFor(col)) {
         _titleCtrls.putIfAbsent(
-            item.id, () => TextEditingController(text: item.title));
-        _notesCtrls.putIfAbsent(item.id,
-            () => TextEditingController(text: item.notes ?? ''));
+          item.id,
+          () => TextEditingController(text: item.title),
+        );
+        _notesCtrls.putIfAbsent(
+          item.id,
+          () => TextEditingController(text: item.notes ?? ''),
+        );
       }
     }
   }
@@ -94,8 +98,11 @@ class _RetroViewState extends State<RetroView> {
     _save(_content.withColumn(column, list));
   }
 
-  void _updateItem(String column, String id,
-      RetroItem Function(RetroItem) edit) {
+  void _updateItem(
+    String column,
+    String id,
+    RetroItem Function(RetroItem) edit,
+  ) {
     final updated = _content
         .itemsFor(column)
         .map((it) => it.id == id ? edit(it) : it)
@@ -104,8 +111,10 @@ class _RetroViewState extends State<RetroView> {
   }
 
   void _deleteItem(String column, String id) {
-    final filtered =
-        _content.itemsFor(column).where((it) => it.id != id).toList();
+    final filtered = _content
+        .itemsFor(column)
+        .where((it) => it.id != id)
+        .toList();
     final renumbered = [
       for (var i = 0; i < filtered.length; i++)
         filtered[i].copyWith(sortOrder: i),
@@ -130,8 +139,7 @@ class _RetroViewState extends State<RetroView> {
     if (idx < 0) return;
     final moving = source.removeAt(idx);
     final renumberedSource = [
-      for (var i = 0; i < source.length; i++)
-        source[i].copyWith(sortOrder: i),
+      for (var i = 0; i < source.length; i++) source[i].copyWith(sortOrder: i),
     ];
     final target = [..._content.itemsFor(targetColumn)];
     target.add(moving.copyWith(sortOrder: target.length));
@@ -153,25 +161,30 @@ class _RetroViewState extends State<RetroView> {
     final desc = item.notes != null && item.notes!.isNotEmpty
         ? '${item.title}\n\n${item.notes}'
         : item.title;
-    await db.actionsDao.insertAction(ProjectActionsCompanion.insert(
-      id: newId,
-      projectId: widget.template.projectId,
-      description: desc,
-      source: const Value('retrospective'),
-      sourceNote: Value(
-          'Retro: ${widget.template.name} (${RetroColumn.label(column)})'),
-    ));
-    _updateItem(column, item.id,
-        (it) => it.copyWith(promotedToActionId: newId));
+    await db.actionsDao.insertAction(
+      ProjectActionsCompanion.insert(
+        id: newId,
+        projectId: widget.template.projectId,
+        description: desc,
+        source: const Value('retrospective'),
+        sourceNote: Value(
+          'Retro: ${widget.template.name} (${RetroColumn.label(column)})',
+        ),
+      ),
+    );
+    _updateItem(
+      column,
+      item.id,
+      (it) => it.copyWith(promotedToActionId: newId),
+    );
     _snack('Promoted to Action.');
   }
 
   void _snack(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(message),
-      duration: const Duration(seconds: 2),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
+    );
   }
 
   // ---- UI -----------------------------------------------------------------
@@ -190,16 +203,19 @@ class _RetroViewState extends State<RetroView> {
             titleCtrls: _titleCtrls,
             notesCtrls: _notesCtrls,
             onAdd: () => _addItem(RetroColumn.start),
-            onTitleChanged: (id, v) =>
-                _updateItem(RetroColumn.start, id, (it) => it.copyWith(title: v)),
+            onTitleChanged: (id, v) => _updateItem(
+              RetroColumn.start,
+              id,
+              (it) => it.copyWith(title: v),
+            ),
             onNotesChanged: (id, v) => _updateItem(
-                RetroColumn.start,
-                id,
-                (it) => it.copyWith(notes: v.isEmpty ? null : v)),
+              RetroColumn.start,
+              id,
+              (it) => it.copyWith(notes: v.isEmpty ? null : v),
+            ),
             onVoteUp: (id) => _voteUp(RetroColumn.start, id),
             onDelete: (id) => _deleteItem(RetroColumn.start, id),
-            onPromoteToAction: (it) =>
-                _promoteToAction(RetroColumn.start, it),
+            onPromoteToAction: (it) => _promoteToAction(RetroColumn.start, it),
             onDropFrom: (src, id) => _moveBetweenColumns(
               id: id,
               sourceColumn: src,
@@ -214,12 +230,16 @@ class _RetroViewState extends State<RetroView> {
             titleCtrls: _titleCtrls,
             notesCtrls: _notesCtrls,
             onAdd: () => _addItem(RetroColumn.stop),
-            onTitleChanged: (id, v) =>
-                _updateItem(RetroColumn.stop, id, (it) => it.copyWith(title: v)),
+            onTitleChanged: (id, v) => _updateItem(
+              RetroColumn.stop,
+              id,
+              (it) => it.copyWith(title: v),
+            ),
             onNotesChanged: (id, v) => _updateItem(
-                RetroColumn.stop,
-                id,
-                (it) => it.copyWith(notes: v.isEmpty ? null : v)),
+              RetroColumn.stop,
+              id,
+              (it) => it.copyWith(notes: v.isEmpty ? null : v),
+            ),
             onVoteUp: (id) => _voteUp(RetroColumn.stop, id),
             onDelete: (id) => _deleteItem(RetroColumn.stop, id),
             onPromoteToAction: null,
@@ -237,12 +257,16 @@ class _RetroViewState extends State<RetroView> {
             titleCtrls: _titleCtrls,
             notesCtrls: _notesCtrls,
             onAdd: () => _addItem(RetroColumn.cont),
-            onTitleChanged: (id, v) =>
-                _updateItem(RetroColumn.cont, id, (it) => it.copyWith(title: v)),
+            onTitleChanged: (id, v) => _updateItem(
+              RetroColumn.cont,
+              id,
+              (it) => it.copyWith(title: v),
+            ),
             onNotesChanged: (id, v) => _updateItem(
-                RetroColumn.cont,
-                id,
-                (it) => it.copyWith(notes: v.isEmpty ? null : v)),
+              RetroColumn.cont,
+              id,
+              (it) => it.copyWith(notes: v.isEmpty ? null : v),
+            ),
             onVoteUp: (id) => _voteUp(RetroColumn.cont, id),
             onDelete: (id) => _deleteItem(RetroColumn.cont, id),
             onPromoteToAction: null,
@@ -260,12 +284,16 @@ class _RetroViewState extends State<RetroView> {
             titleCtrls: _titleCtrls,
             notesCtrls: _notesCtrls,
             onAdd: () => _addItem(RetroColumn.learn),
-            onTitleChanged: (id, v) =>
-                _updateItem(RetroColumn.learn, id, (it) => it.copyWith(title: v)),
+            onTitleChanged: (id, v) => _updateItem(
+              RetroColumn.learn,
+              id,
+              (it) => it.copyWith(title: v),
+            ),
             onNotesChanged: (id, v) => _updateItem(
-                RetroColumn.learn,
-                id,
-                (it) => it.copyWith(notes: v.isEmpty ? null : v)),
+              RetroColumn.learn,
+              id,
+              (it) => it.copyWith(notes: v.isEmpty ? null : v),
+            ),
             onVoteUp: (id) => _voteUp(RetroColumn.learn, id),
             onDelete: (id) => _deleteItem(RetroColumn.learn, id),
             onPromoteToAction: null,
@@ -342,7 +370,10 @@ class _Column extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _ColumnHeader(
-                    column: column, accent: accent, count: items.length),
+                  column: column,
+                  accent: accent,
+                  count: items.length,
+                ),
                 Expanded(
                   child: ListView(
                     padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
@@ -371,11 +402,9 @@ class _Column extends StatelessWidget {
                           label: const Text('Add'),
                           style: TextButton.styleFrom(
                             foregroundColor: accent,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 6),
                             minimumSize: const Size(0, 28),
-                            tapTargetSize:
-                                MaterialTapTargetSize.shrinkWrap,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             textStyle: const TextStyle(fontSize: 12),
                           ),
                         ),
@@ -438,7 +467,7 @@ class _ColumnHeader extends StatelessWidget {
                   RetroColumn.subtitle(column),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: KColors.textMuted,
                     fontSize: 10.5,
                     fontStyle: FontStyle.italic,
@@ -512,16 +541,18 @@ class _ItemCard extends StatelessWidget {
                 child: TextField(
                   controller: titleCtrl,
                   maxLines: null,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: KColors.text,
                     fontSize: 12.5,
                     fontWeight: FontWeight.w600,
                     height: 1.3,
                   ),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'Title',
-                    hintStyle:
-                        TextStyle(color: KColors.textMuted, fontSize: 12),
+                    hintStyle: TextStyle(
+                      color: KColors.textMuted,
+                      fontSize: 12,
+                    ),
                     isDense: true,
                     contentPadding: EdgeInsets.zero,
                     border: InputBorder.none,
@@ -533,8 +564,11 @@ class _ItemCard extends StatelessWidget {
               ),
               PopupMenuButton<String>(
                 tooltip: 'Item actions',
-                icon: const Icon(Icons.more_horiz,
-                    size: 14, color: KColors.textMuted),
+                icon: Icon(
+                  Icons.more_horiz,
+                  size: 14,
+                  color: KColors.textMuted,
+                ),
                 onSelected: (v) {
                   switch (v) {
                     case 'promote':
@@ -548,10 +582,10 @@ class _ItemCard extends StatelessWidget {
                 itemBuilder: (_) => [
                   if (onPromoteToAction != null && !isPromoted)
                     const PopupMenuItem(
-                        value: 'promote',
-                        child: Text('Promote to Action')),
-                  const PopupMenuItem(
-                      value: 'delete', child: Text('Delete')),
+                      value: 'promote',
+                      child: Text('Promote to Action'),
+                    ),
+                  const PopupMenuItem(value: 'delete', child: Text('Delete')),
                 ],
               ),
             ],
@@ -560,15 +594,14 @@ class _ItemCard extends StatelessWidget {
           TextField(
             controller: notesCtrl,
             maxLines: null,
-            style: const TextStyle(
+            style: TextStyle(
               color: KColors.textDim,
               fontSize: 11.5,
               height: 1.35,
             ),
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText: 'Notes (optional)',
-              hintStyle:
-                  TextStyle(color: KColors.textMuted, fontSize: 11),
+              hintStyle: TextStyle(color: KColors.textMuted, fontSize: 11),
               isDense: true,
               contentPadding: EdgeInsets.zero,
               border: InputBorder.none,
@@ -585,34 +618,32 @@ class _ItemCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(3),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 6, vertical: 2),
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: item.votes > 0
                         ? accent.withValues(alpha: 0.2)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(3),
                     border: Border.all(
-                      color: item.votes > 0
-                          ? accent
-                          : KColors.border,
+                      color: item.votes > 0 ? accent : KColors.border,
                       width: 0.5,
                     ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.thumb_up_outlined,
-                          size: 11,
-                          color: item.votes > 0
-                              ? accent
-                              : KColors.textDim),
+                      Icon(
+                        Icons.thumb_up_outlined,
+                        size: 11,
+                        color: item.votes > 0 ? accent : KColors.textDim,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         '${item.votes}',
                         style: TextStyle(
-                          color: item.votes > 0
-                              ? accent
-                              : KColors.textDim,
+                          color: item.votes > 0 ? accent : KColors.textDim,
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
                         ),
@@ -625,8 +656,11 @@ class _ItemCard extends StatelessWidget {
               if (isPromoted)
                 Tooltip(
                   message: 'Promoted to Action',
-                  child: Icon(Icons.check_circle,
-                      size: 12, color: KColors.phosphor),
+                  child: Icon(
+                    Icons.check_circle,
+                    size: 12,
+                    color: KColors.phosphor,
+                  ),
                 ),
             ],
           ),
@@ -641,8 +675,7 @@ class _ItemCard extends StatelessWidget {
         color: Colors.transparent,
         child: Container(
           constraints: const BoxConstraints(maxWidth: 200),
-          padding: const EdgeInsets.symmetric(
-              horizontal: 10, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
             color: KColors.surface,
             border: Border.all(color: accent),

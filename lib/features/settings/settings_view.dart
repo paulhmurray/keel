@@ -43,7 +43,7 @@ class SettingsView extends StatelessWidget {
           // Header
           Row(
             children: [
-              const Icon(Icons.settings, color: KColors.amber, size: 22),
+              Icon(Icons.settings, color: KColors.amber, size: 22),
               const SizedBox(width: 10),
               Flexible(
                 child: Text(
@@ -151,7 +151,7 @@ class SettingsView extends StatelessWidget {
                 ),
                 if (!kIsWeb) ...[
                   const SizedBox(height: 12),
-                  const Text(
+                  Text(
                     'Updates install from inside Keel: when a new version is '
                     'out, the notice offers Install and Keel reopens as the '
                     'new version. Reinstall fetches the latest release and '
@@ -205,7 +205,7 @@ class _SettingsSection extends StatelessWidget {
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: KColors.amber,
@@ -239,14 +239,24 @@ class _DisplaySection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
+            'Theme. Applies at once; exports keep their own print styling.',
+            style: TextStyle(color: KColors.textDim, fontSize: 12),
+          ),
+          const SizedBox(height: 10),
+          _ThemePicker(
+            selectedId: settingsProvider.settings.themeId,
+            onPick: (id) => settingsProvider.setThemeId(id),
+          ),
+          const SizedBox(height: 20),
+          Text(
             'Adjust the UI scale if the app appears too large or small on your display. Default is 1.0.',
             style: TextStyle(color: KColors.textDim, fontSize: 12),
           ),
           const SizedBox(height: 12),
           Row(
             children: [
-              const Text(
+              Text(
                 'UI Scale',
                 style: TextStyle(color: KColors.text, fontSize: 13),
               ),
@@ -279,7 +289,7 @@ class _DisplaySection extends StatelessWidget {
                 width: 36,
                 child: Text(
                   scale.toStringAsFixed(2),
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: KColors.amber,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -338,7 +348,7 @@ class _PlanningSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'The hours the day grid shows. Blocks outside the window still '
             'appear — the grid stretches to hold them.',
             style: TextStyle(color: KColors.textDim, fontSize: 12),
@@ -346,7 +356,7 @@ class _PlanningSection extends StatelessWidget {
           const SizedBox(height: 10),
           Row(
             children: [
-              const Text(
+              Text(
                 'Day grid from',
                 style: TextStyle(color: KColors.text, fontSize: 13),
               ),
@@ -369,10 +379,7 @@ class _PlanningSection extends StatelessWidget {
                     : settingsProvider.setHelmDayWindow(startMinute: v),
               ),
               const SizedBox(width: 16),
-              const Text(
-                'to',
-                style: TextStyle(color: KColors.text, fontSize: 13),
-              ),
+              Text('to', style: TextStyle(color: KColors.text, fontSize: 13)),
               const SizedBox(width: 12),
               DropdownButton<int>(
                 value: dayEnd,
@@ -394,7 +401,7 @@ class _PlanningSection extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 18),
-          const Text(
+          Text(
             'How much focus work a normal day holds. The week ritual '
             'allocates big rocks against this, less the meetings already '
             'on each day, and warns when a day is overcommitted.',
@@ -403,7 +410,7 @@ class _PlanningSection extends StatelessWidget {
           const SizedBox(height: 10),
           Row(
             children: [
-              const Text(
+              Text(
                 'Focus per working day',
                 style: TextStyle(color: KColors.text, fontSize: 13),
               ),
@@ -428,7 +435,7 @@ class _PlanningSection extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 18),
-          const Text(
+          Text(
             'Which month starts Q1 for Helm\'s quarterly planner. '
             'January gives calendar quarters; July matches the '
             'Australian financial year. Quarter plans are stored by '
@@ -439,7 +446,7 @@ class _PlanningSection extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              const Text(
+              Text(
                 'Quarter cycle starts in',
                 style: TextStyle(color: KColors.text, fontSize: 13),
               ),
@@ -511,7 +518,7 @@ class _ProfileSectionState extends State<_ProfileSection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Set your name so you can quickly assign tasks to yourself and be identified in People lists.',
             style: TextStyle(color: KColors.textDim, fontSize: 12),
           ),
@@ -521,7 +528,7 @@ class _ProfileSectionState extends State<_ProfileSection> {
               Expanded(
                 child: TextField(
                   controller: _nameCtrl,
-                  style: const TextStyle(color: KColors.text, fontSize: 13),
+                  style: TextStyle(color: KColors.text, fontSize: 13),
                   decoration: const InputDecoration(
                     labelText: 'Your name',
                     hintText: 'e.g. Paul Murray',
@@ -543,7 +550,7 @@ class _ProfileSectionState extends State<_ProfileSection> {
                 Container(
                   width: 6,
                   height: 6,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: KColors.phosphor,
                     shape: BoxShape.circle,
                   ),
@@ -554,10 +561,7 @@ class _ProfileSectionState extends State<_ProfileSection> {
                     'Showing as "Me — ${settings.settings.myName}" in owner dropdowns',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: KColors.phosphor,
-                      fontSize: 11,
-                    ),
+                    style: TextStyle(color: KColors.phosphor, fontSize: 11),
                   ),
                 ),
               ],
@@ -614,7 +618,7 @@ class _WatcherSectionState extends State<_WatcherSection> {
           Text(
             'Automatically parse .org, .md, and .txt files dropped into a folder '
             'and add them to the Inbox.',
-            style: const TextStyle(color: KColors.textDim, fontSize: 12),
+            style: TextStyle(color: KColors.textDim, fontSize: 12),
           ),
           const SizedBox(height: 12),
           Row(
@@ -810,7 +814,7 @@ class _SettingsRow extends StatelessWidget {
           width: 120,
           child: Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               color: KColors.textDim,
               fontSize: 13,
               fontWeight: FontWeight.w500,
@@ -988,7 +992,7 @@ class _SyncSectionState extends State<_SyncSection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'End-to-end encrypted project sync across devices. '
             'Your data is encrypted before leaving your machine.',
             style: TextStyle(color: KColors.textDim, fontSize: 12),
@@ -1033,7 +1037,7 @@ class _SyncSectionState extends State<_SyncSection> {
             // --- Authenticated state ---
             Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.account_circle_outlined,
                   size: 16,
                   color: KColors.phosphor,
@@ -1042,7 +1046,7 @@ class _SyncSectionState extends State<_SyncSection> {
                 Expanded(
                   child: Text(
                     'Signed in as ${sync.userEmail ?? ''}',
-                    style: const TextStyle(color: KColors.text, fontSize: 13),
+                    style: TextStyle(color: KColors.text, fontSize: 13),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -1079,7 +1083,7 @@ class _SyncSectionState extends State<_SyncSection> {
                 ElevatedButton.icon(
                   onPressed: isSyncing ? null : _syncNow,
                   icon: isSyncing
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 14,
                           height: 14,
                           child: CircularProgressIndicator(
@@ -1109,12 +1113,8 @@ class _SyncSectionState extends State<_SyncSection> {
                 ),
                 TextButton.icon(
                   onPressed: isSyncing ? null : sync.logout,
-                  icon: const Icon(
-                    Icons.logout,
-                    size: 14,
-                    color: KColors.textDim,
-                  ),
-                  label: const Text(
+                  icon: Icon(Icons.logout, size: 14, color: KColors.textDim),
+                  label: Text(
                     'Log Out',
                     style: TextStyle(color: KColors.textDim),
                   ),
@@ -1125,7 +1125,7 @@ class _SyncSectionState extends State<_SyncSection> {
               const SizedBox(height: 8),
               Text(
                 'Last synced: ${_formatDate(lastSyncAt.toLocal())}',
-                style: const TextStyle(color: KColors.textDim, fontSize: 12),
+                style: TextStyle(color: KColors.textDim, fontSize: 12),
               ),
             ],
           ],
@@ -1135,12 +1135,12 @@ class _SyncSectionState extends State<_SyncSection> {
             const SizedBox(height: 8),
             Text(
               sync.lastError!,
-              style: const TextStyle(color: KColors.red, fontSize: 12),
+              style: TextStyle(color: KColors.red, fontSize: 12),
             ),
           ],
           if (sync.status == SyncStatus.success) ...[
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Operation completed successfully.',
               style: TextStyle(color: KColors.phosphor, fontSize: 12),
             ),
@@ -1152,7 +1152,7 @@ class _SyncSectionState extends State<_SyncSection> {
             onTap: () => setState(() => _showServerUrl = !_showServerUrl),
             child: Row(
               children: [
-                const Text(
+                Text(
                   'Advanced',
                   style: TextStyle(
                     color: KColors.textDim,
@@ -1386,7 +1386,7 @@ class _DataSectionState extends State<_DataSection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Export',
             style: TextStyle(
               color: KColors.textDim,
@@ -1428,7 +1428,7 @@ class _DataSectionState extends State<_DataSection> {
             ],
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Import',
             style: TextStyle(
               color: KColors.textDim,
@@ -1505,7 +1505,7 @@ class _AnalyticsSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Opt-in product telemetry — counts and category labels only. '
             'Helps decide which features to invest in.',
             style: TextStyle(color: KColors.textDim, fontSize: 12),
@@ -1531,7 +1531,7 @@ class _AnalyticsSection extends StatelessWidget {
                       enabled
                           ? 'Sharing anonymous usage data — thank you'
                           : 'Not sharing usage data',
-                      style: const TextStyle(color: KColors.text, fontSize: 13),
+                      style: TextStyle(color: KColors.text, fontSize: 13),
                     ),
                   ),
                 ],
@@ -1541,7 +1541,7 @@ class _AnalyticsSection extends StatelessWidget {
           const SizedBox(height: 12),
           // What we collect / don't collect — kept short so it's actually
           // read. The full event list will live in a README link later.
-          const Text(
+          Text(
             'WHAT WE COLLECT',
             style: TextStyle(
               color: KColors.textMuted,
@@ -1551,7 +1551,7 @@ class _AnalyticsSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             '• Which sections you open and how often\n'
             '• Counts of cards, risks, actions, decisions, etc.\n'
             '• Which templates you create (type only, not content)\n'
@@ -1560,7 +1560,7 @@ class _AnalyticsSection extends StatelessWidget {
             style: TextStyle(color: KColors.textDim, fontSize: 12, height: 1.5),
           ),
           const SizedBox(height: 10),
-          const Text(
+          Text(
             'WHAT WE DO NOT COLLECT',
             style: TextStyle(
               color: KColors.textMuted,
@@ -1570,7 +1570,7 @@ class _AnalyticsSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             '• Card / journal / template / person / project text\n'
             '• Search queries or AI prompts\n'
             '• File paths or hostnames\n'
@@ -1588,7 +1588,7 @@ class _AnalyticsSection extends StatelessWidget {
                   onPressed: () => context
                       .read<SettingsProvider>()
                       .clearAnalyticsInstallId(),
-                  child: const Text(
+                  child: Text(
                     'Clear',
                     style: TextStyle(color: KColors.amber, fontSize: 12),
                   ),
@@ -1598,7 +1598,7 @@ class _AnalyticsSection extends StatelessWidget {
           ],
           if (recentEvents.isNotEmpty) ...[
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'RECENT EVENTS (THIS SESSION)',
               style: TextStyle(
                 color: KColors.textMuted,
@@ -1608,7 +1608,7 @@ class _AnalyticsSection extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               'Live snapshot of what the analytics sink has captured in '
               'this run. Useful for self-auditing what gets sent. Cleared '
               'on opt-out.',
@@ -1634,7 +1634,7 @@ class _AnalyticsSection extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 2),
                       child: Text(
                         e.props.isEmpty ? e.name : '${e.name}  ${e.props}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: KColors.text,
                           fontFamily: 'monospace',
                           fontSize: 11,
@@ -1788,7 +1788,7 @@ class _ProgrammeLinksSectionState extends State<_ProgrammeLinksSection> {
                 : 'Generate a code and share it with your programme '
                       'manager — they\'ll paste it in the programme\'s '
                       'settings to connect. Or paste a code they sent you.',
-            style: const TextStyle(color: KColors.textDim, fontSize: 12),
+            style: TextStyle(color: KColors.textDim, fontSize: 12),
           ),
           const SizedBox(height: 12),
 
@@ -1805,7 +1805,7 @@ class _ProgrammeLinksSectionState extends State<_ProgrammeLinksSection> {
                 Expanded(
                   child: SelectableText(
                     _generatedCode!,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: KColors.amber,
                       fontFamily: 'monospace',
                       fontSize: 12,
@@ -1843,11 +1843,7 @@ class _ProgrammeLinksSectionState extends State<_ProgrammeLinksSection> {
             const SizedBox(height: 6),
             Row(
               children: [
-                const Icon(
-                  Icons.lock_outline,
-                  size: 12,
-                  color: KColors.textMuted,
-                ),
+                Icon(Icons.lock_outline, size: 12, color: KColors.textMuted),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
@@ -1873,7 +1869,7 @@ class _ProgrammeLinksSectionState extends State<_ProgrammeLinksSection> {
               Expanded(
                 child: TextField(
                   controller: _redeemCtrl,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: KColors.text,
                     fontFamily: 'monospace',
                     fontSize: 13,
@@ -1901,7 +1897,7 @@ class _ProgrammeLinksSectionState extends State<_ProgrammeLinksSection> {
             builder: (context, snap) {
               final links = snap.data ?? const <ProgrammeLink>[];
               if (links.isEmpty) {
-                return const Padding(
+                return Padding(
                   padding: EdgeInsets.symmetric(vertical: 6),
                   child: Text(
                     'No active links yet.',
@@ -1912,7 +1908,7 @@ class _ProgrammeLinksSectionState extends State<_ProgrammeLinksSection> {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'EXISTING LINKS',
                     style: TextStyle(
                       color: KColors.textMuted,
@@ -1983,7 +1979,7 @@ class _LinkRow extends StatelessWidget {
             ),
             child: Text(
               partnerTag,
-              style: const TextStyle(
+              style: TextStyle(
                 color: KColors.textMuted,
                 fontSize: 9,
                 fontWeight: FontWeight.w700,
@@ -1994,7 +1990,7 @@ class _LinkRow extends StatelessWidget {
           Expanded(
             child: Text(
               partnerLabel,
-              style: const TextStyle(color: KColors.text, fontSize: 12),
+              style: TextStyle(color: KColors.text, fontSize: 12),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -2004,7 +2000,7 @@ class _LinkRow extends StatelessWidget {
           ],
           Text(
             link.code,
-            style: const TextStyle(
+            style: TextStyle(
               color: KColors.textMuted,
               fontFamily: 'monospace',
               fontSize: 10,
@@ -2013,7 +2009,7 @@ class _LinkRow extends StatelessWidget {
           const SizedBox(width: 8),
           if (isPending)
             IconButton(
-              icon: const Icon(
+              icon: Icon(
                 Icons.delete_outline,
                 size: 14,
                 color: KColors.textMuted,
@@ -2029,11 +2025,7 @@ class _LinkRow extends StatelessWidget {
             )
           else
             IconButton(
-              icon: const Icon(
-                Icons.link_off,
-                size: 14,
-                color: KColors.textMuted,
-              ),
+              icon: Icon(Icons.link_off, size: 14, color: KColors.textMuted),
               tooltip: 'Revoke link',
               padding: EdgeInsets.zero,
               visualDensity: VisualDensity.compact,
@@ -2171,6 +2163,104 @@ class _ShareLevelControl extends StatelessWidget {
         ),
       ],
       child: tag,
+    );
+  }
+}
+
+/// Swatch cards for every palette: background, surface, the four accents
+/// and the text colour, with the name and a light or dark tag. Tapping
+/// applies the theme immediately.
+class _ThemePicker extends StatelessWidget {
+  final String selectedId;
+  final ValueChanged<String> onPick;
+  const _ThemePicker({required this.selectedId, required this.onPick});
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: [
+        for (final p in kPalettes)
+          Tooltip(
+            message: p.isLight ? '${p.name} — light' : '${p.name} — dark',
+            child: InkWell(
+              onTap: () => onPick(p.id),
+              borderRadius: BorderRadius.circular(6),
+              child: Container(
+                width: 150,
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: p.bg,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: p.id == selectedId ? KColors.amber : KColors.border2,
+                    width: p.id == selectedId ? 2 : 1,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      height: 26,
+                      decoration: BoxDecoration(
+                        color: p.surface,
+                        borderRadius: BorderRadius.circular(3),
+                        border: Border.all(color: p.border),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      alignment: Alignment.centerLeft,
+                      child: Row(
+                        children: [
+                          for (final c in [
+                            p.amber,
+                            p.phosphor,
+                            p.red,
+                            p.blue,
+                            p.violet,
+                          ])
+                            Container(
+                              width: 10,
+                              height: 10,
+                              margin: const EdgeInsets.only(right: 4),
+                              decoration: BoxDecoration(
+                                color: c,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            p.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: p.text,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        if (p.id == selectedId)
+                          Icon(Icons.check_circle, size: 13, color: p.amber)
+                        else
+                          Text(
+                            p.isLight ? 'light' : 'dark',
+                            style: TextStyle(color: p.textMuted, fontSize: 10),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

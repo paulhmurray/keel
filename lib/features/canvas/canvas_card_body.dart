@@ -13,17 +13,15 @@ import '../../shared/theme/keel_colors.dart';
 /// at-a-glance representation.
 class CanvasCardBody extends StatelessWidget {
   final String body;
-  final TextStyle baseStyle;
+  final TextStyle? _baseStyle;
 
-  const CanvasCardBody({
-    super.key,
-    required this.body,
-    this.baseStyle = const TextStyle(
-      color: KColors.textDim,
-      fontSize: 11.5,
-      height: 1.3,
-    ),
-  });
+  const CanvasCardBody({super.key, required this.body, TextStyle? baseStyle})
+    : _baseStyle = baseStyle;
+
+  /// The caller's style, else the palette's dim text at card size.
+  TextStyle get baseStyle =>
+      _baseStyle ??
+      TextStyle(color: KColors.textDim, fontSize: 11.5, height: 1.3);
 
   @override
   Widget build(BuildContext context) {
@@ -64,18 +62,14 @@ class CanvasCardBody extends StatelessWidget {
         color: KColors.surface2,
         borderRadius: BorderRadius.circular(3),
       ),
-      codeblockPadding: const EdgeInsets.symmetric(
-          horizontal: 6, vertical: 4),
+      codeblockPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
       blockquote: baseStyle.copyWith(
         color: KColors.textMuted,
         fontStyle: FontStyle.italic,
       ),
-      blockquotePadding:
-          const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      blockquoteDecoration: const BoxDecoration(
-        border: Border(
-          left: BorderSide(color: KColors.border2, width: 2),
-        ),
+      blockquotePadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      blockquoteDecoration: BoxDecoration(
+        border: Border(left: BorderSide(color: KColors.border2, width: 2)),
       ),
       listBullet: baseStyle,
       a: baseStyle.copyWith(

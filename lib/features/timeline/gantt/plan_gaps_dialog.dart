@@ -372,13 +372,9 @@ class _PlanGapsDialogState extends State<PlanGapsDialog> {
       contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
       title: Row(
         children: [
-          const Icon(
-            Icons.move_to_inbox_outlined,
-            size: 16,
-            color: KColors.amber,
-          ),
+          Icon(Icons.move_to_inbox_outlined, size: 16, color: KColors.amber),
           const SizedBox(width: 8),
-          const Expanded(
+          Expanded(
             child: Text(
               'Pull in from the registers',
               style: TextStyle(color: KColors.text, fontSize: 14),
@@ -387,10 +383,10 @@ class _PlanGapsDialogState extends State<PlanGapsDialog> {
           if (_phase == _Phase.review)
             Text(
               '${_index + 1} of ${_gaps.length}',
-              style: const TextStyle(color: KColors.textMuted, fontSize: 11),
+              style: TextStyle(color: KColors.textMuted, fontSize: 11),
             ),
           IconButton(
-            icon: const Icon(Icons.close, size: 16, color: KColors.textMuted),
+            icon: Icon(Icons.close, size: 16, color: KColors.textMuted),
             tooltip: _phase == _Phase.review
                 ? 'Stop — what you accepted stays'
                 : 'Close',
@@ -476,7 +472,7 @@ class _PlanGapsDialogState extends State<PlanGapsDialog> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Open actions with a due date, pending decisions, open inbound '
           'dependencies and live risks that no plan activity knows about. '
           'Each gets a proposed home: the activity it belongs with, or a new '
@@ -489,7 +485,7 @@ class _PlanGapsDialogState extends State<PlanGapsDialog> {
         ),
         const SizedBox(height: 14),
         if (_gaps.isEmpty)
-          const Text(
+          Text(
             'Nothing is missing. Every dated register item is on the plan.',
             style: TextStyle(color: KColors.phosphor, fontSize: 13),
           )
@@ -505,14 +501,14 @@ class _PlanGapsDialogState extends State<PlanGapsDialog> {
                     Text(
                       '${counts[k]} ${k.label.toLowerCase()}${counts[k] == 1 ? '' : 's'} '
                       'not on the plan',
-                      style: const TextStyle(color: KColors.text, fontSize: 13),
+                      style: TextStyle(color: KColors.text, fontSize: 13),
                     ),
                   ],
                 ),
               ),
           if (_month0 == null) ...[
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'The plan has no month-0 anchor, so due dates cannot be placed '
               'by month; proposals fall back to the first open activity.',
               style: TextStyle(color: KColors.amber, fontSize: 11),
@@ -535,7 +531,7 @@ class _PlanGapsDialogState extends State<PlanGapsDialog> {
       const SizedBox(height: 12),
       Text(
         'Placing $_placed of ${_gaps.length}…',
-        style: const TextStyle(color: KColors.textDim, fontSize: 12),
+        style: TextStyle(color: KColors.textDim, fontSize: 12),
       ),
       if (_errors.isNotEmpty)
         Padding(
@@ -543,7 +539,7 @@ class _PlanGapsDialogState extends State<PlanGapsDialog> {
           child: Text(
             '${_errors.length} could not be placed by the model; those '
             'cards keep the engine\'s guess.',
-            style: const TextStyle(color: KColors.amber, fontSize: 11),
+            style: TextStyle(color: KColors.amber, fontSize: 11),
           ),
         ),
       const SizedBox(height: 12),
@@ -567,7 +563,7 @@ class _PlanGapsDialogState extends State<PlanGapsDialog> {
                 Expanded(
                   child: Text(
                     g.display,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: KColors.text,
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -583,7 +579,7 @@ class _PlanGapsDialogState extends State<PlanGapsDialog> {
                 if ((g.owner ?? '').isNotEmpty) 'owner ${g.owner}',
                 if (g.dueIso != null) 'due ${g.dueIso}',
               ].join(' · '),
-              style: const TextStyle(color: KColors.textMuted, fontSize: 11),
+              style: TextStyle(color: KColors.textMuted, fontSize: 11),
             ),
             if ((g.detail ?? '').trim().isNotEmpty) ...[
               const SizedBox(height: 6),
@@ -591,7 +587,7 @@ class _PlanGapsDialogState extends State<PlanGapsDialog> {
                 g.detail!.trim(),
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   color: KColors.textDim,
                   fontSize: 12,
                   height: 1.4,
@@ -613,7 +609,7 @@ class _PlanGapsDialogState extends State<PlanGapsDialog> {
                     children: [
                       Text(
                         '${g.kind.linkVerb.toUpperCase()} …',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: KColors.amber,
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
@@ -656,7 +652,7 @@ class _PlanGapsDialogState extends State<PlanGapsDialog> {
                     onTap: () => setState(() => _newRowOpen = !_newRowOpen),
                     child: Row(
                       children: [
-                        const Expanded(child: Divider(color: KColors.border)),
+                        Expanded(child: Divider(color: KColors.border)),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           child: Row(
@@ -674,7 +670,7 @@ class _PlanGapsDialogState extends State<PlanGapsDialog> {
                                 _newRowOpen
                                     ? 'or a new row'
                                     : 'or a new row instead…',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: KColors.textMuted,
                                   fontSize: 11,
                                 ),
@@ -682,7 +678,7 @@ class _PlanGapsDialogState extends State<PlanGapsDialog> {
                             ],
                           ),
                         ),
-                        const Expanded(child: Divider(color: KColors.border)),
+                        Expanded(child: Divider(color: KColors.border)),
                       ],
                     ),
                   ),
@@ -805,7 +801,7 @@ class _PlanGapsDialogState extends State<PlanGapsDialog> {
                               ? 'No month: the row will be unscheduled until you place it.'
                               : 'A new ${p.newType} in ${replanMonthLabel(p.newMonth!, _month0!)}. '
                                     'The existing-activity choice above is cleared.',
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: KColors.textMuted,
                             fontSize: 11,
                           ),
@@ -816,7 +812,7 @@ class _PlanGapsDialogState extends State<PlanGapsDialog> {
                     const SizedBox(height: 8),
                     Text(
                       p.rationale,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: KColors.textDim,
                         fontSize: 12,
                         height: 1.4,
@@ -828,10 +824,7 @@ class _PlanGapsDialogState extends State<PlanGapsDialog> {
                       padding: const EdgeInsets.only(top: 6),
                       child: Text(
                         'The model could not place this one: $err',
-                        style: const TextStyle(
-                          color: KColors.amber,
-                          fontSize: 11,
-                        ),
+                        style: TextStyle(color: KColors.amber, fontSize: 11),
                       ),
                     ),
                 ],
@@ -853,11 +846,11 @@ class _PlanGapsDialogState extends State<PlanGapsDialog> {
           total == 0
               ? 'Nothing to pull in.'
               : '$_accepted of $total linked${_skipped > 0 ? ', $_skipped skipped' : ''}.',
-          style: const TextStyle(color: KColors.text, fontSize: 13),
+          style: TextStyle(color: KColors.text, fontSize: 13),
         ),
         if (_accepted > 0) ...[
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Linked items now show on their activity: actions underneath it, '
             'decisions and dependencies as arrows into it, risks as schedule '
             'drivers. The Gantt reloads when you close this.',

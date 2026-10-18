@@ -3,13 +3,17 @@ import '../../core/database/database.dart';
 import '../../shared/theme/keel_colors.dart';
 
 List<GlossaryEntry> filteredGlossaryEntries(
-    List<GlossaryEntry> entries, String query) {
+  List<GlossaryEntry> entries,
+  String query,
+) {
   final q = query.toLowerCase();
   if (q.isEmpty) return entries.take(6).toList();
   return entries
-      .where((e) =>
-          e.name.toLowerCase().contains(q) ||
-          (e.acronym?.toLowerCase().contains(q) ?? false))
+      .where(
+        (e) =>
+            e.name.toLowerCase().contains(q) ||
+            (e.acronym?.toLowerCase().contains(q) ?? false),
+      )
       .take(6)
       .toList();
 }
@@ -60,7 +64,7 @@ class JournalGlossaryMention extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             child: Row(
-              children: const [
+              children: [
                 Text(
                   'GLOSSARY',
                   style: TextStyle(
@@ -78,7 +82,7 @@ class JournalGlossaryMention extends StatelessWidget {
               ],
             ),
           ),
-          const Divider(color: KColors.border, height: 1),
+          Divider(color: KColors.border, height: 1),
           Flexible(
             child: ListView(
               shrinkWrap: true,
@@ -94,12 +98,16 @@ class JournalGlossaryMention extends StatelessWidget {
                     child: Container(
                       color: isSelected ? KColors.phosDim : Colors.transparent,
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       child: Row(
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 5, vertical: 2),
+                              horizontal: 5,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: isSelected
                                   ? KColors.phosphor
@@ -137,8 +145,10 @@ class JournalGlossaryMention extends StatelessWidget {
                                 if (entry.acronym?.isNotEmpty ?? false)
                                   Text(
                                     entry.acronym!,
-                                    style: const TextStyle(
-                                        color: KColors.textDim, fontSize: 10),
+                                    style: TextStyle(
+                                      color: KColors.textDim,
+                                      fontSize: 10,
+                                    ),
                                   ),
                               ],
                             ),
@@ -157,7 +167,9 @@ class JournalGlossaryMention extends StatelessWidget {
                           ? KColors.phosDim
                           : Colors.transparent,
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       child: Row(
                         children: [
                           Container(

@@ -96,7 +96,10 @@ class _CanvasCalendarViewState extends State<CanvasCalendarView> {
   }
 
   Future<_DateSpan?> _dateForLinked(
-      AppDatabase db, String? type, String? id) async {
+    AppDatabase db,
+    String? type,
+    String? id,
+  ) async {
     if (type == null || id == null) return null;
     switch (type) {
       case 'action':
@@ -105,22 +108,27 @@ class _CanvasCalendarViewState extends State<CanvasCalendarView> {
       case 'milestone':
         final list = await db.milestonesDao.getForProject(widget.projectId);
         return _DateSpan.fromSingle(
-            list.where((e) => e.id == id).map((e) => e.date).firstOrNull);
+          list.where((e) => e.id == id).map((e) => e.date).firstOrNull,
+        );
       case 'activity':
-        final list =
-            await db.workstreamActivitiesDao.getForProject(widget.projectId);
+        final list = await db.workstreamActivitiesDao.getForProject(
+          widget.projectId,
+        );
         final a = list.where((e) => e.id == id).firstOrNull;
         if (a == null) return null;
         return _DateSpan.tryParse(a.startDate, a.endDate);
       case 'issue':
         final list = await db.raidDao.getIssuesForProject(widget.projectId);
         return _DateSpan.fromSingle(
-            list.where((e) => e.id == id).map((e) => e.dueDate).firstOrNull);
+          list.where((e) => e.id == id).map((e) => e.dueDate).firstOrNull,
+        );
       case 'dependency':
-        final list =
-            await db.raidDao.getDependenciesForProject(widget.projectId);
+        final list = await db.raidDao.getDependenciesForProject(
+          widget.projectId,
+        );
         return _DateSpan.fromSingle(
-            list.where((e) => e.id == id).map((e) => e.dueDate).firstOrNull);
+          list.where((e) => e.id == id).map((e) => e.dueDate).firstOrNull,
+        );
       case 'decision':
         final row = await db.decisionsDao.getDecisionById(id);
         return _DateSpan.fromSingle(row?.dueDate);
@@ -167,8 +175,7 @@ class _CanvasCalendarViewState extends State<CanvasCalendarView> {
   /// Called when an undated card is dropped onto the grid at [dropDay].
   /// Materialises start/end based on the card's effortDays (or a 7-day
   /// default) and persists.
-  Future<void> _commitDropFromSidebar(
-      CanvasCard card, DateTime dropDay) async {
+  Future<void> _commitDropFromSidebar(CanvasCard card, DateTime dropDay) async {
     final span = CalendarDragMath.spanFromDrop(dropDay, card.effortDays);
     await _commitDates(card, span.start, span.end);
   }
@@ -177,7 +184,10 @@ class _CanvasCalendarViewState extends State<CanvasCalendarView> {
   /// item's date until now, this is the moment the canvas thinking
   /// "detaches" from the source — the source item is left alone.
   Future<void> _commitDates(
-      CanvasCard card, DateTime start, DateTime end) async {
+    CanvasCard card,
+    DateTime start,
+    DateTime end,
+  ) async {
     final db = context.read<AppDatabase>();
     await db.canvasCardsDao.patchCard(
       card.id,
@@ -191,10 +201,7 @@ class _CanvasCalendarViewState extends State<CanvasCalendarView> {
     // stream tick.
     if (mounted) {
       setState(() {
-        _resolved = {
-          ..._resolved,
-          card.id: _DateSpan(start, end),
-        };
+        _resolved = {..._resolved, card.id: _DateSpan(start, end)};
       });
     }
   }
@@ -256,7 +263,9 @@ class _GridState extends State<_Grid> {
     for (final p in widget.positioned) {
       var lane = -1;
       for (var i = 0; i < laneEnds.length; i++) {
-        if (!laneEnds[i].isAfter(p.span.start.subtract(const Duration(days: 1)))) {
+        if (!laneEnds[i].isAfter(
+          p.span.start.subtract(const Duration(days: 1)),
+        )) {
           lane = i;
           laneEnds[i] = p.span.end;
           break;
@@ -271,8 +280,8 @@ class _GridState extends State<_Grid> {
     final totalLanes = laneEnds.isEmpty ? 1 : laneEnds.length;
     final naturalGridHeight =
         totalLanes * (widget.laneHeight + widget.laneGap) +
-            widget.laneGap +
-            48; // 48 = axis
+        widget.laneGap +
+        48; // 48 = axis
 
     return Scrollbar(
       controller: _scroll,
@@ -283,90 +292,101 @@ class _GridState extends State<_Grid> {
         // LayoutBuilder lets us stretch the Stack to fill the calendar
         // area vertically so sidebar drops can land anywhere over the
         // grid, not just on the narrow strip of visible bars.
-        child: LayoutBuilder(builder: (context, constraints) {
-          final gridHeight = constraints.hasBoundedHeight
-              ? constraints.maxHeight.clamp(naturalGridHeight, double.infinity)
-              : naturalGridHeight;
-          return SizedBox(
-            width: gridWidth,
-            height: gridHeight,
-            child: DragTarget<CanvasCard>(
-            onWillAcceptWithDetails: (_) => true,
-            onAcceptWithDetails: (details) {
-              final box = context.findRenderObject() as RenderBox?;
-              if (box == null) return;
-              final local = box.globalToLocal(details.offset);
-              final dayIdx = CalendarDragMath.dayIndexFromOffset(
-                  local.dx, widget.dayWidth);
-              final dropDay = paddedStart.add(Duration(days: dayIdx));
-              widget.onDropFromSidebar(details.data, dropDay);
-            },
-            builder: (context, candidate, _) {
-              return Stack(
-                children: [
-                  _DateAxis(
-                    start: paddedStart,
-                    totalDays: totalDays,
-                    dayWidth: widget.dayWidth,
-                  ),
-                  for (final p in widget.positioned)
-                    _CardBar(
-                      key: ValueKey(p.card.id),
-                      card: p.card,
-                      span: p.span,
-                      paddedStart: paddedStart,
-                      dayWidth: widget.dayWidth,
-                      laneHeight: widget.laneHeight,
-                      laneGap: widget.laneGap,
-                      lane: p.lane,
-                      topOffset: 48 + widget.laneGap,
-                      onTap: () => widget.onTap(p.card),
-                      onCommit: (s, e) =>
-                          widget.onCommitDates(p.card, s, e),
-                    ),
-                  if (candidate.isNotEmpty)
-                    Positioned.fill(
-                      child: IgnorePointer(
-                        child: Container(
-                          color: KColors.amber.withValues(alpha: 0.06),
-                          alignment: Alignment.topCenter,
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: KColors.amberDim,
-                              border: Border.all(color: KColors.amber),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              candidate.first!.effortDays != null
-                                  ? 'Drop to place as a '
-                                      '${candidate.first!.effortDays}-day bar'
-                                  : 'Drop to place as a 7-day bar '
-                                      '(default)',
-                              style: const TextStyle(
-                                color: KColors.amber,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final gridHeight = constraints.hasBoundedHeight
+                ? constraints.maxHeight.clamp(
+                    naturalGridHeight,
+                    double.infinity,
+                  )
+                : naturalGridHeight;
+            return SizedBox(
+              width: gridWidth,
+              height: gridHeight,
+              child: DragTarget<CanvasCard>(
+                onWillAcceptWithDetails: (_) => true,
+                onAcceptWithDetails: (details) {
+                  final box = context.findRenderObject() as RenderBox?;
+                  if (box == null) return;
+                  final local = box.globalToLocal(details.offset);
+                  final dayIdx = CalendarDragMath.dayIndexFromOffset(
+                    local.dx,
+                    widget.dayWidth,
+                  );
+                  final dropDay = paddedStart.add(Duration(days: dayIdx));
+                  widget.onDropFromSidebar(details.data, dropDay);
+                },
+                builder: (context, candidate, _) {
+                  return Stack(
+                    children: [
+                      _DateAxis(
+                        start: paddedStart,
+                        totalDays: totalDays,
+                        dayWidth: widget.dayWidth,
+                      ),
+                      for (final p in widget.positioned)
+                        _CardBar(
+                          key: ValueKey(p.card.id),
+                          card: p.card,
+                          span: p.span,
+                          paddedStart: paddedStart,
+                          dayWidth: widget.dayWidth,
+                          laneHeight: widget.laneHeight,
+                          laneGap: widget.laneGap,
+                          lane: p.lane,
+                          topOffset: 48 + widget.laneGap,
+                          onTap: () => widget.onTap(p.card),
+                          onCommit: (s, e) =>
+                              widget.onCommitDates(p.card, s, e),
+                        ),
+                      if (candidate.isNotEmpty)
+                        Positioned.fill(
+                          child: IgnorePointer(
+                            child: Container(
+                              color: KColors.amber.withValues(alpha: 0.06),
+                              alignment: Alignment.topCenter,
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: KColors.amberDim,
+                                  border: Border.all(color: KColors.amber),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  candidate.first!.effortDays != null
+                                      ? 'Drop to place as a '
+                                            '${candidate.first!.effortDays}-day bar'
+                                      : 'Drop to place as a 7-day bar '
+                                            '(default)',
+                                  style: TextStyle(
+                                    color: KColors.amber,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                ],
-              );
-            },
-          ),
-          );
-        }),
+                    ],
+                  );
+                },
+              ),
+            );
+          },
+        ),
       ),
     );
   }
 
   static DateTime _startOfWeek(DateTime d) {
-    final monday = d.subtract(Duration(days: (d.weekday - DateTime.monday) % 7));
+    final monday = d.subtract(
+      Duration(days: (d.weekday - DateTime.monday) % 7),
+    );
     return DateTime(monday.year, monday.month, monday.day);
   }
 
@@ -415,7 +435,7 @@ class _DateAxis extends StatelessWidget {
               width: width,
               height: 22,
               child: Container(
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   border: Border(
                     bottom: BorderSide(color: KColors.border, width: 0.5),
                   ),
@@ -430,7 +450,7 @@ class _DateAxis extends StatelessWidget {
                   maxLines: 1,
                   softWrap: false,
                   overflow: TextOverflow.clip,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: KColors.amber,
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -451,14 +471,10 @@ class _DateAxis extends StatelessWidget {
               height: 26,
               child: Container(
                 decoration: BoxDecoration(
-                  color: isWeekend
-                      ? KColors.surface
-                      : Colors.transparent,
-                  border: const Border(
-                    right:
-                        BorderSide(color: KColors.border, width: 0.3),
-                    bottom:
-                        BorderSide(color: KColors.border, width: 0.5),
+                  color: isWeekend ? KColors.surface : Colors.transparent,
+                  border: Border(
+                    right: BorderSide(color: KColors.border, width: 0.3),
+                    bottom: BorderSide(color: KColors.border, width: 0.5),
                   ),
                 ),
                 alignment: Alignment.center,
@@ -479,8 +495,19 @@ class _DateAxis extends StatelessWidget {
 
   static String _monthName(int m) {
     const names = [
-      '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      '',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return names[m];
   }
@@ -558,8 +585,7 @@ class _CardBarState extends State<_CardBar> {
 
   void _onPanUpdate(DragUpdateDetails details) {
     _dragAccumulator += details.delta.dx;
-    final days =
-        CalendarDragMath.snapToDays(_dragAccumulator, widget.dayWidth);
+    final days = CalendarDragMath.snapToDays(_dragAccumulator, widget.dayWidth);
     if (days == 0) return;
     final base = widget.span;
     setState(() {
@@ -570,12 +596,14 @@ class _CardBarState extends State<_CardBar> {
           _previewEnd = shifted.end;
           break;
         case _DragMode.resizeStart:
-          _previewStart =
-              CalendarDragMath.resizeStart(base.start, base.end, days);
+          _previewStart = CalendarDragMath.resizeStart(
+            base.start,
+            base.end,
+            days,
+          );
           break;
         case _DragMode.resizeEnd:
-          _previewEnd =
-              CalendarDragMath.resizeEnd(base.start, base.end, days);
+          _previewEnd = CalendarDragMath.resizeEnd(base.start, base.end, days);
           break;
         case _DragMode.none:
           break;
@@ -603,10 +631,14 @@ class _CardBarState extends State<_CardBar> {
     final startOffset =
         _effStart.difference(widget.paddedStart).inDays * widget.dayWidth;
     final spanDays = _effEnd.difference(_effStart).inDays + 1;
-    final width =
-        (spanDays * widget.dayWidth).clamp(widget.dayWidth * 0.6, double.infinity);
-    final top = widget.topOffset + widget.lane * (widget.laneHeight + widget.laneGap);
-    final fill = CanvasCardColours.colourFor(widget.card.colour) ??
+    final width = (spanDays * widget.dayWidth).clamp(
+      widget.dayWidth * 0.6,
+      double.infinity,
+    );
+    final top =
+        widget.topOffset + widget.lane * (widget.laneHeight + widget.laneGap);
+    final fill =
+        CanvasCardColours.colourFor(widget.card.colour) ??
         KColors.amber.withValues(alpha: 0.6);
 
     return Positioned(
@@ -643,7 +675,8 @@ class _CardBarState extends State<_CardBar> {
                         if (widget.card.linkedItemType != null) ...[
                           Icon(
                             CanvasLinkBadge.iconForType(
-                                widget.card.linkedItemType!),
+                              widget.card.linkedItemType!,
+                            ),
                             size: 10,
                             color: fill,
                           ),
@@ -654,7 +687,7 @@ class _CardBarState extends State<_CardBar> {
                             widget.card.title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: KColors.text,
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
@@ -752,7 +785,7 @@ class _UndatedSidebar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 220,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(left: BorderSide(color: KColors.border, width: 1)),
       ),
       child: Column(
@@ -760,13 +793,14 @@ class _UndatedSidebar extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               border: Border(
-                  bottom: BorderSide(color: KColors.border, width: 0.5)),
+                bottom: BorderSide(color: KColors.border, width: 0.5),
+              ),
             ),
             child: Text(
               'NO DATE · ${cards.length}',
-              style: const TextStyle(
+              style: TextStyle(
                 color: KColors.textMuted,
                 fontSize: 10.5,
                 fontWeight: FontWeight.w700,
@@ -776,20 +810,21 @@ class _UndatedSidebar extends StatelessWidget {
           ),
           Expanded(
             child: cards.isEmpty
-                ? const Center(
+                ? Center(
                     child: Text(
                       '—',
-                      style:
-                          TextStyle(color: KColors.textMuted, fontSize: 18),
+                      style: TextStyle(color: KColors.textMuted, fontSize: 18),
                     ),
                   )
                 : ListView(
                     children: cards
-                        .map((c) => _MiniCard(
-                              card: c,
-                              onTap: () => onTap(c),
-                              draggable: true,
-                            ))
+                        .map(
+                          (c) => _MiniCard(
+                            card: c,
+                            onTap: () => onTap(c),
+                            draggable: true,
+                          ),
+                        )
                         .toList(),
                   ),
           ),
@@ -837,7 +872,7 @@ class _MiniCard extends StatelessWidget {
                 card.title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   color: KColors.text,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -845,11 +880,7 @@ class _MiniCard extends StatelessWidget {
               ),
             ),
             if (draggable)
-              const Icon(
-                Icons.drag_indicator,
-                size: 14,
-                color: KColors.textMuted,
-              ),
+              Icon(Icons.drag_indicator, size: 14, color: KColors.textMuted),
           ],
         ),
       ),
@@ -877,15 +908,14 @@ class _MiniCard extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.drag_indicator,
-                  size: 14, color: KColors.amber),
+              Icon(Icons.drag_indicator, size: 14, color: KColors.amber),
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
                   card.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: KColors.text,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -932,12 +962,12 @@ class _EmptyState extends StatelessWidget {
               child: Text(
                 hovering
                     ? 'Drop here — starts today, default 7-day length '
-                        '(or this card\'s Effort).'
+                          '(or this card\'s Effort).'
                     : 'No dated cards yet. Give a card a start/end date '
-                        'in the editor, drag one in from the sidebar, or '
-                        'link it to a milestone, action or activity.',
+                          'in the editor, drag one in from the sidebar, or '
+                          'link it to a milestone, action or activity.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: KColors.textMuted),
+                style: TextStyle(color: KColors.textMuted),
               ),
             ),
           ),

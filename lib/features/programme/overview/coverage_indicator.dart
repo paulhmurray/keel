@@ -25,7 +25,7 @@ class CoverageIndicator extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'PROGRAMME COVERAGE',
             style: TextStyle(
               color: KColors.textDim,
@@ -75,7 +75,7 @@ class _CoverageBar extends StatelessWidget {
               width: 90,
               child: Text(
                 label,
-                style: const TextStyle(color: KColors.text, fontSize: 12),
+                style: TextStyle(color: KColors.text, fontSize: 12),
               ),
             ),
             Expanded(

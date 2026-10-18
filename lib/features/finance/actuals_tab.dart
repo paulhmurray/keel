@@ -47,11 +47,11 @@ class ActualsTab extends StatelessWidget {
                 final approved = budgets
                     .where((b) => b.status == 'approved')
                     .firstOrNull;
-                final currency = approved?.currency ??
+                final currency =
+                    approved?.currency ??
                     budgets.firstOrNull?.currency ??
                     'AUD';
-                final spent =
-                    actuals.fold<int>(0, (s, l) => s + l.amountMinor);
+                final spent = actuals.fold<int>(0, (s, l) => s + l.amountMinor);
 
                 return SingleChildScrollView(
                   child: Column(
@@ -60,17 +60,21 @@ class ActualsTab extends StatelessWidget {
                       _summaryBar(context, dao, approved, spent, currency),
                       const SizedBox(height: 12),
                       MoneyGrid(
-                        cells: dao.watchActuals(projectId).map((ls) => [
-                              for (final l in ls)
-                                MoneyCell(
-                                  id: l.id,
-                                  categoryId: l.costCategoryId,
-                                  workstreamId: l.workstreamId,
-                                  columnKey: l.period,
-                                  amountMinor: l.amountMinor,
-                                  notes: l.notes,
-                                ),
-                            ]),
+                        cells: dao
+                            .watchActuals(projectId)
+                            .map(
+                              (ls) => [
+                                for (final l in ls)
+                                  MoneyCell(
+                                    id: l.id,
+                                    categoryId: l.costCategoryId,
+                                    workstreamId: l.workstreamId,
+                                    columnKey: l.period,
+                                    amountMinor: l.amountMinor,
+                                    notes: l.notes,
+                                  ),
+                              ],
+                            ),
                         categories: categories,
                         workPackages: workPackages,
                         currency: currency,
@@ -78,41 +82,44 @@ class ActualsTab extends StatelessWidget {
                         columnNoun: 'Month',
                         columnHint: 'e.g. ${currentPeriodLabel()}',
                         defaultColumnKey: currentPeriodLabel(),
-                        onCommit: ({
-                          required existing,
-                          required categoryId,
-                          required workstreamId,
-                          required columnKey,
-                          required amountMinor,
-                        }) async {
-                          final id = existing?.id ?? const Uuid().v4();
-                          await dao.upsertActualLine(
-                            id: id,
-                            projectId: projectId,
-                            period: columnKey,
-                            costCategoryId: categoryId,
-                            workstreamId:
-                                existing?.workstreamId ?? workstreamId,
-                            amountMinor: amountMinor,
-                            notes: existing?.notes,
-                            changedBy: actor,
-                          );
-                          if (!context.mounted) return;
-                          final fresh = (await dao.getActuals(projectId))
-                              .where((a) => a.id == id)
-                              .firstOrNull;
-                          if (fresh != null && context.mounted) {
-                            await buildCascadeService(context)
-                                .pushActual(fresh);
-                          }
-                        },
+                        onCommit:
+                            ({
+                              required existing,
+                              required categoryId,
+                              required workstreamId,
+                              required columnKey,
+                              required amountMinor,
+                            }) async {
+                              final id = existing?.id ?? const Uuid().v4();
+                              await dao.upsertActualLine(
+                                id: id,
+                                projectId: projectId,
+                                period: columnKey,
+                                costCategoryId: categoryId,
+                                workstreamId:
+                                    existing?.workstreamId ?? workstreamId,
+                                amountMinor: amountMinor,
+                                notes: existing?.notes,
+                                changedBy: actor,
+                              );
+                              if (!context.mounted) return;
+                              final fresh = (await dao.getActuals(
+                                projectId,
+                              )).where((a) => a.id == id).firstOrNull;
+                              if (fresh != null && context.mounted) {
+                                await buildCascadeService(
+                                  context,
+                                ).pushActual(fresh);
+                              }
+                            },
                         onDelete: (cells) async {
                           for (final c in cells) {
-                            await dao.deleteActualLine(c.id,
-                                changedBy: actor);
+                            await dao.deleteActualLine(c.id, changedBy: actor);
                             if (context.mounted) {
                               await buildCascadeService(context).deleteActual(
-                                  projectId: projectId, actualId: c.id);
+                                projectId: projectId,
+                                actualId: c.id,
+                              );
                             }
                           }
                         },
@@ -128,8 +135,13 @@ class ActualsTab extends StatelessWidget {
     );
   }
 
-  Widget _summaryBar(BuildContext context, FinanceDao dao,
-      ProjectBudget? approved, int spentMinor, String currency) {
+  Widget _summaryBar(
+    BuildContext context,
+    FinanceDao dao,
+    ProjectBudget? approved,
+    int spentMinor,
+    String currency,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -143,24 +155,28 @@ class ActualsTab extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('ACTUALS TO DATE',
-                    style: TextStyle(
-                        color: KColors.textMuted,
-                        fontSize: 10,
-                        letterSpacing: 0.5)),
+                Text(
+                  'ACTUALS TO DATE',
+                  style: TextStyle(
+                    color: KColors.textMuted,
+                    fontSize: 10,
+                    letterSpacing: 0.5,
+                  ),
+                ),
                 Text(
                   Money.formatMinorCompact(spentMinor, currency),
-                  style: const TextStyle(
-                      color: KColors.text,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700),
+                  style: TextStyle(
+                    color: KColors.text,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 2),
-                const Text(
-                    'Manual entry — CSV import from your finance partner '
-                    'arrives with reconciliation in v3.',
-                    style:
-                        TextStyle(color: KColors.textMuted, fontSize: 10)),
+                Text(
+                  'Manual entry — CSV import from your finance partner '
+                  'arrives with reconciliation in v3.',
+                  style: TextStyle(color: KColors.textMuted, fontSize: 10),
+                ),
               ],
             ),
           ),
@@ -175,16 +191,18 @@ class ActualsTab extends StatelessWidget {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    const Text('OF APPROVED BUDGET',
-                        style: TextStyle(
-                            color: KColors.textMuted,
-                            fontSize: 10,
-                            letterSpacing: 0.5)),
+                    Text(
+                      'OF APPROVED BUDGET',
+                      style: TextStyle(
+                        color: KColors.textMuted,
+                        fontSize: 10,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
                     Text(
                       '${Money.formatMinorCompact(budgetTotal, currency)}'
                       '  ·  ${Money.formatBp(_shareBp(spentMinor, budgetTotal)).replaceAll('+', '')} spent',
-                      style: const TextStyle(
-                          color: KColors.textDim, fontSize: 13),
+                      style: TextStyle(color: KColors.textDim, fontSize: 13),
                     ),
                   ],
                 );

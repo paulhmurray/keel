@@ -54,7 +54,12 @@ class _AssumptionFormDialogState extends State<AssumptionFormDialog> {
 
   final _statuses = ['open', 'validated', 'invalidated', 'closed'];
   final _sources = [
-    'manual', 'inbox', 'document', 'observation', 'meeting', 'journal'
+    'manual',
+    'inbox',
+    'document',
+    'observation',
+    'meeting',
+    'journal',
   ];
 
   bool get _isEdit => widget.assumption != null;
@@ -73,15 +78,18 @@ class _AssumptionFormDialogState extends State<AssumptionFormDialog> {
   }
 
   Future<void> _loadPersons() async {
-    final list = await widget.db.peopleDao.getPersonsForProject(widget.projectId);
+    final list = await widget.db.peopleDao.getPersonsForProject(
+      widget.projectId,
+    );
     if (mounted) setState(() => _persons = list);
   }
 
   // ── AI assist ──────────────────────────────────────────────────────────────
 
   Future<RaidAssistPrompt> _prompt() async {
-    final ctx =
-        await ContextBuilder(widget.db).buildSystemPrompt(widget.projectId);
+    final ctx = await ContextBuilder(
+      widget.db,
+    ).buildSystemPrompt(widget.projectId);
     return assumptionAssistPrompt(
       field: AssumptionAssistField.description,
       description: _descCtrl.text,
@@ -104,8 +112,11 @@ class _AssumptionFormDialogState extends State<AssumptionFormDialog> {
     if (!_formKey.currentState!.validate()) return;
 
     final isNew = widget.assumption == null;
-    String ref = widget.assumption?.ref ??
-        _nextRef(await widget.db.raidDao.getAssumptionsForProject(widget.projectId));
+    String ref =
+        widget.assumption?.ref ??
+        _nextRef(
+          await widget.db.raidDao.getAssumptionsForProject(widget.projectId),
+        );
 
     final id = widget.assumption?.id ?? const Uuid().v4();
     await widget.db.raidDao.upsertAssumption(
@@ -115,16 +126,22 @@ class _AssumptionFormDialogState extends State<AssumptionFormDialog> {
         ref: Value(ref),
         description: Value(_descCtrl.text.trim()),
         owner: Value(
-            _ownerCtrl.text.trim().isEmpty ? null : _ownerCtrl.text.trim()),
+          _ownerCtrl.text.trim().isEmpty ? null : _ownerCtrl.text.trim(),
+        ),
         status: Value(_status),
-        closedAt: Value(nextClosedAt(
+        closedAt: Value(
+          nextClosedAt(
             kind: RaidKind.assumption,
             newStatus: _status,
-            existing: widget.assumption?.closedAt)),
+            existing: widget.assumption?.closedAt,
+          ),
+        ),
         source: Value(_source),
-        sourceNote: Value(_sourceNoteCtrl.text.trim().isEmpty
-            ? null
-            : _sourceNoteCtrl.text.trim()),
+        sourceNote: Value(
+          _sourceNoteCtrl.text.trim().isEmpty
+              ? null
+              : _sourceNoteCtrl.text.trim(),
+        ),
         updatedAt: Value(DateTime.now()),
       ),
     );
@@ -147,26 +164,35 @@ class _AssumptionFormDialogState extends State<AssumptionFormDialog> {
   }
 
   String _nextRef(List<Assumption> existing) {
-    final nums = existing
-        .where((a) => a.ref != null && a.ref!.startsWith('A'))
-        .map((a) => int.tryParse(a.ref!.substring(1)) ?? 0)
-        .toList()
-      ..sort();
+    final nums =
+        existing
+            .where((a) => a.ref != null && a.ref!.startsWith('A'))
+            .map((a) => int.tryParse(a.ref!.substring(1)) ?? 0)
+            .toList()
+          ..sort();
     return 'A${(nums.isEmpty ? 0 : nums.last) + 1}';
   }
 
-  static const _accent = KColors.violet;
+  static final _accent = KColors.violet;
 
   Widget _readView() {
     final a = widget.assumption!;
     return DetailDialog(
       accent: _accent,
       title: [
-        if (a.ref != null) ...[DetailRefChip(a.ref!), const SizedBox(width: 10)],
+        if (a.ref != null) ...[
+          DetailRefChip(a.ref!),
+          const SizedBox(width: 10),
+        ],
         const Expanded(child: DetailTitle('Assumption')),
-        Text(a.status.toUpperCase(),
-            style: const TextStyle(
-                color: _accent, fontSize: 11, fontWeight: FontWeight.w700)),
+        Text(
+          a.status.toUpperCase(),
+          style: TextStyle(
+            color: _accent,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
       ],
       left: [
         DetailField('Description', a.description, large: true),
@@ -179,15 +205,18 @@ class _AssumptionFormDialogState extends State<AssumptionFormDialog> {
         ),
         if (isTerminalStatus(RaidKind.assumption, a.status))
           DetailField(
-              'Closed on',
-              du.formatDate(a.closedAt ??
-                  a.updatedAt.toIso8601String().substring(0, 10))),
+            'Closed on',
+            du.formatDate(
+              a.closedAt ?? a.updatedAt.toIso8601String().substring(0, 10),
+            ),
+          ),
         if (a.validatedBy != null && a.validatedBy!.isNotEmpty)
           DetailField(
-              'Validated by',
-              a.validatedAt != null
-                  ? '${a.validatedBy} · ${du.formatDate(a.validatedAt!.toIso8601String())}'
-                  : a.validatedBy),
+            'Validated by',
+            a.validatedAt != null
+                ? '${a.validatedBy} · ${du.formatDate(a.validatedAt!.toIso8601String())}'
+                : a.validatedBy,
+          ),
       ],
       right: [
         Row(
@@ -204,7 +233,9 @@ class _AssumptionFormDialogState extends State<AssumptionFormDialog> {
           itemText: a.description,
         ),
         DetailField(
-            'Last updated', du.formatDate(a.updatedAt.toIso8601String())),
+          'Last updated',
+          du.formatDate(a.updatedAt.toIso8601String()),
+        ),
         RaidLinksSection(
           db: widget.db,
           projectId: widget.projectId,
@@ -217,8 +248,10 @@ class _AssumptionFormDialogState extends State<AssumptionFormDialog> {
         const Spacer(),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Close',
-              style: TextStyle(color: KColors.textDim, fontSize: 12)),
+          child: Text(
+            'Close',
+            style: TextStyle(color: KColors.textDim, fontSize: 12),
+          ),
         ),
         const SizedBox(width: 8),
         ElevatedButton.icon(
@@ -245,7 +278,8 @@ class _AssumptionFormDialogState extends State<AssumptionFormDialog> {
           const SizedBox(width: 10),
         ],
         Expanded(
-            child: DetailTitle(isEdit ? 'Edit Assumption' : 'New Assumption')),
+          child: DetailTitle(isEdit ? 'Edit Assumption' : 'New Assumption'),
+        ),
         if (isEdit)
           RaidConvertButton(
             db: widget.db,
@@ -259,7 +293,8 @@ class _AssumptionFormDialogState extends State<AssumptionFormDialog> {
         AiAssistedLabel(
           label: 'Description',
           target: _descCtrl,
-          tooltip: 'Rewrite as what we assume, why, what breaks if it is '
+          tooltip:
+              'Rewrite as what we assume, why, what breaks if it is '
               'wrong, and how it will be validated',
           buildPrompt: _prompt,
         ),
@@ -269,7 +304,7 @@ class _AssumptionFormDialogState extends State<AssumptionFormDialog> {
           autofocus: !isEdit,
           minLines: 3,
           maxLines: 8,
-          style: const TextStyle(color: KColors.text, fontSize: 14),
+          style: TextStyle(color: KColors.text, fontSize: 14),
           decoration: InputDecoration(
             hintText: kRaidStatementPatterns[RaidKind.assumption],
             alignLabelWithHint: true,
@@ -351,20 +386,26 @@ class _AssumptionFormDialogState extends State<AssumptionFormDialog> {
         if (widget.startInViewMode)
           TextButton(
             onPressed: () => setState(() => _isViewing = true),
-            child: const Text('Cancel',
-                style: TextStyle(color: KColors.textDim, fontSize: 12)),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: KColors.textDim, fontSize: 12),
+            ),
           )
         else
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel',
-                style: TextStyle(color: KColors.textDim, fontSize: 12)),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: KColors.textDim, fontSize: 12),
+            ),
           ),
         const SizedBox(width: 8),
         ElevatedButton(
           onPressed: _save,
-          child: Text(isEdit ? 'Save' : 'Create',
-              style: const TextStyle(fontSize: 12)),
+          child: Text(
+            isEdit ? 'Save' : 'Create',
+            style: const TextStyle(fontSize: 12),
+          ),
         ),
       ],
     );

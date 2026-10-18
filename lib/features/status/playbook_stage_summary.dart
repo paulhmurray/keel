@@ -30,27 +30,29 @@ class PlaybookStageSummary extends StatelessWidget {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Text(
-            attached
-                ? 'Playbook attached but it has no stages yet.'
-                : 'No playbook attached.',
-            style: const TextStyle(color: KColors.textMuted, fontSize: 12)),
+          attached
+              ? 'Playbook attached but it has no stages yet.'
+              : 'No playbook attached.',
+          style: TextStyle(color: KColors.textMuted, fontSize: 12),
+        ),
       );
     }
 
     final status = progress?.status ?? 'not_started';
     final checklist = _parseChecklist(progress?.checklist);
-    final total     = checklist.length;
-    final complete  = checklist.where((c) => c['checked'] == true).length;
+    final total = checklist.length;
+    final complete = checklist.where((c) => c['checked'] == true).length;
 
     final statusColor = switch (status) {
-      'complete'         => KColors.phosphor,
-      'in_progress'      => KColors.amber,
-      'blocked'          => KColors.red,
+      'complete' => KColors.phosphor,
+      'in_progress' => KColors.amber,
+      'blocked' => KColors.red,
       'pending_approval' => KColors.violet,
-      _                  => KColors.textMuted,
+      _ => KColors.textMuted,
     };
-    final statusLabel =
-        allComplete ? 'All stages complete' : playbookStatusLabel(status);
+    final statusLabel = allComplete
+        ? 'All stages complete'
+        : playbookStatusLabel(status);
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -59,39 +61,43 @@ class PlaybookStageSummary extends StatelessWidget {
         border: Border.all(color: KColors.border),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Row(children: [
-        const Text('▶ ', style: TextStyle(color: KColors.amber, fontSize: 13)),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              RichText(
-                text: TextSpan(
-                  style: const TextStyle(fontSize: 12),
-                  children: [
-                    TextSpan(
+      child: Row(
+        children: [
+          Text('▶ ', style: TextStyle(color: KColors.amber, fontSize: 13)),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                RichText(
+                  text: TextSpan(
+                    style: const TextStyle(fontSize: 12),
+                    children: [
+                      TextSpan(
                         text: 'Stage ${stage!.sortOrder + 1}: ${stage!.name}',
-                        style: const TextStyle(
-                            color: KColors.text,
-                            fontWeight: FontWeight.w500)),
-                    const TextSpan(text: '  '),
-                    TextSpan(
-                        text: '— $statusLabel',
                         style: TextStyle(
-                            color: statusColor, fontSize: 11)),
-                  ],
+                          color: KColors.text,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const TextSpan(text: '  '),
+                      TextSpan(
+                        text: '— $statusLabel',
+                        style: TextStyle(color: statusColor, fontSize: 11),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
+                const SizedBox(height: 4),
+                Text(
                   '$complete of $total checklist items complete'
                   '${stagesTotal > 0 ? '  ·  $stagesDone of $stagesTotal stages complete' : ''}',
-                  style: const TextStyle(
-                      color: KColors.textDim, fontSize: 11)),
-            ],
+                  style: TextStyle(color: KColors.textDim, fontSize: 11),
+                ),
+              ],
+            ),
           ),
-        ),
-      ]),
+        ],
+      ),
     );
   }
 

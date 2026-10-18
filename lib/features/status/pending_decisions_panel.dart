@@ -11,10 +11,12 @@ class PendingDecisionsPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (decisions.isEmpty) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.symmetric(vertical: 8),
-        child: Text('No pending decisions.',
-            style: TextStyle(color: KColors.textMuted, fontSize: 12)),
+        child: Text(
+          'No pending decisions.',
+          style: TextStyle(color: KColors.textMuted, fontSize: 12),
+        ),
       );
     }
 
@@ -64,44 +66,52 @@ class _DecisionRow extends StatelessWidget {
             ? null
             : Border(
                 bottom: BorderSide(
-                    color: KColors.border.withValues(alpha: 0.5))),
+                  color: KColors.border.withValues(alpha: 0.5),
+                ),
+              ),
         borderRadius: isLast
             ? const BorderRadius.vertical(bottom: Radius.circular(4))
             : null,
       ),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        // Ref
-        SizedBox(
-          width: 48,
-          child: Text(
-            decision.ref ?? 'DC$rank',
-            style: TextStyle(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Ref
+          SizedBox(
+            width: 48,
+            child: Text(
+              decision.ref ?? 'DC$rank',
+              style: TextStyle(
                 color: _isOverdue ? KColors.red : KColors.amber,
                 fontSize: 11,
-                fontWeight: FontWeight.w700),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
-        ),
-        // Due date
-        SizedBox(
-          width: 90,
-          child: Text(
-            decision.dueDate ?? '—',
-            style: TextStyle(
+          // Due date
+          SizedBox(
+            width: 90,
+            child: Text(
+              decision.dueDate ?? '—',
+              style: TextStyle(
                 color: _isOverdue ? KColors.red : KColors.textDim,
                 fontSize: 11,
-                fontWeight: _isOverdue ? FontWeight.w600 : FontWeight.normal),
+                fontWeight: _isOverdue ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
           ),
-        ),
-        // Description
-        Expanded(
-          child: Text(
-            decision.description,
-            style: TextStyle(
+          // Description
+          Expanded(
+            child: Text(
+              decision.description,
+              style: TextStyle(
                 color: _isOverdue ? KColors.red : KColors.text,
-                fontSize: 12),
+                fontSize: 12,
+              ),
+            ),
           ),
-        ),
-      ]),
+        ],
+      ),
     );
   }
 }

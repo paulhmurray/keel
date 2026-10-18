@@ -29,7 +29,9 @@ class _JournalDeltaPanelState extends State<JournalDeltaPanel> {
   void initState() {
     super.initState();
     _focusNode = FocusNode();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _focusNode.requestFocus());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _focusNode.requestFocus(),
+    );
   }
 
   @override
@@ -116,7 +118,8 @@ class _JournalDeltaPanelState extends State<JournalDeltaPanel> {
 
   KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
-    final isMetaOrCtrl = HardwareKeyboard.instance.isMetaPressed ||
+    final isMetaOrCtrl =
+        HardwareKeyboard.instance.isMetaPressed ||
         HardwareKeyboard.instance.isControlPressed;
 
     // While an edit form is open, plain keystrokes are the user TYPING
@@ -155,7 +158,11 @@ class _JournalDeltaPanelState extends State<JournalDeltaPanel> {
     }
     if (event.logicalKey == LogicalKeyboardKey.tab) {
       final isShift = HardwareKeyboard.instance.isShiftPressed;
-      if (isShift) { _prevItem(); } else { _nextItem(); }
+      if (isShift) {
+        _prevItem();
+      } else {
+        _nextItem();
+      }
       return KeyEventResult.handled;
     }
     if (event.logicalKey == LogicalKeyboardKey.escape) {
@@ -175,7 +182,7 @@ class _JournalDeltaPanelState extends State<JournalDeltaPanel> {
       focusNode: _focusNode,
       onKeyEvent: _handleKey,
       child: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: KColors.surface,
           border: Border(left: BorderSide(color: KColors.border)),
         ),
@@ -185,14 +192,14 @@ class _JournalDeltaPanelState extends State<JournalDeltaPanel> {
             // Header
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 border: Border(bottom: BorderSide(color: KColors.border)),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.auto_awesome, size: 14, color: KColors.amber),
+                  Icon(Icons.auto_awesome, size: 14, color: KColors.amber),
                   const SizedBox(width: 8),
-                  const Text(
+                  Text(
                     'CHANGES DETECTED',
                     style: TextStyle(
                       color: KColors.amber,
@@ -208,8 +215,7 @@ class _JournalDeltaPanelState extends State<JournalDeltaPanel> {
                         '$confirmedCount confirmed',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            color: KColors.phosphor, fontSize: 10),
+                        style: TextStyle(color: KColors.phosphor, fontSize: 10),
                       ),
                     ),
                 ],
@@ -217,18 +223,29 @@ class _JournalDeltaPanelState extends State<JournalDeltaPanel> {
             ),
 
             if (allDeltas.isEmpty)
-              const Expanded(
+              Expanded(
                 child: Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.search_off, size: 32, color: KColors.textMuted),
+                      Icon(
+                        Icons.search_off,
+                        size: 32,
+                        color: KColors.textMuted,
+                      ),
                       SizedBox(height: 8),
-                      Text('No items detected.',
-                          style: TextStyle(color: KColors.textDim, fontSize: 12)),
+                      Text(
+                        'No items detected.',
+                        style: TextStyle(color: KColors.textDim, fontSize: 12),
+                      ),
                       SizedBox(height: 4),
-                      Text('Entry saved.',
-                          style: TextStyle(color: KColors.textMuted, fontSize: 11)),
+                      Text(
+                        'Entry saved.',
+                        style: TextStyle(
+                          color: KColors.textMuted,
+                          fontSize: 11,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -258,33 +275,43 @@ class _JournalDeltaPanelState extends State<JournalDeltaPanel> {
             // Footer
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 border: Border(top: BorderSide(color: KColors.border)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _KeyHintRow(hints: [
-                    _KeyHintData('Y', 'confirm'),
-                    _KeyHintData('E', 'edit'),
-                    _KeyHintData('N', 'ignore'),
-                    _KeyHintData('Tab', 'next'),
-                  ]),
+                  const _KeyHintRow(
+                    hints: [
+                      _KeyHintData('Y', 'confirm'),
+                      _KeyHintData('E', 'edit'),
+                      _KeyHintData('N', 'ignore'),
+                      _KeyHintData('Tab', 'next'),
+                    ],
+                  ),
                   const SizedBox(height: 6),
                   Row(
                     children: [
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: pendingCount > 0 ? widget.onConfirmAll : null,
+                          onPressed: pendingCount > 0
+                              ? widget.onConfirmAll
+                              : null,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: KColors.phosDim,
                             foregroundColor: KColors.phosphor,
-                            side: const BorderSide(color: KColors.phosphor, width: 0.5),
+                            side: BorderSide(
+                              color: KColors.phosphor,
+                              width: 0.5,
+                            ),
                             padding: const EdgeInsets.symmetric(vertical: 10),
                           ),
                           child: const Text(
                             'Cmd+Enter: Confirm All',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ),
@@ -293,7 +320,7 @@ class _JournalDeltaPanelState extends State<JournalDeltaPanel> {
                   const SizedBox(height: 6),
                   InkWell(
                     onTap: widget.onDismiss,
-                    child: const Text(
+                    child: Text(
                       'Esc — dismiss (unconfirmed items left pending)',
                       style: TextStyle(color: KColors.textMuted, fontSize: 10),
                     ),
@@ -323,24 +350,33 @@ class _KeyHintRow extends StatelessWidget {
     final widgets = <Widget>[];
     for (int i = 0; i < hints.length; i++) {
       final h = hints[i];
-      widgets.add(Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-            decoration: BoxDecoration(
-              border: Border.all(color: KColors.border2),
-              borderRadius: BorderRadius.circular(2),
+      widgets.add(
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+              decoration: BoxDecoration(
+                border: Border.all(color: KColors.border2),
+                borderRadius: BorderRadius.circular(2),
+              ),
+              child: Text(
+                h.keyLabel,
+                style: TextStyle(
+                  color: KColors.textDim,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
-            child: Text(h.keyLabel,
-                style: const TextStyle(
-                    color: KColors.textDim, fontSize: 10, fontWeight: FontWeight.w600)),
-          ),
-          const SizedBox(width: 4),
-          Text(h.actionLabel,
-              style: const TextStyle(color: KColors.textMuted, fontSize: 10)),
-        ],
-      ));
+            const SizedBox(width: 4),
+            Text(
+              h.actionLabel,
+              style: TextStyle(color: KColors.textMuted, fontSize: 10),
+            ),
+          ],
+        ),
+      );
       if (i < hints.length - 1) {
         widgets.add(const SizedBox(width: 12));
       }

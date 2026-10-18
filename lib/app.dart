@@ -12,6 +12,7 @@ import 'providers/project_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/sync_provider.dart';
 import 'providers/update_provider.dart';
+import 'shared/theme/keel_colors.dart';
 import 'shared/theme/keel_theme.dart';
 import 'shared/widgets/update_banner.dart';
 import 'features/shell/shell_layout.dart';
@@ -119,34 +120,53 @@ class _KeelAppState extends State<KeelApp> {
               WatcherService(ctx.read<AppDatabase>(), settings, project),
         ),
       ],
-      child: MaterialApp(
-        title: 'Keel',
-        theme: keelTheme,
-        debugShowCheckedModeBanner: false,
-        home: Consumer<SettingsProvider>(
-          builder: (context, settingsProvider, _) {
-            final scale = settingsProvider.settings.uiScale;
-            return LayoutBuilder(
-              builder: (context, constraints) {
-                final w = constraints.maxWidth / scale;
-                final h = constraints.maxHeight / scale;
-                final mq = MediaQuery.of(context);
-                return FittedBox(
-                  fit: BoxFit.fill,
-                  alignment: Alignment.topLeft,
-                  child: SizedBox(
-                    width: w,
-                    height: h,
-                    child: MediaQuery(
-                      data: mq.copyWith(size: Size(w, h)),
-                      child: const UpdateOverlay(child: ShellLayout()),
-                    ),
-                  ),
+      child: Consumer<SettingsProvider>(
+        builder: (context, settingsProvider, _) {
+          // The palette is read through KColors everywhere, so apply it
+          // before building and key the app on it: a new key rebuilds
+          // every widget, which a ThemeData change alone would not.
+          final palette = paletteById(settingsProvider.settings.themeId);
+          KColors.apply(palette);
+          // Settings load from disk a moment after the first frame. Hold
+          // a blank page until then so the saved theme is what the user
+          // sees first, not a flash of the default palette.
+          if (!settingsProvider.isLoaded) {
+            return MaterialApp(
+              debugShowCheckedModeBanner: false,
+              home: Scaffold(backgroundColor: KColors.bg),
+            );
+          }
+          return MaterialApp(
+            key: ValueKey('theme-${palette.id}'),
+            title: 'Keel',
+            theme: keelThemeFor(palette),
+            debugShowCheckedModeBanner: false,
+            home: Builder(
+              builder: (context) {
+                final scale = settingsProvider.settings.uiScale;
+                return LayoutBuilder(
+                  builder: (context, constraints) {
+                    final w = constraints.maxWidth / scale;
+                    final h = constraints.maxHeight / scale;
+                    final mq = MediaQuery.of(context);
+                    return FittedBox(
+                      fit: BoxFit.fill,
+                      alignment: Alignment.topLeft,
+                      child: SizedBox(
+                        width: w,
+                        height: h,
+                        child: MediaQuery(
+                          data: mq.copyWith(size: Size(w, h)),
+                          child: const UpdateOverlay(child: ShellLayout()),
+                        ),
+                      ),
+                    );
+                  },
                 );
               },
-            );
-          },
-        ),
+            ),
+          );
+        },
       ),
     );
   }

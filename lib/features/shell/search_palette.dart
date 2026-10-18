@@ -49,15 +49,18 @@ class _SearchPaletteState extends State<SearchPalette> {
   @override
   void initState() {
     super.initState();
-    widget.index.then((ix) {
-      if (!mounted) return;
-      setState(() {
-        _index = ix;
-        _recompute();
-      });
-    }, onError: (e) {
-      if (mounted) setState(() => _loadError = e);
-    });
+    widget.index.then(
+      (ix) {
+        if (!mounted) return;
+        setState(() {
+          _index = ix;
+          _recompute();
+        });
+      },
+      onError: (e) {
+        if (mounted) setState(() => _loadError = e);
+      },
+    );
     _ctrl.addListener(() => setState(_recompute));
   }
 
@@ -131,7 +134,8 @@ class _SearchPaletteState extends State<SearchPalette> {
   }
 
   void _choose([SearchHit? hit]) {
-    final h = hit ??
+    final h =
+        hit ??
         (_selected >= 0 && _selected < _rows.length
             ? _rows[_selected].hit
             : null);
@@ -152,8 +156,7 @@ class _SearchPaletteState extends State<SearchPalette> {
       _move(-1);
       return KeyEventResult.handled;
     }
-    if (k == LogicalKeyboardKey.enter ||
-        k == LogicalKeyboardKey.numpadEnter) {
+    if (k == LogicalKeyboardKey.enter || k == LogicalKeyboardKey.numpadEnter) {
       _choose();
       return KeyEventResult.handled;
     }
@@ -169,7 +172,7 @@ class _SearchPaletteState extends State<SearchPalette> {
       backgroundColor: KColors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
-        side: const BorderSide(color: KColors.border),
+        side: BorderSide(color: KColors.border),
       ),
       child: Focus(
         onKeyEvent: _onKey,
@@ -185,29 +188,31 @@ class _SearchPaletteState extends State<SearchPalette> {
                   controller: _ctrl,
                   autofocus: true,
                   style: const TextStyle(fontSize: 16),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'Find a person, risk, action, section…',
-                    hintStyle:
-                        TextStyle(color: KColors.textMuted, fontSize: 16),
+                    hintStyle: TextStyle(
+                      color: KColors.textMuted,
+                      fontSize: 16,
+                    ),
                     prefixIcon: Icon(Icons.search, color: KColors.textDim),
                     border: InputBorder.none,
                     isDense: true,
                   ),
                 ),
               ),
-              const Divider(height: 1, color: KColors.border),
+              Divider(height: 1, color: KColors.border),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
                 child: Text(
                   _loadError != null
                       ? 'Search failed: $_loadError'
                       : _index == null
-                          ? 'Loading…'
-                          : !hasQuery
-                              ? 'Type to search this project. ↑↓ to move, Enter to open, Esc to close.'
-                              : itemCount == 0
-                                  ? 'Nothing in this project matches "${_ctrl.text.trim()}".'
-                                  : '$itemCount ${itemCount == 1 ? 'item' : 'items'} match.',
+                      ? 'Loading…'
+                      : !hasQuery
+                      ? 'Type to search this project. ↑↓ to move, Enter to open, Esc to close.'
+                      : itemCount == 0
+                      ? 'Nothing in this project matches "${_ctrl.text.trim()}".'
+                      : '$itemCount ${itemCount == 1 ? 'item' : 'items'} match.',
                   style: TextStyle(
                     fontSize: 11,
                     color: _loadError != null ? KColors.red : KColors.textDim,
@@ -270,7 +275,7 @@ class _HeaderOrMore extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(8, 14, 8, 4),
         child: Text(
           '${row.headerKind!.label.toUpperCase()}  ·  ${row.count}',
-          style: const TextStyle(
+          style: TextStyle(
             color: KColors.amber,
             fontSize: 10,
             fontWeight: FontWeight.w700,
@@ -283,7 +288,7 @@ class _HeaderOrMore extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
       child: Text(
         '+${row.count} more — keep typing to narrow',
-        style: const TextStyle(color: KColors.textMuted, fontSize: 11),
+        style: TextStyle(color: KColors.textMuted, fontSize: 11),
       ),
     );
   }
@@ -317,24 +322,31 @@ class _HitRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 10),
           child: Row(
             children: [
-              Icon(iconForKind(hit.kind),
-                  size: 16,
-                  color: selected ? KColors.amber : KColors.textDim),
+              Icon(
+                iconForKind(hit.kind),
+                size: 16,
+                color: selected ? KColors.amber : KColors.textDim,
+              ),
               const SizedBox(width: 10),
               if ((hit.ref ?? '').isNotEmpty) ...[
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 5,
+                    vertical: 1,
+                  ),
                   decoration: BoxDecoration(
                     color: KColors.bg,
                     borderRadius: BorderRadius.circular(3),
                     border: Border.all(color: KColors.border2, width: 0.5),
                   ),
-                  child: Text(hit.ref!,
-                      style: const TextStyle(
-                          fontSize: 10,
-                          color: KColors.textDim,
-                          fontWeight: FontWeight.w600)),
+                  child: Text(
+                    hit.ref!,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: KColors.textDim,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 8),
               ],
@@ -354,15 +366,13 @@ class _HitRow extends StatelessWidget {
                     hit.subtitle!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        fontSize: 11, color: KColors.textMuted),
+                    style: TextStyle(fontSize: 11, color: KColors.textMuted),
                   ),
                 ),
               ],
               if (selected) ...[
                 const SizedBox(width: 10),
-                const Icon(Icons.keyboard_return,
-                    size: 14, color: KColors.textMuted),
+                Icon(Icons.keyboard_return, size: 14, color: KColors.textMuted),
               ],
             ],
           ),
@@ -373,16 +383,16 @@ class _HitRow extends StatelessWidget {
 }
 
 IconData iconForKind(SearchKind kind) => switch (kind) {
-      SearchKind.section => Icons.arrow_forward,
-      SearchKind.person => Icons.person_outline,
-      SearchKind.risk => Icons.warning_amber_outlined,
-      SearchKind.issue => Icons.error_outline,
-      SearchKind.assumption => Icons.help_outline,
-      SearchKind.dependency => Icons.link_outlined,
-      SearchKind.action => Icons.task_alt_outlined,
-      SearchKind.decision => Icons.gavel_outlined,
-      SearchKind.milestone => Icons.flag_outlined,
-      SearchKind.planActivity => Icons.view_timeline_outlined,
-      SearchKind.workstream => Icons.account_tree_outlined,
-      SearchKind.glossary => Icons.menu_book_outlined,
-    };
+  SearchKind.section => Icons.arrow_forward,
+  SearchKind.person => Icons.person_outline,
+  SearchKind.risk => Icons.warning_amber_outlined,
+  SearchKind.issue => Icons.error_outline,
+  SearchKind.assumption => Icons.help_outline,
+  SearchKind.dependency => Icons.link_outlined,
+  SearchKind.action => Icons.task_alt_outlined,
+  SearchKind.decision => Icons.gavel_outlined,
+  SearchKind.milestone => Icons.flag_outlined,
+  SearchKind.planActivity => Icons.view_timeline_outlined,
+  SearchKind.workstream => Icons.account_tree_outlined,
+  SearchKind.glossary => Icons.menu_book_outlined,
+};

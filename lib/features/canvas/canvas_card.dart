@@ -84,7 +84,7 @@ class CanvasCardWidget extends StatelessWidget {
                               ? 4
                               : 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: KColors.text,
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -93,9 +93,7 @@ class CanvasCardWidget extends StatelessWidget {
                         ),
                         if (card.body != null && card.body!.isNotEmpty) ...[
                           const SizedBox(height: 6),
-                          Expanded(
-                            child: CanvasCardBody(body: card.body!),
-                          ),
+                          Expanded(child: CanvasCardBody(body: card.body!)),
                         ],
                         if (_tagsOf(card).isNotEmpty) ...[
                           const SizedBox(height: 6),
@@ -143,27 +141,28 @@ class _TagChipRow extends StatelessWidget {
         spacing: 4,
         runSpacing: 3,
         children: tags
-            .map((t) => Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 5, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: KColors.amberDim.withValues(alpha: 0.55),
-                    borderRadius: BorderRadius.circular(3),
-                    border: Border.all(
-                      color: KColors.amber.withValues(alpha: 0.4),
-                      width: 0.5,
-                    ),
+            .map(
+              (t) => Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                decoration: BoxDecoration(
+                  color: KColors.amberDim.withValues(alpha: 0.55),
+                  borderRadius: BorderRadius.circular(3),
+                  border: Border.all(
+                    color: KColors.amber.withValues(alpha: 0.4),
+                    width: 0.5,
                   ),
-                  child: Text(
-                    '#$t',
-                    style: const TextStyle(
-                      color: KColors.amber,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.2,
-                    ),
+                ),
+                child: Text(
+                  '#$t',
+                  style: TextStyle(
+                    color: KColors.amber,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.2,
                   ),
-                ))
+                ),
+              ),
+            )
             .toList(),
       ),
     );
@@ -187,10 +186,8 @@ class _CardTopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(10, 6, 8, 4),
-      decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: KColors.border, width: 0.5),
-        ),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: KColors.border, width: 0.5)),
       ),
       child: Row(
         children: [
@@ -205,9 +202,10 @@ class _CardTopBar extends StatelessWidget {
             const Spacer(),
           if (isPromoted)
             Tooltip(
-              message: 'Promoted to '
+              message:
+                  'Promoted to '
                   '${promotedToType ?? 'item'}',
-              child: const Icon(
+              child: Icon(
                 Icons.arrow_forward,
                 size: 13,
                 color: KColors.phosphor,

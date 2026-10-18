@@ -73,18 +73,21 @@ class _JournalSeriesFormDialogState extends State<JournalSeriesFormDialog> {
     if (!_formKey.currentState!.validate()) return;
     final id = widget.series?.id ?? const Uuid().v4();
     final now = DateTime.now();
-    await widget.db.journalSeriesDao.upsert(JournalSeriesDefsCompanion(
-      id: Value(id),
-      projectId: Value(widget.projectId),
-      name: Value(_nameCtrl.text.trim()),
-      description: Value(
-          _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim()),
-      cadenceHint: Value(_cadenceHint == 'none' ? null : _cadenceHint),
-      color: Value(_color),
-      sortOrder: Value(widget.series?.sortOrder ?? 0),
-      createdAt: widget.series == null ? Value(now) : const Value.absent(),
-      updatedAt: Value(now),
-    ));
+    await widget.db.journalSeriesDao.upsert(
+      JournalSeriesDefsCompanion(
+        id: Value(id),
+        projectId: Value(widget.projectId),
+        name: Value(_nameCtrl.text.trim()),
+        description: Value(
+          _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
+        ),
+        cadenceHint: Value(_cadenceHint == 'none' ? null : _cadenceHint),
+        color: Value(_color),
+        sortOrder: Value(widget.series?.sortOrder ?? 0),
+        createdAt: widget.series == null ? Value(now) : const Value.absent(),
+        updatedAt: Value(now),
+      ),
+    );
     if (!mounted) return;
     final saved = await widget.db.journalSeriesDao.getById(id);
     if (mounted) Navigator.of(context).pop(saved);
@@ -100,7 +103,7 @@ class _JournalSeriesFormDialogState extends State<JournalSeriesFormDialog> {
         content: Text(
           'Remove "${s.name}"? Journal entries tagged with it will be kept '
           '(they\'ll just lose the series tag).',
-          style: const TextStyle(color: KColors.textDim, fontSize: 12),
+          style: TextStyle(color: KColors.textDim, fontSize: 12),
         ),
         actions: [
           TextButton(
@@ -160,12 +163,15 @@ class _JournalSeriesFormDialogState extends State<JournalSeriesFormDialog> {
                 ),
               ),
               const SizedBox(height: 12),
-              const Text('COLOUR',
-                  style: TextStyle(
-                      color: KColors.textMuted,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.1)),
+              Text(
+                'COLOUR',
+                style: TextStyle(
+                  color: KColors.textMuted,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.1,
+                ),
+              ),
               const SizedBox(height: 6),
               Wrap(
                 spacing: 8,
@@ -186,7 +192,7 @@ class _JournalSeriesFormDialogState extends State<JournalSeriesFormDialog> {
               ),
               if (isEdit) ...[
                 const SizedBox(height: 18),
-                const Divider(color: KColors.border, height: 1),
+                Divider(color: KColors.border, height: 1),
                 const SizedBox(height: 8),
                 Align(
                   alignment: Alignment.centerLeft,
@@ -195,13 +201,17 @@ class _JournalSeriesFormDialogState extends State<JournalSeriesFormDialog> {
                     style: TextButton.styleFrom(
                       foregroundColor: KColors.red,
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       minimumSize: Size.zero,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                     icon: const Icon(Icons.delete_outline, size: 14),
-                    label: const Text('Delete this series',
-                        style: TextStyle(fontSize: 11)),
+                    label: const Text(
+                      'Delete this series',
+                      style: TextStyle(fontSize: 11),
+                    ),
                   ),
                 ),
               ],
@@ -260,7 +270,7 @@ class _ColourSwatch extends StatelessWidget {
         ),
         alignment: Alignment.center,
         child: c == null
-            ? const Icon(Icons.block, size: 12, color: KColors.textMuted)
+            ? Icon(Icons.block, size: 12, color: KColors.textMuted)
             : null,
       ),
     );

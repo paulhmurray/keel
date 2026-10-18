@@ -114,12 +114,14 @@ class _LLMSettingsViewState extends State<LLMSettingsView> {
         : _claudeModels.first;
 
     _openAiKeyCtrl = TextEditingController(text: s.openAiApiKey);
-    _openAiModel =
-        _openAiModels.contains(s.openAiModel) ? s.openAiModel : _openAiModels.first;
+    _openAiModel = _openAiModels.contains(s.openAiModel)
+        ? s.openAiModel
+        : _openAiModels.first;
 
     _grokKeyCtrl = TextEditingController(text: s.grokApiKey);
-    _grokModel =
-        _grokModels.contains(s.grokModel) ? s.grokModel : _grokModels.first;
+    _grokModel = _grokModels.contains(s.grokModel)
+        ? s.grokModel
+        : _grokModels.first;
 
     _githubTokenCtrl = TextEditingController(text: s.githubToken);
     _githubModel = _githubModels.contains(s.githubModel)
@@ -197,9 +199,9 @@ class _LLMSettingsViewState extends State<LLMSettingsView> {
     );
     setState(() => _dirty = false);
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Settings saved')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Settings saved')));
     }
   }
 
@@ -307,7 +309,7 @@ class _LLMSettingsViewState extends State<LLMSettingsView> {
               setState(() => _obscureClaudeKey = !_obscureClaudeKey),
         ),
         const SizedBox(height: 8),
-        const Text(
+        Text(
           'Get your API key at console.anthropic.com',
           style: TextStyle(color: KColors.textDim, fontSize: 11),
         ),
@@ -390,7 +392,7 @@ class _LLMSettingsViewState extends State<LLMSettingsView> {
               setState(() => _obscureGithubToken = !_obscureGithubToken),
         ),
         const SizedBox(height: 8),
-        const Text(
+        Text(
           'Generate at github.com/settings/tokens',
           style: TextStyle(color: KColors.textDim, fontSize: 11),
         ),
@@ -478,21 +480,29 @@ class _LLMSettingsViewState extends State<LLMSettingsView> {
         const SizedBox(height: 8),
         // Connection status indicator
         if (_ollamaStatus == _OllamaStatus.connected)
-          const Row(
+          Row(
             children: [
-              Icon(Icons.check_circle_outline, size: 14, color: KColors.phosphor),
+              Icon(
+                Icons.check_circle_outline,
+                size: 14,
+                color: KColors.phosphor,
+              ),
               SizedBox(width: 6),
-              Text('Connected',
-                  style: TextStyle(color: KColors.phosphor, fontSize: 12)),
+              Text(
+                'Connected',
+                style: TextStyle(color: KColors.phosphor, fontSize: 12),
+              ),
             ],
           )
         else if (_ollamaStatus == _OllamaStatus.failed)
-          const Row(
+          Row(
             children: [
               Icon(Icons.error_outline, size: 14, color: KColors.red),
               SizedBox(width: 6),
-              Text('Not reachable',
-                  style: TextStyle(color: KColors.red, fontSize: 12)),
+              Text(
+                'Not reachable',
+                style: TextStyle(color: KColors.red, fontSize: 12),
+              ),
             ],
           ),
         const SizedBox(height: 16),
@@ -527,12 +537,12 @@ class _LLMSettingsViewState extends State<LLMSettingsView> {
           label: const Text('Run setup wizard'),
           style: OutlinedButton.styleFrom(
             foregroundColor: KColors.amber,
-            side: const BorderSide(color: KColors.amber, width: 0.5),
+            side: BorderSide(color: KColors.amber, width: 0.5),
           ),
         ),
         const SizedBox(height: 20),
         // Recommended models section
-        const Text(
+        Text(
           'Recommended free models',
           style: TextStyle(
             color: KColors.amber,
@@ -553,7 +563,7 @@ class _LLMSettingsViewState extends State<LLMSettingsView> {
                     children: [
                       Text(
                         name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                           color: KColors.text,
@@ -561,10 +571,7 @@ class _LLMSettingsViewState extends State<LLMSettingsView> {
                       ),
                       Text(
                         desc,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: KColors.textDim,
-                        ),
+                        style: TextStyle(fontSize: 11, color: KColors.textDim),
                       ),
                     ],
                   ),
@@ -580,7 +587,7 @@ class _LLMSettingsViewState extends State<LLMSettingsView> {
             ),
           ),
         const SizedBox(height: 12),
-        const Text(
+        Text(
           'Don\'t have Ollama? Use the setup wizard above.',
           style: TextStyle(color: KColors.textDim, fontSize: 11),
         ),
@@ -611,7 +618,7 @@ class _LLMSettingsViewState extends State<LLMSettingsView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'LLM Provider',
                       style: TextStyle(
                         color: KColors.amber,
@@ -630,20 +637,21 @@ class _LLMSettingsViewState extends State<LLMSettingsView> {
                           // Hide Ollama on web — it requires local process access
                           .where((p) => !kIsWeb || p != LLMProvider.ollama)
                           .map((p) {
-                        return DropdownMenuItem(
-                          value: p,
-                          child: Row(
-                            children: [
-                              Icon(_providerIcon(p), size: 16),
-                              const SizedBox(width: 8),
-                              Text(
-                                _providerLabel(p),
-                                style: const TextStyle(fontSize: 13),
+                            return DropdownMenuItem(
+                              value: p,
+                              child: Row(
+                                children: [
+                                  Icon(_providerIcon(p), size: 16),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    _providerLabel(p),
+                                    style: const TextStyle(fontSize: 13),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
+                            );
+                          })
+                          .toList(),
                       onChanged: (v) => setState(() {
                         _provider = v!;
                         _dirty = true;
@@ -669,7 +677,7 @@ class _LLMSettingsViewState extends State<LLMSettingsView> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'File Watcher',
                         style: TextStyle(
                           color: KColors.amber,
@@ -684,8 +692,10 @@ class _LLMSettingsViewState extends State<LLMSettingsView> {
                           _watcherEnabled = v;
                           _dirty = true;
                         }),
-                        title: const Text('Enable file watcher',
-                            style: TextStyle(fontSize: 13)),
+                        title: const Text(
+                          'Enable file watcher',
+                          style: TextStyle(fontSize: 13),
+                        ),
                         contentPadding: EdgeInsets.zero,
                         activeColor: KColors.amber,
                       ),
@@ -714,12 +724,9 @@ class _LLMSettingsViewState extends State<LLMSettingsView> {
                 ),
                 const SizedBox(width: 12),
                 if (_dirty)
-                  const Text(
+                  Text(
                     'Unsaved changes',
-                    style: TextStyle(
-                      color: KColors.amber,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: KColors.amber, fontSize: 12),
                   ),
               ],
             ),
@@ -750,7 +757,7 @@ class _SettingsCard extends StatelessWidget {
           children: [
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 color: KColors.amber,
                 fontWeight: FontWeight.w700,
                 fontSize: 13,
@@ -818,15 +825,14 @@ class _ModelDropdown extends StatelessWidget {
   Widget build(BuildContext context) {
     return DropdownButtonFormField<String>(
       value: models.contains(value) ? value : models.first,
-      decoration: InputDecoration(
-        labelText: label,
-        isDense: true,
-      ),
+      decoration: InputDecoration(labelText: label, isDense: true),
       items: models
-          .map((m) => DropdownMenuItem(
-                value: m,
-                child: Text(m, style: const TextStyle(fontSize: 13)),
-              ))
+          .map(
+            (m) => DropdownMenuItem(
+              value: m,
+              child: Text(m, style: const TextStyle(fontSize: 13)),
+            ),
+          )
           .toList(),
       onChanged: onChanged,
     );

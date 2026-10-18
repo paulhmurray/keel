@@ -29,10 +29,12 @@ class WorkstreamsView extends StatelessWidget {
           Row(
             children: [
               Flexible(
-                child: Text('Workstreams',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.headlineSmall),
+                child: Text(
+                  'Workstreams',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
               ),
               const Spacer(),
               ElevatedButton.icon(
@@ -56,9 +58,11 @@ class WorkstreamsView extends StatelessWidget {
                 }
                 final items = snap.data!;
                 if (items.isEmpty) {
-                  return const Center(
-                    child: Text('No workstreams yet.',
-                        style: TextStyle(color: KColors.textDim)),
+                  return Center(
+                    child: Text(
+                      'No workstreams yet.',
+                      style: TextStyle(color: KColors.textDim),
+                    ),
                   );
                 }
                 return ListView.separated(
@@ -69,15 +73,22 @@ class WorkstreamsView extends StatelessWidget {
                     return Card(
                       child: ListTile(
                         contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         leading: RAGBadge(rag: w.status, showLabel: false),
-                        title: Text(w.name,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.w600)),
+                        title: Text(
+                          w.name,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
                         subtitle: w.lead != null
-                            ? Text('Lead: ${w.lead}',
-                                style: const TextStyle(
-                                    color: KColors.textDim, fontSize: 12))
+                            ? Text(
+                                'Lead: ${w.lead}',
+                                style: TextStyle(
+                                  color: KColors.textDim,
+                                  fontSize: 12,
+                                ),
+                              )
                             : null,
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -89,14 +100,18 @@ class WorkstreamsView extends StatelessWidget {
                               onPressed: () => showDialog(
                                 context: context,
                                 builder: (_) => WorkstreamFormDialog(
-                                    projectId: projectId,
-                                    db: db,
-                                    workstream: w),
+                                  projectId: projectId,
+                                  db: db,
+                                  workstream: w,
+                                ),
                               ),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.delete_outline,
-                                  size: 18, color: KColors.red),
+                              icon: Icon(
+                                Icons.delete_outline,
+                                size: 18,
+                                color: KColors.red,
+                              ),
                               onPressed: () =>
                                   db.programmeDao.deleteWorkstream(w.id),
                             ),

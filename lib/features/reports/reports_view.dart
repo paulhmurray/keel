@@ -59,12 +59,14 @@ class _ReportsViewState extends State<ReportsView>
           padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
           child: Row(
             children: [
-              const Icon(Icons.description, color: KColors.amber, size: 22),
+              Icon(Icons.description, color: KColors.amber, size: 22),
               const SizedBox(width: 10),
               Flexible(
-                child: Text('Reports',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                    overflow: TextOverflow.ellipsis),
+                child: Text(
+                  'Reports',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
@@ -72,7 +74,7 @@ class _ReportsViewState extends State<ReportsView>
         const SizedBox(height: 12),
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             border: Border(bottom: BorderSide(color: KColors.border)),
           ),
           child: TabBar(
@@ -96,14 +98,18 @@ class _ReportsViewState extends State<ReportsView>
             controller: _tabController,
             children: [
               _StatusReportsTab(
-                  projectId: projectId, db: db, settings: settings),
+                projectId: projectId,
+                db: db,
+                settings: settings,
+              ),
               _RaidExportTab(projectId: projectId, db: db),
               _NarrativeExportTab(projectId: projectId, db: db),
               _HandoverPackTab(projectId: projectId, db: db),
               _ProgrammeWorkbookTab(
-                  projectId: projectId,
-                  projectName: project?.name ?? 'Programme',
-                  db: db),
+                projectId: projectId,
+                projectName: project?.name ?? 'Programme',
+                db: db,
+              ),
             ],
           ),
         ),
@@ -121,8 +127,11 @@ class _StatusReportsTab extends StatelessWidget {
   final AppDatabase db;
   final SettingsProvider settings;
 
-  const _StatusReportsTab(
-      {required this.projectId, required this.db, required this.settings});
+  const _StatusReportsTab({
+    required this.projectId,
+    required this.db,
+    required this.settings,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -137,7 +146,10 @@ class _StatusReportsTab extends StatelessWidget {
                 onPressed: () => showDialog(
                   context: context,
                   builder: (_) => _ReportFormDialog(
-                      projectId: projectId, db: db, settings: settings),
+                    projectId: projectId,
+                    db: db,
+                    settings: settings,
+                  ),
                 ),
                 icon: const Icon(Icons.add, size: 16),
                 label: const Text('New Report'),
@@ -154,9 +166,11 @@ class _StatusReportsTab extends StatelessWidget {
                 }
                 final items = snap.data!;
                 if (items.isEmpty) {
-                  return const Center(
-                    child: Text('No status reports yet.',
-                        style: TextStyle(color: KColors.textDim)),
+                  return Center(
+                    child: Text(
+                      'No status reports yet.',
+                      style: TextStyle(color: KColors.textDim),
+                    ),
                   );
                 }
                 return ListView.separated(
@@ -205,21 +219,25 @@ class _ReportCard extends StatelessWidget {
   void _exportHtml(BuildContext context) async {
     final name = await _projectName();
     try {
-      final path =
-          await HtmlExporter.exportReport(report: report, projectName: name);
+      final path = await HtmlExporter.exportReport(
+        report: report,
+        projectName: name,
+      );
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Saved: $path'),
-              duration: const Duration(seconds: 4)),
+            content: Text('Saved: $path'),
+            duration: const Duration(seconds: 4),
+          ),
         );
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Export failed: $e'),
-              backgroundColor: KColors.red),
+            content: Text('Export failed: $e'),
+            backgroundColor: KColors.red,
+          ),
         );
       }
     }
@@ -228,21 +246,25 @@ class _ReportCard extends StatelessWidget {
   void _exportPdf(BuildContext context) async {
     final name = await _projectName();
     try {
-      final path =
-          await PdfExporter.exportReport(report: report, projectName: name);
+      final path = await PdfExporter.exportReport(
+        report: report,
+        projectName: name,
+      );
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Saved: $path'),
-              duration: const Duration(seconds: 4)),
+            content: Text('Saved: $path'),
+            duration: const Duration(seconds: 4),
+          ),
         );
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Export failed: $e'),
-              backgroundColor: KColors.red),
+            content: Text('Export failed: $e'),
+            backgroundColor: KColors.red,
+          ),
         );
       }
     }
@@ -268,21 +290,27 @@ class _ReportCard extends StatelessWidget {
                   RAGBadge(rag: report.overallRag, showLabel: false),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: Text(report.title,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w600, fontSize: 14)),
+                    child: Text(
+                      report.title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
                   ),
                   if (isCascaded) ...[
                     CascadedSourceBadge(
-                        sourceProjectId: report.sourceProjectId),
+                      sourceProjectId: report.sourceProjectId,
+                    ),
                     const SizedBox(width: 8),
                   ],
                   if (report.period != null) ...[
                     Flexible(
-                      child: Text(report.period!,
-                          style: const TextStyle(
-                              color: KColors.textDim, fontSize: 12),
-                          overflow: TextOverflow.ellipsis),
+                      child: Text(
+                        report.period!,
+                        style: TextStyle(color: KColors.textDim, fontSize: 12),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                     const SizedBox(width: 8),
                   ],
@@ -322,52 +350,68 @@ class _ReportCard extends StatelessWidget {
                             // Cascaded rows are read-only — only the
                             // export + (local) delete options remain.
                             PopupMenuItem(
-                                value: 'html',
-                                child: Row(children: [
+                              value: 'html',
+                              child: Row(
+                                children: [
                                   Icon(Icons.code, size: 16),
                                   SizedBox(width: 8),
                                   Text('Export HTML'),
-                                ])),
+                                ],
+                              ),
+                            ),
                             PopupMenuItem(
-                                value: 'pdf',
-                                child: Row(children: [
+                              value: 'pdf',
+                              child: Row(
+                                children: [
                                   Icon(Icons.picture_as_pdf, size: 16),
                                   SizedBox(width: 8),
                                   Text('Export PDF'),
-                                ])),
+                                ],
+                              ),
+                            ),
                             PopupMenuItem(
-                                value: 'delete',
-                                child:
-                                    Text('Remove from programme')),
+                              value: 'delete',
+                              child: Text('Remove from programme'),
+                            ),
                           ]
                         : const [
-                      PopupMenuItem(value: 'edit', child: Text('Edit')),
-                      PopupMenuItem(
-                          value: 'html',
-                          child: Row(children: [
-                            Icon(Icons.code, size: 16),
-                            SizedBox(width: 8),
-                            Text('Export HTML'),
-                          ])),
-                      PopupMenuItem(
-                          value: 'pdf',
-                          child: Row(children: [
-                            Icon(Icons.picture_as_pdf, size: 16),
-                            SizedBox(width: 8),
-                            Text('Export PDF'),
-                          ])),
-                      PopupMenuItem(value: 'delete', child: Text('Delete')),
-                    ],
+                            PopupMenuItem(value: 'edit', child: Text('Edit')),
+                            PopupMenuItem(
+                              value: 'html',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.code, size: 16),
+                                  SizedBox(width: 8),
+                                  Text('Export HTML'),
+                                ],
+                              ),
+                            ),
+                            PopupMenuItem(
+                              value: 'pdf',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.picture_as_pdf, size: 16),
+                                  SizedBox(width: 8),
+                                  Text('Export PDF'),
+                                ],
+                              ),
+                            ),
+                            PopupMenuItem(
+                              value: 'delete',
+                              child: Text('Delete'),
+                            ),
+                          ],
                   ),
                 ],
               ),
               if (report.summary != null && report.summary!.isNotEmpty) ...[
                 const SizedBox(height: 8),
-                Text(report.summary!,
-                    style: const TextStyle(
-                        color: KColors.textDim, fontSize: 12),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis),
+                Text(
+                  report.summary!,
+                  style: TextStyle(color: KColors.textDim, fontSize: 12),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ],
           ),
@@ -402,9 +446,10 @@ class _ReportDetailDialog extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (report.period != null) ...[
-                Text('Period: ${report.period}',
-                    style: const TextStyle(
-                        color: KColors.textDim, fontSize: 13)),
+                Text(
+                  'Period: ${report.period}',
+                  style: TextStyle(color: KColors.textDim, fontSize: 13),
+                ),
                 const SizedBox(height: 12),
               ],
               if (report.summary != null && report.summary!.isNotEmpty) ...[
@@ -418,8 +463,7 @@ class _ReportDetailDialog extends StatelessWidget {
                 Text(report.accomplishments!),
                 const SizedBox(height: 12),
               ],
-              if (report.nextSteps != null &&
-                  report.nextSteps!.isNotEmpty) ...[
+              if (report.nextSteps != null && report.nextSteps!.isNotEmpty) ...[
                 _SectionLabel('Next Steps'),
                 Text(report.nextSteps!),
                 const SizedBox(height: 12),
@@ -451,12 +495,15 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
-      child: Text(text,
-          style: const TextStyle(
-              color: KColors.amber,
-              fontWeight: FontWeight.w700,
-              fontSize: 12,
-              letterSpacing: 0.8)),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: KColors.amber,
+          fontWeight: FontWeight.w700,
+          fontSize: 12,
+          letterSpacing: 0.8,
+        ),
+      ),
     );
   }
 }
@@ -503,8 +550,9 @@ class _ReportFormDialogState extends State<_ReportFormDialog> {
     _titleCtrl = TextEditingController(text: r?.title ?? '');
     _periodCtrl = TextEditingController(text: r?.period ?? '');
     _summaryCtrl = TextEditingController(text: r?.summary ?? '');
-    _accomplishmentsCtrl =
-        TextEditingController(text: r?.accomplishments ?? '');
+    _accomplishmentsCtrl = TextEditingController(
+      text: r?.accomplishments ?? '',
+    );
     _nextStepsCtrl = TextEditingController(text: r?.nextSteps ?? '');
     _risksCtrl = TextEditingController(text: r?.risksHighlighted ?? '');
     _overallRag = r?.overallRag ?? 'green';
@@ -534,12 +582,15 @@ class _ReportFormDialogState extends State<_ReportFormDialog> {
 
     try {
       // Gather project data
-      final risks =
-          await widget.db.raidDao.getRisksForProject(widget.projectId);
-      final decisions =
-          await widget.db.decisionsDao.getDecisionsForProject(widget.projectId);
-      final actions =
-          await widget.db.actionsDao.getActionsForProject(widget.projectId);
+      final risks = await widget.db.raidDao.getRisksForProject(
+        widget.projectId,
+      );
+      final decisions = await widget.db.decisionsDao.getDecisionsForProject(
+        widget.projectId,
+      );
+      final actions = await widget.db.actionsDao.getActionsForProject(
+        widget.projectId,
+      );
 
       final openRisks = risks.where((r) => r.status == 'open').toList();
       final highRisks = openRisks
@@ -547,8 +598,7 @@ class _ReportFormDialogState extends State<_ReportFormDialog> {
           .take(5)
           .toList();
       final recentDecisions = decisions.take(5).toList();
-      final openActions =
-          actions.where((a) => a.status != 'closed').toList();
+      final openActions = actions.where((a) => a.status != 'closed').toList();
       final overdueActions = openActions.where((a) {
         if (a.dueDate == null) return false;
         final today = DateTime.now().toIso8601String().substring(0, 10);
@@ -563,7 +613,8 @@ class _ReportFormDialogState extends State<_ReportFormDialog> {
         buffer.writeln('TOP RISKS (open, high impact/likelihood):');
         for (final r in highRisks) {
           buffer.writeln(
-              '- ${r.ref ?? ''} ${r.description} [${ratingSummary(r.likelihood, r.impact)}]');
+            '- ${r.ref ?? ''} ${r.description} [${ratingSummary(r.likelihood, r.impact)}]',
+          );
           if (r.mitigation != null) {
             buffer.writeln('  Mitigation: ${r.mitigation}');
           }
@@ -587,12 +638,14 @@ class _ReportFormDialogState extends State<_ReportFormDialog> {
         buffer.writeln('Overdue:');
         for (final a in overdueActions.take(5)) {
           buffer.writeln(
-              '  - ${a.description} (owner: ${a.owner ?? "unassigned"}, due: ${a.dueDate})');
+            '  - ${a.description} (owner: ${a.owner ?? "unassigned"}, due: ${a.dueDate})',
+          );
         }
       }
 
-      final period =
-          _periodCtrl.text.isNotEmpty ? _periodCtrl.text : 'current period';
+      final period = _periodCtrl.text.isNotEmpty
+          ? _periodCtrl.text
+          : 'current period';
 
       final client = LLMClientFactory.fromSettings(widget.settings.settings);
 
@@ -643,16 +696,20 @@ class _ReportFormDialogState extends State<_ReportFormDialog> {
     final labels = ['SUMMARY', 'ACCOMPLISHMENTS', 'NEXT STEPS', 'RISKS'];
     for (int i = 0; i < labels.length; i++) {
       final label = labels[i];
-      final pattern =
-          RegExp('${RegExp.escape(label)}:\\s*', caseSensitive: false);
+      final pattern = RegExp(
+        '${RegExp.escape(label)}:\\s*',
+        caseSensitive: false,
+      );
       final match = pattern.firstMatch(text);
       if (match == null) continue;
       final start = match.end;
       // Find where next section starts
       int end = text.length;
       for (int j = i + 1; j < labels.length; j++) {
-        final nextPattern = RegExp('${RegExp.escape(labels[j])}:\\s*',
-            caseSensitive: false);
+        final nextPattern = RegExp(
+          '${RegExp.escape(labels[j])}:\\s*',
+          caseSensitive: false,
+        );
         final nextMatch = nextPattern.firstMatch(text.substring(start));
         if (nextMatch != null) {
           end = start + nextMatch.start;
@@ -672,19 +729,23 @@ class _ReportFormDialogState extends State<_ReportFormDialog> {
       projectId: Value(widget.projectId),
       title: Value(_titleCtrl.text.trim()),
       period: Value(
-          _periodCtrl.text.trim().isEmpty ? null : _periodCtrl.text.trim()),
+        _periodCtrl.text.trim().isEmpty ? null : _periodCtrl.text.trim(),
+      ),
       overallRag: Value(_overallRag),
       summary: Value(
-          _summaryCtrl.text.trim().isEmpty ? null : _summaryCtrl.text.trim()),
-      accomplishments: Value(_accomplishmentsCtrl.text.trim().isEmpty
-          ? null
-          : _accomplishmentsCtrl.text.trim()),
-      nextSteps: Value(_nextStepsCtrl.text.trim().isEmpty
-          ? null
-          : _nextStepsCtrl.text.trim()),
-      risksHighlighted: Value(_risksCtrl.text.trim().isEmpty
-          ? null
-          : _risksCtrl.text.trim()),
+        _summaryCtrl.text.trim().isEmpty ? null : _summaryCtrl.text.trim(),
+      ),
+      accomplishments: Value(
+        _accomplishmentsCtrl.text.trim().isEmpty
+            ? null
+            : _accomplishmentsCtrl.text.trim(),
+      ),
+      nextSteps: Value(
+        _nextStepsCtrl.text.trim().isEmpty ? null : _nextStepsCtrl.text.trim(),
+      ),
+      risksHighlighted: Value(
+        _risksCtrl.text.trim().isEmpty ? null : _risksCtrl.text.trim(),
+      ),
       updatedAt: Value(DateTime.now()),
     );
 
@@ -695,11 +756,13 @@ class _ReportFormDialogState extends State<_ReportFormDialog> {
     // programme" toggle. CascadeService handles the "no links / not
     // signed in / cascaded row" cases internally.
     if (mounted) {
-      final saved = await widget.db.reportsDao
-          .getReportsForProject(widget.projectId);
+      final saved = await widget.db.reportsDao.getReportsForProject(
+        widget.projectId,
+      );
       final fresh = saved.firstWhere(
-          (r) => r.id == companion.id.value,
-          orElse: () => saved.first);
+        (r) => r.id == companion.id.value,
+        orElse: () => saved.first,
+      );
       // ignore: use_build_context_synchronously
       await _cascadeFor(context).pushStatusReport(fresh);
     }
@@ -732,17 +795,20 @@ class _ReportFormDialogState extends State<_ReportFormDialog> {
                   children: [
                     Expanded(
                       child: _drafting
-                          ? const Row(
+                          ? Row(
                               children: [
                                 SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2)),
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
                                 SizedBox(width: 10),
-                                Text('Drafting with Claude…',
-                                    style: TextStyle(
-                                        color: KColors.textDim)),
+                                Text(
+                                  'Drafting with Claude…',
+                                  style: TextStyle(color: KColors.textDim),
+                                ),
                               ],
                             )
                           : OutlinedButton.icon(
@@ -755,9 +821,10 @@ class _ReportFormDialogState extends State<_ReportFormDialog> {
                 ),
                 if (_draftError != null) ...[
                   const SizedBox(height: 6),
-                  Text(_draftError!,
-                      style: const TextStyle(
-                          color: KColors.red, fontSize: 12)),
+                  Text(
+                    _draftError!,
+                    style: TextStyle(color: KColors.red, fontSize: 12),
+                  ),
                 ],
                 const SizedBox(height: 16),
                 Row(
@@ -766,8 +833,7 @@ class _ReportFormDialogState extends State<_ReportFormDialog> {
                       child: TextFormField(
                         controller: _titleCtrl,
                         autofocus: true,
-                        decoration:
-                            const InputDecoration(labelText: 'Title *'),
+                        decoration: const InputDecoration(labelText: 'Title *'),
                         validator: (v) =>
                             v == null || v.trim().isEmpty ? 'Required' : null,
                       ),
@@ -778,7 +844,9 @@ class _ReportFormDialogState extends State<_ReportFormDialog> {
                       child: TextFormField(
                         controller: _periodCtrl,
                         decoration: const InputDecoration(
-                            labelText: 'Period', hintText: 'e.g. Week 14'),
+                          labelText: 'Period',
+                          hintText: 'e.g. Week 14',
+                        ),
                       ),
                     ),
                   ],
@@ -800,22 +868,23 @@ class _ReportFormDialogState extends State<_ReportFormDialog> {
                 TextFormField(
                   controller: _accomplishmentsCtrl,
                   maxLines: 3,
-                  decoration:
-                      const InputDecoration(labelText: 'Accomplishments'),
+                  decoration: const InputDecoration(
+                    labelText: 'Accomplishments',
+                  ),
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _nextStepsCtrl,
                   maxLines: 3,
-                  decoration:
-                      const InputDecoration(labelText: 'Next Steps'),
+                  decoration: const InputDecoration(labelText: 'Next Steps'),
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _risksCtrl,
                   maxLines: 2,
                   decoration: const InputDecoration(
-                      labelText: 'Risks Highlighted'),
+                    labelText: 'Risks Highlighted',
+                  ),
                 ),
               ],
             ),
@@ -828,8 +897,9 @@ class _ReportFormDialogState extends State<_ReportFormDialog> {
           child: const Text('Cancel'),
         ),
         ElevatedButton(
-            onPressed: _save,
-            child: Text(isEdit ? 'Save' : 'Create')),
+          onPressed: _save,
+          child: Text(isEdit ? 'Save' : 'Create'),
+        ),
       ],
     );
   }
@@ -863,17 +933,22 @@ class _RaidExportTabState extends State<_RaidExportTab> {
       setState(() => _exportingHtml = true);
     }
     try {
-      final project =
-          await widget.db.projectDao.getProjectById(widget.projectId);
+      final project = await widget.db.projectDao.getProjectById(
+        widget.projectId,
+      );
       final projectName = project?.name ?? 'Project';
-      final risks =
-          await widget.db.raidDao.getRisksForProject(widget.projectId);
-      final assumptions =
-          await widget.db.raidDao.getAssumptionsForProject(widget.projectId);
-      final issues =
-          await widget.db.raidDao.getIssuesForProject(widget.projectId);
-      final deps =
-          await widget.db.raidDao.getDependenciesForProject(widget.projectId);
+      final risks = await widget.db.raidDao.getRisksForProject(
+        widget.projectId,
+      );
+      final assumptions = await widget.db.raidDao.getAssumptionsForProject(
+        widget.projectId,
+      );
+      final issues = await widget.db.raidDao.getIssuesForProject(
+        widget.projectId,
+      );
+      final deps = await widget.db.raidDao.getDependenciesForProject(
+        widget.projectId,
+      );
 
       final String path;
       if (asPdf) {
@@ -935,7 +1010,7 @@ class _RaidExportTabState extends State<_RaidExportTab> {
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Exports the open risks, assumptions, issues, and dependencies '
             'for this project. Choose HTML for a browser-viewable file, or '
             'PDF for a print-ready document.',
@@ -952,30 +1027,34 @@ class _RaidExportTabState extends State<_RaidExportTab> {
             runSpacing: 12,
             children: [
               ElevatedButton.icon(
-                onPressed:
-                    (_exportingHtml || _exportingPdf)
-                        ? null
-                        : () => _doExport(asPdf: false),
+                onPressed: (_exportingHtml || _exportingPdf)
+                    ? null
+                    : () => _doExport(asPdf: false),
                 icon: _exportingHtml
                     ? const SizedBox(
                         width: 16,
                         height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2))
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
                     : const Icon(Icons.code, size: 16),
-                label: Text(_exportingHtml ? 'Exporting…' : 'Export RAID as HTML'),
+                label: Text(
+                  _exportingHtml ? 'Exporting…' : 'Export RAID as HTML',
+                ),
               ),
               ElevatedButton.icon(
-                onPressed:
-                    (_exportingHtml || _exportingPdf)
-                        ? null
-                        : () => _doExport(asPdf: true),
+                onPressed: (_exportingHtml || _exportingPdf)
+                    ? null
+                    : () => _doExport(asPdf: true),
                 icon: _exportingPdf
                     ? const SizedBox(
                         width: 16,
                         height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2))
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
                     : const Icon(Icons.picture_as_pdf, size: 16),
-                label: Text(_exportingPdf ? 'Exporting…' : 'Export RAID as PDF'),
+                label: Text(
+                  _exportingPdf ? 'Exporting…' : 'Export RAID as PDF',
+                ),
               ),
             ],
           ),
@@ -1005,18 +1084,18 @@ class _NarrativeExportTabState extends State<_NarrativeExportTab> {
   Future<void> _doExport() async {
     setState(() => _exportingHtml = true);
     try {
-      final project =
-          await widget.db.projectDao.getProjectById(widget.projectId);
+      final project = await widget.db.projectDao.getProjectById(
+        widget.projectId,
+      );
       final projectName = project?.name ?? 'Project';
-      final entries =
-          await widget.db.journalDao.getEntriesForProject(widget.projectId);
+      final entries = await widget.db.journalDao.getEntriesForProject(
+        widget.projectId,
+      );
 
       if (entries.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('No journal entries to export.'),
-            ),
+            const SnackBar(content: Text('No journal entries to export.')),
           );
         }
         return;
@@ -1062,14 +1141,15 @@ class _NarrativeExportTabState extends State<_NarrativeExportTab> {
           ),
           const SizedBox(height: 8),
           StreamBuilder<int>(
-            stream: widget.db.journalDao
-                .watchEntryCountForProject(widget.projectId),
+            stream: widget.db.journalDao.watchEntryCountForProject(
+              widget.projectId,
+            ),
             builder: (context, snap) {
               final count = snap.data ?? 0;
               return Text(
                 '$count journal ${count == 1 ? 'entry' : 'entries'} · '
                 'Exports a chronological narrative from all journal entries.',
-                style: const TextStyle(color: KColors.textDim, fontSize: 13),
+                style: TextStyle(color: KColors.textDim, fontSize: 13),
               );
             },
           ),
@@ -1080,10 +1160,12 @@ class _NarrativeExportTabState extends State<_NarrativeExportTab> {
                 ? const SizedBox(
                     width: 16,
                     height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2))
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
                 : const Icon(Icons.article_outlined, size: 16),
             label: Text(
-                _exportingHtml ? 'Exporting…' : 'Export Narrative as HTML'),
+              _exportingHtml ? 'Exporting…' : 'Export Narrative as HTML',
+            ),
           ),
         ],
       ),
@@ -1112,25 +1194,34 @@ class _HandoverPackTabState extends State<_HandoverPackTab> {
   Future<void> _exportHandoverPack() async {
     setState(() => _exportingHandover = true);
     try {
-      final project =
-          await widget.db.projectDao.getProjectById(widget.projectId);
+      final project = await widget.db.projectDao.getProjectById(
+        widget.projectId,
+      );
       final projectName = project?.name ?? 'Project';
-      final risks =
-          await widget.db.raidDao.getRisksForProject(widget.projectId);
-      final assumptions =
-          await widget.db.raidDao.getAssumptionsForProject(widget.projectId);
-      final issues =
-          await widget.db.raidDao.getIssuesForProject(widget.projectId);
-      final deps =
-          await widget.db.raidDao.getDependenciesForProject(widget.projectId);
-      final entries =
-          await widget.db.journalDao.getEntriesForProject(widget.projectId);
-      final persons =
-          await widget.db.peopleDao.getPersonsForProject(widget.projectId);
-      final stakeholders = await widget.db.peopleDao
-          .getStakeholdersForProject(widget.projectId);
-      final reports =
-          await widget.db.reportsDao.getReportsForProject(widget.projectId);
+      final risks = await widget.db.raidDao.getRisksForProject(
+        widget.projectId,
+      );
+      final assumptions = await widget.db.raidDao.getAssumptionsForProject(
+        widget.projectId,
+      );
+      final issues = await widget.db.raidDao.getIssuesForProject(
+        widget.projectId,
+      );
+      final deps = await widget.db.raidDao.getDependenciesForProject(
+        widget.projectId,
+      );
+      final entries = await widget.db.journalDao.getEntriesForProject(
+        widget.projectId,
+      );
+      final persons = await widget.db.peopleDao.getPersonsForProject(
+        widget.projectId,
+      );
+      final stakeholders = await widget.db.peopleDao.getStakeholdersForProject(
+        widget.projectId,
+      );
+      final reports = await widget.db.reportsDao.getReportsForProject(
+        widget.projectId,
+      );
       final latestReport = reports.isNotEmpty ? reports.first : null;
 
       final path = await HandoverExporter.exportHandoverPack(
@@ -1170,20 +1261,21 @@ class _HandoverPackTabState extends State<_HandoverPackTab> {
   Future<void> _exportStakeholderMap() async {
     setState(() => _exportingStakeholderMap = true);
     try {
-      final project =
-          await widget.db.projectDao.getProjectById(widget.projectId);
+      final project = await widget.db.projectDao.getProjectById(
+        widget.projectId,
+      );
       final projectName = project?.name ?? 'Project';
-      final persons =
-          await widget.db.peopleDao.getPersonsForProject(widget.projectId);
-      final stakeholders = await widget.db.peopleDao
-          .getStakeholdersForProject(widget.projectId);
+      final persons = await widget.db.peopleDao.getPersonsForProject(
+        widget.projectId,
+      );
+      final stakeholders = await widget.db.peopleDao.getStakeholdersForProject(
+        widget.projectId,
+      );
 
       if (stakeholders.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('No stakeholder profiles to export.'),
-            ),
+            const SnackBar(content: Text('No stakeholder profiles to export.')),
           );
         }
         return;
@@ -1229,19 +1321,21 @@ class _HandoverPackTabState extends State<_HandoverPackTab> {
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Export a complete handover package as a ZIP file. '
             'Contains all project artefacts in open formats.',
             style: TextStyle(color: KColors.textDim, fontSize: 13),
           ),
           const SizedBox(height: 16),
-          const _BulletList(items: [
-            'RAID log (HTML + PDF)',
-            'Programme narrative (HTML, if journal entries exist)',
-            'Stakeholder influence/stance map (HTML, if profiles exist)',
-            'Latest status report (HTML + PDF, if one exists)',
-            'README.txt with contents guide',
-          ]),
+          const _BulletList(
+            items: [
+              'RAID log (HTML + PDF)',
+              'Programme narrative (HTML, if journal entries exist)',
+              'Stakeholder influence/stance map (HTML, if profiles exist)',
+              'Latest status report (HTML + PDF, if one exists)',
+              'README.txt with contents guide',
+            ],
+          ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
             onPressed: (_exportingHandover || _exportingStakeholderMap)
@@ -1251,10 +1345,12 @@ class _HandoverPackTabState extends State<_HandoverPackTab> {
                 ? const SizedBox(
                     width: 16,
                     height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2))
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
                 : const Icon(Icons.folder_zip_outlined, size: 16),
             label: Text(
-                _exportingHandover ? 'Exporting…' : 'Export Handover Pack'),
+              _exportingHandover ? 'Exporting…' : 'Export Handover Pack',
+            ),
           ),
           const SizedBox(height: 32),
           const Divider(),
@@ -1264,7 +1360,7 @@ class _HandoverPackTabState extends State<_HandoverPackTab> {
             style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             'Export a standalone influence × stance grid for all stakeholders.',
             style: TextStyle(color: KColors.textDim, fontSize: 13),
           ),
@@ -1277,11 +1373,14 @@ class _HandoverPackTabState extends State<_HandoverPackTab> {
                 ? const SizedBox(
                     width: 16,
                     height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2))
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
                 : const Icon(Icons.people_outline, size: 16),
-            label: Text(_exportingStakeholderMap
-                ? 'Exporting…'
-                : 'Export Stakeholder Map'),
+            label: Text(
+              _exportingStakeholderMap
+                  ? 'Exporting…'
+                  : 'Export Stakeholder Map',
+            ),
           ),
         ],
       ),
@@ -1298,21 +1397,26 @@ class _BulletList extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: items
-          .map((item) => Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('• ',
-                        style: TextStyle(color: KColors.amber, fontSize: 13)),
-                    Expanded(
-                      child: Text(item,
-                          style: const TextStyle(
-                              color: KColors.textDim, fontSize: 13)),
+          .map(
+            (item) => Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '• ',
+                    style: TextStyle(color: KColors.amber, fontSize: 13),
+                  ),
+                  Expanded(
+                    child: Text(
+                      item,
+                      style: TextStyle(color: KColors.textDim, fontSize: 13),
                     ),
-                  ],
-                ),
-              ))
+                  ),
+                ],
+              ),
+            ),
+          )
           .toList(),
     );
   }
@@ -1344,7 +1448,10 @@ class _ProgrammeWorkbookTabState extends State<_ProgrammeWorkbookTab> {
 
   Future<void> _export() async {
     final isProgramme = context.read<ProjectProvider>().isProgramme;
-    setState(() { _exporting = true; _error = null; });
+    setState(() {
+      _exporting = true;
+      _error = null;
+    });
     try {
       await ProgrammeWorkbookExporter.export(
         db: widget.db,
@@ -1354,9 +1461,14 @@ class _ProgrammeWorkbookTabState extends State<_ProgrammeWorkbookTab> {
         includeClosed: _includeClosed,
       );
     } catch (e) {
-      setState(() { _error = e.toString(); });
+      setState(() {
+        _error = e.toString();
+      });
     } finally {
-      if (mounted) setState(() { _exporting = false; });
+      if (mounted)
+        setState(() {
+          _exporting = false;
+        });
     }
   }
 
@@ -1369,8 +1481,10 @@ class _ProgrammeWorkbookTabState extends State<_ProgrammeWorkbookTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('$kind Workbook',
-              style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            '$kind Workbook',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 8),
           Text(
             'Exports a multi-sheet Excel workbook — styled for Excel '
@@ -1380,7 +1494,7 @@ class _ProgrammeWorkbookTabState extends State<_ProgrammeWorkbookTab> {
             '  • Stakeholder Map\n'
             '  • Scope & Prioritisation\n'
             '  • RAID Log (open items; closed in a trailing band if ticked)',
-            style: const TextStyle(color: KColors.textDim, fontSize: 13),
+            style: TextStyle(color: KColors.textDim, fontSize: 13),
           ),
           const SizedBox(height: 12),
           _IncludeClosedCheckbox(
@@ -1397,9 +1511,9 @@ class _ProgrammeWorkbookTabState extends State<_ProgrammeWorkbookTab> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.table_chart_outlined, size: 18),
-            label: Text(_exporting
-                ? 'Exporting…'
-                : 'Export $kind Workbook (.xlsx)'),
+            label: Text(
+              _exporting ? 'Exporting…' : 'Export $kind Workbook (.xlsx)',
+            ),
           ),
           if (_error != null) ...[
             const SizedBox(height: 16),
@@ -1410,8 +1524,10 @@ class _ProgrammeWorkbookTabState extends State<_ProgrammeWorkbookTab> {
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(color: KColors.red),
               ),
-              child: Text(_error!,
-                  style: const TextStyle(color: KColors.red, fontSize: 12)),
+              child: Text(
+                _error!,
+                style: TextStyle(color: KColors.red, fontSize: 12),
+              ),
             ),
           ],
         ],
@@ -1434,17 +1550,24 @@ class _IncludeClosedCheckbox extends StatelessWidget {
       borderRadius: BorderRadius.circular(3),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 2),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          SizedBox(
-            width: 18,
-            height: 18,
-            child: Checkbox(
-                value: value, onChanged: (v) => onChanged(v ?? false)),
-          ),
-          const SizedBox(width: 8),
-          const Text('Include closed items (audit trail section at the end)',
-              style: TextStyle(color: KColors.text, fontSize: 12)),
-        ]),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 18,
+              height: 18,
+              child: Checkbox(
+                value: value,
+                onChanged: (v) => onChanged(v ?? false),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Include closed items (audit trail section at the end)',
+              style: TextStyle(color: KColors.text, fontSize: 12),
+            ),
+          ],
+        ),
       ),
     );
   }

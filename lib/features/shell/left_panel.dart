@@ -66,77 +66,91 @@ class LeftPanel extends StatelessWidget {
       color: KColors.surface,
       child: LayoutBuilder(
         builder: (context, constraints) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // My Day rides above the project pulse and survives project
-          // switches — the user's day is global. It gets the lion's share
-          // of the panel (up to ~half) so the WHOLE day reads at a
-          // glance; the pulse below is deliberately condensed.
-          ConstrainedBox(
-            constraints:
-                BoxConstraints(maxHeight: constraints.maxHeight * 0.52),
-            child: _MyDaySection(db: db, onOpen: onNavigateToHelm),
-          ),
-          Expanded(
-            child: projectId == null
-                ? _NoProjectPlaceholder()
-                : SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _SectionHeader(
-                          label: 'Top Risks',
-                          icon: Icons.shield,
-                        ),
-                        _TopRisksSection(
-                          projectId: projectId,
-                          db: db,
-                          onTap: onNavigateToRaid,
-                          onOpenItem: onOpenRisk,
-                        ),
-                        _SectionHeader(
-                          label: 'Pending Decisions',
-                          icon: Icons.gavel,
-                        ),
-                        _TopDecisionsSection(
-                          projectId: projectId,
-                          db: db,
-                          onTap: onNavigateToDecisions,
-                          onOpenItem: onOpenDecision,
-                        ),
-                        _SectionHeader(
-                          label: 'Overdue Actions',
-                          icon: Icons.check_circle,
-                        ),
-                        _TopActionsSection(
-                          projectId: projectId,
-                          db: db,
-                          onTap: onNavigateToActions,
-                          onOpenItem: onOpenAction,
-                        ),
-                        _SectionHeader(label: 'Recent Journal', icon: Icons.menu_book_outlined),
-                        _RecentJournalSection(
-                          projectId: projectId,
-                          db: db,
-                          onTap: onNavigateToJournal,
-                          onOpenItem: onOpenJournal,
-                        ),
-                        _SectionHeader(label: 'Playbook Stage', icon: Icons.account_tree_outlined),
-                        _PlaybookStageSection(
-                          projectId: projectId,
-                          db: db,
-                          onTap: onNavigateToPlaybook,
-                          onOpenStage: onOpenPlaybookStage,
-                        ),
-                        _ProgrammeGapsSection(projectId: projectId, db: db, onTap: onNavigateToProgramme),
-                        _UpcomingDeadlinesSection(projectId: projectId, db: db),
-                        const SizedBox(height: 8),
-                      ],
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // My Day rides above the project pulse and survives project
+            // switches — the user's day is global. It gets the lion's share
+            // of the panel (up to ~half) so the WHOLE day reads at a
+            // glance; the pulse below is deliberately condensed.
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: constraints.maxHeight * 0.52,
+              ),
+              child: _MyDaySection(db: db, onOpen: onNavigateToHelm),
+            ),
+            Expanded(
+              child: projectId == null
+                  ? _NoProjectPlaceholder()
+                  : SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _SectionHeader(
+                            label: 'Top Risks',
+                            icon: Icons.shield,
+                          ),
+                          _TopRisksSection(
+                            projectId: projectId,
+                            db: db,
+                            onTap: onNavigateToRaid,
+                            onOpenItem: onOpenRisk,
+                          ),
+                          _SectionHeader(
+                            label: 'Pending Decisions',
+                            icon: Icons.gavel,
+                          ),
+                          _TopDecisionsSection(
+                            projectId: projectId,
+                            db: db,
+                            onTap: onNavigateToDecisions,
+                            onOpenItem: onOpenDecision,
+                          ),
+                          _SectionHeader(
+                            label: 'Overdue Actions',
+                            icon: Icons.check_circle,
+                          ),
+                          _TopActionsSection(
+                            projectId: projectId,
+                            db: db,
+                            onTap: onNavigateToActions,
+                            onOpenItem: onOpenAction,
+                          ),
+                          _SectionHeader(
+                            label: 'Recent Journal',
+                            icon: Icons.menu_book_outlined,
+                          ),
+                          _RecentJournalSection(
+                            projectId: projectId,
+                            db: db,
+                            onTap: onNavigateToJournal,
+                            onOpenItem: onOpenJournal,
+                          ),
+                          _SectionHeader(
+                            label: 'Playbook Stage',
+                            icon: Icons.account_tree_outlined,
+                          ),
+                          _PlaybookStageSection(
+                            projectId: projectId,
+                            db: db,
+                            onTap: onNavigateToPlaybook,
+                            onOpenStage: onOpenPlaybookStage,
+                          ),
+                          _ProgrammeGapsSection(
+                            projectId: projectId,
+                            db: db,
+                            onTap: onNavigateToProgramme,
+                          ),
+                          _UpcomingDeadlinesSection(
+                            projectId: projectId,
+                            db: db,
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                      ),
                     ),
-                  ),
-          ),
-          const StandardUpdateNotice(),
-        ],
+            ),
+            const StandardUpdateNotice(),
+          ],
         ),
       ),
     );
@@ -176,8 +190,7 @@ class _MyDaySectionState extends State<_MyDaySection> {
   @override
   void initState() {
     super.initState();
-    _clock = Timer.periodic(
-        const Duration(minutes: 1), (_) => setState(() {}));
+    _clock = Timer.periodic(const Duration(minutes: 1), (_) => setState(() {}));
   }
 
   @override
@@ -214,7 +227,8 @@ class _MyDaySectionState extends State<_MyDaySection> {
   Stream<WeekPlan?> _weekStreamForToday() {
     final now = DateTime.now();
     final monday = mondayOf(now);
-    final mondayIso = '${monday.year.toString().padLeft(4, '0')}-'
+    final mondayIso =
+        '${monday.year.toString().padLeft(4, '0')}-'
         '${monday.month.toString().padLeft(2, '0')}-'
         '${monday.day.toString().padLeft(2, '0')}';
     if (_weekStreamMonday != mondayIso) {
@@ -227,7 +241,7 @@ class _MyDaySectionState extends State<_MyDaySection> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: KColors.surface2,
         border: Border(
           left: BorderSide(color: KColors.amber, width: 2),
@@ -244,8 +258,7 @@ class _MyDaySectionState extends State<_MyDaySection> {
               padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
               child: Row(
                 children: [
-                  const Icon(Icons.explore_outlined,
-                      size: 13, color: KColors.amber),
+                  Icon(Icons.explore_outlined, size: 13, color: KColors.amber),
                   const SizedBox(width: 6),
                   Text(
                     'MY DAY',
@@ -257,8 +270,7 @@ class _MyDaySectionState extends State<_MyDaySection> {
                     ),
                   ),
                   const Spacer(),
-                  const Icon(Icons.chevron_right,
-                      size: 14, color: KColors.textMuted),
+                  Icon(Icons.chevron_right, size: 14, color: KColors.textMuted),
                 ],
               ),
             ),
@@ -270,17 +282,17 @@ class _MyDaySectionState extends State<_MyDaySection> {
               final plan = weekSnap.data;
               if (plan == null) return const SizedBox.shrink();
               final mission = parseDayMissions(
-                  plan.dayMissionsJson)[DateTime.now().weekday - 1];
+                plan.dayMissionsJson,
+              )[DateTime.now().weekday - 1];
               if (mission == null) return const SizedBox.shrink();
               return Padding(
                 padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.only(top: 1),
-                      child: Icon(Icons.flag,
-                          size: 11, color: KColors.amber),
+                      child: Icon(Icons.flag, size: 11, color: KColors.amber),
                     ),
                     const SizedBox(width: 5),
                     Expanded(
@@ -288,7 +300,7 @@ class _MyDaySectionState extends State<_MyDaySection> {
                         mission,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: KColors.textDim,
                           fontSize: 11,
                           fontStyle: FontStyle.italic,
@@ -312,16 +324,14 @@ class _MyDaySectionState extends State<_MyDaySection> {
                   stream: _blocksStreamFor(plan.id),
                   builder: (context, blockSnap) {
                     final blocks = blockSnap.data ?? const [];
-                    final starts =
-                        parseRevisionStarts(plan.revisionStartsJson);
+                    final starts = parseRevisionStarts(plan.revisionStartsJson);
                     final now = DateTime.now();
                     final nowMin = now.hour * 60 + now.minute;
                     // The WHOLE effective day, not just what's next —
                     // past blocks stay visible (dimmed) so the plan
                     // reads at a glance; scrolls when the day is packed.
                     final schedule = effectiveSchedule(blocks, starts);
-                    final home =
-                        imminentHomeBlock(blocks, starts, nowMin);
+                    final home = imminentHomeBlock(blocks, starts, nowMin);
                     if (schedule.isEmpty) {
                       return _myDayNote('No blocks yet — chart your day.');
                     }
@@ -337,13 +347,13 @@ class _MyDaySectionState extends State<_MyDaySection> {
                             child: SingleChildScrollView(
                               padding: const EdgeInsets.only(bottom: 8),
                               child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   for (final b in schedule)
                                     _MyDayRow(
                                       block: b,
-                                      isNow: b.startMinute <= nowMin &&
+                                      isNow:
+                                          b.startMinute <= nowMin &&
                                           nowMin < b.endMinute,
                                       isPast: b.endMinute <= nowMin,
                                     ),
@@ -371,7 +381,7 @@ class _MyDaySectionState extends State<_MyDaySection> {
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
         child: Text(
           text,
-          style: const TextStyle(color: KColors.textDim, fontSize: 11),
+          style: TextStyle(color: KColors.textDim, fontSize: 11),
         ),
       ),
     );
@@ -397,8 +407,8 @@ class _HomeCountdown extends StatelessWidget {
     final headline = started
         ? 'GO NOW'
         : minutesLeft >= 60
-            ? 'LEAVE IN 1H'
-            : 'LEAVE IN ${minutesLeft}M';
+        ? 'LEAVE IN 1H'
+        : 'LEAVE IN ${minutesLeft}M';
 
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 2, 12, 6),
@@ -429,8 +439,7 @@ class _HomeCountdown extends StatelessWidget {
                   '${formatMinute(block.startMinute)} · ${block.label}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style:
-                      const TextStyle(color: KColors.text, fontSize: 11),
+                  style: TextStyle(color: KColors.text, fontSize: 11),
                 ),
               ],
             ),
@@ -457,12 +466,10 @@ class _MyDayRow extends StatelessWidget {
     final labelColor = isNow
         ? KColors.text
         : isPast
-            ? KColors.textMuted
-            : KColors.textDim;
+        ? KColors.textMuted
+        : KColors.textDim;
     return Container(
-      color: isNow
-          ? KColors.amber.withValues(alpha: 0.08)
-          : Colors.transparent,
+      color: isNow ? KColors.amber.withValues(alpha: 0.08) : Colors.transparent,
       padding: const EdgeInsets.fromLTRB(12, 3, 12, 3),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -497,8 +504,7 @@ class _MyDayRow extends StatelessWidget {
                 fontWeight: isNow ? FontWeight.w600 : FontWeight.w400,
                 // Strikethrough means DONE — a past block left unticked
                 // stays legible; it's tomorrow's carry-over signal.
-                decoration:
-                    block.done ? TextDecoration.lineThrough : null,
+                decoration: block.done ? TextDecoration.lineThrough : null,
                 decorationColor: KColors.textMuted,
               ),
             ),
@@ -506,8 +512,7 @@ class _MyDayRow extends StatelessWidget {
           if (isNow)
             Container(
               margin: const EdgeInsets.only(left: 4),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
               decoration: BoxDecoration(
                 color: KColors.amber,
                 borderRadius: BorderRadius.circular(2),
@@ -545,7 +550,7 @@ class _SectionHeader extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             label.toUpperCase(),
-            style: const TextStyle(
+            style: TextStyle(
               color: KColors.textDim,
               fontSize: 10,
               fontWeight: FontWeight.w600,
@@ -566,11 +571,12 @@ class _TopRisksSection extends StatelessWidget {
   final VoidCallback? onTap;
   final void Function(Risk)? onOpenItem;
 
-  const _TopRisksSection(
-      {required this.projectId,
-      required this.db,
-      this.onTap,
-      this.onOpenItem});
+  const _TopRisksSection({
+    required this.projectId,
+    required this.db,
+    this.onTap,
+    this.onOpenItem,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -586,22 +592,23 @@ class _TopRisksSection extends StatelessWidget {
         }
         return Column(
           children: risks
-              .map((r) => _PulseItem(
-                    label: '${r.steerco ? '▲ ' : ''}'
-                        '${r.ref != null ? '[${r.ref}] ' : ''}'
-                        '${r.title ?? r.description}',
-                    barColor: _riskBarColor(r.likelihood, r.impact),
-                    trailing: RAGBadge(
-                      rag: _riskRag(r.likelihood, r.impact),
-                      showLabel: false,
-                    ),
-                    // Prefer the item-aware opener so the click navigates
-                    // *and* opens the risk dialog; fall back to the
-                    // section-level navigation if not wired.
-                    onTap: onOpenItem != null
-                        ? () => onOpenItem!(r)
-                        : onTap,
-                  ))
+              .map(
+                (r) => _PulseItem(
+                  label:
+                      '${r.steerco ? '▲ ' : ''}'
+                      '${r.ref != null ? '[${r.ref}] ' : ''}'
+                      '${r.title ?? r.description}',
+                  barColor: _riskBarColor(r.likelihood, r.impact),
+                  trailing: RAGBadge(
+                    rag: _riskRag(r.likelihood, r.impact),
+                    showLabel: false,
+                  ),
+                  // Prefer the item-aware opener so the click navigates
+                  // *and* opens the risk dialog; fall back to the
+                  // section-level navigation if not wired.
+                  onTap: onOpenItem != null ? () => onOpenItem!(r) : onTap,
+                ),
+              )
               .toList(),
         );
       },
@@ -621,7 +628,6 @@ class _TopRisksSection extends StatelessWidget {
         'medium' => 'amber',
         _ => 'green',
       };
-
 }
 
 // ---- Top Decisions ----
@@ -632,11 +638,12 @@ class _TopDecisionsSection extends StatelessWidget {
   final VoidCallback? onTap;
   final void Function(Decision)? onOpenItem;
 
-  const _TopDecisionsSection(
-      {required this.projectId,
-      required this.db,
-      this.onTap,
-      this.onOpenItem});
+  const _TopDecisionsSection({
+    required this.projectId,
+    required this.db,
+    this.onTap,
+    this.onOpenItem,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -650,16 +657,16 @@ class _TopDecisionsSection extends StatelessWidget {
         }
         return Column(
           children: decisions
-              .map((d) => _PulseItem(
-                    label: d.ref != null
-                        ? '[${d.ref}] ${d.description}'
-                        : d.description,
-                    barColor: KColors.blue,
-                    trailing: StatusChip(status: d.status),
-                    onTap: onOpenItem != null
-                        ? () => onOpenItem!(d)
-                        : onTap,
-                  ))
+              .map(
+                (d) => _PulseItem(
+                  label: d.ref != null
+                      ? '[${d.ref}] ${d.description}'
+                      : d.description,
+                  barColor: KColors.blue,
+                  trailing: StatusChip(status: d.status),
+                  onTap: onOpenItem != null ? () => onOpenItem!(d) : onTap,
+                ),
+              )
               .toList(),
         );
       },
@@ -675,11 +682,12 @@ class _TopActionsSection extends StatelessWidget {
   final VoidCallback? onTap;
   final void Function(ProjectAction)? onOpenItem;
 
-  const _TopActionsSection(
-      {required this.projectId,
-      required this.db,
-      this.onTap,
-      this.onOpenItem});
+  const _TopActionsSection({
+    required this.projectId,
+    required this.db,
+    this.onTap,
+    this.onOpenItem,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -693,24 +701,21 @@ class _TopActionsSection extends StatelessWidget {
         }
         return Column(
           children: actions
-              .map((a) => _PulseItem(
-                    label: a.ref != null
-                        ? '[${a.ref}] ${a.description}'
-                        : a.description,
-                    barColor: KColors.red,
-                    trailing: a.dueDate != null
-                        ? Text(
-                            du.formatDate(a.dueDate),
-                            style: const TextStyle(
-                              color: KColors.red,
-                              fontSize: 11,
-                            ),
-                          )
-                        : null,
-                    onTap: onOpenItem != null
-                        ? () => onOpenItem!(a)
-                        : onTap,
-                  ))
+              .map(
+                (a) => _PulseItem(
+                  label: a.ref != null
+                      ? '[${a.ref}] ${a.description}'
+                      : a.description,
+                  barColor: KColors.red,
+                  trailing: a.dueDate != null
+                      ? Text(
+                          du.formatDate(a.dueDate),
+                          style: TextStyle(color: KColors.red, fontSize: 11),
+                        )
+                      : null,
+                  onTap: onOpenItem != null ? () => onOpenItem!(a) : onTap,
+                ),
+              )
               .toList(),
         );
       },
@@ -740,10 +745,8 @@ class _PulseItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        decoration: const BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: KColors.border, width: 1),
-          ),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: KColors.border, width: 1)),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Row(
@@ -758,18 +761,12 @@ class _PulseItem extends StatelessWidget {
             Expanded(
               child: Text(
                 label,
-                style: const TextStyle(
-                  color: KColors.text,
-                  fontSize: 11,
-                ),
+                style: TextStyle(color: KColors.text, fontSize: 11),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            if (trailing != null) ...[
-              const SizedBox(width: 6),
-              trailing!,
-            ],
+            if (trailing != null) ...[const SizedBox(width: 6), trailing!],
           ],
         ),
       ),
@@ -804,7 +801,7 @@ class _PulseEmpty extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 14),
       child: Text(
         message,
-        style: const TextStyle(color: KColors.textMuted, fontSize: 12),
+        style: TextStyle(color: KColors.textMuted, fontSize: 12),
       ),
     );
   }
@@ -813,7 +810,7 @@ class _PulseEmpty extends StatelessWidget {
 class _NoProjectPlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Padding(
         padding: EdgeInsets.all(24),
         child: Text(
@@ -845,19 +842,27 @@ class _RecentJournalSection extends StatelessWidget {
       builder: (context, snap) {
         if (!snap.hasData) return const _PulseLoading();
         final entries = snap.data!;
-        if (entries.isEmpty) return const _PulseEmpty(message: 'No journal entries');
+        if (entries.isEmpty)
+          return const _PulseEmpty(message: 'No journal entries');
         return Column(
           children: entries.map((e) {
             final title = e.title?.isNotEmpty == true
                 ? e.title!
-                : e.body.split('\n').firstWhere((l) => l.trim().isNotEmpty, orElse: () => 'Entry');
+                : e.body
+                      .split('\n')
+                      .firstWhere(
+                        (l) => l.trim().isNotEmpty,
+                        orElse: () => 'Entry',
+                      );
             final cleaned = title.replaceAll(RegExp(r'^#+\s*'), '').trim();
             return _PulseItem(
               label: cleaned.isEmpty ? 'Journal entry' : cleaned,
-              barColor: e.confirmedAt != null ? KColors.phosphor : KColors.amber,
+              barColor: e.confirmedAt != null
+                  ? KColors.phosphor
+                  : KColors.amber,
               trailing: Text(
                 _fmt(e.entryDate),
-                style: const TextStyle(color: KColors.textDim, fontSize: 10),
+                style: TextStyle(color: KColors.textDim, fontSize: 10),
               ),
               onTap: onOpenItem != null ? () => onOpenItem!(e) : onTap,
             );
@@ -870,9 +875,24 @@ class _RecentJournalSection extends StatelessWidget {
   String _fmt(String iso) {
     try {
       final dt = DateTime.parse(iso);
-      const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      return '${dt.day} ${m[dt.month-1]}';
-    } catch (_) { return iso; }
+      const m = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
+      return '${dt.day} ${m[dt.month - 1]}';
+    } catch (_) {
+      return iso;
+    }
   }
 }
 
@@ -970,12 +990,12 @@ class _PlaybookStageSection extends StatelessWidget {
   }
 
   static String _statusLabel(String s) => switch (s) {
-        'in_progress' => 'In progress',
-        'blocked' => 'Blocked',
-        'pending_approval' => 'Pending approval',
-        'complete' => 'Complete',
-        _ => 'Not started',
-      };
+    'in_progress' => 'In progress',
+    'blocked' => 'Blocked',
+    'pending_approval' => 'Pending approval',
+    'complete' => 'Complete',
+    _ => 'Not started',
+  };
 
   static int _checkedCount(String? json) {
     if (json == null) return 0;
@@ -1005,10 +1025,7 @@ class _UpcomingDeadlinesSection extends StatelessWidget {
   final String projectId;
   final AppDatabase db;
 
-  const _UpcomingDeadlinesSection({
-    required this.projectId,
-    required this.db,
-  });
+  const _UpcomingDeadlinesSection({required this.projectId, required this.db});
 
   @override
   Widget build(BuildContext context) {
@@ -1022,12 +1039,14 @@ class _UpcomingDeadlinesSection extends StatelessWidget {
         final in30Str = in30Days.toIso8601String().substring(0, 10);
 
         final upcoming = snap.data!
-            .where((ms) =>
-                ms.isHardDeadline &&
-                ms.status != 'achieved' &&
-                ms.date.isNotEmpty &&
-                ms.date.compareTo(todayStr) >= 0 &&
-                ms.date.compareTo(in30Str) <= 0)
+            .where(
+              (ms) =>
+                  ms.isHardDeadline &&
+                  ms.status != 'achieved' &&
+                  ms.date.isNotEmpty &&
+                  ms.date.compareTo(todayStr) >= 0 &&
+                  ms.date.compareTo(in30Str) <= 0,
+            )
             .take(2)
             .toList();
 
@@ -1037,17 +1056,19 @@ class _UpcomingDeadlinesSection extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _SectionHeader(
-                label: 'Upcoming Deadlines',
-                icon: Icons.diamond_outlined),
-            ...upcoming.map((ms) => _PulseItem(
-                  label: ms.name,
-                  barColor: KColors.red,
-                  trailing: Text(
-                    ms.date,
-                    style: const TextStyle(
-                        color: KColors.red, fontSize: 10),
-                  ),
-                )),
+              label: 'Upcoming Deadlines',
+              icon: Icons.diamond_outlined,
+            ),
+            ...upcoming.map(
+              (ms) => _PulseItem(
+                label: ms.name,
+                barColor: KColors.red,
+                trailing: Text(
+                  ms.date,
+                  style: TextStyle(color: KColors.red, fontSize: 10),
+                ),
+              ),
+            ),
           ],
         );
       },
@@ -1082,28 +1103,34 @@ class _ProgrammeGapsSection extends StatelessWidget {
             final teamRoles = trSnap.data ?? [];
 
             final sponsorFilled = stakeholderRoles
-                .where((r) =>
-                    r.roleName == 'Programme Sponsor' &&
-                    r.isApplicable &&
-                    r.personId != null)
+                .where(
+                  (r) =>
+                      r.roleName == 'Programme Sponsor' &&
+                      r.isApplicable &&
+                      r.personId != null,
+                )
                 .isNotEmpty;
 
             final changeMgrFilled = teamRoles
-                .where((r) =>
-                    r.roleName == 'Change Manager' &&
-                    r.isApplicable &&
-                    r.personId != null)
+                .where(
+                  (r) =>
+                      r.roleName == 'Change Manager' &&
+                      r.isApplicable &&
+                      r.personId != null,
+                )
                 .isNotEmpty;
 
             final gaps = <String>[];
             if (!sponsorFilled &&
-                stakeholderRoles.any((r) =>
-                    r.roleName == 'Programme Sponsor' && r.isApplicable)) {
+                stakeholderRoles.any(
+                  (r) => r.roleName == 'Programme Sponsor' && r.isApplicable,
+                )) {
               gaps.add('Programme Sponsor');
             }
             if (!changeMgrFilled &&
-                teamRoles.any((r) =>
-                    r.roleName == 'Change Manager' && r.isApplicable)) {
+                teamRoles.any(
+                  (r) => r.roleName == 'Change Manager' && r.isApplicable,
+                )) {
               gaps.add('Change Manager');
             }
 
@@ -1113,14 +1140,21 @@ class _ProgrammeGapsSection extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _SectionHeader(
-                    label: 'Programme Gaps', icon: Icons.warning_amber_rounded),
-                ...gaps.map((g) => _PulseItem(
-                      label: 'No $g assigned',
-                      barColor: KColors.amber,
-                      trailing: const Icon(Icons.warning_amber_rounded,
-                          size: 12, color: KColors.amber),
-                      onTap: onTap,
-                    )),
+                  label: 'Programme Gaps',
+                  icon: Icons.warning_amber_rounded,
+                ),
+                ...gaps.map(
+                  (g) => _PulseItem(
+                    label: 'No $g assigned',
+                    barColor: KColors.amber,
+                    trailing: Icon(
+                      Icons.warning_amber_rounded,
+                      size: 12,
+                      color: KColors.amber,
+                    ),
+                    onTap: onTap,
+                  ),
+                ),
               ],
             );
           },

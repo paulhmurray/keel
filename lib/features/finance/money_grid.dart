@@ -26,19 +26,24 @@ class MoneyCell {
   });
 }
 
-typedef MoneyCommit = Future<void> Function({
-  required MoneyCell? existing,
-  required String categoryId,
-  required String? workstreamId,
-  required String columnKey,
-  required int amountMinor,
-});
+typedef MoneyCommit =
+    Future<void> Function({
+      required MoneyCell? existing,
+      required String categoryId,
+      required String? workstreamId,
+      required String columnKey,
+      required int amountMinor,
+    });
 
 typedef MoneyDelete = Future<void> Function(List<MoneyCell> cells);
 
-typedef MoneyDetail = Future<void> Function(
-    String categoryId, String? workstreamId, String columnKey,
-    MoneyCell? cell);
+typedef MoneyDetail =
+    Future<void> Function(
+      String categoryId,
+      String? workstreamId,
+      String columnKey,
+      MoneyCell? cell,
+    );
 
 /// The Excel-feel finance grid. Rows are category × optional-workstream;
 /// columns are arbitrary keys (financial years for budget/forecast,
@@ -134,8 +139,7 @@ class _MoneyGridState extends State<MoneyGrid> {
         final cols = <String>{
           for (final c in cells) c.columnKey,
           ..._pendingCols,
-        }.toList()
-          ..sort();
+        }.toList()..sort();
         if (cols.isEmpty) cols.add(widget.defaultColumnKey);
 
         // Rows grouped per category: no-workstream row first, then
@@ -181,45 +185,53 @@ class _MoneyGridState extends State<MoneyGrid> {
         // Fill the width the surrounding panels get: fixed data columns,
         // label column absorbs any surplus. Falls back to horizontal
         // scrolling when the columns genuinely overflow.
-        return LayoutBuilder(builder: (context, constraints) {
-          final fixedW = cols.length * _colW + _totalW + _trailW;
-          final availW = constraints.maxWidth - 2; // container border
-          final labelW = (availW - fixedW) > _labelMinW
-              ? availW - fixedW
-              : _labelMinW;
-          final gridW = labelW + fixedW;
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final fixedW = cols.length * _colW + _totalW + _trailW;
+            final availW = constraints.maxWidth - 2; // container border
+            final labelW = (availW - fixedW) > _labelMinW
+                ? availW - fixedW
+                : _labelMinW;
+            final gridW = labelW + fixedW;
 
-          return SingleChildScrollView(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: KColors.surface,
-                  border: Border.all(color: KColors.border),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: SizedBox(
-                  width: gridW,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _headerRow(cols, labelW),
-                      for (final cat in widget.categories)
-                        if ((rowKeysByCat[cat.id]?.isNotEmpty ?? false) ||
-                            !widget.readOnly) ...[
-                          _categoryHeaderRow(cat, cols, byCat, labelW),
-                          for (final rk in rowKeysByCat[cat.id] ?? const [])
-                            _dataRow(rk, cat, cols, cellsByKey, flatRows,
-                                labelW),
-                        ],
-                      _totalsRow(cols, byCol, grandTotal, labelW),
-                    ],
+            return SingleChildScrollView(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: KColors.surface,
+                    border: Border.all(color: KColors.border),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: SizedBox(
+                    width: gridW,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _headerRow(cols, labelW),
+                        for (final cat in widget.categories)
+                          if ((rowKeysByCat[cat.id]?.isNotEmpty ?? false) ||
+                              !widget.readOnly) ...[
+                            _categoryHeaderRow(cat, cols, byCat, labelW),
+                            for (final rk in rowKeysByCat[cat.id] ?? const [])
+                              _dataRow(
+                                rk,
+                                cat,
+                                cols,
+                                cellsByKey,
+                                flatRows,
+                                labelW,
+                              ),
+                          ],
+                        _totalsRow(cols, byCol, grandTotal, labelW),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          );
-        });
+            );
+          },
+        );
       },
     );
   }
@@ -228,7 +240,7 @@ class _MoneyGridState extends State<MoneyGrid> {
 
   Widget _headerRow(List<String> cols, double labelW) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: KColors.border)),
       ),
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -238,23 +250,29 @@ class _MoneyGridState extends State<MoneyGrid> {
           for (final col in cols)
             SizedBox(
               width: _colW,
-              child: Text(col,
-                  textAlign: TextAlign.right,
-                  style: const TextStyle(
-                      color: KColors.textDim,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.4)),
-            ),
-          const SizedBox(
-            width: _totalW,
-            child: Text('TOTAL',
+              child: Text(
+                col,
                 textAlign: TextAlign.right,
                 style: TextStyle(
-                    color: KColors.textDim,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.4)),
+                  color: KColors.textDim,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.4,
+                ),
+              ),
+            ),
+          SizedBox(
+            width: _totalW,
+            child: Text(
+              'TOTAL',
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                color: KColors.textDim,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.4,
+              ),
+            ),
           ),
           SizedBox(
             width: _trailW,
@@ -264,8 +282,11 @@ class _MoneyGridState extends State<MoneyGrid> {
                     message: 'Add ${widget.columnNoun.toLowerCase()} column',
                     child: InkWell(
                       onTap: _addColumn,
-                      child: const Icon(Icons.add,
-                          size: 14, color: KColors.textMuted),
+                      child: Icon(
+                        Icons.add,
+                        size: 14,
+                        color: KColors.textMuted,
+                      ),
                     ),
                   ),
           ),
@@ -274,8 +295,12 @@ class _MoneyGridState extends State<MoneyGrid> {
     );
   }
 
-  Widget _categoryHeaderRow(CostCategory cat, List<String> cols,
-      Map<String, int> byCat, double labelW) {
+  Widget _categoryHeaderRow(
+    CostCategory cat,
+    List<String> cols,
+    Map<String, int> byCat,
+    double labelW,
+  ) {
     return Container(
       color: KColors.surface2,
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -287,20 +312,26 @@ class _MoneyGridState extends State<MoneyGrid> {
               padding: const EdgeInsets.only(left: 12),
               child: Row(
                 children: [
-                  Text(cat.name.toUpperCase(),
-                      style: const TextStyle(
-                          color: KColors.textDim,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5)),
+                  Text(
+                    cat.name.toUpperCase(),
+                    style: TextStyle(
+                      color: KColors.textDim,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
                   if (!widget.readOnly) ...[
                     const SizedBox(width: 6),
                     Tooltip(
                       message: 'Add row',
                       child: InkWell(
                         onTap: () => _addRow(cat),
-                        child: const Icon(Icons.add_circle_outline,
-                            size: 13, color: KColors.textMuted),
+                        child: Icon(
+                          Icons.add_circle_outline,
+                          size: 13,
+                          color: KColors.textMuted,
+                        ),
                       ),
                     ),
                   ],
@@ -314,13 +345,13 @@ class _MoneyGridState extends State<MoneyGrid> {
             child: Padding(
               padding: const EdgeInsets.only(right: 8),
               child: Text(
-                Money.formatMinorCompact(
-                    byCat[cat.id] ?? 0, widget.currency),
+                Money.formatMinorCompact(byCat[cat.id] ?? 0, widget.currency),
                 textAlign: TextAlign.right,
-                style: const TextStyle(
-                    color: KColors.text,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: KColors.text,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
@@ -330,17 +361,22 @@ class _MoneyGridState extends State<MoneyGrid> {
     );
   }
 
-  Widget _dataRow(String rowKey, CostCategory cat, List<String> cols,
-      Map<String, List<MoneyCell>> cellsByKey, List<String> flatRows,
-      double labelW) {
+  Widget _dataRow(
+    String rowKey,
+    CostCategory cat,
+    List<String> cols,
+    Map<String, List<MoneyCell>> cellsByKey,
+    List<String> flatRows,
+    double labelW,
+  ) {
     final wsId = rowKey.split('|').last;
     final wsName = wsId.isEmpty
         ? null
         : widget.workPackages
-                .where((wp) => wp.id == wsId)
-                .map((wp) => wp.name)
-                .firstOrNull ??
-            'Unknown workstream';
+                  .where((wp) => wp.id == wsId)
+                  .map((wp) => wp.name)
+                  .firstOrNull ??
+              'Unknown workstream';
     var rowTotal = 0;
     for (final col in cols) {
       for (final c in cellsByKey['$rowKey|$col'] ?? const <MoneyCell>[]) {
@@ -349,9 +385,8 @@ class _MoneyGridState extends State<MoneyGrid> {
     }
 
     return Container(
-      decoration: const BoxDecoration(
-        border:
-            Border(bottom: BorderSide(color: KColors.border, width: 0.5)),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: KColors.border, width: 0.5)),
       ),
       child: Row(
         children: [
@@ -360,28 +395,42 @@ class _MoneyGridState extends State<MoneyGrid> {
             child: Padding(
               padding: const EdgeInsets.only(left: 24),
               child: wsName == null
-                  ? const Text('General',
-                      style:
-                          TextStyle(color: KColors.textMuted, fontSize: 11))
+                  ? Text(
+                      'General',
+                      style: TextStyle(color: KColors.textMuted, fontSize: 11),
+                    )
                   : Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.table_chart_outlined,
-                            size: 11, color: KColors.textDim),
+                        Icon(
+                          Icons.table_chart_outlined,
+                          size: 11,
+                          color: KColors.textDim,
+                        ),
                         const SizedBox(width: 4),
                         Flexible(
-                          child: Text(wsName,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                  color: KColors.textDim, fontSize: 11)),
+                          child: Text(
+                            wsName,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: KColors.textDim,
+                              fontSize: 11,
+                            ),
+                          ),
                         ),
                       ],
                     ),
             ),
           ),
           for (final col in cols)
-            _cell(rowKey, cat, col,
-                cellsByKey['$rowKey|$col'] ?? const [], cols, flatRows),
+            _cell(
+              rowKey,
+              cat,
+              col,
+              cellsByKey['$rowKey|$col'] ?? const [],
+              cols,
+              flatRows,
+            ),
           SizedBox(
             width: _totalW,
             child: Padding(
@@ -391,7 +440,7 @@ class _MoneyGridState extends State<MoneyGrid> {
                     ? '—'
                     : Money.formatMinorCompact(rowTotal, widget.currency),
                 textAlign: TextAlign.right,
-                style: const TextStyle(color: KColors.text, fontSize: 12),
+                style: TextStyle(color: KColors.text, fontSize: 12),
               ),
             ),
           ),
@@ -403,8 +452,11 @@ class _MoneyGridState extends State<MoneyGrid> {
                     message: 'Delete row',
                     child: InkWell(
                       onTap: () => _deleteRow(rowKey, cols, cellsByKey),
-                      child: const Icon(Icons.close,
-                          size: 12, color: KColors.textMuted),
+                      child: Icon(
+                        Icons.close,
+                        size: 12,
+                        color: KColors.textMuted,
+                      ),
                     ),
                   ),
           ),
@@ -413,10 +465,14 @@ class _MoneyGridState extends State<MoneyGrid> {
     );
   }
 
-  Widget _totalsRow(List<String> cols, Map<String, int> byCol,
-      int grandTotal, double labelW) {
+  Widget _totalsRow(
+    List<String> cols,
+    Map<String, int> byCol,
+    int grandTotal,
+    double labelW,
+  ) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(top: BorderSide(color: KColors.border)),
       ),
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -424,14 +480,17 @@ class _MoneyGridState extends State<MoneyGrid> {
         children: [
           SizedBox(
             width: labelW,
-            child: const Padding(
+            child: Padding(
               padding: EdgeInsets.only(left: 12),
-              child: Text('TOTAL',
-                  style: TextStyle(
-                      color: KColors.textDim,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5)),
+              child: Text(
+                'TOTAL',
+                style: TextStyle(
+                  color: KColors.textDim,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                ),
+              ),
             ),
           ),
           for (final col in cols)
@@ -440,10 +499,11 @@ class _MoneyGridState extends State<MoneyGrid> {
               child: Text(
                 Money.formatMinorCompact(byCol[col] ?? 0, widget.currency),
                 textAlign: TextAlign.right,
-                style: const TextStyle(
-                    color: KColors.text,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: KColors.text,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           SizedBox(
@@ -453,10 +513,11 @@ class _MoneyGridState extends State<MoneyGrid> {
               child: Text(
                 Money.formatMinorCompact(grandTotal, widget.currency),
                 textAlign: TextAlign.right,
-                style: const TextStyle(
-                    color: KColors.amber,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700),
+                style: TextStyle(
+                  color: KColors.amber,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ),
@@ -468,8 +529,14 @@ class _MoneyGridState extends State<MoneyGrid> {
 
   // ── Cells ─────────────────────────────────────────────────────────────
 
-  Widget _cell(String rowKey, CostCategory cat, String col,
-      List<MoneyCell> cells, List<String> cols, List<String> flatRows) {
+  Widget _cell(
+    String rowKey,
+    CostCategory cat,
+    String col,
+    List<MoneyCell> cells,
+    List<String> cols,
+    List<String> flatRows,
+  ) {
     final cellKey = '$rowKey|$col';
     final sum = cells.fold<int>(0, (s, c) => s + c.amountMinor);
     final display = cells.isEmpty ? '' : Money.formatMinorPlain(sum);
@@ -486,8 +553,15 @@ class _MoneyGridState extends State<MoneyGrid> {
           onKeyEvent: (node, event) {
             if (event is! KeyDownEvent) return KeyEventResult.ignored;
             if (event.logicalKey == LogicalKeyboardKey.tab) {
-              _commitCell(rowKey, cat, col, cells, cols, flatRows,
-                  move: _Move.right);
+              _commitCell(
+                rowKey,
+                cat,
+                col,
+                cells,
+                cols,
+                flatRows,
+                move: _Move.right,
+              );
               return KeyEventResult.handled;
             }
             if (event.logicalKey == LogicalKeyboardKey.escape) {
@@ -504,29 +578,45 @@ class _MoneyGridState extends State<MoneyGrid> {
             controller: _cellCtrl,
             autofocus: true,
             textAlign: TextAlign.right,
-            style: const TextStyle(color: KColors.text, fontSize: 12),
+            style: TextStyle(color: KColors.text, fontSize: 12),
             decoration: InputDecoration(
               isDense: true,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 6,
+                vertical: 6,
+              ),
               enabledBorder: OutlineInputBorder(
                 borderSide: BorderSide(
-                    color: _cellInvalid ? KColors.red : KColors.amber),
+                  color: _cellInvalid ? KColors.red : KColors.amber,
+                ),
                 borderRadius: BorderRadius.circular(2),
               ),
               focusedBorder: OutlineInputBorder(
                 borderSide: BorderSide(
-                    color: _cellInvalid ? KColors.red : KColors.amber),
+                  color: _cellInvalid ? KColors.red : KColors.amber,
+                ),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             onChanged: (_) => _cellDirty = true,
             onSubmitted: (_) => _commitCell(
-                rowKey, cat, col, cells, cols, flatRows,
-                move: _Move.down),
+              rowKey,
+              cat,
+              col,
+              cells,
+              cols,
+              flatRows,
+              move: _Move.down,
+            ),
             onTapOutside: (_) => _commitCell(
-                rowKey, cat, col, cells, cols, flatRows,
-                move: _Move.none),
+              rowKey,
+              cat,
+              col,
+              cells,
+              cols,
+              flatRows,
+              move: _Move.none,
+            ),
           ),
         ),
       );
@@ -550,10 +640,20 @@ class _MoneyGridState extends State<MoneyGrid> {
             : () => _startEdit(cellKey, sum, cells),
         onSecondaryTap: widget.readOnly || detail == null
             ? null
-            : () => detail(cat.id, rowKey.split('|').last.isEmpty ? null : rowKey.split('|').last, col, cells.firstOrNull),
+            : () => detail(
+                cat.id,
+                rowKey.split('|').last.isEmpty ? null : rowKey.split('|').last,
+                col,
+                cells.firstOrNull,
+              ),
         onLongPress: widget.readOnly || detail == null
             ? null
-            : () => detail(cat.id, rowKey.split('|').last.isEmpty ? null : rowKey.split('|').last, col, cells.firstOrNull),
+            : () => detail(
+                cat.id,
+                rowKey.split('|').last.isEmpty ? null : rowKey.split('|').last,
+                col,
+                cells.firstOrNull,
+              ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
           child: notes.isEmpty ? text : Tooltip(message: notes, child: text),
@@ -569,13 +669,21 @@ class _MoneyGridState extends State<MoneyGrid> {
       _cellDirty = false;
       _cellCtrl.text = cells.isEmpty ? '' : Money.formatMinorPlain(sum);
       _cellCtrl.selection = TextSelection(
-          baseOffset: 0, extentOffset: _cellCtrl.text.length);
+        baseOffset: 0,
+        extentOffset: _cellCtrl.text.length,
+      );
     });
   }
 
-  Future<void> _commitCell(String rowKey, CostCategory cat, String col,
-      List<MoneyCell> cells, List<String> cols, List<String> flatRows,
-      {required _Move move}) async {
+  Future<void> _commitCell(
+    String rowKey,
+    CostCategory cat,
+    String col,
+    List<MoneyCell> cells,
+    List<String> cols,
+    List<String> flatRows, {
+    required _Move move,
+  }) async {
     if (_editingCell != '$rowKey|$col') return; // stale focus callback
     final text = _cellCtrl.text.trim();
     final minor = text.isEmpty ? null : Money.parseToMinor(text);
@@ -630,12 +738,16 @@ class _MoneyGridState extends State<MoneyGrid> {
     );
     // The dialog returns '' for "no workstream"; null = cancelled.
     if (wsId == null) return;
-    setState(() =>
-        _pendingRows.add(_rowKey(cat.id, wsId.isEmpty ? null : wsId)));
+    setState(
+      () => _pendingRows.add(_rowKey(cat.id, wsId.isEmpty ? null : wsId)),
+    );
   }
 
-  Future<void> _deleteRow(String rowKey, List<String> cols,
-      Map<String, List<MoneyCell>> cellsByKey) async {
+  Future<void> _deleteRow(
+    String rowKey,
+    List<String> cols,
+    Map<String, List<MoneyCell>> cellsByKey,
+  ) async {
     final all = <MoneyCell>[
       for (final col in cols)
         ...cellsByKey['$rowKey|$col'] ?? const <MoneyCell>[],
@@ -656,18 +768,21 @@ class _MoneyGridState extends State<MoneyGrid> {
             controller: ctrl,
             autofocus: true,
             decoration: InputDecoration(
-                labelText: widget.columnNoun,
-                hintText: widget.columnHint),
+              labelText: widget.columnNoun,
+              hintText: widget.columnHint,
+            ),
             onSubmitted: (v) => Navigator.of(ctx).pop(v.trim()),
           ),
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
-              onPressed: () => Navigator.of(ctx).pop(ctrl.text.trim()),
-              child: const Text('Add')),
+            onPressed: () => Navigator.of(ctx).pop(ctrl.text.trim()),
+            child: const Text('Add'),
+          ),
         ],
       ),
     );
@@ -695,8 +810,10 @@ class _AddRowDialog extends StatelessWidget {
             ListTile(
               dense: true,
               leading: const Icon(Icons.remove, size: 16),
-              title: const Text('No workstream (General)',
-                  style: TextStyle(fontSize: 13)),
+              title: const Text(
+                'No workstream (General)',
+                style: TextStyle(fontSize: 13),
+              ),
               onTap: () => Navigator.of(context).pop(''),
             ),
             for (final wp in workPackages)

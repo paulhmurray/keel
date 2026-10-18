@@ -53,17 +53,20 @@ class FinancialSummaryPanel extends StatelessWidget {
     final led = contingency;
     final hasLedger = led != null && !led.isEmpty;
     if ((port == null || port.isEmpty) && !hasLedger) return own;
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      if (hasLedger) ...[
-        _ContingencyLine(ledger: led, warnBp: contingencyWarnBp),
-        const SizedBox(height: 10),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (hasLedger) ...[
+          _ContingencyLine(ledger: led, warnBp: contingencyWarnBp),
+          const SizedBox(height: 10),
+        ],
+        if (port != null && !port.isEmpty) ...[
+          _PortfolioBlock(finance: port, projectNames: projectNames),
+          const SizedBox(height: 10),
+        ],
+        own,
       ],
-      if (port != null && !port.isEmpty) ...[
-        _PortfolioBlock(finance: port, projectNames: projectNames),
-        const SizedBox(height: 10),
-      ],
-      own,
-    ]);
+    );
   }
 
   Widget _own(BuildContext context) {
@@ -72,16 +75,19 @@ class FinancialSummaryPanel extends StatelessWidget {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Text(
-            portfolio == null || portfolio!.isEmpty
-                ? 'No approved budget.'
-                : 'No programme-level budget of its own.',
-            style: const TextStyle(color: KColors.textMuted, fontSize: 12)),
+          portfolio == null || portfolio!.isEmpty
+              ? 'No approved budget.'
+              : 'No programme-level budget of its own.',
+          style: TextStyle(color: KColors.textMuted, fontSize: 12),
+        ),
       );
     }
     final t = totals!;
     final fys = t.byFinancialYear.keys.toList()..sort();
-    final maxCategoryMinor = t.byCategoryId.values
-        .fold<int>(0, (m, v) => v > m ? v : m);
+    final maxCategoryMinor = t.byCategoryId.values.fold<int>(
+      0,
+      (m, v) => v > m ? v : m,
+    );
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -99,30 +105,33 @@ class FinancialSummaryPanel extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(budget.name,
-                        style: const TextStyle(
-                            color: KColors.text,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13),
-                        overflow: TextOverflow.ellipsis),
+                    Text(
+                      budget.name,
+                      style: TextStyle(
+                        color: KColors.text,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     const SizedBox(height: 3),
                     Text(
                       budget.approvedAt == null
                           ? 'Approved'
                           : 'Approved ${DateFormat('d MMM yyyy').format(budget.approvedAt!)}'
-                              '${budget.approvedBy == null ? '' : ' by ${budget.approvedBy}'}',
-                      style: const TextStyle(
-                          color: KColors.textDim, fontSize: 11),
+                                '${budget.approvedBy == null ? '' : ' by ${budget.approvedBy}'}',
+                      style: TextStyle(color: KColors.textDim, fontSize: 11),
                     ),
                   ],
                 ),
               ),
               Text(
                 Money.formatMinorCompact(t.totalMinor, budget.currency),
-                style: const TextStyle(
-                    color: KColors.amber,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700),
+                style: TextStyle(
+                  color: KColors.amber,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),
@@ -135,20 +144,28 @@ class FinancialSummaryPanel extends StatelessWidget {
                     'FORECAST AT COMPLETION'
                     '${forecastPeriod == null ? '' : ' ($forecastPeriod)'}',
                     Money.formatMinorCompact(
-                        forecastTotalMinor!, budget.currency),
+                      forecastTotalMinor!,
+                      budget.currency,
+                    ),
                     _varianceColor(),
                   ),
                   const SizedBox(width: 24),
-                  _metric('VARIANCE', Money.formatBp(varianceBp),
-                      _varianceColor()),
+                  _metric(
+                    'VARIANCE',
+                    Money.formatBp(varianceBp),
+                    _varianceColor(),
+                  ),
                   const SizedBox(width: 24),
                 ],
                 if (actualsToDateMinor != null)
                   _metric(
-                      'ACTUALS TO DATE',
-                      Money.formatMinorCompact(
-                          actualsToDateMinor!, budget.currency),
-                      KColors.text),
+                    'ACTUALS TO DATE',
+                    Money.formatMinorCompact(
+                      actualsToDateMinor!,
+                      budget.currency,
+                    ),
+                    KColors.text,
+                  ),
               ],
             ),
           ],
@@ -158,11 +175,12 @@ class FinancialSummaryPanel extends StatelessWidget {
               spacing: 14,
               runSpacing: 4,
               children: fys
-                  .map((fy) => Text(
-                        '$fy  ${Money.formatMinorCompact(t.byFinancialYear[fy]!, budget.currency)}',
-                        style: const TextStyle(
-                            color: KColors.textDim, fontSize: 11),
-                      ))
+                  .map(
+                    (fy) => Text(
+                      '$fy  ${Money.formatMinorCompact(t.byFinancialYear[fy]!, budget.currency)}',
+                      style: TextStyle(color: KColors.textDim, fontSize: 11),
+                    ),
+                  )
                   .toList(),
             ),
           ],
@@ -170,12 +188,14 @@ class FinancialSummaryPanel extends StatelessWidget {
             const SizedBox(height: 12),
             ...(t.byCategoryId.entries.toList()
                   ..sort((a, b) => b.value.compareTo(a.value)))
-                .map((e) => _categoryBar(
-                      categoryNames[e.key] ?? 'Unknown',
-                      e.value,
-                      maxCategoryMinor,
-                      budget.currency,
-                    )),
+                .map(
+                  (e) => _categoryBar(
+                    categoryNames[e.key] ?? 'Unknown',
+                    e.value,
+                    maxCategoryMinor,
+                    budget.currency,
+                  ),
+                ),
           ],
         ],
       ),
@@ -195,27 +215,43 @@ class FinancialSummaryPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: const TextStyle(
-                color: KColors.textMuted, fontSize: 9, letterSpacing: 0.5)),
-        Text(value,
-            style: TextStyle(
-                color: color, fontSize: 14, fontWeight: FontWeight.w600)),
+        Text(
+          label,
+          style: TextStyle(
+            color: KColors.textMuted,
+            fontSize: 9,
+            letterSpacing: 0.5,
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            color: color,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ],
     );
   }
 
   Widget _categoryBar(
-      String name, int amountMinor, int maxMinor, String currency) {
+    String name,
+    int amountMinor,
+    int maxMinor,
+    String currency,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         children: [
           SizedBox(
             width: 110,
-            child: Text(name,
-                style: const TextStyle(color: KColors.textDim, fontSize: 11),
-                overflow: TextOverflow.ellipsis),
+            child: Text(
+              name,
+              style: TextStyle(color: KColors.textDim, fontSize: 11),
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
           Expanded(
             child: LayoutBuilder(
@@ -227,8 +263,10 @@ class FinancialSummaryPanel extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: Container(
                     height: 8,
-                    width: (constraints.maxWidth * frac)
-                        .clamp(2.0, constraints.maxWidth),
+                    width: (constraints.maxWidth * frac).clamp(
+                      2.0,
+                      constraints.maxWidth,
+                    ),
                     decoration: BoxDecoration(
                       color: KColors.blue,
                       borderRadius: BorderRadius.circular(2),
@@ -244,7 +282,7 @@ class FinancialSummaryPanel extends StatelessWidget {
             child: Text(
               Money.formatMinorCompact(amountMinor, currency),
               textAlign: TextAlign.right,
-              style: const TextStyle(color: KColors.text, fontSize: 11),
+              style: TextStyle(color: KColors.text, fontSize: 11),
             ),
           ),
         ],
@@ -273,87 +311,119 @@ class _PortfolioBlock extends StatelessWidget {
         border: Border.all(color: KColors.border),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Text(
-              'PORTFOLIO · ${f.projects.length} '
-              '${f.projects.length == 1 ? 'PROJECT' : 'PROJECTS'}',
-              style: const TextStyle(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'PORTFOLIO · ${f.projects.length} '
+                '${f.projects.length == 1 ? 'PROJECT' : 'PROJECTS'}',
+                style: TextStyle(
                   color: KColors.textMuted,
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: 1.2)),
-          const Spacer(),
-          Text(
-            breaches.isEmpty
-                ? 'All within tolerance'
-                : '${breaches.length} beyond tolerance',
-            style: TextStyle(
-                color: breaches.isEmpty ? KColors.phosphor : KColors.red,
-                fontSize: 11,
-                fontWeight: FontWeight.w700),
-          ),
-        ]),
-        const SizedBox(height: 8),
-        Row(children: [
-          _stat('Budget', Money.formatMinorCompact(f.budgetMinor, cur)),
-          _stat('Forecast', Money.formatMinorCompact(f.forecastMinor, cur)),
-          _stat('Actuals', Money.formatMinorCompact(f.actualsMinor, cur)),
-          _stat('Variance', Money.formatBp(f.varianceBp),
-              color: f.varianceBp == null
-                  ? KColors.textMuted
-                  : f.varianceBp!.abs() > 500
-                      ? KColors.red
-                      : KColors.text),
-        ]),
-        const SizedBox(height: 10),
-        for (final r in f.projects)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2),
-            child: Row(children: [
-              if (r.breach)
-                const Padding(
-                  padding: EdgeInsets.only(right: 4),
-                  child: Icon(Icons.warning_amber_rounded,
-                      size: 12, color: KColors.red),
+                  letterSpacing: 1.2,
                 ),
-              Expanded(
-                child: Text(projectNames[r.sourceId] ?? 'Linked project',
-                    style: const TextStyle(color: KColors.text, fontSize: 12),
-                    overflow: TextOverflow.ellipsis),
               ),
+              const Spacer(),
               Text(
-                '${Money.formatMinorCompact(r.budgetMinor, r.currency ?? cur)}'
-                ' → ${r.forecastMinor == null ? 'no forecast' : Money.formatMinorCompact(r.forecastMinor, r.currency ?? cur)}'
-                '  ${Money.formatBp(r.varianceBp)}',
+                breaches.isEmpty
+                    ? 'All within tolerance'
+                    : '${breaches.length} beyond tolerance',
                 style: TextStyle(
-                    color: r.breach ? KColors.red : KColors.textDim,
-                    fontSize: 11,
-                    fontFamily: 'monospace'),
+                  color: breaches.isEmpty ? KColors.phosphor : KColors.red,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-            ]),
+            ],
           ),
-      ]),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              _stat('Budget', Money.formatMinorCompact(f.budgetMinor, cur)),
+              _stat('Forecast', Money.formatMinorCompact(f.forecastMinor, cur)),
+              _stat('Actuals', Money.formatMinorCompact(f.actualsMinor, cur)),
+              _stat(
+                'Variance',
+                Money.formatBp(f.varianceBp),
+                color: f.varianceBp == null
+                    ? KColors.textMuted
+                    : f.varianceBp!.abs() > 500
+                    ? KColors.red
+                    : KColors.text,
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          for (final r in f.projects)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                children: [
+                  if (r.breach)
+                    Padding(
+                      padding: EdgeInsets.only(right: 4),
+                      child: Icon(
+                        Icons.warning_amber_rounded,
+                        size: 12,
+                        color: KColors.red,
+                      ),
+                    ),
+                  Expanded(
+                    child: Text(
+                      projectNames[r.sourceId] ?? 'Linked project',
+                      style: TextStyle(color: KColors.text, fontSize: 12),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Text(
+                    '${Money.formatMinorCompact(r.budgetMinor, r.currency ?? cur)}'
+                    ' → ${r.forecastMinor == null ? 'no forecast' : Money.formatMinorCompact(r.forecastMinor, r.currency ?? cur)}'
+                    '  ${Money.formatBp(r.varianceBp)}',
+                    style: TextStyle(
+                      color: r.breach ? KColors.red : KColors.textDim,
+                      fontSize: 11,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
     );
   }
 
-  Widget _stat(String label, String value, {Color color = KColors.text}) =>
-      Expanded(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label.toUpperCase(),
-              style: const TextStyle(
-                  color: KColors.textMuted,
-                  fontSize: 9.5,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.2)),
-          Text(value,
-              style: TextStyle(
-                  color: color,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  fontFamily: 'monospace')),
-        ]),
-      );
+  Widget _stat(String label, String value, {Color? color}) {
+    color ??= KColors.text;
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label.toUpperCase(),
+            style: TextStyle(
+              color: KColors.textMuted,
+              fontSize: 9.5,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.2,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              fontFamily: 'monospace',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// Funding, allocated, and the contingency balance against its threshold.
@@ -372,43 +442,62 @@ class _ContingencyLine extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: KColors.surface,
-        border: Border.all(color: warn ? colour.withValues(alpha: 0.6) : KColors.border),
+        border: Border.all(
+          color: warn ? colour.withValues(alpha: 0.6) : KColors.border,
+        ),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Row(children: [
-        Expanded(
-          child: Text.rich(TextSpan(children: [
-            const TextSpan(
-                text: 'CONTINGENCY  ',
-                style: TextStyle(
-                    color: KColors.textMuted,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.2)),
-            TextSpan(
-                text: '${Money.formatMinorCompact(l.balanceMinor, cur)} of '
-                    '${Money.formatMinorCompact(l.fundingMinor, cur)} funding'
-                    '${l.balanceBp == null ? '' : ' (${Money.formatBp(l.balanceBp).replaceAll('+', '')})'}',
-                style: TextStyle(
-                    color: colour,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    fontFamily: 'monospace')),
-            TextSpan(
-                text: '  ·  ${Money.formatMinorCompact(l.drawnMinor, cur)} drawn'
-                    '${l.returnedMinor > 0 ? ', ${Money.formatMinorCompact(l.returnedMinor, cur)} returned' : ''}',
-                style: const TextStyle(color: KColors.textDim, fontSize: 11)),
-          ])),
-        ),
-        if (warn)
-          Text(
-            l.balanceMinor < 0
-                ? 'OVER-ALLOCATED'
-                : 'BELOW ${Money.formatBp(warnBp).replaceAll('+', '')}',
-            style: const TextStyle(
-                color: KColors.red, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.6),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: 'CONTINGENCY  ',
+                    style: TextStyle(
+                      color: KColors.textMuted,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  TextSpan(
+                    text:
+                        '${Money.formatMinorCompact(l.balanceMinor, cur)} of '
+                        '${Money.formatMinorCompact(l.fundingMinor, cur)} funding'
+                        '${l.balanceBp == null ? '' : ' (${Money.formatBp(l.balanceBp).replaceAll('+', '')})'}',
+                    style: TextStyle(
+                      color: colour,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                  TextSpan(
+                    text:
+                        '  ·  ${Money.formatMinorCompact(l.drawnMinor, cur)} drawn'
+                        '${l.returnedMinor > 0 ? ', ${Money.formatMinorCompact(l.returnedMinor, cur)} returned' : ''}',
+                    style: TextStyle(color: KColors.textDim, fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
           ),
-      ]),
+          if (warn)
+            Text(
+              l.balanceMinor < 0
+                  ? 'OVER-ALLOCATED'
+                  : 'BELOW ${Money.formatBp(warnBp).replaceAll('+', '')}',
+              style: TextStyle(
+                color: KColors.red,
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.6,
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

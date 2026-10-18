@@ -234,7 +234,7 @@ class ProgrammeGanttView extends StatelessWidget {
   Widget build(BuildContext context) {
     final projectId = context.watch<ProjectProvider>().currentProjectId;
     if (projectId == null) {
-      return const Center(
+      return Center(
         child: Text(
           'No project selected',
           style: TextStyle(color: KColors.textMuted),
@@ -716,11 +716,11 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: KColors.surface,
-        title: const Text(
+        title: Text(
           'Set Baseline',
           style: TextStyle(color: KColors.text, fontSize: 14),
         ),
-        content: const Text(
+        content: Text(
           'Snapshot the current plan as the baseline.\n'
           'Any future changes will show as variance (ghost bars).',
           style: TextStyle(color: KColors.textDim, fontSize: 13),
@@ -996,7 +996,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     return Container(
       height: 64,
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: KColors.border)),
       ),
       child: LayoutBuilder(
@@ -1023,7 +1023,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                             planLabel,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: KColors.textMuted,
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
@@ -1033,16 +1033,13 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                         ),
                         if (_header?.title != null) ...[
                           const SizedBox(width: 8),
-                          const Text(
-                            '·',
-                            style: TextStyle(color: KColors.border2),
-                          ),
+                          Text('·', style: TextStyle(color: KColors.border2)),
                           const SizedBox(width: 8),
                           Flexible(
                             child: Text(
                               _header!.title!,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: KColors.text,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w500,
@@ -1057,10 +1054,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                       planDesc,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: KColors.textMuted,
-                        fontSize: 11,
-                      ),
+                      style: TextStyle(color: KColors.textMuted, fontSize: 11),
                     ),
                   ],
                 ),
@@ -1200,7 +1194,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                                     borderRadius: BorderRadius.circular(4),
                                     border: Border.all(color: KColors.border),
                                   ),
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.bookmark_remove_outlined,
                                     size: 13,
                                     color: KColors.textMuted,
@@ -1233,7 +1227,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                                           strokeWidth: 1.5,
                                         ),
                                       )
-                                    : const Text(
+                                    : Text(
                                         'Baseline',
                                         style: TextStyle(
                                           color: KColors.textMuted,
@@ -1262,7 +1256,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                                   border: Border.all(color: KColors.border),
                                 ),
                                 alignment: Alignment.center,
-                                child: const Row(
+                                child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(
@@ -1302,7 +1296,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                                   border: Border.all(color: KColors.border),
                                 ),
                                 alignment: Alignment.center,
-                                child: const Row(
+                                child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(
@@ -1342,7 +1336,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                                   border: Border.all(color: KColors.border),
                                 ),
                                 alignment: Alignment.center,
-                                child: const Row(
+                                child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(
@@ -1427,9 +1421,9 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
       required String label,
       required VoidCallback onTap,
       bool active = false,
-      Color activeColor = KColors.amber,
+      Color? activeColor,
     }) {
-      final color = active ? activeColor : KColors.textDim;
+      final color = active ? (activeColor ?? KColors.amber) : KColors.textDim;
       return PopupMenuItem<VoidCallback>(
         value: onTap,
         height: 36,
@@ -1535,7 +1529,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
           borderRadius: BorderRadius.circular(4),
           border: Border.all(color: KColors.border),
         ),
-        child: const Icon(Icons.more_horiz, size: 15, color: KColors.textMuted),
+        child: Icon(Icons.more_horiz, size: 15, color: KColors.textMuted),
       ),
     );
   }
@@ -1545,13 +1539,9 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Icons.table_chart_outlined,
-            size: 48,
-            color: KColors.textMuted,
-          ),
+          Icon(Icons.table_chart_outlined, size: 48, color: KColors.textMuted),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'No work packages yet',
             style: TextStyle(
               color: KColors.text,
@@ -1560,7 +1550,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             'Add a work package to start building the programme Gantt.',
             style: TextStyle(color: KColors.textDim, fontSize: 12),
           ),
@@ -1607,7 +1597,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                   Container(
                     width: _kNameW,
                     height: _kHeaderH,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: KColors.surface2,
                       border: Border(
                         right: BorderSide(color: KColors.border),
@@ -1616,7 +1606,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                     ),
                     alignment: Alignment.centerLeft,
                     padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: const Row(
+                    child: Row(
                       children: [
                         Expanded(
                           child: Text(
@@ -1864,7 +1854,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
         child: Container(
           height: _kGroupRowH,
           padding: const EdgeInsets.only(left: 8, right: 8),
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: KColors.surface2,
             border: Border(
               bottom: BorderSide(color: KColors.border),
@@ -1888,7 +1878,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
               Expanded(
                 child: Text(
                   row.label.toUpperCase(),
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: KColors.textDim,
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
@@ -1899,7 +1889,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
               ),
               Text(
                 '${row.wpCount}',
-                style: const TextStyle(
+                style: TextStyle(
                   color: KColors.textMuted,
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
@@ -1930,7 +1920,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
               color: c.withValues(alpha: isCascaded ? 0.06 : 0.12),
               border: Border(
                 left: BorderSide(color: c, width: 3),
-                bottom: const BorderSide(color: KColors.border),
+                bottom: BorderSide(color: KColors.border),
               ),
             ),
             padding: const EdgeInsets.only(left: 4, right: 6),
@@ -2095,10 +2085,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                         child: TextField(
                           controller: _inlineNameCtrl,
                           focusNode: _inlineNameFocus,
-                          style: const TextStyle(
-                            color: KColors.text,
-                            fontSize: 11,
-                          ),
+                          style: TextStyle(color: KColors.text, fontSize: 11),
                           decoration: const InputDecoration(
                             isDense: true,
                             contentPadding: EdgeInsets.symmetric(
@@ -2142,7 +2129,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                                   act.contributors != null
                                       ? '${act.owner!} +${(jsonDecode(act.contributors!) as List).length}'
                                       : act.owner!,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: KColors.textDim,
                                     fontSize: 9,
                                   ),
@@ -2154,7 +2141,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                       ),
               ),
               if (act.isCritical)
-                const Padding(
+                Padding(
                   padding: EdgeInsets.only(right: 2),
                   child: Icon(
                     Icons.priority_high,
@@ -2163,7 +2150,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                   ),
                 ),
               if (row.isSummary && _tasksBreachWindow(row))
-                const Tooltip(
+                Tooltip(
                   message:
                       'Tasks are scheduled outside this activity\'s '
                       'window — widen the window or move the tasks',
@@ -2277,7 +2264,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
     return Container(
       width: _cellW,
       height: _kHeaderH,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: KColors.surface2,
         border: Border(
           right: BorderSide(color: KColors.border),
@@ -2288,7 +2275,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
       child: Text(
         col.label,
         textAlign: TextAlign.center,
-        style: const TextStyle(
+        style: TextStyle(
           color: KColors.textMuted,
           fontSize: 10,
           fontWeight: FontWeight.w600,
@@ -2307,7 +2294,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
       return Container(
         height: _kGroupRowH,
         width: cols.length * _cellW,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: KColors.surface2,
           border: Border(
             bottom: BorderSide(color: KColors.border),
@@ -2340,7 +2327,7 @@ class _ProgrammeGanttContentState extends State<_ProgrammeGanttContent> {
                   right: BorderSide(
                     color: KColors.border.withValues(alpha: 0.3),
                   ),
-                  bottom: const BorderSide(color: KColors.border),
+                  bottom: BorderSide(color: KColors.border),
                 ),
               ),
               alignment: Alignment.center,
@@ -3070,7 +3057,7 @@ class _CascadedFromTag extends StatelessWidget {
           label == null ? 'PROJ' : 'PROJ · $label',
           overflow: TextOverflow.ellipsis,
           maxLines: 1,
-          style: const TextStyle(
+          style: TextStyle(
             color: KColors.textMuted,
             fontSize: 8.5,
             fontWeight: FontWeight.w700,
@@ -3192,7 +3179,7 @@ class _DependsOnEditor extends StatelessWidget {
       children: [
         Row(
           children: [
-            const Text(
+            Text(
               'DEPENDS ON',
               style: TextStyle(
                 color: KColors.textMuted,
@@ -3231,7 +3218,7 @@ class _DependsOnEditor extends StatelessWidget {
           ],
         ),
         if (predecessors.isEmpty)
-          const Padding(
+          Padding(
             padding: EdgeInsets.symmetric(vertical: 4),
             child: Text(
               'No predecessors. Use "Add predecessor" for activities in '
@@ -3248,7 +3235,7 @@ class _DependsOnEditor extends StatelessWidget {
           ...List.generate(predecessors.length, (i) {
             final p = predecessors[i];
             final removeBtn = IconButton(
-              icon: const Icon(Icons.close, size: 14, color: KColors.textMuted),
+              icon: Icon(Icons.close, size: 14, color: KColors.textMuted),
               visualDensity: VisualDensity.compact,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
@@ -3263,19 +3250,12 @@ class _DependsOnEditor extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 2),
                 child: Row(
                   children: [
-                    const Icon(
-                      Icons.language,
-                      size: 14,
-                      color: KColors.textDim,
-                    ),
+                    Icon(Icons.language, size: 14, color: KColors.textDim),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         'EXT · ${p.externalLabel}',
-                        style: const TextStyle(
-                          color: KColors.text,
-                          fontSize: 12,
-                        ),
+                        style: TextStyle(color: KColors.text, fontSize: 12),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -3299,10 +3279,7 @@ class _DependsOnEditor extends StatelessWidget {
                     child: pair == null || onOpen == null
                         ? Text(
                             label,
-                            style: const TextStyle(
-                              color: KColors.text,
-                              fontSize: 12,
-                            ),
+                            style: TextStyle(color: KColors.text, fontSize: 12),
                             overflow: TextOverflow.ellipsis,
                           )
                         : Tooltip(
@@ -3317,7 +3294,7 @@ class _DependsOnEditor extends StatelessWidget {
                                   Flexible(
                                     child: Text(
                                       label,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         color: KColors.text,
                                         fontSize: 12,
                                         decoration: TextDecoration.underline,
@@ -3327,7 +3304,7 @@ class _DependsOnEditor extends StatelessWidget {
                                     ),
                                   ),
                                   const SizedBox(width: 4),
-                                  const Icon(
+                                  Icon(
                                     Icons.open_in_new,
                                     size: 11,
                                     color: KColors.textMuted,
@@ -3404,10 +3381,7 @@ class _DepTypeDropdown extends StatelessWidget {
                 ),
                 Text(
                   t.$4,
-                  style: const TextStyle(
-                    color: KColors.textMuted,
-                    fontSize: 10,
-                  ),
+                  style: TextStyle(color: KColors.textMuted, fontSize: 10),
                 ),
               ],
             ),
@@ -3420,13 +3394,9 @@ class _DepTypeDropdown extends StatelessWidget {
           children: [
             Text(
               current.$2,
-              style: const TextStyle(color: KColors.text, fontSize: 11),
+              style: TextStyle(color: KColors.text, fontSize: 11),
             ),
-            const Icon(
-              Icons.arrow_drop_down,
-              size: 14,
-              color: KColors.textMuted,
-            ),
+            Icon(Icons.arrow_drop_down, size: 14, color: KColors.textMuted),
           ],
         ),
       ),
@@ -3464,7 +3434,7 @@ class _AddExternalDependencyDialogState
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: KColors.surface,
-      title: const Text(
+      title: Text(
         'External dependency',
         style: TextStyle(color: KColors.text, fontSize: 14),
       ),
@@ -3474,7 +3444,7 @@ class _AddExternalDependencyDialogState
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Something this activity depends on that lives outside '
               'the plan — e.g. a vendor delivery, legal sign-off, or '
               'another team\'s milestone.',
@@ -3488,7 +3458,7 @@ class _AddExternalDependencyDialogState
             TextField(
               controller: _ctrl,
               autofocus: true,
-              style: const TextStyle(color: KColors.text, fontSize: 14),
+              style: TextStyle(color: KColors.text, fontSize: 14),
               decoration: const InputDecoration(
                 labelText: 'Label',
                 hintText: 'e.g. Vendor API release, Legal sign-off',
@@ -3501,7 +3471,7 @@ class _AddExternalDependencyDialogState
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text(
+          child: Text(
             'Cancel',
             style: TextStyle(color: KColors.textDim, fontSize: 12),
           ),
@@ -3539,7 +3509,7 @@ class _DependsOnPicker extends StatelessWidget {
     }
     return AlertDialog(
       backgroundColor: KColors.surface,
-      title: const Text(
+      title: Text(
         'Pick a predecessor',
         style: TextStyle(color: KColors.text, fontSize: 14),
       ),
@@ -3555,7 +3525,7 @@ class _DependsOnPicker extends StatelessWidget {
                   groups[wpId]!.first.wp.shortCode != null
                       ? '${groups[wpId]!.first.wp.shortCode} · ${groups[wpId]!.first.wp.name}'
                       : groups[wpId]!.first.wp.name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: KColors.textMuted,
                     fontSize: 10.5,
                     fontWeight: FontWeight.w700,
@@ -3569,7 +3539,7 @@ class _DependsOnPicker extends StatelessWidget {
                   visualDensity: VisualDensity.compact,
                   title: Text(
                     pair.act.name,
-                    style: const TextStyle(color: KColors.text, fontSize: 12),
+                    style: TextStyle(color: KColors.text, fontSize: 12),
                   ),
                   onTap: () => Navigator.of(context).pop(pair.act.id),
                 ),
@@ -3580,7 +3550,7 @@ class _DependsOnPicker extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel', style: TextStyle(color: KColors.textDim)),
+          child: Text('Cancel', style: TextStyle(color: KColors.textDim)),
         ),
       ],
     );
@@ -3704,7 +3674,7 @@ class _HeaderSettingsDialogState extends State<_HeaderSettingsDialog> {
     final preview = _generateLabels();
     return AlertDialog(
       backgroundColor: KColors.surface,
-      title: const Text(
+      title: Text(
         'Programme Header & Months',
         style: TextStyle(color: KColors.text, fontSize: 14),
       ),
@@ -3720,7 +3690,7 @@ class _HeaderSettingsDialogState extends State<_HeaderSettingsDialog> {
                   labelText: 'Programme title',
                   hintText: 'e.g. TAC Digital Toolkit – Integration',
                 ),
-                style: const TextStyle(color: KColors.text, fontSize: 13),
+                style: TextStyle(color: KColors.text, fontSize: 13),
               ),
               const SizedBox(height: 10),
               TextFormField(
@@ -3728,7 +3698,7 @@ class _HeaderSettingsDialogState extends State<_HeaderSettingsDialog> {
                 decoration: const InputDecoration(
                   labelText: 'Subtitle (optional)',
                 ),
-                style: const TextStyle(color: KColors.text, fontSize: 13),
+                style: TextStyle(color: KColors.text, fontSize: 13),
               ),
               const SizedBox(height: 10),
               TextFormField(
@@ -3737,7 +3707,7 @@ class _HeaderSettingsDialogState extends State<_HeaderSettingsDialog> {
                   labelText: 'Hard deadline statement (optional)',
                   hintText: 'e.g. Integrations in production by Aug 27',
                 ),
-                style: const TextStyle(color: KColors.text, fontSize: 13),
+                style: TextStyle(color: KColors.text, fontSize: 13),
               ),
               const SizedBox(height: 10),
               DatePickerField(
@@ -3746,7 +3716,7 @@ class _HeaderSettingsDialogState extends State<_HeaderSettingsDialog> {
                 onChanged: (v) => setState(() => _deadlineDate = v),
               ),
               const SizedBox(height: 4),
-              const Text(
+              Text(
                 'The banner on the milestone tracker stays quiet while the '
                 'date is ahead, turns amber inside two weeks and red once '
                 'it has passed. Without a date it reads one from the '
@@ -3754,7 +3724,7 @@ class _HeaderSettingsDialogState extends State<_HeaderSettingsDialog> {
                 style: TextStyle(color: KColors.textMuted, fontSize: 10),
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'MONTH COLUMNS',
                 style: TextStyle(
                   color: KColors.textMuted,
@@ -3783,7 +3753,7 @@ class _HeaderSettingsDialogState extends State<_HeaderSettingsDialog> {
                         labelText: 'Months',
                         isDense: true,
                       ),
-                      style: const TextStyle(color: KColors.text, fontSize: 12),
+                      style: TextStyle(color: KColors.text, fontSize: 12),
                       onChanged: (_) => setState(() {}),
                     ),
                   ),
@@ -3826,7 +3796,7 @@ class _HeaderSettingsDialogState extends State<_HeaderSettingsDialog> {
               Text(
                 'Spans ${_generateLabels().length} months'
                 '${preview.isNotEmpty ? ' · ${preview.first} → ${preview.last}' : ''}',
-                style: const TextStyle(color: KColors.textDim, fontSize: 11),
+                style: TextStyle(color: KColors.textDim, fontSize: 11),
               ),
             ],
           ),
@@ -3835,7 +3805,7 @@ class _HeaderSettingsDialogState extends State<_HeaderSettingsDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel', style: TextStyle(color: KColors.textDim)),
+          child: Text('Cancel', style: TextStyle(color: KColors.textDim)),
         ),
         ElevatedButton(
           onPressed: _saving ? null : _save,
@@ -3944,13 +3914,13 @@ class _WpFormDialogState extends State<_WpFormDialog> {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: KColors.surface,
-        title: const Text(
+        title: Text(
           'Delete Work Package',
           style: TextStyle(color: KColors.text, fontSize: 14),
         ),
         content: Text(
           'Delete "${widget.wp!.name}" and all its activities? This cannot be undone.',
-          style: const TextStyle(color: KColors.textDim, fontSize: 13),
+          style: TextStyle(color: KColors.textDim, fontSize: 13),
         ),
         actions: [
           TextButton(
@@ -3991,7 +3961,7 @@ class _WpFormDialogState extends State<_WpFormDialog> {
       backgroundColor: KColors.surface,
       title: Text(
         _isEdit ? 'Edit Work Package' : 'New Work Package',
-        style: const TextStyle(color: KColors.text, fontSize: 14),
+        style: TextStyle(color: KColors.text, fontSize: 14),
       ),
       content: SizedBox(
         width: 440,
@@ -4005,7 +3975,7 @@ class _WpFormDialogState extends State<_WpFormDialog> {
                   controller: _nameCtrl,
                   autofocus: !_isEdit,
                   decoration: const InputDecoration(labelText: 'Name *'),
-                  style: const TextStyle(color: KColors.text, fontSize: 13),
+                  style: TextStyle(color: KColors.text, fontSize: 13),
                   validator: (v) =>
                       v == null || v.trim().isEmpty ? 'Required' : null,
                 ),
@@ -4016,11 +3986,11 @@ class _WpFormDialogState extends State<_WpFormDialog> {
                     labelText: 'Short code (optional)',
                     hintText: 'e.g. WP1',
                   ),
-                  style: const TextStyle(color: KColors.text, fontSize: 13),
+                  style: TextStyle(color: KColors.text, fontSize: 13),
                 ),
                 const SizedBox(height: 12),
                 // Colour theme
-                const Text(
+                Text(
                   'COLOUR THEME',
                   style: TextStyle(
                     color: KColors.textMuted,
@@ -4106,7 +4076,7 @@ class _WpFormDialogState extends State<_WpFormDialog> {
                     labelText: 'Description (optional)',
                     isDense: true,
                   ),
-                  style: const TextStyle(color: KColors.text, fontSize: 12),
+                  style: TextStyle(color: KColors.text, fontSize: 12),
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -4125,7 +4095,7 @@ class _WpFormDialogState extends State<_WpFormDialog> {
                     const Spacer(),
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text(
+                      child: Text(
                         'Cancel',
                         style: TextStyle(color: KColors.textDim, fontSize: 12),
                       ),
@@ -4172,7 +4142,7 @@ class _ParentActivityDropdown extends StatelessWidget {
         editingId != null &&
         allActivities.any((p) => p.act.parentActivityId == editingId);
     if (editingHasTasks) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.symmetric(vertical: 4),
         child: Text(
           'Has tasks — this activity is a WBS parent and can\'t be '
@@ -4206,7 +4176,7 @@ class _ParentActivityDropdown extends StatelessWidget {
         labelText: 'Parent activity (makes this a task)',
         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       ),
-      style: const TextStyle(color: KColors.text, fontSize: 14),
+      style: TextStyle(color: KColors.text, fontSize: 14),
       dropdownColor: KColors.surface2,
       items: [
         const DropdownMenuItem<String?>(
@@ -4655,13 +4625,13 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: KColors.surface,
-        title: const Text(
+        title: Text(
           'Delete Activity',
           style: TextStyle(color: KColors.text, fontSize: 14),
         ),
         content: Text(
           'Delete "${widget.activity!.name}"?',
-          style: const TextStyle(color: KColors.textDim, fontSize: 13),
+          style: TextStyle(color: KColors.textDim, fontSize: 13),
         ),
         actions: [
           TextButton(
@@ -4779,7 +4749,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
           Expanded(
             child: Text(
               _isEdit ? 'Edit Activity' : 'Add Activity',
-              style: const TextStyle(color: KColors.text, fontSize: 16),
+              style: TextStyle(color: KColors.text, fontSize: 16),
             ),
           ),
           Text(
@@ -4815,7 +4785,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                       vertical: 12,
                     ),
                   ),
-                  style: const TextStyle(color: KColors.text, fontSize: 14),
+                  style: TextStyle(color: KColors.text, fontSize: 14),
                   validator: (v) =>
                       v == null || v.trim().isEmpty ? 'Required' : null,
                 ),
@@ -4834,10 +4804,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                             vertical: 10,
                           ),
                         ),
-                        style: const TextStyle(
-                          color: KColors.text,
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: KColors.text, fontSize: 14),
                         dropdownColor: KColors.surface2,
                         items: _kActivityTypes
                             .map(
@@ -4865,10 +4832,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                             vertical: 10,
                           ),
                         ),
-                        style: const TextStyle(
-                          color: KColors.text,
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: KColors.text, fontSize: 14),
                         dropdownColor: KColors.surface2,
                         items: milestoneTrackerStatuses
                             .map(
@@ -4901,10 +4865,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                             vertical: 10,
                           ),
                         ),
-                        style: const TextStyle(
-                          color: KColors.text,
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: KColors.text, fontSize: 14),
                         dropdownColor: KColors.surface2,
                         items: _monthItems,
                         onChanged: (v) => setState(() {
@@ -4948,10 +4909,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                               vertical: 10,
                             ),
                           ),
-                          style: const TextStyle(
-                            color: KColors.text,
-                            fontSize: 14,
-                          ),
+                          style: TextStyle(color: KColors.text, fontSize: 14),
                           dropdownColor: KColors.surface2,
                           items: _monthItems,
                           onChanged: (v) => setState(() {
@@ -4979,16 +4937,13 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                                 'date with it.'
                           : 'Dated — the dates set the months; changing a '
                                 'month moves its date with it.',
-                      style: const TextStyle(
-                        color: KColors.textMuted,
-                        fontSize: 10,
-                      ),
+                      style: TextStyle(color: KColors.textMuted, fontSize: 10),
                     ),
                   ),
                 // ── Schedule scenarios (A / B / C) ──────────────────────
                 if (_canHaveScenarios) ...[
                   const SizedBox(height: 14),
-                  const Text(
+                  Text(
                     'SCHEDULE SCENARIOS',
                     style: TextStyle(
                       color: KColors.textDim,
@@ -5008,7 +4963,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                           : 'The end month above is A — Anchor. Optionally add '
                                 'the B — Likely and C — Safe finishes, and link the '
                                 'RAID items that drive the spread.',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: KColors.textMuted,
                         fontSize: 11,
                         height: 1.5,
@@ -5031,10 +4986,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                               vertical: 10,
                             ),
                           ),
-                          style: const TextStyle(
-                            color: KColors.text,
-                            fontSize: 14,
-                          ),
+                          style: TextStyle(color: KColors.text, fontSize: 14),
                           dropdownColor: KColors.surface2,
                           items: _scenarioItems,
                           onChanged: (v) => setState(() => _likelyMonth = v),
@@ -5054,10 +5006,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                               vertical: 10,
                             ),
                           ),
-                          style: const TextStyle(
-                            color: KColors.text,
-                            fontSize: 14,
-                          ),
+                          style: TextStyle(color: KColors.text, fontSize: 14),
                           dropdownColor: KColors.surface2,
                           items: _scenarioItems,
                           onChanged: (v) => setState(() => _safeMonth = v),
@@ -5071,7 +5020,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                       padding: const EdgeInsets.only(bottom: 4),
                       child: Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.shield_outlined,
                             size: 13,
                             color: KColors.textDim,
@@ -5082,14 +5031,14 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                               link.label ?? '…',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: KColors.text,
                                 fontSize: 12,
                               ),
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.close,
                               size: 14,
                               color: KColors.textMuted,
@@ -5109,7 +5058,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                   Row(
                     children: [
                       if (_varianceLinks.isEmpty)
-                        const Expanded(
+                        Expanded(
                           child: Text(
                             'No RAID items linked',
                             style: TextStyle(
@@ -5132,7 +5081,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                           ),
                         )
                       else
-                        const Text(
+                        Text(
                           'Max 5 linked',
                           style: TextStyle(
                             color: KColors.textMuted,
@@ -5143,7 +5092,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                   ),
                   if ((_likelyMonth != null || _safeMonth != null) &&
                       _varianceLinks.isEmpty)
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.only(top: 4),
                       child: Text(
                         'Dates vary — link the RAID items that drive the '
@@ -5180,7 +5129,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                   ],
                 ),
                 if (_startDate != null && widget.month0Date == null)
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.only(top: 4),
                     child: Text(
                       'Set the plan\'s month-0 date (Configure) so dates '
@@ -5202,7 +5151,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                 const SizedBox(height: 14),
                 // Tasks — rapid decomposition without leaving the dialog.
                 if (_canHaveTasks) ...[
-                  const Text(
+                  Text(
                     'TASKS',
                     style: TextStyle(
                       color: KColors.textDim,
@@ -5227,7 +5176,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                             Expanded(
                               child: Text(
                                 t.name,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: KColors.text,
                                   fontSize: 12,
                                 ),
@@ -5236,7 +5185,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                             ),
                             InkWell(
                               onTap: () => _removeTask(t),
-                              child: const Padding(
+                              child: Padding(
                                 padding: EdgeInsets.all(2),
                                 child: Icon(
                                   Icons.close,
@@ -5263,7 +5212,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                             Expanded(
                               child: Text(
                                 _pendingTaskNames[i],
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: KColors.text,
                                   fontSize: 12,
                                 ),
@@ -5273,7 +5222,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                             InkWell(
                               onTap: () =>
                                   setState(() => _pendingTaskNames.removeAt(i)),
-                              child: const Padding(
+                              child: Padding(
                                 padding: EdgeInsets.all(2),
                                 child: Icon(
                                   Icons.close,
@@ -5288,17 +5237,17 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                   TextField(
                     controller: _taskQuickAddCtrl,
                     focusNode: _taskQuickAddFocus,
-                    style: const TextStyle(color: KColors.text, fontSize: 12),
+                    style: TextStyle(color: KColors.text, fontSize: 12),
                     decoration: InputDecoration(
                       hintText: _isEdit
                           ? 'Add task — Enter to save, keep typing for more'
                           : 'Add task — created with the activity',
-                      hintStyle: const TextStyle(
+                      hintStyle: TextStyle(
                         color: KColors.textMuted,
                         fontSize: 12,
                       ),
                       isDense: true,
-                      prefixIcon: const Icon(
+                      prefixIcon: Icon(
                         Icons.add,
                         size: 14,
                         color: KColors.textDim,
@@ -5321,11 +5270,8 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                   db: widget.db,
                   projectId: widget.projectId,
                   onPersonCreated: _loadPersons,
-                  textStyle: const TextStyle(color: KColors.text, fontSize: 14),
-                  labelStyle: const TextStyle(
-                    color: KColors.textDim,
-                    fontSize: 13,
-                  ),
+                  textStyle: TextStyle(color: KColors.text, fontSize: 14),
+                  labelStyle: TextStyle(color: KColors.textDim, fontSize: 13),
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 12,
                     vertical: 14,
@@ -5353,7 +5299,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                       vertical: 10,
                     ),
                   ),
-                  style: const TextStyle(color: KColors.text, fontSize: 14),
+                  style: TextStyle(color: KColors.text, fontSize: 14),
                 ),
                 const SizedBox(height: 14),
                 // Notes — generous multi-line, larger font, label
@@ -5371,7 +5317,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                       vertical: 12,
                     ),
                   ),
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: KColors.text,
                     fontSize: 14,
                     height: 1.4,
@@ -5381,7 +5327,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                 CheckboxListTile(
                   value: _isCritical,
                   onChanged: (v) => setState(() => _isCritical = v ?? false),
-                  title: const Text(
+                  title: Text(
                     'On critical path',
                     style: TextStyle(color: KColors.text, fontSize: 12),
                   ),
@@ -5398,7 +5344,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                 ),
                 if (_successors.isNotEmpty) ...[
                   const SizedBox(height: 12),
-                  const Text(
+                  Text(
                     'GATES',
                     style: TextStyle(
                       color: KColors.textDim,
@@ -5408,7 +5354,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                     ),
                   ),
                   const SizedBox(height: 2),
-                  const Text(
+                  Text(
                     'Rows that wait on this one. Open any to see its detail.',
                     style: TextStyle(color: KColors.textMuted, fontSize: 11),
                   ),
@@ -5430,7 +5376,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                                   sx.wp.shortCode != null
                                       ? '${sx.wp.shortCode} · ${sx.act.name}'
                                       : '${sx.wp.name} · ${sx.act.name}',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: KColors.text,
                                     fontSize: 12,
                                     decoration: TextDecoration.underline,
@@ -5446,13 +5392,13 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                                   'finish_to_finish' => 'FF',
                                   _ => 'FS',
                                 },
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: KColors.textMuted,
                                   fontSize: 10,
                                 ),
                               ),
                               const SizedBox(width: 6),
-                              const Icon(
+                              Icon(
                                 Icons.open_in_new,
                                 size: 11,
                                 color: KColors.textMuted,
@@ -5478,7 +5424,7 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
                   const Spacer(),
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text(
+                    child: Text(
                       'Cancel',
                       style: TextStyle(color: KColors.textDim, fontSize: 12),
                     ),
@@ -5605,12 +5551,12 @@ class _ActionsPopoverDialogState extends State<_ActionsPopoverDialog> {
       backgroundColor: KColors.surface,
       title: Row(
         children: [
-          const Icon(Icons.bolt, size: 14, color: KColors.amber),
+          Icon(Icons.bolt, size: 14, color: KColors.amber),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               'Actions – ${widget.activity.name}',
-              style: const TextStyle(color: KColors.text, fontSize: 13),
+              style: TextStyle(color: KColors.text, fontSize: 13),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -5625,7 +5571,7 @@ class _ActionsPopoverDialogState extends State<_ActionsPopoverDialog> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (_actions.isEmpty)
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.symmetric(vertical: 8),
                       child: Text(
                         'No actions linked to this activity yet.',
@@ -5658,7 +5604,7 @@ class _ActionsPopoverDialogState extends State<_ActionsPopoverDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text(
+          child: Text(
             'Close',
             style: TextStyle(color: KColors.textDim, fontSize: 12),
           ),
@@ -5709,7 +5655,7 @@ class _ActionRow extends StatelessWidget {
             Expanded(
               child: Text(
                 action.description,
-                style: const TextStyle(color: KColors.text, fontSize: 12),
+                style: TextStyle(color: KColors.text, fontSize: 12),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -5717,7 +5663,7 @@ class _ActionRow extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 action.owner!,
-                style: const TextStyle(color: KColors.textDim, fontSize: 10),
+                style: TextStyle(color: KColors.textDim, fontSize: 10),
               ),
             ],
             if (action.dueDate != null) ...[
@@ -5918,7 +5864,7 @@ class _MultiPersonPickerFieldState extends State<_MultiPersonPickerField> {
                         ),
                       ),
                       backgroundColor: KColors.surface2,
-                      side: const BorderSide(color: KColors.border2),
+                      side: BorderSide(color: KColors.border2),
                       deleteIcon: Icon(
                         Icons.close,
                         size: chipDeleteSize,
@@ -5984,7 +5930,7 @@ class _MultiPersonPickerFieldState extends State<_MultiPersonPickerField> {
                     elevation: 6,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(4),
-                      side: const BorderSide(color: KColors.border2),
+                      side: BorderSide(color: KColors.border2),
                     ),
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(
@@ -5999,14 +5945,14 @@ class _MultiPersonPickerFieldState extends State<_MultiPersonPickerField> {
                             return ListTile(
                               dense: true,
                               visualDensity: VisualDensity.compact,
-                              leading: const Icon(
+                              leading: Icon(
                                 Icons.person_pin_outlined,
                                 size: 14,
                                 color: KColors.phosphor,
                               ),
                               title: Text(
                                 'Me — $_myName',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: KColors.phosphor,
                                   fontSize: 12,
                                 ),
@@ -6022,14 +5968,14 @@ class _MultiPersonPickerFieldState extends State<_MultiPersonPickerField> {
                             return ListTile(
                               dense: true,
                               visualDensity: VisualDensity.compact,
-                              leading: const Icon(
+                              leading: Icon(
                                 Icons.person_add_outlined,
                                 size: 14,
                                 color: KColors.phosphor,
                               ),
                               title: Text(
                                 'Add "$q" as new person',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: KColors.phosphor,
                                   fontSize: 12,
                                 ),
@@ -6043,14 +5989,14 @@ class _MultiPersonPickerFieldState extends State<_MultiPersonPickerField> {
                           return ListTile(
                             dense: true,
                             visualDensity: VisualDensity.compact,
-                            leading: const Icon(
+                            leading: Icon(
                               Icons.person_outline,
                               size: 14,
                               color: KColors.textDim,
                             ),
                             title: Text(
                               opt,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: KColors.text,
                                 fontSize: 12,
                               ),
@@ -6108,11 +6054,7 @@ class _StatusDropdown extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Flexible(child: statusChip(status)),
-            const Icon(
-              Icons.arrow_drop_down,
-              size: 14,
-              color: KColors.textMuted,
-            ),
+            Icon(Icons.arrow_drop_down, size: 14, color: KColors.textMuted),
           ],
         ),
       ),
@@ -6956,7 +6898,7 @@ class _RaidPickerDialogState extends State<_RaidPickerDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: KColors.surface,
-      title: const Text(
+      title: Text(
         'Link a RAID item',
         style: TextStyle(color: KColors.text, fontSize: 14),
       ),
@@ -6966,7 +6908,7 @@ class _RaidPickerDialogState extends State<_RaidPickerDialog> {
         child: _loading
             ? const Center(child: CircularProgressIndicator(strokeWidth: 1.5))
             : _items.isEmpty
-            ? const Center(
+            ? Center(
                 child: Text(
                   'No open RAID items yet — create one below.',
                   style: TextStyle(color: KColors.textDim, fontSize: 12),
@@ -6980,7 +6922,7 @@ class _RaidPickerDialogState extends State<_RaidPickerDialog> {
                         context,
                       ).pop((type: item.type, id: item.id)),
                       child: Container(
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           border: Border(
                             bottom: BorderSide(color: KColors.border, width: 1),
                           ),
@@ -7018,7 +6960,7 @@ class _RaidPickerDialogState extends State<_RaidPickerDialog> {
                                 item.description,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: KColors.text,
                                   fontSize: 12,
                                 ),

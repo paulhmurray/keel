@@ -15,7 +15,7 @@ final _kTabStopRe = RegExp(r'⟨[^⟩]+⟩');
 
 // Shared text style — must match the TextField and _BlockCursorPainter exactly
 // so the TextPainter used for visual navigation lays out identically.
-const _kEditorTextStyle = TextStyle(
+final _kEditorTextStyle = TextStyle(
   color: KColors.text,
   fontSize: 13,
   height: 1.7,
@@ -34,7 +34,9 @@ class _VimNormalModeFormatter extends TextInputFormatter {
 
   @override
   TextEditingValue formatEditUpdate(
-      TextEditingValue old, TextEditingValue next) {
+    TextEditingValue old,
+    TextEditingValue next,
+  ) {
     return _isNormal() ? old : next;
   }
 }
@@ -194,8 +196,9 @@ class _JournalEditorState extends State<JournalEditor> {
 
     final textBeforeCursor = text.substring(0, cursor);
 
-    final slashMatch =
-        RegExp(r'(?:^|[\n ])(\/\w*)$').firstMatch(textBeforeCursor);
+    final slashMatch = RegExp(
+      r'(?:^|[\n ])(\/\w*)$',
+    ).firstMatch(textBeforeCursor);
     if (slashMatch != null) {
       final query = slashMatch.group(1)!.substring(1);
       final wasShowing = _showSlashMenu && _slashQuery == query;
@@ -259,7 +262,7 @@ class _JournalEditorState extends State<JournalEditor> {
 
     final now = DateTime.now();
     final dateStr =
-        '${now.day} ${const ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][now.month - 1]} ${now.year}';
+        '${now.day} ${const ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][now.month - 1]} ${now.year}';
     final resolved = cmd.template.replaceAll('{{today}}', dateStr);
 
     final newText =
@@ -283,7 +286,9 @@ class _JournalEditorState extends State<JournalEditor> {
     } else {
       ctrl.value = TextEditingValue(
         text: newText,
-        selection: TextSelection.collapsed(offset: slashStart + resolved.length),
+        selection: TextSelection.collapsed(
+          offset: slashStart + resolved.length,
+        ),
       );
       setState(() {
         _showSlashMenu = false;
@@ -300,7 +305,10 @@ class _JournalEditorState extends State<JournalEditor> {
 
     RegExpMatch? next;
     for (final m in _kTabStopRe.allMatches(text)) {
-      if (m.start >= from) { next = m; break; }
+      if (m.start >= from) {
+        next = m;
+        break;
+      }
     }
 
     if (next != null) {
@@ -336,8 +344,7 @@ class _JournalEditorState extends State<JournalEditor> {
     }
     ctrl.value = TextEditingValue(
       text: sb.toString(),
-      selection: TextSelection.collapsed(
-          offset: newCursor.clamp(0, sb.length)),
+      selection: TextSelection.collapsed(offset: newCursor.clamp(0, sb.length)),
     );
   }
 
@@ -393,8 +400,7 @@ class _JournalEditorState extends State<JournalEditor> {
         text.substring(0, hashStart) + link + text.substring(cursor);
     ctrl.value = TextEditingValue(
       text: newText,
-      selection:
-          TextSelection.collapsed(offset: hashStart + link.length),
+      selection: TextSelection.collapsed(offset: hashStart + link.length),
     );
     setState(() {
       _showGlossaryMenu = false;
@@ -476,7 +482,10 @@ class _JournalEditorState extends State<JournalEditor> {
   void _vimJ() {
     final tp = _makeNavPainter();
     final lh = tp.preferredLineHeight;
-    final caretOff = tp.getOffsetForCaret(TextPosition(offset: _cursor), Rect.zero);
+    final caretOff = tp.getOffsetForCaret(
+      TextPosition(offset: _cursor),
+      Rect.zero,
+    );
     final target = Offset(caretOff.dx, caretOff.dy + lh * 1.5);
     final newPos = tp.getPositionForOffset(target);
     tp.dispose();
@@ -487,8 +496,14 @@ class _JournalEditorState extends State<JournalEditor> {
   void _vimK() {
     final tp = _makeNavPainter();
     final lh = tp.preferredLineHeight;
-    final caretOff = tp.getOffsetForCaret(TextPosition(offset: _cursor), Rect.zero);
-    if (caretOff.dy < lh * 0.5) { tp.dispose(); return; } // already on first visual line
+    final caretOff = tp.getOffsetForCaret(
+      TextPosition(offset: _cursor),
+      Rect.zero,
+    );
+    if (caretOff.dy < lh * 0.5) {
+      tp.dispose();
+      return;
+    } // already on first visual line
     final target = Offset(caretOff.dx, caretOff.dy - lh * 0.5);
     final newPos = tp.getPositionForOffset(target);
     tp.dispose();
@@ -523,11 +538,17 @@ class _JournalEditorState extends State<JournalEditor> {
     var i = _cursor;
     if (i >= _text.length) return;
     if (_isWordChar(_text[i])) {
-      while (i < _text.length && _isWordChar(_text[i])) { i++; }
+      while (i < _text.length && _isWordChar(_text[i])) {
+        i++;
+      }
     } else {
-      while (i < _text.length && !_isWordChar(_text[i]) && _text[i] != '\n') { i++; }
+      while (i < _text.length && !_isWordChar(_text[i]) && _text[i] != '\n') {
+        i++;
+      }
     }
-    while (i < _text.length && (_text[i] == ' ' || _text[i] == '\t')) { i++; }
+    while (i < _text.length && (_text[i] == ' ' || _text[i] == '\t')) {
+      i++;
+    }
     _moveTo(i);
   }
 
@@ -537,13 +558,19 @@ class _JournalEditorState extends State<JournalEditor> {
     if (i >= _text.length) return;
     // If on whitespace or end of word, advance to next word first
     if (!_isWordChar(_text[i])) {
-      while (i < _text.length && !_isWordChar(_text[i])) { i++; }
+      while (i < _text.length && !_isWordChar(_text[i])) {
+        i++;
+      }
     } else if (i + 1 < _text.length && !_isWordChar(_text[i + 1])) {
       i++; // already at end of word — move to next
-      while (i < _text.length && !_isWordChar(_text[i])) { i++; }
+      while (i < _text.length && !_isWordChar(_text[i])) {
+        i++;
+      }
     }
     // Now advance to last char of this word
-    while (i + 1 < _text.length && _isWordChar(_text[i + 1])) { i++; }
+    while (i + 1 < _text.length && _isWordChar(_text[i + 1])) {
+      i++;
+    }
     _moveTo(i);
   }
 
@@ -552,9 +579,13 @@ class _JournalEditorState extends State<JournalEditor> {
     var i = _cursor;
     if (i == 0) return;
     i--;
-    while (i > 0 && (_text[i] == ' ' || _text[i] == '\t' || _text[i] == '\n')) { i--; }
+    while (i > 0 && (_text[i] == ' ' || _text[i] == '\t' || _text[i] == '\n')) {
+      i--;
+    }
     if (_isWordChar(_text[i])) {
-      while (i > 0 && _isWordChar(_text[i - 1])) { i--; }
+      while (i > 0 && _isWordChar(_text[i - 1])) {
+        i--;
+      }
     }
     _moveTo(i);
   }
@@ -573,8 +604,7 @@ class _JournalEditorState extends State<JournalEditor> {
     final newText = _text.substring(0, pos) + _text.substring(pos + 1);
     _ctrl.value = TextEditingValue(
       text: newText,
-      selection: TextSelection.collapsed(
-          offset: pos.clamp(0, newText.length)),
+      selection: TextSelection.collapsed(offset: pos.clamp(0, newText.length)),
     );
   }
 
@@ -586,13 +616,12 @@ class _JournalEditorState extends State<JournalEditor> {
     var end = _text.indexOf('\n', pos);
     if (end < 0) {
       // Last line — also remove the preceding newline if any
-      final newText = start > 0
-          ? _text.substring(0, start - 1)
-          : '';
+      final newText = start > 0 ? _text.substring(0, start - 1) : '';
       _ctrl.value = TextEditingValue(
         text: newText,
         selection: TextSelection.collapsed(
-            offset: (start - 1).clamp(0, newText.length)),
+          offset: (start - 1).clamp(0, newText.length),
+        ),
       );
     } else {
       // Remove line + newline
@@ -600,7 +629,8 @@ class _JournalEditorState extends State<JournalEditor> {
       _ctrl.value = TextEditingValue(
         text: newText,
         selection: TextSelection.collapsed(
-            offset: start.clamp(0, newText.length)),
+          offset: start.clamp(0, newText.length),
+        ),
       );
     }
   }
@@ -639,12 +669,12 @@ class _JournalEditorState extends State<JournalEditor> {
   }
 
   void _enterNormal() => setState(() {
-        _vimKind = _VimKind.normal;
-        _vimPending = '';
-        // Dismiss any menus
-        _showSlashMenu = false;
-        _showMentionMenu = false;
-      });
+    _vimKind = _VimKind.normal;
+    _vimPending = '';
+    // Dismiss any menus
+    _showSlashMenu = false;
+    _showMentionMenu = false;
+  });
 
   // Helpers
   int _lineStart(int pos) {
@@ -662,7 +692,8 @@ class _JournalEditorState extends State<JournalEditor> {
   KeyEventResult _handleEditorKey(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
 
-    final isMetaOrCtrl = HardwareKeyboard.instance.isMetaPressed ||
+    final isMetaOrCtrl =
+        HardwareKeyboard.instance.isMetaPressed ||
         HardwareKeyboard.instance.isControlPressed;
 
     // Ctrl+Enter → save (always)
@@ -686,18 +717,23 @@ class _JournalEditorState extends State<JournalEditor> {
       if (items.isNotEmpty) {
         if (event.logicalKey == LogicalKeyboardKey.arrowDown ||
             event.logicalKey == LogicalKeyboardKey.tab) {
-          setState(() => _slashSelectedIndex =
-              (_slashSelectedIndex + 1) % items.length);
+          setState(
+            () =>
+                _slashSelectedIndex = (_slashSelectedIndex + 1) % items.length,
+          );
           return KeyEventResult.handled;
         }
         if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-          setState(() => _slashSelectedIndex =
-              (_slashSelectedIndex - 1 + items.length) % items.length);
+          setState(
+            () => _slashSelectedIndex =
+                (_slashSelectedIndex - 1 + items.length) % items.length,
+          );
           return KeyEventResult.handled;
         }
         if (event.logicalKey == LogicalKeyboardKey.enter) {
           _insertSlashTemplate(
-              items[_slashSelectedIndex.clamp(0, items.length - 1)]);
+            items[_slashSelectedIndex.clamp(0, items.length - 1)],
+          );
           return KeyEventResult.handled;
         }
       }
@@ -710,19 +746,21 @@ class _JournalEditorState extends State<JournalEditor> {
     // ── Mention menu navigation ──────────────────────────────────────────────
     if (_showMentionMenu) {
       final items = filteredPersons(widget.persons, _mentionQuery);
-      final showAdd =
-          _mentionQuery.isNotEmpty && widget.onCreatePerson != null;
+      final showAdd = _mentionQuery.isNotEmpty && widget.onCreatePerson != null;
       final total = items.length + (showAdd ? 1 : 0);
       if (total > 0) {
         if (event.logicalKey == LogicalKeyboardKey.arrowDown ||
             event.logicalKey == LogicalKeyboardKey.tab) {
-          setState(() =>
-              _mentionSelectedIndex = (_mentionSelectedIndex + 1) % total);
+          setState(
+            () => _mentionSelectedIndex = (_mentionSelectedIndex + 1) % total,
+          );
           return KeyEventResult.handled;
         }
         if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-          setState(() => _mentionSelectedIndex =
-              (_mentionSelectedIndex - 1 + total) % total);
+          setState(
+            () => _mentionSelectedIndex =
+                (_mentionSelectedIndex - 1 + total) % total,
+          );
           return KeyEventResult.handled;
         }
         if (event.logicalKey == LogicalKeyboardKey.enter) {
@@ -730,7 +768,8 @@ class _JournalEditorState extends State<JournalEditor> {
             _handleAddPerson();
           } else if (items.isNotEmpty) {
             _insertMention(
-                items[_mentionSelectedIndex.clamp(0, items.length - 1)]);
+              items[_mentionSelectedIndex.clamp(0, items.length - 1)],
+            );
           }
           return KeyEventResult.handled;
         }
@@ -743,21 +782,26 @@ class _JournalEditorState extends State<JournalEditor> {
 
     // ── Glossary menu navigation ─────────────────────────────────────────────
     if (_showGlossaryMenu) {
-      final items =
-          filteredGlossaryEntries(widget.glossaryEntries, _glossaryQuery);
-      final hasAddNew = _glossaryQuery.isNotEmpty &&
-          widget.onCreateGlossaryEntry != null;
+      final items = filteredGlossaryEntries(
+        widget.glossaryEntries,
+        _glossaryQuery,
+      );
+      final hasAddNew =
+          _glossaryQuery.isNotEmpty && widget.onCreateGlossaryEntry != null;
       final total = items.length + (hasAddNew ? 1 : 0);
       if (total > 0) {
         if (event.logicalKey == LogicalKeyboardKey.arrowDown ||
             event.logicalKey == LogicalKeyboardKey.tab) {
-          setState(() => _glossarySelectedIndex =
-              (_glossarySelectedIndex + 1) % total);
+          setState(
+            () => _glossarySelectedIndex = (_glossarySelectedIndex + 1) % total,
+          );
           return KeyEventResult.handled;
         }
         if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-          setState(() => _glossarySelectedIndex =
-              (_glossarySelectedIndex - 1 + total) % total);
+          setState(
+            () => _glossarySelectedIndex =
+                (_glossarySelectedIndex - 1 + total) % total,
+          );
           return KeyEventResult.handled;
         }
         if (event.logicalKey == LogicalKeyboardKey.enter) {
@@ -765,7 +809,8 @@ class _JournalEditorState extends State<JournalEditor> {
             _handleAddGlossaryEntry();
           } else if (items.isNotEmpty) {
             _insertGlossaryLink(
-                items[_glossarySelectedIndex.clamp(0, items.length - 1)]);
+              items[_glossarySelectedIndex.clamp(0, items.length - 1)],
+            );
           }
           return KeyEventResult.handled;
         }
@@ -824,43 +869,85 @@ class _JournalEditorState extends State<JournalEditor> {
     // ── Two-key sequences ────────────────────────────────────────────────────
     if (_vimPending == 'd') {
       setState(() => _vimPending = '');
-      if (char == 'd') { _vimDD(); return KeyEventResult.handled; }
+      if (char == 'd') {
+        _vimDD();
+        return KeyEventResult.handled;
+      }
       return KeyEventResult.handled; // unknown — consume and reset
     }
     if (_vimPending == 'g') {
       setState(() => _vimPending = '');
-      if (char == 'g') { _vimGG(); return KeyEventResult.handled; }
+      if (char == 'g') {
+        _vimGG();
+        return KeyEventResult.handled;
+      }
       return KeyEventResult.handled;
     }
 
     // ── Single-key commands ──────────────────────────────────────────────────
     switch (char) {
       // Enter insert mode
-      case 'i': _enterInsert(); return KeyEventResult.handled;
-      case 'I': _vim0(); _enterInsert(); return KeyEventResult.handled;
+      case 'i':
+        _enterInsert();
+        return KeyEventResult.handled;
+      case 'I':
+        _vim0();
+        _enterInsert();
+        return KeyEventResult.handled;
       case 'a':
         _moveTo(_cursor + 1);
         _enterInsert();
         return KeyEventResult.handled;
-      case 'A': _vimDollar(); _enterInsert(); return KeyEventResult.handled;
-      case 'o': _vimO(); return KeyEventResult.handled; // opens + enters insert
-      case 'O': _vimOUpper(); return KeyEventResult.handled;
+      case 'A':
+        _vimDollar();
+        _enterInsert();
+        return KeyEventResult.handled;
+      case 'o':
+        _vimO();
+        return KeyEventResult.handled; // opens + enters insert
+      case 'O':
+        _vimOUpper();
+        return KeyEventResult.handled;
 
       // Motions
-      case 'h': _vimH(); return KeyEventResult.handled;
-      case 'l': _vimL(); return KeyEventResult.handled;
-      case 'j': _vimJ(); return KeyEventResult.handled;
-      case 'k': _vimK(); return KeyEventResult.handled;
-      case 'w': _vimW(); return KeyEventResult.handled;
-      case 'e': _vimE(); return KeyEventResult.handled;
-      case 'b': _vimB(); return KeyEventResult.handled;
-      case '0': _vim0(); return KeyEventResult.handled;
-      case r'$': _vimDollar(); return KeyEventResult.handled;
-      case 'G': _vimG(); return KeyEventResult.handled;
-      case 'u': _vimUndo(); return KeyEventResult.handled;
+      case 'h':
+        _vimH();
+        return KeyEventResult.handled;
+      case 'l':
+        _vimL();
+        return KeyEventResult.handled;
+      case 'j':
+        _vimJ();
+        return KeyEventResult.handled;
+      case 'k':
+        _vimK();
+        return KeyEventResult.handled;
+      case 'w':
+        _vimW();
+        return KeyEventResult.handled;
+      case 'e':
+        _vimE();
+        return KeyEventResult.handled;
+      case 'b':
+        _vimB();
+        return KeyEventResult.handled;
+      case '0':
+        _vim0();
+        return KeyEventResult.handled;
+      case r'$':
+        _vimDollar();
+        return KeyEventResult.handled;
+      case 'G':
+        _vimG();
+        return KeyEventResult.handled;
+      case 'u':
+        _vimUndo();
+        return KeyEventResult.handled;
 
       // Operations
-      case 'x': _vimX(); return KeyEventResult.handled;
+      case 'x':
+        _vimX();
+        return KeyEventResult.handled;
 
       // Start of two-key sequences
       case 'd':
@@ -872,10 +959,22 @@ class _JournalEditorState extends State<JournalEditor> {
     }
 
     // Arrow keys work in normal mode for navigation
-    if (key == LogicalKeyboardKey.arrowLeft) { _vimH(); return KeyEventResult.handled; }
-    if (key == LogicalKeyboardKey.arrowRight) { _vimL(); return KeyEventResult.handled; }
-    if (key == LogicalKeyboardKey.arrowDown) { _vimJ(); return KeyEventResult.handled; }
-    if (key == LogicalKeyboardKey.arrowUp) { _vimK(); return KeyEventResult.handled; }
+    if (key == LogicalKeyboardKey.arrowLeft) {
+      _vimH();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.arrowRight) {
+      _vimL();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.arrowDown) {
+      _vimJ();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.arrowUp) {
+      _vimK();
+      return KeyEventResult.handled;
+    }
 
     // Consume everything else in normal mode (don't let chars be typed)
     return KeyEventResult.handled;
@@ -905,20 +1004,23 @@ class _JournalEditorState extends State<JournalEditor> {
             child: TextField(
               controller: widget.titleController,
               onSubmitted: (_) => widget.bodyFocusNode.requestFocus(),
-              style: const TextStyle(
+              style: TextStyle(
                 color: KColors.text,
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'Entry title (optional)',
                 hintStyle: TextStyle(color: KColors.textMuted, fontSize: 18),
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.symmetric(vertical: 4),
                 prefixIcon: Padding(
                   padding: EdgeInsets.only(right: 8),
-                  child: Icon(Icons.edit_note_outlined,
-                      color: KColors.amber, size: 20),
+                  child: Icon(
+                    Icons.edit_note_outlined,
+                    color: KColors.amber,
+                    size: 20,
+                  ),
                 ),
               ),
             ),
@@ -926,14 +1028,14 @@ class _JournalEditorState extends State<JournalEditor> {
           const SizedBox(height: 4),
           Text(
             widget.entryDate,
-            style: const TextStyle(
+            style: TextStyle(
               color: KColors.amber,
               fontSize: 11,
               fontWeight: FontWeight.w500,
             ),
           ),
           const SizedBox(height: 16),
-          const Divider(color: KColors.border, height: 1),
+          Divider(color: KColors.border, height: 1),
           const SizedBox(height: 16),
 
           // Body editor
@@ -957,7 +1059,7 @@ class _JournalEditorState extends State<JournalEditor> {
                         _VimNormalModeFormatter(() => _inNormal),
                     ],
                     style: _kEditorTextStyle,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText:
                           'Write meeting notes, observations, decisions...\n\nType / for commands, @ to mention someone, # to link a glossary term.',
                       hintStyle: TextStyle(
@@ -967,7 +1069,10 @@ class _JournalEditorState extends State<JournalEditor> {
                       ),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.only(
-                          left: _kBodyLeftPad, top: 8, bottom: 80),
+                        left: _kBodyLeftPad,
+                        top: 8,
+                        bottom: 80,
+                      ),
                     ),
                   ),
                 ),
@@ -981,11 +1086,15 @@ class _JournalEditorState extends State<JournalEditor> {
                         // the same layout dimensions as the cursor painter.
                         _layoutWidth = constraints.maxWidth - _kBodyLeftPad;
                         return ListenableBuilder(
-                          listenable: Listenable.merge(
-                              [widget.bodyController, _scrollController]),
+                          listenable: Listenable.merge([
+                            widget.bodyController,
+                            _scrollController,
+                          ]),
                           builder: (context, _) => CustomPaint(
                             size: Size(
-                                constraints.maxWidth, constraints.maxHeight),
+                              constraints.maxWidth,
+                              constraints.maxHeight,
+                            ),
                             painter: _BlockCursorPainter(
                               controller: widget.bodyController,
                               scrollOffset: _scrollController.hasClients
@@ -1007,8 +1116,7 @@ class _JournalEditorState extends State<JournalEditor> {
                       query: _slashQuery,
                       selectedIndex: _slashSelectedIndex,
                       onSelect: _insertSlashTemplate,
-                      onDismiss: () =>
-                          setState(() => _showSlashMenu = false),
+                      onDismiss: () => setState(() => _showSlashMenu = false),
                     ),
                   ),
 
@@ -1046,7 +1154,7 @@ class _JournalEditorState extends State<JournalEditor> {
           ),
 
           // Footer
-          const Divider(color: KColors.border, height: 1),
+          Divider(color: KColors.border, height: 1),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Row(
@@ -1071,13 +1179,12 @@ class _JournalEditorState extends State<JournalEditor> {
                   listenable: widget.bodyController,
                   builder: (context, _) => Text(
                     '${widget.bodyController.text.length} chars',
-                    style: const TextStyle(
-                        color: KColors.textMuted, fontSize: 10),
+                    style: TextStyle(color: KColors.textMuted, fontSize: 10),
                   ),
                 ),
                 if (widget.saving) ...[
                   const SizedBox(width: 8),
-                  const SizedBox(
+                  SizedBox(
                     width: 12,
                     height: 12,
                     child: CircularProgressIndicator(
@@ -1104,15 +1211,17 @@ class _JournalEditorState extends State<JournalEditor> {
             border: Border.all(color: KColors.border2),
             borderRadius: BorderRadius.circular(2),
           ),
-          child: Text(keyLabel,
-              style: const TextStyle(
-                  color: KColors.textDim,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600)),
+          child: Text(
+            keyLabel,
+            style: TextStyle(
+              color: KColors.textDim,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
         const SizedBox(width: 4),
-        Text(label,
-            style: const TextStyle(color: KColors.textMuted, fontSize: 10)),
+        Text(label, style: TextStyle(color: KColors.textMuted, fontSize: 10)),
       ],
     );
   }
@@ -1123,9 +1232,11 @@ class _JournalEditorState extends State<JournalEditor> {
 // ---------------------------------------------------------------------------
 
 class _BlockCursorPainter extends CustomPainter {
-  static const _textStyle = _kEditorTextStyle; // must match TextField style exactly
-  static const _topPadding = 8.0;             // matches TextField contentPadding.top
-  static const _leftPadding = _kBodyLeftPad;  // matches TextField contentPadding.left
+  static final _textStyle =
+      _kEditorTextStyle; // must match TextField style exactly
+  static const _topPadding = 8.0; // matches TextField contentPadding.top
+  static const _leftPadding =
+      _kBodyLeftPad; // matches TextField contentPadding.left
 
   final TextEditingController controller;
   final double scrollOffset;
@@ -1159,7 +1270,8 @@ class _BlockCursorPainter extends CustomPainter {
     );
 
     // Character width: measure the box of the char under the cursor
-    double charWidth = lineHeight * 0.55; // sensible fallback (~half line height)
+    double charWidth =
+        lineHeight * 0.55; // sensible fallback (~half line height)
     if (cursor < text.length && text[cursor] != '\n') {
       final boxes = painter.getBoxesForSelection(
         TextSelection(baseOffset: cursor, extentOffset: cursor + 1),
@@ -1235,15 +1347,19 @@ class _VimModeBadge extends StatelessWidget {
         if (isNormal) ...[
           const SizedBox(width: 10),
           Flexible(
-            child: Text('i/a insert  o new line  w/e/b words  \$ end  gg/G top/end  dd delete  u undo  ^r redo',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: KColors.textMuted, fontSize: 10)),
+            child: Text(
+              'i/a insert  o new line  w/e/b words  \$ end  gg/G top/end  dd delete  u undo  ^r redo',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: KColors.textMuted, fontSize: 10),
+            ),
           ),
         ] else ...[
           const SizedBox(width: 10),
-          Text('Esc  normal mode',
-              style: const TextStyle(color: KColors.textMuted, fontSize: 10)),
+          Text(
+            'Esc  normal mode',
+            style: TextStyle(color: KColors.textMuted, fontSize: 10),
+          ),
         ],
       ],
     );

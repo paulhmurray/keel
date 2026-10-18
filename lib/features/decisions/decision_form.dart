@@ -70,10 +70,20 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
   // 'decided' is what the journal parser writes; the rest are the
   // governance outcomes. Both vocabularies live in the register.
   final _statuses = [
-    'pending', 'decided', 'approved', 'rejected', 'deferred', 'closed'
+    'pending',
+    'decided',
+    'approved',
+    'rejected',
+    'deferred',
+    'closed',
   ];
   final _sources = [
-    'manual', 'inbox', 'document', 'observation', 'meeting', 'journal'
+    'manual',
+    'inbox',
+    'document',
+    'observation',
+    'meeting',
+    'journal',
   ];
 
   bool get _isEdit => widget.decision != null;
@@ -99,8 +109,9 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
   }
 
   Future<void> _loadPersons() async {
-    final persons =
-        await widget.db.peopleDao.getPersonsForProject(widget.projectId);
+    final persons = await widget.db.peopleDao.getPersonsForProject(
+      widget.projectId,
+    );
     if (mounted) setState(() => _persons = persons);
   }
 
@@ -108,13 +119,17 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
     final db = widget.db;
     final persons = await db.peopleDao.getPersonsForProject(widget.projectId);
     final wps = await db.programmeGanttDao.getWorkPackages(widget.projectId);
-    final acts =
-        await db.programmeGanttDao.getActivitiesForProject(widget.projectId);
+    final acts = await db.programmeGanttDao.getActivitiesForProject(
+      widget.projectId,
+    );
     final header = await db.programmeGanttDao.getHeader(widget.projectId);
     final planRow = widget.decision != null
         ? await DependencyPlanLink.find(
-            db, widget.projectId, widget.decision!.id,
-            kind: PlanLinkKind.decision)
+            db,
+            widget.projectId,
+            widget.decision!.id,
+            kind: PlanLinkKind.decision,
+          )
         : null;
     if (!mounted) return;
     setState(() {
@@ -157,13 +172,15 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
     if (!_formKey.currentState!.validate()) return;
 
     final isNew = widget.decision == null;
-    final existing =
-        await widget.db.decisionsDao.getDecisionsForProject(widget.projectId);
-    final nums = existing
-        .where((d) => d.ref != null && d.ref!.startsWith('DC'))
-        .map((d) => int.tryParse(d.ref!.substring(2)) ?? 0)
-        .toList()
-      ..sort();
+    final existing = await widget.db.decisionsDao.getDecisionsForProject(
+      widget.projectId,
+    );
+    final nums =
+        existing
+            .where((d) => d.ref != null && d.ref!.startsWith('DC'))
+            .map((d) => int.tryParse(d.ref!.substring(2)) ?? 0)
+            .toList()
+          ..sort();
     final String ref =
         widget.decision?.ref ?? 'DC${(nums.isEmpty ? 0 : nums.last) + 1}';
 
@@ -229,8 +246,11 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
 
   String? get _activityLabel => _planActivityId == null
       ? null
-      : PlanActivityPicker.labelFor(_planActivityId!,
-          workPackages: _workPackages, activities: _activities);
+      : PlanActivityPicker.labelFor(
+          _planActivityId!,
+          workPackages: _workPackages,
+          activities: _activities,
+        );
 
   DependencySlack? get _slack {
     final a = _activity;
@@ -250,7 +270,7 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
     final a = _activity;
     final slack = _slack;
     if (a == null) {
-      return const Text(
+      return Text(
         'Not linked to a plan activity — the register can\'t tell whether '
         'a late decision threatens the schedule.',
         style: TextStyle(color: KColors.textMuted, fontSize: 11),
@@ -262,23 +282,26 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (!editable) DetailField('Plan activity waiting on this', _activityLabel),
+        if (!editable)
+          DetailField('Plan activity waiting on this', _activityLabel),
         if (made)
-          Row(children: [
-            const Icon(Icons.check_circle, size: 12, color: KColors.phosphor),
-            const SizedBox(width: 5),
-            Flexible(
-              child: Text(
-                _decidedAt != null
-                    ? 'Decided on ${du.formatDate(_decidedAt)} — no longer '
-                        'holding up the activity. The plan arrow is removed '
-                        'while decided.'
-                    : 'Decided — no longer holding up the activity. The plan '
-                        'arrow is removed while decided.',
-                style: const TextStyle(color: KColors.phosphor, fontSize: 11),
+          Row(
+            children: [
+              Icon(Icons.check_circle, size: 12, color: KColors.phosphor),
+              const SizedBox(width: 5),
+              Flexible(
+                child: Text(
+                  _decidedAt != null
+                      ? 'Decided on ${du.formatDate(_decidedAt)} — no longer '
+                            'holding up the activity. The plan arrow is removed '
+                            'while decided.'
+                      : 'Decided — no longer holding up the activity. The plan '
+                            'arrow is removed while decided.',
+                  style: TextStyle(color: KColors.phosphor, fontSize: 11),
+                ),
               ),
-            ),
-          ])
+            ],
+          )
         else if (slack != null)
           DependencySlackChip(slack: slack)
         else
@@ -286,11 +309,11 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
             _dueDate == null
                 ? 'Set a needed-by date to see the slack against the plan.'
                 : 'The linked activity has no dates yet.',
-            style: const TextStyle(color: KColors.textMuted, fontSize: 11),
+            style: TextStyle(color: KColors.textMuted, fontSize: 11),
           ),
         if (!made) ...[
           const SizedBox(height: 6),
-          const Text(
+          Text(
             'Measured against the activity\'s start: it can\'t begin until '
             'this is decided.',
             style: TextStyle(color: KColors.textMuted, fontSize: 10),
@@ -303,8 +326,9 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
   // ── AI assist ──────────────────────────────────────────────────────────────
 
   Future<RaidAssistPrompt> _prompt(DecisionAssistField field) async {
-    final ctx =
-        await ContextBuilder(widget.db).buildSystemPrompt(widget.projectId);
+    final ctx = await ContextBuilder(
+      widget.db,
+    ).buildSystemPrompt(widget.projectId);
     return decisionAssistPrompt(
       field: field,
       description: _descCtrl.text,
@@ -321,11 +345,11 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
   }
 
   Color get _accent => switch (_status) {
-        'pending' => KColors.blue,
-        'decided' || 'approved' => KColors.phosphor,
-        'rejected' => KColors.red,
-        _ => KColors.textMuted,
-      };
+    'pending' => KColors.blue,
+    'decided' || 'approved' => KColors.phosphor,
+    'rejected' => KColors.red,
+    _ => KColors.textMuted,
+  };
 
   /// Contingency movements this decision authorised (programme side).
   Widget _movementsSection(Decision d) {
@@ -339,21 +363,24 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
         final rows = snap.data?.$1 ?? const <ContingencyMovement>[];
         final cur = snap.data?.$2 ?? 'AUD';
         if (rows.isEmpty) return const SizedBox.shrink();
-        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const DetailSectionLabel('Contingency movements'),
-          const SizedBox(height: 6),
-          for (final m in rows)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Text(
-                '${m.movedOn}  ${movementLabel(m.kind)}  '
-                '${movementSign(m.kind) < 0 ? '−' : '+'}${Money.formatMinorCompact(m.amountMinor, cur)}'
-                '${m.reason != null ? '  ·  ${m.reason}' : ''}',
-                style: const TextStyle(color: KColors.text, fontSize: 12),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const DetailSectionLabel('Contingency movements'),
+            const SizedBox(height: 6),
+            for (final m in rows)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  '${m.movedOn}  ${movementLabel(m.kind)}  '
+                  '${movementSign(m.kind) < 0 ? '−' : '+'}${Money.formatMinorCompact(m.amountMinor, cur)}'
+                  '${m.reason != null ? '  ·  ${m.reason}' : ''}',
+                  style: TextStyle(color: KColors.text, fontSize: 12),
+                ),
               ),
-            ),
-          const SizedBox(height: 8),
-        ]);
+            const SizedBox(height: 8),
+          ],
+        );
       },
     );
   }
@@ -365,11 +392,19 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
     return DetailDialog(
       accent: _accent,
       title: [
-        if (d.ref != null) ...[DetailRefChip(d.ref!), const SizedBox(width: 10)],
+        if (d.ref != null) ...[
+          DetailRefChip(d.ref!),
+          const SizedBox(width: 10),
+        ],
         const Expanded(child: DetailTitle('Decision')),
-        Text(d.status.toUpperCase(),
-            style: TextStyle(
-                color: _accent, fontSize: 11, fontWeight: FontWeight.w700)),
+        Text(
+          d.status.toUpperCase(),
+          style: TextStyle(
+            color: _accent,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
       ],
       left: [
         DetailField('Decision required', d.description, large: true),
@@ -384,10 +419,12 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
           children: [
             if (d.dueDate != null)
               Expanded(
-                  child: DetailField('Needed by', du.formatDate(d.dueDate))),
+                child: DetailField('Needed by', du.formatDate(d.dueDate)),
+              ),
             if (d.decidedAt != null)
               Expanded(
-                  child: DetailField('Decided on', du.formatDate(d.decidedAt))),
+                child: DetailField('Decided on', du.formatDate(d.decidedAt)),
+              ),
           ],
         ),
         DetailField('Options considered', d.optionsConsidered),
@@ -402,12 +439,16 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
         _timelineSummary(editable: false),
         if (_showOnPlan) ...[
           const SizedBox(height: 6),
-          const Row(children: [
-            Icon(Icons.timeline, size: 12, color: KColors.textDim),
-            SizedBox(width: 4),
-            Text('Shown on the plan as an external dependency',
-                style: TextStyle(color: KColors.textDim, fontSize: 10)),
-          ]),
+          Row(
+            children: [
+              Icon(Icons.timeline, size: 12, color: KColors.textDim),
+              SizedBox(width: 4),
+              Text(
+                'Shown on the plan as an external dependency',
+                style: TextStyle(color: KColors.textDim, fontSize: 10),
+              ),
+            ],
+          ),
         ],
         const DetailDivider(),
         Row(
@@ -424,7 +465,9 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
           itemText: d.description,
         ),
         DetailField(
-            'Last updated', du.formatDate(d.updatedAt.toIso8601String())),
+          'Last updated',
+          du.formatDate(d.updatedAt.toIso8601String()),
+        ),
         RaidLinksSection(
           db: widget.db,
           projectId: widget.projectId,
@@ -437,8 +480,10 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
         const Spacer(),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Close',
-              style: TextStyle(color: KColors.textDim, fontSize: 12)),
+          child: Text(
+            'Close',
+            style: TextStyle(color: KColors.textDim, fontSize: 12),
+          ),
         ),
         const SizedBox(width: 8),
         ElevatedButton.icon(
@@ -466,8 +511,7 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
           DetailRefChip(widget.decision!.ref!),
           const SizedBox(width: 10),
         ],
-        Expanded(
-            child: DetailTitle(isEdit ? 'Edit Decision' : 'New Decision')),
+        Expanded(child: DetailTitle(isEdit ? 'Edit Decision' : 'New Decision')),
       ],
       left: [
         TextFormField(
@@ -475,10 +519,11 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
           autofocus: !isEdit,
           minLines: 2,
           maxLines: 6,
-          style: const TextStyle(color: KColors.text, fontSize: 14),
+          style: TextStyle(color: KColors.text, fontSize: 14),
           decoration: const InputDecoration(
             labelText: 'Decision required *',
-            hintText: 'The question that needs an answer, e.g. "Which '
+            hintText:
+                'The question that needs an answer, e.g. "Which '
                 'vendor for the payments gateway?"',
             alignLabelWithHint: true,
           ),
@@ -540,9 +585,10 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
           controller: _optionsCtrl,
           minLines: 2,
           maxLines: 6,
-          style: const TextStyle(color: KColors.text, fontSize: 13),
+          style: TextStyle(color: KColors.text, fontSize: 13),
           decoration: const InputDecoration(
-            hintText: 'The alternatives weighed, one per line, with the '
+            hintText:
+                'The alternatives weighed, one per line, with the '
                 'main trade-off of each',
             isDense: true,
           ),
@@ -559,7 +605,7 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
           controller: _rationaleCtrl,
           minLines: 2,
           maxLines: 6,
-          style: const TextStyle(color: KColors.text, fontSize: 13),
+          style: TextStyle(color: KColors.text, fontSize: 13),
           decoration: const InputDecoration(
             hintText: 'The drivers, constraints and trade-offs that settle it',
             isDense: true,
@@ -570,7 +616,7 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
           controller: _outcomeCtrl,
           minLines: 2,
           maxLines: 5,
-          style: const TextStyle(color: KColors.text, fontSize: 13),
+          style: TextStyle(color: KColors.text, fontSize: 13),
           decoration: const InputDecoration(
             labelText: 'Outcome',
             hintText: 'What was decided, once it is',
@@ -583,7 +629,8 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
         AiAssistedLabel(
           label: 'Impact of leaving it open',
           target: _impactCtrl,
-          tooltip: 'Draft what is blocked or at risk while this stays undecided',
+          tooltip:
+              'Draft what is blocked or at risk while this stays undecided',
           buildPrompt: () => _prompt(DecisionAssistField.impactStatement),
         ),
         const SizedBox(height: 4),
@@ -591,9 +638,10 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
           controller: _impactCtrl,
           minLines: 2,
           maxLines: 6,
-          style: const TextStyle(color: KColors.text, fontSize: 13),
+          style: TextStyle(color: KColors.text, fontSize: 13),
           decoration: const InputDecoration(
-            hintText: 'What can\'t proceed, which milestones move, and by '
+            hintText:
+                'What can\'t proceed, which milestones move, and by '
                 'when it must be decided',
             isDense: true,
           ),
@@ -602,7 +650,7 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
         const DetailSectionLabel('Timeline'),
         const SizedBox(height: 8),
         if (_workPackages.isEmpty)
-          const Text(
+          Text(
             'No plan yet — build work packages and activities in Plan to '
             'link this decision to the schedule.',
             style: TextStyle(color: KColors.textMuted, fontSize: 11),
@@ -622,26 +670,28 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
         _timelineSummary(editable: true),
         if (_planActivityId != null) ...[
           const SizedBox(height: 8),
-          Row(children: [
-            SizedBox(
-              width: 18,
-              height: 18,
-              child: Checkbox(
-                value: _showOnPlan,
-                onChanged: (v) => setState(() => _showOnPlan = v ?? false),
+          Row(
+            children: [
+              SizedBox(
+                width: 18,
+                height: 18,
+                child: Checkbox(
+                  value: _showOnPlan,
+                  onChanged: (v) => setState(() => _showOnPlan = v ?? false),
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            const Icon(Icons.timeline, size: 13, color: KColors.blue),
-            const SizedBox(width: 5),
-            const Expanded(
-              child: Text(
-                'Show on the plan as an external dependency arrow into '
-                'this activity',
-                style: TextStyle(color: KColors.text, fontSize: 12),
+              const SizedBox(width: 8),
+              Icon(Icons.timeline, size: 13, color: KColors.blue),
+              const SizedBox(width: 5),
+              Expanded(
+                child: Text(
+                  'Show on the plan as an external dependency arrow into '
+                  'this activity',
+                  style: TextStyle(color: KColors.text, fontSize: 12),
+                ),
               ),
-            ),
-          ]),
+            ],
+          ),
         ],
         const DetailDivider(),
         Row(
@@ -686,20 +736,26 @@ class _DecisionFormDialogState extends State<DecisionFormDialog> {
         if (widget.startInViewMode)
           TextButton(
             onPressed: () => setState(() => _isViewing = true),
-            child: const Text('Cancel',
-                style: TextStyle(color: KColors.textDim, fontSize: 12)),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: KColors.textDim, fontSize: 12),
+            ),
           )
         else
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel',
-                style: TextStyle(color: KColors.textDim, fontSize: 12)),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: KColors.textDim, fontSize: 12),
+            ),
           ),
         const SizedBox(width: 8),
         ElevatedButton(
           onPressed: _save,
-          child: Text(isEdit ? 'Save' : 'Create',
-              style: const TextStyle(fontSize: 12)),
+          child: Text(
+            isEdit ? 'Save' : 'Create',
+            style: const TextStyle(fontSize: 12),
+          ),
         ),
       ],
     );

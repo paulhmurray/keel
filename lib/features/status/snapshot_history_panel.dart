@@ -39,7 +39,7 @@ class _SnapshotHistoryPanelState extends State<SnapshotHistoryPanel> {
         }
         final snapshots = snap.data!;
         if (snapshots.isEmpty) {
-          return const Padding(
+          return Padding(
             padding: EdgeInsets.all(24),
             child: Text(
               'No snapshots yet. Take one from the live Status view.',
@@ -69,13 +69,15 @@ class _SnapshotHistoryPanelState extends State<SnapshotHistoryPanel> {
             children: [
               RagTrendChart(snapshotsMostRecentFirst: snapshots),
               const SizedBox(height: 20),
-              const Text('SNAPSHOTS',
-                  style: TextStyle(
-                    color: KColors.textDim,
-                    fontSize: 11,
-                    letterSpacing: 0.6,
-                    fontWeight: FontWeight.w600,
-                  )),
+              Text(
+                'SNAPSHOTS',
+                style: TextStyle(
+                  color: KColors.textDim,
+                  fontSize: 11,
+                  letterSpacing: 0.6,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               const SizedBox(height: 6),
               Expanded(
                 child: ListView.separated(
@@ -83,8 +85,8 @@ class _SnapshotHistoryPanelState extends State<SnapshotHistoryPanel> {
                   separatorBuilder: (_, _) => const SizedBox(height: 6),
                   itemBuilder: (ctx, i) => _SnapshotListTile(
                     snapshot: snapshots[i],
-                    onTap: () => setState(
-                        () => _selectedSnapshotId = snapshots[i].id),
+                    onTap: () =>
+                        setState(() => _selectedSnapshotId = snapshots[i].id),
                   ),
                 ),
               ),
@@ -129,8 +131,7 @@ class _SnapshotListTile extends StatelessWidget {
             Expanded(
               child: Text(
                 'Week ending ${fmt.format(snapshot.weekEnding)}',
-                style:
-                    const TextStyle(color: KColors.text, fontSize: 13),
+                style: TextStyle(color: KColors.text, fontSize: 13),
               ),
             ),
             const SizedBox(width: 12),
@@ -139,8 +140,7 @@ class _SnapshotListTile extends StatelessWidget {
             _Mini('Risks', snapshot.openRisksCount),
             _Mini('Decisions', snapshot.pendingDecisionsCount),
             const SizedBox(width: 8),
-            const Icon(Icons.chevron_right,
-                size: 16, color: KColors.textMuted),
+            Icon(Icons.chevron_right, size: 16, color: KColors.textMuted),
           ],
         ),
       ),
@@ -159,13 +159,15 @@ class _Mini extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6),
       child: Column(
         children: [
-          Text('$value',
-              style: const TextStyle(
-                  color: KColors.text,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600)),
-          Text(label,
-              style: const TextStyle(color: KColors.textDim, fontSize: 9)),
+          Text(
+            '$value',
+            style: TextStyle(
+              color: KColors.text,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          Text(label, style: TextStyle(color: KColors.textDim, fontSize: 9)),
         ],
       ),
     );

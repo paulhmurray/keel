@@ -49,11 +49,13 @@ class CanvasView extends StatefulWidget {
 class _CanvasViewState extends State<CanvasView> {
   String? _editingCardId;
   String? _draggingCardId;
+
   /// When non-null, the next card tap creates a sequence arrow from this id
   /// to the tapped card. Set by the "Add arrow to…" button in the editor.
   String? _sequenceSourceCardId;
   CanvasViewMode _viewMode = CanvasViewMode.grid;
   CanvasFilter _filter = CanvasFilter.empty;
+
   /// Per-session toggle: when true, the grid view swaps the three-band
   /// layout for clusters grouped by tag. Resets on app restart so the
   /// default canvas remains the free-positioned bands view.
@@ -101,13 +103,10 @@ class _CanvasViewState extends State<CanvasView> {
           final allCards = snapshot.data ?? const <CanvasCard>[];
           final cards = _filter.apply(allCards);
           return StreamBuilder<List<CanvasSequence>>(
-            stream: db.canvasCardsDao
-                .watchSequencesForProject(projectId),
+            stream: db.canvasCardsDao.watchSequencesForProject(projectId),
             builder: (context, seqSnap) {
-              final sequences =
-                  seqSnap.data ?? const <CanvasSequence>[];
-              return _buildScaffold(
-                projectId, allCards, cards, sequences);
+              final sequences = seqSnap.data ?? const <CanvasSequence>[];
+              return _buildScaffold(projectId, allCards, cards, sequences);
             },
           );
         },
@@ -116,10 +115,11 @@ class _CanvasViewState extends State<CanvasView> {
   }
 
   Widget _buildScaffold(
-      String projectId,
-      List<CanvasCard> allCards,
-      List<CanvasCard> cards,
-      List<CanvasSequence> sequences) {
+    String projectId,
+    List<CanvasCard> allCards,
+    List<CanvasCard> cards,
+    List<CanvasSequence> sequences,
+  ) {
     // Build the alphabetised tag → count map from the unfiltered card
     // list so the filter UI sees every tag in the project, not just the
     // ones surviving the current filter.
@@ -130,85 +130,73 @@ class _CanvasViewState extends State<CanvasView> {
       }
     }
     final sortedTags = tagCounts.keys.toList()..sort();
-    final orderedTagCounts = {
-      for (final k in sortedTags) k: tagCounts[k]!,
-    };
-          final isThreeBands = _section == CanvasSection.threeBands;
-          return Column(
-            children: [
-              _Header(
-                projectName:
-                    context.read<ProjectProvider>().currentProject?.name ??
-                        '',
-                section: _section,
-                onSectionChanged: (s) => setState(() {
-                  _section = s;
-                  // Reset open template when switching sections.
-                  if (s == CanvasSection.threeBands) {
-                    _openTemplateId = null;
-                  }
-                }),
-                viewMode: _viewMode,
-                cardCount: cards.length,
-                onViewModeChanged: (m) => setState(() => _viewMode = m),
-                groupByTag: _groupByTag,
-                onGroupByTagChanged: (v) =>
-                    setState(() => _groupByTag = v),
-                filter: _filter,
-                onFilterChanged: (f) => setState(() => _filter = f),
-                tagCounts: orderedTagCounts,
-                onNewCard: () => _createCard(
-                  projectId: projectId,
-                  band: CanvasBands.thisWeek,
-                  localOffset: CanvasLayout.defaultDropOffset,
-                ),
-              ),
-              if (isThreeBands && _sequenceSourceCardId != null)
-                _SequencingBanner(
-                  onCancel: () =>
-                      setState(() => _sequenceSourceCardId = null),
-                ),
-              Expanded(
-                child: isThreeBands
-                    ? _buildThreeBandsArea(
-                        projectId, cards, sequences, sortedTags)
-                    : _buildTemplatesArea(projectId),
-              ),
-            ],
-          );
+    final orderedTagCounts = {for (final k in sortedTags) k: tagCounts[k]!};
+    final isThreeBands = _section == CanvasSection.threeBands;
+    return Column(
+      children: [
+        _Header(
+          projectName:
+              context.read<ProjectProvider>().currentProject?.name ?? '',
+          section: _section,
+          onSectionChanged: (s) => setState(() {
+            _section = s;
+            // Reset open template when switching sections.
+            if (s == CanvasSection.threeBands) {
+              _openTemplateId = null;
+            }
+          }),
+          viewMode: _viewMode,
+          cardCount: cards.length,
+          onViewModeChanged: (m) => setState(() => _viewMode = m),
+          groupByTag: _groupByTag,
+          onGroupByTagChanged: (v) => setState(() => _groupByTag = v),
+          filter: _filter,
+          onFilterChanged: (f) => setState(() => _filter = f),
+          tagCounts: orderedTagCounts,
+          onNewCard: () => _createCard(
+            projectId: projectId,
+            band: CanvasBands.thisWeek,
+            localOffset: CanvasLayout.defaultDropOffset,
+          ),
+        ),
+        if (isThreeBands && _sequenceSourceCardId != null)
+          _SequencingBanner(
+            onCancel: () => setState(() => _sequenceSourceCardId = null),
+          ),
+        Expanded(
+          child: isThreeBands
+              ? _buildThreeBandsArea(projectId, cards, sequences, sortedTags)
+              : _buildTemplatesArea(projectId),
+        ),
+      ],
+    );
   }
 
   Widget _buildThreeBandsArea(
-      String projectId,
-      List<CanvasCard> cards,
-      List<CanvasSequence> sequences,
-      List<String> knownTags) {
+    String projectId,
+    List<CanvasCard> cards,
+    List<CanvasSequence> sequences,
+    List<String> knownTags,
+  ) {
     return Stack(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildBody(projectId, cards, sequences),
-                        ),
-                        if (_editingCardId != null)
-                          _buildEditor(
-                            projectId,
-                            cards,
-                            knownTags,
-                          ),
-                      ],
-                    ),
-                    if (_captureMode)
-                      Positioned.fill(
-                        child: QuickCaptureOverlay(
-                          onSubmit: (title, index) =>
-                              _onQuickCaptureSubmit(
-                                  projectId, title, index),
-                          onClose: _closeQuickCapture,
-                        ),
-                      ),
-                  ],
-                );
+      children: [
+        Row(
+          children: [
+            Expanded(child: _buildBody(projectId, cards, sequences)),
+            if (_editingCardId != null)
+              _buildEditor(projectId, cards, knownTags),
+          ],
+        ),
+        if (_captureMode)
+          Positioned.fill(
+            child: QuickCaptureOverlay(
+              onSubmit: (title, index) =>
+                  _onQuickCaptureSubmit(projectId, title, index),
+              onClose: _closeQuickCapture,
+            ),
+          ),
+      ],
+    );
   }
 
   Widget _buildTemplatesArea(String projectId) {
@@ -216,8 +204,7 @@ class _CanvasViewState extends State<CanvasView> {
     if (id == null) {
       return TemplatesGalleryView(
         projectId: projectId,
-        onOpen: (templateId) =>
-            setState(() => _openTemplateId = templateId),
+        onOpen: (templateId) => setState(() => _openTemplateId = templateId),
       );
     }
     return TemplateShell(
@@ -226,16 +213,16 @@ class _CanvasViewState extends State<CanvasView> {
     );
   }
 
-  Widget _buildBody(String projectId, List<CanvasCard> cards,
-      List<CanvasSequence> sequences) {
+  Widget _buildBody(
+    String projectId,
+    List<CanvasCard> cards,
+    List<CanvasSequence> sequences,
+  ) {
     switch (_viewMode) {
       case CanvasViewMode.grid:
         return _buildGrid(projectId, cards, sequences);
       case CanvasViewMode.list:
-        return CanvasListView(
-          cards: cards,
-          onTap: _onTapCard,
-        );
+        return CanvasListView(cards: cards, onTap: _onTapCard);
       case CanvasViewMode.calendar:
         return CanvasCalendarView(
           projectId: projectId,
@@ -245,8 +232,11 @@ class _CanvasViewState extends State<CanvasView> {
     }
   }
 
-  Widget _buildGrid(String projectId, List<CanvasCard> cards,
-      List<CanvasSequence> sequences) {
+  Widget _buildGrid(
+    String projectId,
+    List<CanvasCard> cards,
+    List<CanvasSequence> sequences,
+  ) {
     if (_groupByTag) return _buildGroupByTag(cards);
     final byBand = <String, List<CanvasCard>>{
       for (final b in CanvasBands.all) b: [],
@@ -270,8 +260,7 @@ class _CanvasViewState extends State<CanvasView> {
                 band: band,
                 localOffset: offset,
               ),
-              onAcceptCard: (drag, offset) =>
-                  _moveCard(drag, band, offset),
+              onAcceptCard: (drag, offset) => _moveCard(drag, band, offset),
               onAcceptExternal: (drag, offset) => _createLinkedCard(
                 projectId: projectId,
                 band: band,
@@ -313,7 +302,7 @@ class _CanvasViewState extends State<CanvasView> {
     final orderedTags = byTag.keys.toList()..sort();
     final hasAnything = orderedTags.isNotEmpty || untagged.isNotEmpty;
     if (!hasAnything) {
-      return const Center(
+      return Center(
         child: Padding(
           padding: EdgeInsets.all(32),
           child: Text(
@@ -338,20 +327,21 @@ class _CanvasViewState extends State<CanvasView> {
               ),
             ),
           if (untagged.isNotEmpty)
-            _TagCluster(
-              tag: null,
-              cards: untagged,
-              onTapCard: _onTapCard,
-            ),
+            _TagCluster(tag: null, cards: untagged, onTapCard: _onTapCard),
         ],
       ),
     );
   }
 
   Widget _buildEditor(
-      String projectId, List<CanvasCard> cards, List<String> knownTags) {
-    final card =
-        cards.where((c) => c.id == _editingCardId).cast<CanvasCard?>().firstOrNull;
+    String projectId,
+    List<CanvasCard> cards,
+    List<String> knownTags,
+  ) {
+    final card = cards
+        .where((c) => c.id == _editingCardId)
+        .cast<CanvasCard?>()
+        .firstOrNull;
     if (card == null) {
       // Card may have been deleted — close panel.
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -379,7 +369,9 @@ class _CanvasViewState extends State<CanvasView> {
   }
 
   Future<void> _revertPromotion(
-      CanvasCard card, bool deletePromotedItem) async {
+    CanvasCard card,
+    bool deletePromotedItem,
+  ) async {
     final db = context.read<AppDatabase>();
     final messenger = ScaffoldMessenger.of(context);
     final service = PromotionService(db);
@@ -489,10 +481,8 @@ class _CanvasViewState extends State<CanvasView> {
   ) async {
     final db = context.read<AppDatabase>();
     final adjusted = Offset(
-      (localOffset.dx - drag.pointerOffsetInCard.dx)
-          .clamp(0, double.infinity),
-      (localOffset.dy - drag.pointerOffsetInCard.dy)
-          .clamp(0, double.infinity),
+      (localOffset.dx - drag.pointerOffsetInCard.dx).clamp(0, double.infinity),
+      (localOffset.dy - drag.pointerOffsetInCard.dy).clamp(0, double.infinity),
     );
     await db.canvasCardsDao.patchCard(
       drag.card.id,
@@ -515,7 +505,10 @@ class _CanvasViewState extends State<CanvasView> {
   }
 
   Future<void> _createSequence(
-      String fromId, String toId, String projectId) async {
+    String fromId,
+    String toId,
+    String projectId,
+  ) async {
     final db = context.read<AppDatabase>();
     await db.canvasCardsDao.addSequence(
       id: const Uuid().v4(),
@@ -526,11 +519,9 @@ class _CanvasViewState extends State<CanvasView> {
     if (mounted) setState(() => _sequenceSourceCardId = null);
   }
 
-  Future<void> _showContextMenu(
-      BuildContext context, CanvasCard card) async {
+  Future<void> _showContextMenu(BuildContext context, CanvasCard card) async {
     final db = context.read<AppDatabase>();
-    final projectId =
-        context.read<ProjectProvider>().currentProjectId;
+    final projectId = context.read<ProjectProvider>().currentProjectId;
     final selected = await showMenu<String>(
       context: context,
       position: RelativeRect.fromLTRB(200, 200, 200, 200),
@@ -581,15 +572,16 @@ class _CanvasViewState extends State<CanvasView> {
     final service = PromotionService(db);
     await service.promote(card: card, targetType: target);
     if (!mounted) return;
-    messenger.showSnackBar(
-      SnackBar(content: Text('Promoted to $target.')),
-    );
+    messenger.showSnackBar(SnackBar(content: Text('Promoted to $target.')));
   }
 
   // ---- Keyboard -----------------------------------------------------------
 
   KeyEventResult _handleKeyEvent(
-      KeyEvent event, String projectId, AppDatabase db) {
+    KeyEvent event,
+    String projectId,
+    AppDatabase db,
+  ) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
     // When focus is on a TextField anywhere in the canvas (title, body,
     // search, etc.), key events bubble up to this handler. We must NOT
@@ -601,7 +593,8 @@ class _CanvasViewState extends State<CanvasView> {
     // in the three-band view. The overlay's own TextField captures
     // Enter for submission and Escape to close, so its key events
     // never re-trigger this handler.
-    final isPlainN = event.logicalKey == LogicalKeyboardKey.keyN &&
+    final isPlainN =
+        event.logicalKey == LogicalKeyboardKey.keyN &&
         !HardwareKeyboard.instance.isMetaPressed &&
         !HardwareKeyboard.instance.isControlPressed &&
         !HardwareKeyboard.instance.isAltPressed &&
@@ -617,7 +610,8 @@ class _CanvasViewState extends State<CanvasView> {
     // Cmd/Ctrl+V — paste-to-create. Multi-line clipboards produce one
     // card per non-blank line (the brainstorm dump case); single-line
     // produces a single card.
-    final isPaste = event.logicalKey == LogicalKeyboardKey.keyV &&
+    final isPaste =
+        event.logicalKey == LogicalKeyboardKey.keyV &&
         (HardwareKeyboard.instance.isMetaPressed ||
             HardwareKeyboard.instance.isControlPressed);
     if (isPaste) {
@@ -655,7 +649,10 @@ class _CanvasViewState extends State<CanvasView> {
   // ---- Quick-capture overlay ---------------------------------------------
 
   Future<void> _onQuickCaptureSubmit(
-      String projectId, String title, int index) async {
+    String projectId,
+    String title,
+    int index,
+  ) async {
     await _createCard(
       projectId: projectId,
       band: CanvasBands.thisWeek,
@@ -703,15 +700,13 @@ class _Header extends StatelessWidget {
     return Container(
       height: CanvasLayout.headerHeight,
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: KColors.surface,
-        border: Border(
-          bottom: BorderSide(color: KColors.border, width: 1),
-        ),
+        border: Border(bottom: BorderSide(color: KColors.border, width: 1)),
       ),
       child: Row(
         children: [
-          const Text(
+          Text(
             'CANVAS',
             style: TextStyle(
               color: KColors.amber,
@@ -728,7 +723,7 @@ class _Header extends StatelessWidget {
             Flexible(
               child: Text(
                 '· $projectName',
-                style: const TextStyle(
+                style: TextStyle(
                   color: KColors.textDim,
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
@@ -739,10 +734,7 @@ class _Header extends StatelessWidget {
             ),
           ],
           const SizedBox(width: 14),
-          _SectionTabs(
-            section: section,
-            onChanged: onSectionChanged,
-          ),
+          _SectionTabs(section: section, onChanged: onSectionChanged),
           // Controls: right-aligned; scroll horizontally when the
           // viewport is squeezed (journal dock / Claude panel) rather
           // than overflowing the header.
@@ -759,7 +751,7 @@ class _Header extends StatelessWidget {
                       const SizedBox(width: 12),
                       Text(
                         '$cardCount cards',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: KColors.textMuted,
                           fontSize: 11,
                         ),
@@ -772,26 +764,29 @@ class _Header extends StatelessWidget {
                               onFilterChanged(filter.copyWith(search: v)),
                           decoration: InputDecoration(
                             hintText: 'Search canvas…',
-                            hintStyle: const TextStyle(
-                                color: KColors.textMuted, fontSize: 12),
+                            hintStyle: TextStyle(
+                              color: KColors.textMuted,
+                              fontSize: 12,
+                            ),
                             isDense: true,
-                            prefixIcon: const Icon(Icons.search,
-                                size: 14, color: KColors.textDim),
-                            contentPadding:
-                                const EdgeInsets.symmetric(vertical: 6),
+                            prefixIcon: Icon(
+                              Icons.search,
+                              size: 14,
+                              color: KColors.textDim,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 6,
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(4),
-                              borderSide:
-                                  const BorderSide(color: KColors.border),
+                              borderSide: BorderSide(color: KColors.border),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(4),
-                              borderSide:
-                                  const BorderSide(color: KColors.border),
+                              borderSide: BorderSide(color: KColors.border),
                             ),
                           ),
-                          style: const TextStyle(
-                              color: KColors.text, fontSize: 12.5),
+                          style: TextStyle(color: KColors.text, fontSize: 12.5),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -809,7 +804,9 @@ class _Header extends StatelessWidget {
                         const SizedBox(width: 8),
                       ],
                       _ViewModeToggle(
-                          value: viewMode, onChanged: onViewModeChanged),
+                        value: viewMode,
+                        onChanged: onViewModeChanged,
+                      ),
                       const SizedBox(width: 12),
                       ElevatedButton.icon(
                         onPressed: onNewCard,
@@ -820,11 +817,12 @@ class _Header extends StatelessWidget {
                           foregroundColor: KColors.amber,
                           elevation: 0,
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(4),
-                            side: const BorderSide(
-                                color: KColors.amber, width: 0.5),
+                            side: BorderSide(color: KColors.amber, width: 0.5),
                           ),
                         ),
                       ),
@@ -855,8 +853,7 @@ class _SectionTabs extends StatelessWidget {
         onTap: () => onChanged(s),
         borderRadius: BorderRadius.circular(3),
         child: Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
             color: isOn ? KColors.amberDim : Colors.transparent,
             borderRadius: BorderRadius.circular(3),
@@ -864,9 +861,11 @@ class _SectionTabs extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon,
-                  size: 13,
-                  color: isOn ? KColors.amber : KColors.textDim),
+              Icon(
+                icon,
+                size: 13,
+                color: isOn ? KColors.amber : KColors.textDim,
+              ),
               const SizedBox(width: 6),
               Text(
                 label,
@@ -891,10 +890,16 @@ class _SectionTabs extends StatelessWidget {
       padding: const EdgeInsets.all(2),
       child: Row(
         children: [
-          tab(CanvasSection.threeBands, 'Three Bands',
-              Icons.view_agenda_outlined),
-          tab(CanvasSection.templates, 'Templates',
-              Icons.dashboard_customize_outlined),
+          tab(
+            CanvasSection.threeBands,
+            'Three Bands',
+            Icons.view_agenda_outlined,
+          ),
+          tab(
+            CanvasSection.templates,
+            'Templates',
+            Icons.dashboard_customize_outlined,
+          ),
         ],
       ),
     );
@@ -916,14 +921,16 @@ class _ViewModeToggle extends StatelessWidget {
         child: InkWell(
           onTap: () => onChanged(m),
           child: Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color: isOn ? KColors.amberDim : Colors.transparent,
               borderRadius: BorderRadius.circular(3),
             ),
-            child: Icon(icon,
-                size: 16, color: isOn ? KColors.amber : KColors.textDim),
+            child: Icon(
+              icon,
+              size: 16,
+              color: isOn ? KColors.amber : KColors.textDim,
+            ),
           ),
         ),
       );
@@ -965,21 +972,20 @@ class _GroupByTagToggle extends StatelessWidget {
         onTap: () => onChanged(!isOn),
         borderRadius: BorderRadius.circular(4),
         child: Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
             color: isOn ? KColors.amberDim : Colors.transparent,
-            border: Border.all(
-              color: isOn ? KColors.amber : KColors.border,
-            ),
+            border: Border.all(color: isOn ? KColors.amber : KColors.border),
             borderRadius: BorderRadius.circular(4),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.bubble_chart_outlined,
-                  size: 14,
-                  color: isOn ? KColors.amber : KColors.textDim),
+              Icon(
+                Icons.bubble_chart_outlined,
+                size: 14,
+                color: isOn ? KColors.amber : KColors.textDim,
+              ),
               const SizedBox(width: 6),
               Text(
                 'Group by tag',
@@ -1048,10 +1054,7 @@ class _TagCluster extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 '${cards.length}',
-                style: const TextStyle(
-                  color: KColors.textMuted,
-                  fontSize: 11,
-                ),
+                style: TextStyle(color: KColors.textMuted, fontSize: 11),
               ),
             ],
           ),
@@ -1093,24 +1096,22 @@ class _FilterButton extends StatelessWidget {
       icon: Stack(
         clipBehavior: Clip.none,
         children: [
-          const Icon(Icons.filter_alt_outlined,
-              size: 18, color: KColors.textDim),
+          Icon(Icons.filter_alt_outlined, size: 18, color: KColors.textDim),
           if (active > 0)
             Positioned(
               right: -4,
               top: -4,
               child: Container(
                 padding: const EdgeInsets.all(2),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: KColors.amber,
                   shape: BoxShape.circle,
                 ),
-                constraints:
-                    const BoxConstraints(minWidth: 14, minHeight: 14),
+                constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
                 child: Text(
                   '$active',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: KColors.bg,
                     fontSize: 9,
                     fontWeight: FontWeight.w700,
@@ -1122,32 +1123,65 @@ class _FilterButton extends StatelessWidget {
       ),
       itemBuilder: (_) => [
         _section('Band'),
-        _check('All', filter.band == null,
-            () => onChanged(filter.copyWith(band: null))),
-        _check('This Week', filter.band == CanvasBands.thisWeek,
-            () => onChanged(filter.copyWith(band: CanvasBands.thisWeek))),
-        _check('Next 30 Days', filter.band == CanvasBands.next30Days,
-            () => onChanged(filter.copyWith(band: CanvasBands.next30Days))),
-        _check('Horizon', filter.band == CanvasBands.horizon,
-            () => onChanged(filter.copyWith(band: CanvasBands.horizon))),
+        _check(
+          'All',
+          filter.band == null,
+          () => onChanged(filter.copyWith(band: null)),
+        ),
+        _check(
+          'This Week',
+          filter.band == CanvasBands.thisWeek,
+          () => onChanged(filter.copyWith(band: CanvasBands.thisWeek)),
+        ),
+        _check(
+          'Next 30 Days',
+          filter.band == CanvasBands.next30Days,
+          () => onChanged(filter.copyWith(band: CanvasBands.next30Days)),
+        ),
+        _check(
+          'Horizon',
+          filter.band == CanvasBands.horizon,
+          () => onChanged(filter.copyWith(band: CanvasBands.horizon)),
+        ),
         _section('Link'),
-        _check('All', filter.linked == null,
-            () => onChanged(filter.copyWith(linked: null))),
-        _check('Linked only', filter.linked == 'linked',
-            () => onChanged(filter.copyWith(linked: 'linked'))),
-        _check('Free-form only', filter.linked == 'free',
-            () => onChanged(filter.copyWith(linked: 'free'))),
+        _check(
+          'All',
+          filter.linked == null,
+          () => onChanged(filter.copyWith(linked: null)),
+        ),
+        _check(
+          'Linked only',
+          filter.linked == 'linked',
+          () => onChanged(filter.copyWith(linked: 'linked')),
+        ),
+        _check(
+          'Free-form only',
+          filter.linked == 'free',
+          () => onChanged(filter.copyWith(linked: 'free')),
+        ),
         _section('Promotion'),
-        _check('All', filter.promoted == null,
-            () => onChanged(filter.copyWith(promoted: null))),
-        _check('Promoted', filter.promoted == 'promoted',
-            () => onChanged(filter.copyWith(promoted: 'promoted'))),
-        _check('Not promoted', filter.promoted == 'not_promoted',
-            () => onChanged(filter.copyWith(promoted: 'not_promoted'))),
+        _check(
+          'All',
+          filter.promoted == null,
+          () => onChanged(filter.copyWith(promoted: null)),
+        ),
+        _check(
+          'Promoted',
+          filter.promoted == 'promoted',
+          () => onChanged(filter.copyWith(promoted: 'promoted')),
+        ),
+        _check(
+          'Not promoted',
+          filter.promoted == 'not_promoted',
+          () => onChanged(filter.copyWith(promoted: 'not_promoted')),
+        ),
         if (tagCounts.isNotEmpty) ...[
           _section('Tag'),
-          _check('All', filter.tag == null,
-              () => onChanged(filter.copyWith(tag: null))),
+          _check(
+            'All',
+            filter.tag == null,
+            () => onChanged(filter.copyWith(tag: null)),
+          ),
           for (final entry in tagCounts.entries)
             _check(
               '#${entry.key}  ·  ${entry.value}',
@@ -1162,13 +1196,15 @@ class _FilterButton extends StatelessWidget {
   PopupMenuItem<String> _section(String label) {
     return PopupMenuItem(
       enabled: false,
-      child: Text(label.toUpperCase(),
-          style: const TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            color: KColors.textMuted,
-            letterSpacing: 1.4,
-          )),
+      child: Text(
+        label.toUpperCase(),
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          color: KColors.textMuted,
+          letterSpacing: 1.4,
+        ),
+      ),
     );
   }
 
@@ -1177,9 +1213,11 @@ class _FilterButton extends StatelessWidget {
       onTap: on,
       child: Row(
         children: [
-          Icon(selected ? Icons.check : Icons.check_box_outline_blank,
-              size: 14,
-              color: selected ? KColors.amber : KColors.textMuted),
+          Icon(
+            selected ? Icons.check : Icons.check_box_outline_blank,
+            size: 14,
+            color: selected ? KColors.amber : KColors.textMuted,
+          ),
           const SizedBox(width: 8),
           Text(label, style: const TextStyle(fontSize: 12)),
         ],
@@ -1199,16 +1237,13 @@ class _SequencingBanner extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: KColors.amberDim,
-        border: const Border(
-          bottom: BorderSide(color: KColors.amber, width: 0.5),
-        ),
+        border: Border(bottom: BorderSide(color: KColors.amber, width: 0.5)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.arrow_forward,
-              size: 14, color: KColors.amber),
+          Icon(Icons.arrow_forward, size: 14, color: KColors.amber),
           const SizedBox(width: 8),
-          const Expanded(
+          Expanded(
             child: Text(
               'Click another card to draw a sequence arrow to it.',
               style: TextStyle(
@@ -1218,10 +1253,7 @@ class _SequencingBanner extends StatelessWidget {
               ),
             ),
           ),
-          TextButton(
-            onPressed: onCancel,
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: onCancel, child: const Text('Cancel')),
         ],
       ),
     );
@@ -1233,7 +1265,7 @@ class _NoProjectState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Text(
         'Select a project to open Canvas.',
         style: TextStyle(color: KColors.textDim),

@@ -35,44 +35,75 @@ class ReferencedItemsPanel extends StatelessWidget {
               border: Border.all(color: KColors.border),
               borderRadius: BorderRadius.circular(4),
             ),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('REFERENCED ITEMS · goes out with the export',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'REFERENCED ITEMS · goes out with the export',
                   style: TextStyle(
-                      color: KColors.textMuted,
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.2)),
-              const SizedBox(height: 8),
-              for (final r in items)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    SizedBox(
-                      width: 56,
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(r.ref,
-                            style: const TextStyle(
-                                color: KColors.amber,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700)),
-                        Text(r.kind,
-                            style: const TextStyle(
-                                color: KColors.textMuted, fontSize: 9)),
-                      ]),
-                    ),
-                    Expanded(
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(r.headline,
-                            style: const TextStyle(color: KColors.text, fontSize: 12)),
-                        if (r.detail.isNotEmpty)
-                          Text(r.detail,
-                              style: const TextStyle(
-                                  color: KColors.textDim, fontSize: 10.5)),
-                      ]),
-                    ),
-                  ]),
+                    color: KColors.textMuted,
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2,
+                  ),
                 ),
-            ]),
+                const SizedBox(height: 8),
+                for (final r in items)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: 56,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                r.ref,
+                                style: TextStyle(
+                                  color: KColors.amber,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              Text(
+                                r.kind,
+                                style: TextStyle(
+                                  color: KColors.textMuted,
+                                  fontSize: 9,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                r.headline,
+                                style: TextStyle(
+                                  color: KColors.text,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              if (r.detail.isNotEmpty)
+                                Text(
+                                  r.detail,
+                                  style: TextStyle(
+                                    color: KColors.textDim,
+                                    fontSize: 10.5,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
           ),
         );
       },

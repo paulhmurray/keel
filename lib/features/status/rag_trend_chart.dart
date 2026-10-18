@@ -80,10 +80,7 @@ RagTrendStats summariseTrend(List<StatusSnapshot> mostRecentFirst) {
 class RagTrendChart extends StatelessWidget {
   final List<StatusSnapshot> snapshotsMostRecentFirst;
 
-  const RagTrendChart({
-    super.key,
-    required this.snapshotsMostRecentFirst,
-  });
+  const RagTrendChart({super.key, required this.snapshotsMostRecentFirst});
 
   @override
   Widget build(BuildContext context) {
@@ -96,59 +93,62 @@ class RagTrendChart extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Summary stats row
-        Row(children: [
-          _StatPill('${stats.greenWeeks}w', 'green', KColors.phosphor),
-          const SizedBox(width: 6),
-          _StatPill('${stats.amberWeeks}w', 'amber', KColors.amber),
-          const SizedBox(width: 6),
-          _StatPill('${stats.redWeeks}w', 'red', KColors.red),
-          const SizedBox(width: 16),
-          if (stats.currentRag != null)
-            Flexible(
-              child: Text(
-                'Currently ${stats.currentRag!.toUpperCase()} '
-                'for ${stats.currentStreak} '
-                'week${stats.currentStreak == 1 ? "" : "s"}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                    color: KColors.textDim, fontSize: 12),
+        Row(
+          children: [
+            _StatPill('${stats.greenWeeks}w', 'green', KColors.phosphor),
+            const SizedBox(width: 6),
+            _StatPill('${stats.amberWeeks}w', 'amber', KColors.amber),
+            const SizedBox(width: 6),
+            _StatPill('${stats.redWeeks}w', 'red', KColors.red),
+            const SizedBox(width: 16),
+            if (stats.currentRag != null)
+              Flexible(
+                child: Text(
+                  'Currently ${stats.currentRag!.toUpperCase()} '
+                  'for ${stats.currentStreak} '
+                  'week${stats.currentStreak == 1 ? "" : "s"}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: KColors.textDim, fontSize: 12),
+                ),
               ),
-            ),
-        ]),
+          ],
+        ),
         const SizedBox(height: 12),
 
         // Horizontal timeline
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          child: Row(children: [
-            for (final s in chronological)
-              Padding(
-                padding: const EdgeInsets.only(right: 6),
-                child: Column(
-                  children: [
-                    Tooltip(
-                      message: '${fmt.format(s.weekEnding)} — '
-                          '${s.programmeRag}',
-                      child: Container(
-                        width: 22,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: ragColor(s.programmeRag),
-                          borderRadius: BorderRadius.circular(3),
+          child: Row(
+            children: [
+              for (final s in chronological)
+                Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: Column(
+                    children: [
+                      Tooltip(
+                        message:
+                            '${fmt.format(s.weekEnding)} — '
+                            '${s.programmeRag}',
+                        child: Container(
+                          width: 22,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: ragColor(s.programmeRag),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      fmt.format(s.weekEnding),
-                      style: const TextStyle(
-                          color: KColors.textMuted, fontSize: 9),
-                    ),
-                  ],
+                      const SizedBox(height: 4),
+                      Text(
+                        fmt.format(s.weekEnding),
+                        style: TextStyle(color: KColors.textMuted, fontSize: 9),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-          ]),
+            ],
+          ),
         ),
       ],
     );
@@ -173,12 +173,16 @@ class _StatPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(value,
-              style: TextStyle(
-                  color: color, fontWeight: FontWeight.w700, fontSize: 12)),
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
+            ),
+          ),
           const SizedBox(width: 4),
-          Text(label,
-              style: TextStyle(color: color, fontSize: 10)),
+          Text(label, style: TextStyle(color: color, fontSize: 10)),
         ],
       ),
     );

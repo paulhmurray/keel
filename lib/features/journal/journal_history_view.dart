@@ -17,8 +17,11 @@ class JournalHistoryView extends StatefulWidget {
   /// split view instead of the modal overlay.
   final void Function(JournalEntry entry)? onOpenEntryDocked;
 
-  const JournalHistoryView(
-      {super.key, this.onNewEntryDocked, this.onOpenEntryDocked});
+  const JournalHistoryView({
+    super.key,
+    this.onNewEntryDocked,
+    this.onOpenEntryDocked,
+  });
 
   @override
   State<JournalHistoryView> createState() => _JournalHistoryViewState();
@@ -99,9 +102,12 @@ class _JournalHistoryViewState extends State<JournalHistoryView> {
   Widget build(BuildContext context) {
     final projectId = context.watch<ProjectProvider>().currentProjectId;
     if (projectId == null) {
-      return const Center(
-          child: Text('Select a project to view the journal.',
-              style: TextStyle(color: KColors.textDim)));
+      return Center(
+        child: Text(
+          'Select a project to view the journal.',
+          style: TextStyle(color: KColors.textDim),
+        ),
+      );
     }
     final db = context.read<AppDatabase>();
 
@@ -112,13 +118,14 @@ class _JournalHistoryViewState extends State<JournalHistoryView> {
         children: [
           Row(
             children: [
-              const Icon(Icons.menu_book_outlined,
-                  color: KColors.amber, size: 18),
+              Icon(Icons.menu_book_outlined, color: KColors.amber, size: 18),
               const SizedBox(width: 8),
               Flexible(
-                child: Text('JOURNAL',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                    overflow: TextOverflow.ellipsis),
+                child: Text(
+                  'JOURNAL',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               const SizedBox(width: 8),
               ElevatedButton.icon(
@@ -136,23 +143,21 @@ class _JournalHistoryViewState extends State<JournalHistoryView> {
             controller: _searchCtrl,
             decoration: InputDecoration(
               hintText: 'Search entries...',
-              hintStyle:
-                  const TextStyle(color: KColors.textMuted, fontSize: 12),
-              prefixIcon: const Icon(Icons.search,
-                  size: 14, color: KColors.textDim),
+              hintStyle: TextStyle(color: KColors.textMuted, fontSize: 12),
+              prefixIcon: Icon(Icons.search, size: 14, color: KColors.textDim),
               filled: true,
               fillColor: KColors.surface,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(4),
-                borderSide: const BorderSide(color: KColors.border),
+                borderSide: BorderSide(color: KColors.border),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(4),
-                borderSide: const BorderSide(color: KColors.border),
+                borderSide: BorderSide(color: KColors.border),
               ),
               contentPadding: const EdgeInsets.symmetric(vertical: 8),
             ),
-            style: const TextStyle(color: KColors.text, fontSize: 12),
+            style: TextStyle(color: KColors.text, fontSize: 12),
           ),
           const SizedBox(height: 12),
           Expanded(
@@ -165,8 +170,7 @@ class _JournalHistoryViewState extends State<JournalHistoryView> {
                   stream: db.journalDao.watchEntriesForProject(projectId),
                   builder: (context, entrySnap) {
                     if (!entrySnap.hasData) {
-                      return const Center(
-                          child: CircularProgressIndicator());
+                      return const Center(child: CircularProgressIndicator());
                     }
                     final all = entrySnap.data!;
                     return _buildBody(
@@ -204,12 +208,12 @@ class _JournalHistoryViewState extends State<JournalHistoryView> {
         : scoped.where((e) {
             final body = e.body.toLowerCase();
             final title = (e.title ?? '').toLowerCase();
-            return body.contains(_searchQuery) ||
-                title.contains(_searchQuery);
+            return body.contains(_searchQuery) || title.contains(_searchQuery);
           }).toList();
 
     final favouriteCount = allEntries.where((e) => e.isFavourite).length;
-    final showPinned = _seriesFilter == null &&
+    final showPinned =
+        _seriesFilter == null &&
         _searchQuery.isEmpty &&
         (favouriteCount > 0 || allSeries.isNotEmpty);
 
@@ -234,8 +238,7 @@ class _JournalHistoryViewState extends State<JournalHistoryView> {
           _SeriesFilterBanner(
             series: seriesById[_seriesFilter!],
             onClear: () => setState(() => _seriesFilter = null),
-            onAddEntry: () =>
-                _openNewEntry(context, seriesId: _seriesFilter),
+            onAddEntry: () => _openNewEntry(context, seriesId: _seriesFilter),
           ),
           const SizedBox(height: 8),
         ],
@@ -246,32 +249,36 @@ class _JournalHistoryViewState extends State<JournalHistoryView> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.menu_book_outlined,
-                      size: 40, color: KColors.textMuted),
+                  Icon(
+                    Icons.menu_book_outlined,
+                    size: 40,
+                    color: KColors.textMuted,
+                  ),
                   const SizedBox(height: 12),
                   Text(
                     _seriesFilter != null
                         ? 'No entries in this series yet.'
                         : _searchQuery.isEmpty
-                            ? 'No journal entries yet.'
-                            : 'No entries match "$_searchQuery".',
-                    style: const TextStyle(color: KColors.textDim),
+                        ? 'No journal entries yet.'
+                        : 'No entries match "$_searchQuery".',
+                    style: TextStyle(color: KColors.textDim),
                   ),
                   if (_searchQuery.isEmpty) ...[
                     const SizedBox(height: 12),
-                    const Text(
+                    Text(
                       'Press Cmd+J anywhere to open a new entry.',
-                      style: TextStyle(
-                          color: KColors.textMuted, fontSize: 11),
+                      style: TextStyle(color: KColors.textMuted, fontSize: 11),
                     ),
                     const SizedBox(height: 12),
                     ElevatedButton.icon(
-                      onPressed: () => _openNewEntry(context,
-                          seriesId: _seriesFilter),
+                      onPressed: () =>
+                          _openNewEntry(context, seriesId: _seriesFilter),
                       icon: const Icon(Icons.add, size: 14),
-                      label: Text(_seriesFilter == null
-                          ? 'New Entry'
-                          : 'New Entry in Series'),
+                      label: Text(
+                        _seriesFilter == null
+                            ? 'New Entry'
+                            : 'New Entry in Series',
+                      ),
                     ),
                   ],
                 ],
@@ -291,8 +298,10 @@ class _JournalHistoryViewState extends State<JournalHistoryView> {
                       ? seriesById[entry.seriesId!]?.name
                       : null,
                   onTap: () => _openEntry(context, entry),
-                  onToggleFavourite: () => db.journalDao
-                      .toggleFavourite(entry.id, !entry.isFavourite),
+                  onToggleFavourite: () => db.journalDao.toggleFavourite(
+                    entry.id,
+                    !entry.isFavourite,
+                  ),
                   onDelete: () async {
                     await db.journalDao.deleteLinksForEntry(entry.id);
                     await db.journalDao.deleteEntry(entry.id);
@@ -306,8 +315,7 @@ class _JournalHistoryViewState extends State<JournalHistoryView> {
     );
   }
 
-  Map<String, List<JournalEntry>> _groupBySeries(
-      List<JournalEntry> entries) {
+  Map<String, List<JournalEntry>> _groupBySeries(List<JournalEntry> entries) {
     final out = <String, List<JournalEntry>>{};
     for (final e in entries) {
       final sid = e.seriesId;
@@ -367,91 +375,102 @@ class _PinnedSection extends StatelessWidget {
               // which can be squeezed to ~100px when the journal dock
               // and Claude panel are both open — shed the counts, then
               // the button label, then the button, rather than overflow.
-              child: LayoutBuilder(builder: (context, c) {
-                final showCounts = c.maxWidth >= 300;
-                final compactButton = c.maxWidth < 300;
-                final showButton = c.maxWidth >= 170;
-                return Row(
-                children: [
-                  Icon(
-                    expanded ? Icons.expand_more : Icons.chevron_right,
-                    size: 16,
-                    color: KColors.amber,
-                  ),
-                  const SizedBox(width: 4),
-                  const Flexible(
-                    child: Text(
-                      'PINNED',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+              child: LayoutBuilder(
+                builder: (context, c) {
+                  final showCounts = c.maxWidth >= 300;
+                  final compactButton = c.maxWidth < 300;
+                  final showButton = c.maxWidth >= 170;
+                  return Row(
+                    children: [
+                      Icon(
+                        expanded ? Icons.expand_more : Icons.chevron_right,
+                        size: 16,
                         color: KColors.amber,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.15,
                       ),
-                    ),
-                  ),
-                  if (showCounts) ...[
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        '${entries.length} starred · ${series.length} series',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            color: KColors.textMuted, fontSize: 10),
-                      ),
-                    ),
-                  ],
-                  const Spacer(),
-                  if (showButton && compactButton)
-                    Tooltip(
-                      message: 'New series',
-                      child: InkWell(
-                        onTap: onNewSeries,
-                        borderRadius: BorderRadius.circular(3),
-                        child: const Padding(
-                          padding: EdgeInsets.all(4),
-                          child: Icon(Icons.add,
-                              size: 14, color: KColors.textDim),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          'PINNED',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: KColors.amber,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.15,
+                          ),
                         ),
                       ),
-                    )
-                  else if (showButton)
-                  TextButton.icon(
-                    onPressed: onNewSeries,
-                    icon: const Icon(Icons.add, size: 12),
-                    label: const Text('Series'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: KColors.textDim,
-                      textStyle: const TextStyle(fontSize: 11),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 0),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                  ),
-                ],
-                );
-              }),
+                      if (showCounts) ...[
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            '${entries.length} starred · ${series.length} series',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: KColors.textMuted,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ),
+                      ],
+                      const Spacer(),
+                      if (showButton && compactButton)
+                        Tooltip(
+                          message: 'New series',
+                          child: InkWell(
+                            onTap: onNewSeries,
+                            borderRadius: BorderRadius.circular(3),
+                            child: Padding(
+                              padding: EdgeInsets.all(4),
+                              child: Icon(
+                                Icons.add,
+                                size: 14,
+                                color: KColors.textDim,
+                              ),
+                            ),
+                          ),
+                        )
+                      else if (showButton)
+                        TextButton.icon(
+                          onPressed: onNewSeries,
+                          icon: const Icon(Icons.add, size: 12),
+                          label: const Text('Series'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: KColors.textDim,
+                            textStyle: const TextStyle(fontSize: 11),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 0,
+                            ),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
             ),
           ),
           if (expanded) ...[
-            const Divider(color: KColors.border, height: 1),
+            Divider(color: KColors.border, height: 1),
             Padding(
               padding: const EdgeInsets.all(10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (series.isNotEmpty) ...[
-                    const Text('SERIES',
-                        style: TextStyle(
-                          color: KColors.textMuted,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.15,
-                        )),
+                    Text(
+                      'SERIES',
+                      style: TextStyle(
+                        color: KColors.textMuted,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.15,
+                      ),
+                    ),
                     const SizedBox(height: 6),
                     Wrap(
                       spacing: 8,
@@ -460,14 +479,15 @@ class _PinnedSection extends StatelessWidget {
                         for (final s in series)
                           _SeriesCard(
                             series: s,
-                            entryCount:
-                                entriesBySeriesId[s.id]?.length ?? 0,
-                            latestEntry: (entriesBySeriesId[s.id] ?? const [])
-                                    .isNotEmpty
-                                ? entriesBySeriesId[s.id]!.reduce((a, b) =>
-                                    a.entryDate.compareTo(b.entryDate) > 0
+                            entryCount: entriesBySeriesId[s.id]?.length ?? 0,
+                            latestEntry:
+                                (entriesBySeriesId[s.id] ?? const []).isNotEmpty
+                                ? entriesBySeriesId[s.id]!.reduce(
+                                    (a, b) =>
+                                        a.entryDate.compareTo(b.entryDate) > 0
                                         ? a
-                                        : b)
+                                        : b,
+                                  )
                                 : null,
                             onTap: () => onSelectSeries(s.id),
                           ),
@@ -476,13 +496,15 @@ class _PinnedSection extends StatelessWidget {
                     const SizedBox(height: 12),
                   ],
                   if (entries.isNotEmpty) ...[
-                    const Text('STARRED',
-                        style: TextStyle(
-                          color: KColors.textMuted,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.15,
-                        )),
+                    Text(
+                      'STARRED',
+                      style: TextStyle(
+                        color: KColors.textMuted,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.15,
+                      ),
+                    ),
                     const SizedBox(height: 6),
                     for (final e in entries) ...[
                       Padding(
@@ -548,16 +570,18 @@ class _SeriesCard extends StatelessWidget {
                   width: 8,
                   height: 8,
                   decoration: BoxDecoration(
-                      color: accent, shape: BoxShape.circle),
+                    color: accent,
+                    shape: BoxShape.circle,
+                  ),
                 ),
                 const SizedBox(width: 6),
-                const Icon(Icons.repeat, size: 11, color: KColors.blue),
+                Icon(Icons.repeat, size: 11, color: KColors.blue),
                 const SizedBox(width: 5),
                 Expanded(
                   child: Text(
                     series.name,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: KColors.text,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -571,17 +595,13 @@ class _SeriesCard extends StatelessWidget {
               series.cadenceHint == null
                   ? '$entryCount entr${entryCount == 1 ? 'y' : 'ies'}'
                   : '${series.cadenceHint!} · $entryCount entr${entryCount == 1 ? 'y' : 'ies'}',
-              style: const TextStyle(
-                color: KColors.textDim,
-                fontSize: 10,
-              ),
+              style: TextStyle(color: KColors.textDim, fontSize: 10),
             ),
             if (latestEntry != null) ...[
               const SizedBox(height: 2),
               Text(
                 'last: ${latestEntry!.entryDate}',
-                style: const TextStyle(
-                    color: KColors.textMuted, fontSize: 10),
+                style: TextStyle(color: KColors.textMuted, fontSize: 10),
               ),
             ],
           ],
@@ -626,9 +646,10 @@ class _SeriesFilterBanner extends StatelessWidget {
             style: TextButton.styleFrom(
               foregroundColor: KColors.textDim,
               textStyle: const TextStyle(
-                  fontSize: 13, fontWeight: FontWeight.w500),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             ),
           ),
         ),
@@ -642,73 +663,81 @@ class _SeriesFilterBanner extends StatelessWidget {
           ),
           // Sheds under squeeze (journal dock + Claude panel open): the
           // lead text drops first, then the button collapses to its icon.
-          child: LayoutBuilder(builder: (context, c) {
-            final showLead = c.maxWidth >= 380;
-            final compactButton = c.maxWidth < 320;
-            return Row(
-            children: [
-              const Icon(Icons.repeat, size: 13, color: KColors.blue),
-              const SizedBox(width: 6),
-              if (showLead)
-                const Text('Filtering by series · ',
-                    style:
-                        TextStyle(color: KColors.textDim, fontSize: 11)),
-              // Expanded — not Flexible — so the name consumes all the
-              // leftover space and the buttons sit flush against the
-              // banner's right edge. Flexible+Spacer was claiming the
-              // leftover 50/50 and parking the buttons in the middle.
-              Expanded(
-                child: Text(
-                  name,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                      color: KColors.blue,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600),
-                ),
-              ),
-              const SizedBox(width: 12),
-              if (compactButton)
-                Tooltip(
-                  message: 'New in series',
-                  child: InkWell(
-                    onTap: onAddEntry,
-                    borderRadius: BorderRadius.circular(3),
-                    child: const Padding(
-                      padding: EdgeInsets.all(4),
-                      child:
-                          Icon(Icons.add, size: 14, color: KColors.blue),
+          child: LayoutBuilder(
+            builder: (context, c) {
+              final showLead = c.maxWidth >= 380;
+              final compactButton = c.maxWidth < 320;
+              return Row(
+                children: [
+                  Icon(Icons.repeat, size: 13, color: KColors.blue),
+                  const SizedBox(width: 6),
+                  if (showLead)
+                    Text(
+                      'Filtering by series · ',
+                      style: TextStyle(color: KColors.textDim, fontSize: 11),
+                    ),
+                  // Expanded — not Flexible — so the name consumes all the
+                  // leftover space and the buttons sit flush against the
+                  // banner's right edge. Flexible+Spacer was claiming the
+                  // leftover 50/50 and parking the buttons in the middle.
+                  Expanded(
+                    child: Text(
+                      name,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: KColors.blue,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                )
-              else
-              ElevatedButton.icon(
-                onPressed: onAddEntry,
-                icon: const Icon(Icons.add, size: 12),
-                label: const Text('New in series'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 6),
-                  textStyle: const TextStyle(fontSize: 11),
-                  visualDensity: VisualDensity.compact,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Tooltip(
-                message: 'Clear filter',
-                child: InkWell(
-                  onTap: onClear,
-                  borderRadius: BorderRadius.circular(3),
-                  child: const Padding(
-                    padding: EdgeInsets.all(4),
-                    child: Icon(Icons.close,
-                        size: 14, color: KColors.textDim),
+                  const SizedBox(width: 12),
+                  if (compactButton)
+                    Tooltip(
+                      message: 'New in series',
+                      child: InkWell(
+                        onTap: onAddEntry,
+                        borderRadius: BorderRadius.circular(3),
+                        child: Padding(
+                          padding: EdgeInsets.all(4),
+                          child: Icon(Icons.add, size: 14, color: KColors.blue),
+                        ),
+                      ),
+                    )
+                  else
+                    ElevatedButton.icon(
+                      onPressed: onAddEntry,
+                      icon: const Icon(Icons.add, size: 12),
+                      label: const Text('New in series'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        textStyle: const TextStyle(fontSize: 11),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                  const SizedBox(width: 6),
+                  Tooltip(
+                    message: 'Clear filter',
+                    child: InkWell(
+                      onTap: onClear,
+                      borderRadius: BorderRadius.circular(3),
+                      child: Padding(
+                        padding: EdgeInsets.all(4),
+                        child: Icon(
+                          Icons.close,
+                          size: 14,
+                          color: KColors.textDim,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ],
-            );
-          }),
+                ],
+              );
+            },
+          ),
         ),
       ],
     );

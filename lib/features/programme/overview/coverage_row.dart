@@ -22,36 +22,41 @@ class CoverageRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (context, constraints) {
-      final useColumn = constraints.maxWidth < 500;
-      final children = [
-        _StakeholderGauge(
-            projectId: projectId, db: db, onTap: onTapStakeholders),
-        _TeamGauge(projectId: projectId, db: db, onTap: onTapTeam),
-        _PlaybookGauge(projectId: projectId, db: db, onTap: onTapPlaybook),
-      ];
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final useColumn = constraints.maxWidth < 500;
+        final children = [
+          _StakeholderGauge(
+            projectId: projectId,
+            db: db,
+            onTap: onTapStakeholders,
+          ),
+          _TeamGauge(projectId: projectId, db: db, onTap: onTapTeam),
+          _PlaybookGauge(projectId: projectId, db: db, onTap: onTapPlaybook),
+        ];
 
-      if (useColumn) {
-        return Column(
+        if (useColumn) {
+          return Column(
+            children: [
+              for (int i = 0; i < children.length; i++) ...[
+                if (i > 0) const SizedBox(height: 8),
+                children[i],
+              ],
+            ],
+          );
+        }
+
+        return Row(
           children: [
-            for (int i = 0; i < children.length; i++) ...[
-              if (i > 0) const SizedBox(height: 8),
-              children[i],
-            ]
+            Expanded(child: children[0]),
+            const SizedBox(width: 8),
+            Expanded(child: children[1]),
+            const SizedBox(width: 8),
+            Expanded(child: children[2]),
           ],
         );
-      }
-
-      return Row(
-        children: [
-          Expanded(child: children[0]),
-          const SizedBox(width: 8),
-          Expanded(child: children[1]),
-          const SizedBox(width: 8),
-          Expanded(child: children[2]),
-        ],
-      );
-    });
+      },
+    );
   }
 }
 
@@ -64,16 +69,18 @@ class _StakeholderGauge extends StatelessWidget {
   final AppDatabase db;
   final VoidCallback? onTap;
 
-  const _StakeholderGauge(
-      {required this.projectId, required this.db, this.onTap});
+  const _StakeholderGauge({
+    required this.projectId,
+    required this.db,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<StakeholderRole>>(
       stream: db.stakeholderRoleDao.watchForProject(projectId),
       builder: (context, snap) {
-        final result =
-            CoverageCalculator.forStakeholders(snap.data ?? []);
+        final result = CoverageCalculator.forStakeholders(snap.data ?? []);
         return _CoverageGauge(
           label: 'STAKEHOLDERS',
           result: result,
@@ -89,8 +96,7 @@ class _TeamGauge extends StatelessWidget {
   final AppDatabase db;
   final VoidCallback? onTap;
 
-  const _TeamGauge(
-      {required this.projectId, required this.db, this.onTap});
+  const _TeamGauge({required this.projectId, required this.db, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -98,11 +104,7 @@ class _TeamGauge extends StatelessWidget {
       stream: db.teamRoleDao.watchForProject(projectId),
       builder: (context, snap) {
         final result = CoverageCalculator.forTeam(snap.data ?? []);
-        return _CoverageGauge(
-          label: 'TEAM',
-          result: result,
-          onTap: onTap,
-        );
+        return _CoverageGauge(label: 'TEAM', result: result, onTap: onTap);
       },
     );
   }
@@ -113,8 +115,7 @@ class _PlaybookGauge extends StatelessWidget {
   final AppDatabase db;
   final VoidCallback? onTap;
 
-  const _PlaybookGauge(
-      {required this.projectId, required this.db, this.onTap});
+  const _PlaybookGauge({required this.projectId, required this.db, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -130,13 +131,13 @@ class _PlaybookGauge extends StatelessWidget {
           );
         }
         return StreamBuilder<List<ProjectStageProgressesData>>(
-          stream: db.playbookDao
-              .watchProgressForProjectPlaybook(ppSnap.data!.id),
+          stream: db.playbookDao.watchProgressForProjectPlaybook(
+            ppSnap.data!.id,
+          ),
           builder: (context, pgSnap) {
             final progresses = pgSnap.data ?? [];
             final total = progresses.length;
-            final done =
-                progresses.where((p) => p.status == 'complete').length;
+            final done = progresses.where((p) => p.status == 'complete').length;
             final inProgress = progresses
                 .where((p) => p.status == 'in_progress')
                 .firstOrNull;
@@ -154,8 +155,8 @@ class _PlaybookGauge extends StatelessWidget {
               playbookStageInfo: inProgress != null
                   ? 'Stage ${done + 1} of $total in progress'
                   : done == total && total > 0
-                      ? 'All $total stages complete'
-                      : '$done of $total stages done',
+                  ? 'All $total stages complete'
+                  : '$done of $total stages done',
               onTap: onTap,
             );
           },
@@ -202,7 +203,7 @@ class _CoverageGauge extends StatelessWidget {
           children: [
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.15,
@@ -213,10 +214,11 @@ class _CoverageGauge extends StatelessWidget {
             if (r == null)
               Text(
                 noDataMessage ?? '—',
-                style: const TextStyle(
-                    fontSize: 12,
-                    color: KColors.textDim,
-                    fontStyle: FontStyle.italic),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: KColors.textDim,
+                  fontStyle: FontStyle.italic,
+                ),
               )
             else ...[
               // Two-tone progress bar:
@@ -231,24 +233,21 @@ class _CoverageGauge extends StatelessWidget {
               Text(
                 playbookStageInfo != null
                     ? '${(r.percentage * 100).round()}%'
-                        '  (${r.filled}/${r.applicable})'
+                          '  (${r.filled}/${r.applicable})'
                     : '${r.filled} of ${r.applicable} assigned · ${r.defined} defined',
-                style: const TextStyle(
-                    fontSize: 12, color: KColors.text),
+                style: TextStyle(fontSize: 12, color: KColors.text),
               ),
               if (playbookStageInfo != null) ...[
                 const SizedBox(height: 4),
                 Text(
                   playbookStageInfo!,
-                  style: const TextStyle(
-                      fontSize: 11, color: KColors.textDim),
+                  style: TextStyle(fontSize: 11, color: KColors.textDim),
                 ),
               ] else if (r.missingRoles.isNotEmpty) ...[
                 const SizedBox(height: 6),
                 Text(
                   'Missing: ${r.missingRoles.take(3).join(', ')}${r.missingRoles.length > 3 ? '…' : ''}',
-                  style: const TextStyle(
-                      fontSize: 11, color: KColors.textDim),
+                  style: TextStyle(fontSize: 11, color: KColors.textDim),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -281,8 +280,8 @@ class _TwoTonePercentBar extends StatelessWidget {
     final ragColor = assigned >= 0.8
         ? const Color(0xFF22c55e)
         : assigned >= 0.5
-            ? KColors.amber
-            : KColors.red;
+        ? KColors.amber
+        : KColors.red;
     final definedColor = ragColor.withValues(alpha: 0.32);
 
     return ClipRRect(
@@ -291,9 +290,7 @@ class _TwoTonePercentBar extends StatelessWidget {
         height: 6,
         child: Stack(
           children: [
-            Positioned.fill(
-              child: Container(color: KColors.border2),
-            ),
+            Positioned.fill(child: Container(color: KColors.border2)),
             FractionallySizedBox(
               widthFactor: defined,
               alignment: Alignment.centerLeft,

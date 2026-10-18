@@ -22,18 +22,18 @@ enum _Col { todo, inProgress, overdue, done }
 
 extension _ColExt on _Col {
   String get label => switch (this) {
-        _Col.todo => 'To Do',
-        _Col.inProgress => 'In Progress',
-        _Col.overdue => 'Overdue',
-        _Col.done => 'Done',
-      };
+    _Col.todo => 'To Do',
+    _Col.inProgress => 'In Progress',
+    _Col.overdue => 'Overdue',
+    _Col.done => 'Done',
+  };
 
   String get dbStatus => switch (this) {
-        _Col.todo => 'open',
-        _Col.inProgress => 'in progress',
-        _Col.overdue => 'overdue',
-        _Col.done => 'closed',
-      };
+    _Col.todo => 'open',
+    _Col.inProgress => 'in progress',
+    _Col.overdue => 'overdue',
+    _Col.done => 'closed',
+  };
 }
 
 _Col _colFor(ProjectAction a) {
@@ -111,7 +111,10 @@ class _ActionsKanbanState extends State<ActionsKanban> {
   }
 
   Future<void> _drop(
-      ProjectAction action, _Col targetCol, String? targetParentId) async {
+    ProjectAction action,
+    _Col targetCol,
+    String? targetParentId,
+  ) async {
     final statusChange = _colFor(action) != targetCol;
     final parentChange = action.parentActionId != targetParentId;
     if (!statusChange && !parentChange) return;
@@ -121,8 +124,10 @@ class _ActionsKanbanState extends State<ActionsKanban> {
     if (targetParentId != null && parentChange) {
       if (action.id == targetParentId) return;
       final part = partitionByParent(widget.actions);
-      if (actionDescendantIds(action.id, part.childrenByParent)
-          .contains(targetParentId)) {
+      if (actionDescendantIds(
+        action.id,
+        part.childrenByParent,
+      ).contains(targetParentId)) {
         return;
       }
       if (actionSubtreeHeight(action.id, part.childrenByParent) + 1 >
@@ -140,13 +145,15 @@ class _ActionsKanbanState extends State<ActionsKanban> {
         await widget.db.actionsDao.setParent(action.id, targetParentId);
       }
       if (statusChange) {
-        await widget.db.actionsDao.upsertAction(ProjectActionsCompanion(
-          id: Value(action.id),
-          projectId: Value(action.projectId),
-          description: Value(action.description),
-          status: Value(isClose ? 'closed' : targetCol.dbStatus),
-          updatedAt: Value(DateTime.now()),
-        ));
+        await widget.db.actionsDao.upsertAction(
+          ProjectActionsCompanion(
+            id: Value(action.id),
+            projectId: Value(action.projectId),
+            description: Value(action.description),
+            status: Value(isClose ? 'closed' : targetCol.dbStatus),
+            updatedAt: Value(DateTime.now()),
+          ),
+        );
       }
     });
 
@@ -167,26 +174,30 @@ class _ActionsKanbanState extends State<ActionsKanban> {
     final now = DateTime.now();
 
     await widget.db.transaction(() async {
-      await widget.db.actionsDao.upsertAction(ProjectActionsCompanion(
-        id: Value(action.id),
-        projectId: Value(action.projectId),
-        description: Value(action.description),
-        status: const Value('closed'),
-        outcome: Value(outcome.isEmpty ? null : outcome),
-        updatedAt: Value(now),
-      ));
+      await widget.db.actionsDao.upsertAction(
+        ProjectActionsCompanion(
+          id: Value(action.id),
+          projectId: Value(action.projectId),
+          description: Value(action.description),
+          status: const Value('closed'),
+          outcome: Value(outcome.isEmpty ? null : outcome),
+          updatedAt: Value(now),
+        ),
+      );
       // Mirror non-empty outcomes into a special "completion" comment so
       // the reason shows up in the action's running comment thread.
       if (outcome.isNotEmpty) {
-        await widget.db.actionCommentsDao.upsertComment(ActionCommentsCompanion(
-          id: Value(const Uuid().v4()),
-          actionId: Value(action.id),
-          content: Value(outcome),
-          isCompletion: const Value(true),
-          authorName: Value(author.isEmpty ? null : author),
-          createdAt: Value(now),
-          updatedAt: Value(now),
-        ));
+        await widget.db.actionCommentsDao.upsertComment(
+          ActionCommentsCompanion(
+            id: Value(const Uuid().v4()),
+            actionId: Value(action.id),
+            content: Value(outcome),
+            isCompletion: const Value(true),
+            authorName: Value(author.isEmpty ? null : author),
+            createdAt: Value(now),
+            updatedAt: Value(now),
+          ),
+        );
       }
     });
 
@@ -198,12 +209,16 @@ class _ActionsKanbanState extends State<ActionsKanban> {
   /// Drop card [dragged] onto card [target]: nest it as a child/sub-task,
   /// promoting the target to a group parent if needed.
   Future<void> _nestUnderCard(
-      ProjectAction dragged, ProjectAction target) async {
+    ProjectAction dragged,
+    ProjectAction target,
+  ) async {
     if (dragged.id == target.id) return;
     final part = partitionByParent(widget.actions);
     final byId = {for (final a in widget.actions) a.id: a};
-    if (actionDescendantIds(dragged.id, part.childrenByParent)
-        .contains(target.id)) {
+    if (actionDescendantIds(
+      dragged.id,
+      part.childrenByParent,
+    ).contains(target.id)) {
       return;
     }
     final height = actionSubtreeHeight(dragged.id, part.childrenByParent);
@@ -224,19 +239,23 @@ class _ActionsKanbanState extends State<ActionsKanban> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Close group'),
-        content: Text(openCount == 0
-            ? 'Close this group? It will leave the board (find it again '
-                'via "show old closed").'
-            : 'Close this group and its $openCount open '
-                'action${openCount == 1 ? '' : 's'}? The group will leave '
-                'the board (find it again via "show old closed").'),
+        content: Text(
+          openCount == 0
+              ? 'Close this group? It will leave the board (find it again '
+                    'via "show old closed").'
+              : 'Close this group and its $openCount open '
+                    'action${openCount == 1 ? '' : 's'}? The group will leave '
+                    'the board (find it again via "show old closed").',
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Close group')),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Close group'),
+          ),
         ],
       ),
     );
@@ -245,13 +264,15 @@ class _ActionsKanbanState extends State<ActionsKanban> {
   }
 
   Future<void> _toggleSubTask(ProjectAction s, bool closed) async {
-    await widget.db.actionsDao.upsertAction(ProjectActionsCompanion(
-      id: Value(s.id),
-      projectId: Value(s.projectId),
-      description: Value(s.description),
-      status: Value(closed ? 'closed' : 'open'),
-      updatedAt: Value(DateTime.now()),
-    ));
+    await widget.db.actionsDao.upsertAction(
+      ProjectActionsCompanion(
+        id: Value(s.id),
+        projectId: Value(s.projectId),
+        description: Value(s.description),
+        status: Value(closed ? 'closed' : 'open'),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
   }
 
   Future<void> _deleteAction(ProjectAction a) async {
@@ -267,14 +288,14 @@ class _ActionsKanbanState extends State<ActionsKanban> {
   }
 
   void _openCard(ProjectAction a) => showDialog(
-        context: context,
-        builder: (_) => ActionFormDialog(
-          projectId: widget.projectId,
-          db: widget.db,
-          action: a,
-          startInViewMode: true,
-        ),
-      );
+    context: context,
+    builder: (_) => ActionFormDialog(
+      projectId: widget.projectId,
+      db: widget.db,
+      action: a,
+      startInViewMode: true,
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -317,44 +338,44 @@ class _ActionsKanbanState extends State<ActionsKanban> {
     return MinWidthHScroll(
       minWidth: 900,
       child: Column(
-      children: [
-        _ColumnHeaderRow(),
-        const Divider(color: KColors.border, height: 1),
-        Expanded(
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                for (var i = 0; i < lanes.length; i++) ...[
-                  _Swimlane(
-                    spec: lanes[i],
-                    childrenByParent: part.childrenByParent,
-                    catMap: widget.catMap,
-                    planTagMap: widget.planTagMap,
-                    db: widget.db,
-                    projectId: widget.projectId,
-                    ownerMatches: widget.ownerMatches,
-                    ownerFilterActive: widget.ownerFilterActive,
-                    pendingOutcomeId: _pendingOutcomeId,
-                    outcomeCtrl: _outcomeCtrl,
-                    outcomeFocus: _outcomeFocus,
-                    onDrop: _drop,
-                    onNest: _nestUnderCard,
-                    onToggleSubTask: _toggleSubTask,
-                    onCloseGroup: _closeGroup,
-                    onSaveOutcome: _saveOutcome,
-                    onDismissOutcome: _dismissOutcome,
-                    onCardTap: _openCard,
-                    onDelete: _deleteAction,
-                    onDeleteSeries: _deleteSeries,
-                  ),
-                  if (i < lanes.length - 1)
-                    const Divider(color: KColors.border, height: 1),
+        children: [
+          _ColumnHeaderRow(),
+          Divider(color: KColors.border, height: 1),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  for (var i = 0; i < lanes.length; i++) ...[
+                    _Swimlane(
+                      spec: lanes[i],
+                      childrenByParent: part.childrenByParent,
+                      catMap: widget.catMap,
+                      planTagMap: widget.planTagMap,
+                      db: widget.db,
+                      projectId: widget.projectId,
+                      ownerMatches: widget.ownerMatches,
+                      ownerFilterActive: widget.ownerFilterActive,
+                      pendingOutcomeId: _pendingOutcomeId,
+                      outcomeCtrl: _outcomeCtrl,
+                      outcomeFocus: _outcomeFocus,
+                      onDrop: _drop,
+                      onNest: _nestUnderCard,
+                      onToggleSubTask: _toggleSubTask,
+                      onCloseGroup: _closeGroup,
+                      onSaveOutcome: _saveOutcome,
+                      onDismissOutcome: _dismissOutcome,
+                      onCardTap: _openCard,
+                      onDelete: _deleteAction,
+                      onDeleteSeries: _deleteSeries,
+                    ),
+                    if (i < lanes.length - 1)
+                      Divider(color: KColors.border, height: 1),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
-        ),
-      ],
+        ],
       ),
     );
   }
@@ -386,10 +407,10 @@ class _LaneSpec {
 
 class _ColumnHeaderRow extends StatelessWidget {
   Color _colorFor(_Col col) => switch (col) {
-        _Col.overdue => KColors.red,
-        _Col.done => KColors.textMuted,
-        _ => KColors.textDim,
-      };
+    _Col.overdue => KColors.red,
+    _Col.done => KColors.textMuted,
+    _ => KColors.textDim,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -572,23 +593,28 @@ class _ParentHeader extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.account_tree_outlined,
-                    size: 11, color: KColors.phosphor),
+                Icon(
+                  Icons.account_tree_outlined,
+                  size: 11,
+                  color: KColors.phosphor,
+                ),
                 const SizedBox(width: 5),
                 if (parent.ref != null) ...[
-                  Text(parent.ref!,
-                      style: const TextStyle(
-                          color: KColors.amber,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold)),
+                  Text(
+                    parent.ref!,
+                    style: TextStyle(
+                      color: KColors.amber,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(width: 5),
                 ],
                 Expanded(
                   child: Text(
                     '${rollup.done}/${rollup.total}',
                     textAlign: TextAlign.right,
-                    style: const TextStyle(
-                        color: KColors.textMuted, fontSize: 10),
+                    style: TextStyle(color: KColors.textMuted, fontSize: 10),
                   ),
                 ),
                 const SizedBox(width: 2),
@@ -600,7 +626,7 @@ class _ParentHeader extends StatelessWidget {
               parent.description,
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: TextStyle(
                 color: KColors.text,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
@@ -615,18 +641,20 @@ class _ParentHeader extends StatelessWidget {
                     width: 18,
                     height: 18,
                     decoration: BoxDecoration(
-                      color: colorFromName(parent.owner!)
-                          .withValues(alpha: 0.28),
+                      color: colorFromName(
+                        parent.owner!,
+                      ).withValues(alpha: 0.28),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: colorFromName(parent.owner!)
-                            .withValues(alpha: 0.6),
+                        color: colorFromName(
+                          parent.owner!,
+                        ).withValues(alpha: 0.6),
                       ),
                     ),
                     alignment: Alignment.center,
                     child: Text(
                       initialsFromName(parent.owner!),
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: KColors.text,
                         fontSize: 8,
                         fontWeight: FontWeight.w700,
@@ -638,8 +666,7 @@ class _ParentHeader extends StatelessWidget {
                     child: Text(
                       parent.owner!,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          color: KColors.textDim, fontSize: 10),
+                      style: TextStyle(color: KColors.textDim, fontSize: 10),
                     ),
                   ),
                 ],
@@ -658,13 +685,14 @@ class _HeaderMenuButton extends StatelessWidget {
 
   Future<void> _showMenu(BuildContext context) async {
     final button = context.findRenderObject() as RenderBox;
-    final overlay =
-        Overlay.of(context).context.findRenderObject() as RenderBox;
+    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
     final position = RelativeRect.fromRect(
       Rect.fromPoints(
         button.localToGlobal(Offset.zero, ancestor: overlay),
-        button.localToGlobal(button.size.bottomRight(Offset.zero),
-            ancestor: overlay),
+        button.localToGlobal(
+          button.size.bottomRight(Offset.zero),
+          ancestor: overlay,
+        ),
       ),
       Offset.zero & overlay.size,
     );
@@ -687,7 +715,7 @@ class _HeaderMenuButton extends StatelessWidget {
     return InkResponse(
       onTap: () => _showMenu(context),
       radius: 12,
-      child: const Padding(
+      child: Padding(
         padding: EdgeInsets.all(2),
         child: Icon(Icons.more_vert, size: 13, color: KColors.textMuted),
       ),
@@ -702,13 +730,11 @@ class _UngroupedHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: const BoxDecoration(
-        border: Border(
-          right: BorderSide(color: KColors.border, width: 1),
-        ),
+      decoration: BoxDecoration(
+        border: Border(right: BorderSide(color: KColors.border, width: 1)),
       ),
       alignment: Alignment.centerLeft,
-      child: const Text(
+      child: Text(
         '— Ungrouped —',
         style: TextStyle(
           color: KColors.textMuted,
@@ -796,13 +822,16 @@ class _LaneCell extends StatelessWidget {
                   planTag: actions[i].planActivityId != null
                       ? planTagMap[actions[i].planActivityId!]
                       : null,
-                  subTasks: childrenByParent[actions[i].id] ??
+                  subTasks:
+                      childrenByParent[actions[i].id] ??
                       const <ProjectAction>[],
                   showOutcomeField: pendingOutcomeId == actions[i].id,
-                  outcomeCtrl:
-                      pendingOutcomeId == actions[i].id ? outcomeCtrl : null,
-                  outcomeFocus:
-                      pendingOutcomeId == actions[i].id ? outcomeFocus : null,
+                  outcomeCtrl: pendingOutcomeId == actions[i].id
+                      ? outcomeCtrl
+                      : null,
+                  outcomeFocus: pendingOutcomeId == actions[i].id
+                      ? outcomeFocus
+                      : null,
                   onTap: () => onCardTap(actions[i]),
                   onNest: onNest,
                   onToggleSubTask: onToggleSubTask,
@@ -858,8 +887,9 @@ class _KanbanCard extends StatelessWidget {
   });
 
   Widget _buildCardContent({bool nestHover = false}) {
-    final barColor =
-        category != null ? parseHexColor(category!.color) : KColors.border2;
+    final barColor = category != null
+        ? parseHexColor(category!.color)
+        : KColors.border2;
 
     return Container(
       decoration: BoxDecoration(
@@ -890,7 +920,7 @@ class _KanbanCard extends StatelessWidget {
                   if (action.ref != null) ...[
                     Text(
                       action.ref!,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: KColors.amber,
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
@@ -911,7 +941,7 @@ class _KanbanCard extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 action.description,
-                style: const TextStyle(
+                style: TextStyle(
                   color: KColors.text,
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
@@ -928,18 +958,20 @@ class _KanbanCard extends StatelessWidget {
                       width: 20,
                       height: 20,
                       decoration: BoxDecoration(
-                        color: colorFromName(action.owner!)
-                            .withValues(alpha: 0.28),
+                        color: colorFromName(
+                          action.owner!,
+                        ).withValues(alpha: 0.28),
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: colorFromName(action.owner!)
-                              .withValues(alpha: 0.6),
+                          color: colorFromName(
+                            action.owner!,
+                          ).withValues(alpha: 0.6),
                         ),
                       ),
                       alignment: Alignment.center,
                       child: Text(
                         initialsFromName(action.owner!),
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: KColors.text,
                           fontSize: 9,
                           fontWeight: FontWeight.w700,
@@ -950,8 +982,7 @@ class _KanbanCard extends StatelessWidget {
                     Flexible(
                       child: Text(
                         action.owner!,
-                        style: const TextStyle(
-                            color: KColors.textDim, fontSize: 10),
+                        style: TextStyle(color: KColors.textDim, fontSize: 10),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -981,12 +1012,11 @@ class _KanbanCard extends StatelessWidget {
               ),
               if (subTasks.isNotEmpty) ...[
                 const SizedBox(height: 6),
-                const Divider(color: KColors.border, height: 1),
+                Divider(color: KColors.border, height: 1),
                 const SizedBox(height: 4),
                 for (final s in subTasks)
                   InkWell(
-                    onTap: () =>
-                        onToggleSubTask(s, s.status != 'closed'),
+                    onTap: () => onToggleSubTask(s, s.status != 'closed'),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 2),
                       child: Row(
@@ -1025,27 +1055,35 @@ class _KanbanCard extends StatelessWidget {
               if (planTag != null) ...[
                 const SizedBox(height: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 5,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: KColors.phosphor.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(3),
                     border: Border.all(
-                        color: KColors.phosphor.withValues(alpha: 0.3)),
+                      color: KColors.phosphor.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.account_tree_outlined,
-                          size: 9, color: KColors.phosphor),
+                      Icon(
+                        Icons.account_tree_outlined,
+                        size: 9,
+                        color: KColors.phosphor,
+                      ),
                       const SizedBox(width: 3),
                       Flexible(
                         child: Text(
                           planTag!,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              color: KColors.phosphor,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                            color: KColors.phosphor,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],
@@ -1054,19 +1092,25 @@ class _KanbanCard extends StatelessWidget {
               ],
               if (showOutcomeField && outcomeCtrl != null) ...[
                 const SizedBox(height: 8),
-                const Divider(color: KColors.border, height: 1),
+                Divider(color: KColors.border, height: 1),
                 const SizedBox(height: 6),
                 SizedBox(
                   height: 20,
                   child: TextField(
                     controller: outcomeCtrl,
                     focusNode: outcomeFocus,
-                    style: const TextStyle(
-                        color: KColors.text, fontSize: 11, height: 1.2),
-                    decoration: const InputDecoration(
+                    style: TextStyle(
+                      color: KColors.text,
+                      fontSize: 11,
+                      height: 1.2,
+                    ),
+                    decoration: InputDecoration(
                       hintText: 'Add outcome… (Enter to save)',
                       hintStyle: TextStyle(
-                          color: KColors.textMuted, fontSize: 11, height: 1.2),
+                        color: KColors.textMuted,
+                        fontSize: 11,
+                        height: 1.2,
+                      ),
                       border: InputBorder.none,
                       isDense: true,
                       contentPadding: EdgeInsets.zero,
@@ -1084,26 +1128,38 @@ class _KanbanCard extends StatelessWidget {
                         onPressed: onDismissOutcome,
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 0),
+                            horizontal: 8,
+                            vertical: 0,
+                          ),
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           minimumSize: Size.zero,
                         ),
-                        child: const Text('Skip',
-                            style: TextStyle(
-                                color: KColors.textMuted, fontSize: 10)),
+                        child: Text(
+                          'Skip',
+                          style: TextStyle(
+                            color: KColors.textMuted,
+                            fontSize: 10,
+                          ),
+                        ),
                       ),
                       const SizedBox(width: 4),
                       TextButton(
                         onPressed: onSaveOutcome,
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 0),
+                            horizontal: 8,
+                            vertical: 0,
+                          ),
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           minimumSize: Size.zero,
                         ),
-                        child: const Text('Save',
-                            style: TextStyle(
-                                color: KColors.phosphor, fontSize: 10)),
+                        child: Text(
+                          'Save',
+                          style: TextStyle(
+                            color: KColors.phosphor,
+                            fontSize: 10,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -1126,8 +1182,7 @@ class _KanbanCard extends StatelessWidget {
       onAcceptWithDetails: (d) => onNest(d.data, action),
       builder: (ctx, candidates, _) {
         final hover = candidates.isNotEmpty;
-        final display =
-            hover ? _buildCardContent(nestHover: true) : content;
+        final display = hover ? _buildCardContent(nestHover: true) : content;
         return Draggable<ProjectAction>(
           data: action,
           feedback: Material(
@@ -1165,13 +1220,14 @@ class _CardMenuButton extends StatelessWidget {
 
   Future<void> _showMenu(BuildContext context) async {
     final button = context.findRenderObject() as RenderBox;
-    final overlay =
-        Overlay.of(context).context.findRenderObject() as RenderBox;
+    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
     final position = RelativeRect.fromRect(
       Rect.fromPoints(
         button.localToGlobal(Offset.zero, ancestor: overlay),
-        button.localToGlobal(button.size.bottomRight(Offset.zero),
-            ancestor: overlay),
+        button.localToGlobal(
+          button.size.bottomRight(Offset.zero),
+          ancestor: overlay,
+        ),
       ),
       Offset.zero & overlay.size,
     );
@@ -1188,8 +1244,7 @@ class _CardMenuButton extends StatelessWidget {
           const PopupMenuItem(
             value: 'delete_series',
             height: 32,
-            child: Text('Delete all in series',
-                style: TextStyle(fontSize: 12)),
+            child: Text('Delete all in series', style: TextStyle(fontSize: 12)),
           ),
       ],
     );
@@ -1202,7 +1257,7 @@ class _CardMenuButton extends StatelessWidget {
     return InkResponse(
       onTap: () => _showMenu(context),
       radius: 12,
-      child: const Padding(
+      child: Padding(
         padding: EdgeInsets.all(2),
         child: Icon(Icons.more_vert, size: 14, color: KColors.textMuted),
       ),

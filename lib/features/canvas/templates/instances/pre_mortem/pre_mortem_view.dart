@@ -95,16 +95,13 @@ class _PreMortemViewState extends State<PreMortemView> {
       if (cause.mitigations.any((m) => m.id == mitId)) {
         // Skip the no-op case where the controller is being rebuilt
         // with the same value (e.g. didUpdateWidget seeding).
-        final current = cause.mitigations
-            .firstWhere((m) => m.id == mitId)
-            .owner ??
-            '';
+        final current =
+            cause.mitigations.firstWhere((m) => m.id == mitId).owner ?? '';
         if (current == value.trim()) return;
         _onMitigationFieldChanged(
           cause.id,
           mitId,
-          (m) => m.copyWith(
-              owner: value.trim().isEmpty ? null : value.trim()),
+          (m) => m.copyWith(owner: value.trim().isEmpty ? null : value.trim()),
         );
         return;
       }
@@ -162,7 +159,9 @@ class _PreMortemViewState extends State<PreMortemView> {
   }
 
   void _onCauseFieldChanged(
-      String causeId, PreMortemCause Function(PreMortemCause) edit) {
+    String causeId,
+    PreMortemCause Function(PreMortemCause) edit,
+  ) {
     final updated = _content.causes
         .map((c) => c.id == causeId ? edit(c) : c)
         .toList();
@@ -171,8 +170,7 @@ class _PreMortemViewState extends State<PreMortemView> {
   }
 
   void _deleteCause(String causeId) {
-    final updated =
-        _content.causes.where((c) => c.id != causeId).toList();
+    final updated = _content.causes.where((c) => c.id != causeId).toList();
     _causeDescCtrls.remove(causeId)?.dispose();
     setState(() {});
     _save(_content.copyWith(causes: updated));
@@ -183,7 +181,10 @@ class _PreMortemViewState extends State<PreMortemView> {
     final updated = _content.causes.map((c) {
       if (c.id != causeId) return c;
       return c.copyWith(
-        mitigations: [...c.mitigations, PreMortemMitigation(id: mitId)],
+        mitigations: [
+          ...c.mitigations,
+          PreMortemMitigation(id: mitId),
+        ],
       );
     }).toList();
     _mitigationDescCtrls[mitId] = TextEditingController();
@@ -211,8 +212,7 @@ class _PreMortemViewState extends State<PreMortemView> {
     final updated = _content.causes.map((c) {
       if (c.id != causeId) return c;
       return c.copyWith(
-        mitigations:
-            c.mitigations.where((m) => m.id != mitigationId).toList(),
+        mitigations: c.mitigations.where((m) => m.id != mitigationId).toList(),
       );
     }).toList();
     _mitigationDescCtrls.remove(mitigationId)?.dispose();
@@ -231,22 +231,25 @@ class _PreMortemViewState extends State<PreMortemView> {
     }
     final db = context.read<AppDatabase>();
     final id = const Uuid().v4();
-    await db.raidDao.insertRisk(RisksCompanion.insert(
-      id: id,
-      projectId: widget.template.projectId,
-      description: cause.description,
-      likelihood: Value(normaliseLikelihood(cause.likelihood)),
-      impact: Value(normaliseConsequence(cause.impact)),
-      source: const Value('pre_mortem'),
-      sourceNote: Value('Pre-mortem: ${widget.template.name}'),
-    ));
-    _onCauseFieldChanged(
-        cause.id, (c) => c.copyWith(promotedToRiskId: id));
+    await db.raidDao.insertRisk(
+      RisksCompanion.insert(
+        id: id,
+        projectId: widget.template.projectId,
+        description: cause.description,
+        likelihood: Value(normaliseLikelihood(cause.likelihood)),
+        impact: Value(normaliseConsequence(cause.impact)),
+        source: const Value('pre_mortem'),
+        sourceNote: Value('Pre-mortem: ${widget.template.name}'),
+      ),
+    );
+    _onCauseFieldChanged(cause.id, (c) => c.copyWith(promotedToRiskId: id));
     _snack('Cause promoted to Risk.');
   }
 
   Future<void> _promoteMitigationToAction(
-      String causeId, PreMortemMitigation m) async {
+    String causeId,
+    PreMortemMitigation m,
+  ) async {
     if (m.promotedToActionId != null) return;
     if (m.description.trim().isEmpty) {
       _snack('Add a description before promoting.');
@@ -254,25 +257,29 @@ class _PreMortemViewState extends State<PreMortemView> {
     }
     final db = context.read<AppDatabase>();
     final id = const Uuid().v4();
-    await db.actionsDao.insertAction(ProjectActionsCompanion.insert(
-      id: id,
-      projectId: widget.template.projectId,
-      description: m.description,
-      owner: Value(m.owner),
-      source: const Value('pre_mortem'),
-      sourceNote: Value('Pre-mortem: ${widget.template.name}'),
-    ));
+    await db.actionsDao.insertAction(
+      ProjectActionsCompanion.insert(
+        id: id,
+        projectId: widget.template.projectId,
+        description: m.description,
+        owner: Value(m.owner),
+        source: const Value('pre_mortem'),
+        sourceNote: Value('Pre-mortem: ${widget.template.name}'),
+      ),
+    );
     _onMitigationFieldChanged(
-        causeId, m.id, (x) => x.copyWith(promotedToActionId: id));
+      causeId,
+      m.id,
+      (x) => x.copyWith(promotedToActionId: id),
+    );
     _snack('Mitigation promoted to Action.');
   }
 
   void _snack(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(message),
-      duration: const Duration(seconds: 2),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
+    );
   }
 
   // ---- UI -----------------------------------------------------------------
@@ -310,17 +317,12 @@ class _PreMortemViewState extends State<PreMortemView> {
             child: TextField(
               controller: _goalCtrl,
               maxLines: null,
-              style: const TextStyle(
-                color: KColors.text,
-                fontSize: 14,
-                height: 1.4,
-              ),
-              decoration: const InputDecoration(
+              style: TextStyle(color: KColors.text, fontSize: 14, height: 1.4),
+              decoration: InputDecoration(
                 hintText:
                     'e.g. "The TAC Integration programme failed to '
                     'deliver by September 2026."',
-                hintStyle:
-                    TextStyle(color: KColors.textMuted, fontSize: 13),
+                hintStyle: TextStyle(color: KColors.textMuted, fontSize: 13),
                 isDense: true,
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
@@ -338,31 +340,38 @@ class _PreMortemViewState extends State<PreMortemView> {
           if (_content.causes.isEmpty)
             const _EmptyCauses()
           else
-            ..._content.causes
-                .map((c) => _CauseCard(
-                      key: ValueKey(c.id),
-                      cause: c,
-                      descCtrl: _causeDescCtrls[c.id]!,
-                      mitDescCtrls: _mitigationDescCtrls,
-                      mitOwnerCtrls: _mitigationOwnerCtrls,
-                      people: people,
-                      db: db,
-                      projectId: widget.template.projectId,
-                      onDescChanged: (v) => _onCauseFieldChanged(
-                          c.id, (x) => x.copyWith(description: v)),
-                      onLikelihoodChanged: (v) => _onCauseFieldChanged(
-                          c.id, (x) => x.copyWith(likelihood: v)),
-                      onImpactChanged: (v) => _onCauseFieldChanged(
-                          c.id, (x) => x.copyWith(impact: v)),
-                      onDelete: () => _deleteCause(c.id),
-                      onPromote: () => _promoteCauseToRisk(c),
-                      onAddMitigation: () => _addMitigation(c.id),
-                      onMitDescChanged: (mid, v) => _onMitigationFieldChanged(
-                          c.id, mid, (m) => m.copyWith(description: v)),
-                      onMitDelete: (mid) => _deleteMitigation(c.id, mid),
-                      onMitPromote: (m) =>
-                          _promoteMitigationToAction(c.id, m),
-                    )),
+            ..._content.causes.map(
+              (c) => _CauseCard(
+                key: ValueKey(c.id),
+                cause: c,
+                descCtrl: _causeDescCtrls[c.id]!,
+                mitDescCtrls: _mitigationDescCtrls,
+                mitOwnerCtrls: _mitigationOwnerCtrls,
+                people: people,
+                db: db,
+                projectId: widget.template.projectId,
+                onDescChanged: (v) => _onCauseFieldChanged(
+                  c.id,
+                  (x) => x.copyWith(description: v),
+                ),
+                onLikelihoodChanged: (v) => _onCauseFieldChanged(
+                  c.id,
+                  (x) => x.copyWith(likelihood: v),
+                ),
+                onImpactChanged: (v) =>
+                    _onCauseFieldChanged(c.id, (x) => x.copyWith(impact: v)),
+                onDelete: () => _deleteCause(c.id),
+                onPromote: () => _promoteCauseToRisk(c),
+                onAddMitigation: () => _addMitigation(c.id),
+                onMitDescChanged: (mid, v) => _onMitigationFieldChanged(
+                  c.id,
+                  mid,
+                  (m) => m.copyWith(description: v),
+                ),
+                onMitDelete: (mid) => _deleteMitigation(c.id, mid),
+                onMitPromote: (m) => _promoteMitigationToAction(c.id, m),
+              ),
+            ),
           const SizedBox(height: 12),
           Align(
             alignment: Alignment.centerLeft,
@@ -372,7 +381,7 @@ class _PreMortemViewState extends State<PreMortemView> {
               label: const Text('Add cause'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: KColors.amber,
-                side: const BorderSide(color: KColors.amber),
+                side: BorderSide(color: KColors.amber),
               ),
             ),
           ),
@@ -395,7 +404,7 @@ class _SectionHeader extends StatelessWidget {
       children: [
         Text(
           label.toUpperCase(),
-          style: const TextStyle(
+          style: TextStyle(
             color: KColors.amber,
             fontSize: 11,
             fontWeight: FontWeight.w700,
@@ -405,7 +414,7 @@ class _SectionHeader extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           hint,
-          style: const TextStyle(
+          style: TextStyle(
             color: KColors.textMuted,
             fontSize: 11.5,
             fontStyle: FontStyle.italic,
@@ -427,7 +436,7 @@ class _EmptyCauses extends StatelessWidget {
         border: Border.all(color: KColors.border),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: const Text(
+      child: Text(
         'No causes yet. Click "Add cause" below to list the ways '
         'this goal could fail.',
         style: TextStyle(
@@ -505,16 +514,18 @@ class _CauseCard extends StatelessWidget {
                 child: TextField(
                   controller: descCtrl,
                   maxLines: null,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: KColors.text,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     height: 1.35,
                   ),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'How might this happen?',
                     hintStyle: TextStyle(
-                        color: KColors.textMuted, fontSize: 12.5),
+                      color: KColors.textMuted,
+                      fontSize: 12.5,
+                    ),
                     isDense: true,
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
@@ -525,8 +536,11 @@ class _CauseCard extends StatelessWidget {
               ),
               PopupMenuButton<String>(
                 tooltip: 'Cause actions',
-                icon: const Icon(Icons.more_horiz,
-                    size: 16, color: KColors.textMuted),
+                icon: Icon(
+                  Icons.more_horiz,
+                  size: 16,
+                  color: KColors.textMuted,
+                ),
                 onSelected: (v) {
                   if (v == 'promote') {
                     onPromote();
@@ -551,35 +565,45 @@ class _CauseCard extends StatelessWidget {
           const SizedBox(height: 6),
           Row(
             children: [
-              const Text('Likelihood',
-                  style: TextStyle(
-                      color: KColors.textMuted, fontSize: 11)),
+              Text(
+                'Likelihood',
+                style: TextStyle(color: KColors.textMuted, fontSize: 11),
+              ),
               const SizedBox(width: 6),
               _LevelChips(
-                  value: cause.likelihood, onChanged: onLikelihoodChanged),
+                value: cause.likelihood,
+                onChanged: onLikelihoodChanged,
+              ),
               const SizedBox(width: 16),
-              const Text('Impact',
-                  style: TextStyle(
-                      color: KColors.textMuted, fontSize: 11)),
+              Text(
+                'Impact',
+                style: TextStyle(color: KColors.textMuted, fontSize: 11),
+              ),
               const SizedBox(width: 6),
               _LevelChips(value: cause.impact, onChanged: onImpactChanged),
               const Spacer(),
               if (isPromoted)
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 6, vertical: 2),
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: KColors.phosDim.withValues(alpha: 0.55),
                     border: Border.all(
-                        color: KColors.phosphor.withValues(alpha: 0.5),
-                        width: 0.5),
+                      color: KColors.phosphor.withValues(alpha: 0.5),
+                      width: 0.5,
+                    ),
                     borderRadius: BorderRadius.circular(3),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.shield_outlined,
-                          size: 11, color: KColors.phosphor),
+                      Icon(
+                        Icons.shield_outlined,
+                        size: 11,
+                        color: KColors.phosphor,
+                      ),
                       SizedBox(width: 4),
                       Text(
                         'Promoted to Risk',
@@ -595,9 +619,9 @@ class _CauseCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          const Divider(height: 1, color: KColors.border),
+          Divider(height: 1, color: KColors.border),
           const SizedBox(height: 10),
-          const Text(
+          Text(
             'MITIGATIONS',
             style: TextStyle(
               color: KColors.textMuted,
@@ -608,7 +632,7 @@ class _CauseCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           if (cause.mitigations.isEmpty)
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(vertical: 6),
               child: Text(
                 'No mitigations yet.',
@@ -688,24 +712,22 @@ class _MitigationRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
+          Padding(
             padding: EdgeInsets.only(top: 6, right: 8),
-            child: Icon(Icons.arrow_forward,
-                size: 12, color: KColors.amber),
+            child: Icon(Icons.arrow_forward, size: 12, color: KColors.amber),
           ),
           Expanded(
             child: TextField(
               controller: descCtrl,
               maxLines: null,
-              style: const TextStyle(
+              style: TextStyle(
                 color: KColors.text,
                 fontSize: 12.5,
                 height: 1.35,
               ),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'How will we prevent this?',
-                hintStyle:
-                    TextStyle(color: KColors.textMuted, fontSize: 12),
+                hintStyle: TextStyle(color: KColors.textMuted, fontSize: 12),
                 isDense: true,
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
@@ -737,14 +759,16 @@ class _MitigationRow extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 6),
               child: Tooltip(
                 message: 'Promoted to Action',
-                child: Icon(Icons.check_circle,
-                    size: 14, color: KColors.phosphor),
+                child: Icon(
+                  Icons.check_circle,
+                  size: 14,
+                  color: KColors.phosphor,
+                ),
               ),
             ),
           PopupMenuButton<String>(
             tooltip: 'Mitigation actions',
-            icon: const Icon(Icons.more_horiz,
-                size: 14, color: KColors.textMuted),
+            icon: Icon(Icons.more_horiz, size: 14, color: KColors.textMuted),
             onSelected: (v) {
               if (v == 'promote') {
                 onPromote();
@@ -755,9 +779,10 @@ class _MitigationRow extends StatelessWidget {
             itemBuilder: (_) => [
               if (!isPromoted)
                 const PopupMenuItem(
-                    value: 'promote', child: Text('Promote to Action')),
-              const PopupMenuItem(
-                  value: 'delete', child: Text('Delete')),
+                  value: 'promote',
+                  child: Text('Promote to Action'),
+                ),
+              const PopupMenuItem(value: 'delete', child: Text('Delete')),
             ],
           ),
         ],
@@ -782,8 +807,7 @@ class _LevelChips extends StatelessWidget {
           onTap: () => onChanged(v),
           borderRadius: BorderRadius.circular(3),
           child: Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
               color: isOn
                   ? _colourFor(v).withValues(alpha: 0.25)
@@ -810,11 +834,7 @@ class _LevelChips extends StatelessWidget {
 
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: [
-        chip('low', 'L'),
-        chip('medium', 'M'),
-        chip('high', 'H'),
-      ],
+      children: [chip('low', 'L'), chip('medium', 'M'), chip('high', 'H')],
     );
   }
 

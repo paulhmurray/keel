@@ -122,38 +122,54 @@ class _RowInfo {
 
 Color _barStroke(String status) {
   switch (status) {
-    case 'in_progress': return KColors.phosphor;
-    case 'complete':    return KColors.phosphor;
-    case 'blocked':     return KColors.red;
-    default:            return KColors.border2;
+    case 'in_progress':
+      return KColors.phosphor;
+    case 'complete':
+      return KColors.phosphor;
+    case 'blocked':
+      return KColors.red;
+    default:
+      return KColors.border2;
   }
 }
 
 Color _barFill(String status) {
   switch (status) {
-    case 'in_progress': return const Color(0xFF0E2318);
-    case 'complete':    return const Color(0xFF081A10);
-    case 'blocked':     return KColors.redDim;
-    default:            return KColors.surface2;
+    case 'in_progress':
+      return const Color(0xFF0E2318);
+    case 'complete':
+      return const Color(0xFF081A10);
+    case 'blocked':
+      return KColors.redDim;
+    default:
+      return KColors.surface2;
   }
 }
 
 Color _statusDot(String status) {
   switch (status) {
-    case 'in_progress': return KColors.phosphor;
-    case 'complete':    return KColors.phosphor;
-    case 'blocked':     return KColors.red;
-    default:            return KColors.textMuted;
+    case 'in_progress':
+      return KColors.phosphor;
+    case 'complete':
+      return KColors.phosphor;
+    case 'blocked':
+      return KColors.red;
+    default:
+      return KColors.textMuted;
   }
 }
 
 Color _milestoneColor(GanttMilestone ms) {
   if (ms.isHardDeadline) return KColors.red;
   switch (ms.status) {
-    case 'achieved': return KColors.phosphor;
-    case 'at_risk':  return KColors.amber;
-    case 'missed':   return KColors.red;
-    default:         return KColors.text; // upcoming
+    case 'achieved':
+      return KColors.phosphor;
+    case 'at_risk':
+      return KColors.amber;
+    case 'missed':
+      return KColors.red;
+    default:
+      return KColors.text; // upcoming
   }
 }
 
@@ -164,10 +180,14 @@ Color _milestoneColor(GanttMilestone ms) {
 Color _eventColor(TimelineEvent ev) {
   if (ev.categoryColor != null) return ev.categoryColor!;
   switch (ev.type) {
-    case TimelineEventType.action:     return KColors.amber;
-    case TimelineEventType.decision:   return KColors.blue;
-    case TimelineEventType.issue:      return KColors.red;
-    case TimelineEventType.dependency: return KColors.phosphor;
+    case TimelineEventType.action:
+      return KColors.amber;
+    case TimelineEventType.decision:
+      return KColors.blue;
+    case TimelineEventType.issue:
+      return KColors.red;
+    case TimelineEventType.dependency:
+      return KColors.phosphor;
   }
 }
 
@@ -263,8 +283,10 @@ class _GanttChartState extends State<GanttChart> {
       final todayNorm = DateTime(today.year, today.month, today.day);
       final daysFromStart = todayNorm.difference(winStart).inDays;
       final todayX = daysFromStart * _kPxPerDay;
-      final target =
-          (todayX - 120).clamp(0.0, _hScroll.position.maxScrollExtent);
+      final target = (todayX - 120).clamp(
+        0.0,
+        _hScroll.position.maxScrollExtent,
+      );
       _hScroll.jumpTo(target);
     });
   }
@@ -340,13 +362,23 @@ class _GanttChartState extends State<GanttChart> {
         if (act.start == null || act.end == null) continue;
         final x1 = xFor(act.start!);
         final x2 = xFor(act.end!.add(const Duration(days: 1)));
-        final barY = row.y + _kRowH + i * _kActivityRowH +
+        final barY =
+            row.y +
+            _kRowH +
+            i * _kActivityRowH +
             (_kActivityRowH - _kActivityBarH) / 2;
-        hits.add(_ActivityHit(
-          Rect.fromLTWH(x1, barY, (x2 - x1).clamp(4.0, double.infinity), _kActivityBarH),
-          act,
-          row.ws!,
-        ));
+        hits.add(
+          _ActivityHit(
+            Rect.fromLTWH(
+              x1,
+              barY,
+              (x2 - x1).clamp(4.0, double.infinity),
+              _kActivityBarH,
+            ),
+            act,
+            row.ws!,
+          ),
+        );
       }
     }
     return hits;
@@ -422,14 +454,16 @@ class _GanttChartState extends State<GanttChart> {
     if (unassociated.isNotEmpty) {
       rows.add(_RowInfo(isLane: true, label: 'KEY DATES', y: y, h: _kLaneH));
       y += _kLaneH;
-      rows.add(_RowInfo(
-        isLane: false,
-        isKeyDates: true,
-        label: 'Key Dates',
-        y: y,
-        h: _kRowH,
-        milestonesInRow: unassociated,
-      ));
+      rows.add(
+        _RowInfo(
+          isLane: false,
+          isKeyDates: true,
+          label: 'Key Dates',
+          y: y,
+          h: _kRowH,
+          milestonesInRow: unassociated,
+        ),
+      );
       y += _kRowH;
     }
 
@@ -437,20 +471,23 @@ class _GanttChartState extends State<GanttChart> {
       rows.add(_RowInfo(isLane: true, label: lane, y: y, h: _kLaneH));
       y += _kLaneH;
       for (final ws in laneMap[lane]!) {
-        final wsMilestones =
-            widget.milestones.where((m) => m.workstreamId == ws.id).toList();
+        final wsMilestones = widget.milestones
+            .where((m) => m.workstreamId == ws.id)
+            .toList();
         final activities = List<GanttActivity>.from(ws.activities)
           ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
         final rowH = _kRowH + activities.length * _kActivityRowH;
-        rows.add(_RowInfo(
-          isLane: false,
-          label: ws.name,
-          y: y,
-          h: rowH,
-          ws: ws,
-          activities: activities,
-          milestonesInRow: wsMilestones,
-        ));
+        rows.add(
+          _RowInfo(
+            isLane: false,
+            label: ws.name,
+            y: y,
+            h: rowH,
+            ws: ws,
+            activities: activities,
+            milestonesInRow: wsMilestones,
+          ),
+        );
         y += rowH;
       }
     }
@@ -466,33 +503,47 @@ class _GanttChartState extends State<GanttChart> {
 
     for (final ws in widget.workstreams) {
       if (ws.start != null) {
-        final s = DateTime(ws.start!.year, ws.start!.month, ws.start!.day)
-            .subtract(const Duration(days: 7));
+        final s = DateTime(
+          ws.start!.year,
+          ws.start!.month,
+          ws.start!.day,
+        ).subtract(const Duration(days: 7));
         if (s.isBefore(winStart)) winStart = s;
       }
       if (ws.end != null) {
-        final e = DateTime(ws.end!.year, ws.end!.month, ws.end!.day)
-            .add(const Duration(days: 14));
+        final e = DateTime(
+          ws.end!.year,
+          ws.end!.month,
+          ws.end!.day,
+        ).add(const Duration(days: 14));
         if (e.isAfter(winEnd)) winEnd = e;
       }
       for (final act in ws.activities) {
         if (act.start != null) {
-          final s =
-              DateTime(act.start!.year, act.start!.month, act.start!.day)
-                  .subtract(const Duration(days: 7));
+          final s = DateTime(
+            act.start!.year,
+            act.start!.month,
+            act.start!.day,
+          ).subtract(const Duration(days: 7));
           if (s.isBefore(winStart)) winStart = s;
         }
         if (act.end != null) {
-          final e = DateTime(act.end!.year, act.end!.month, act.end!.day)
-              .add(const Duration(days: 14));
+          final e = DateTime(
+            act.end!.year,
+            act.end!.month,
+            act.end!.day,
+          ).add(const Duration(days: 14));
           if (e.isAfter(winEnd)) winEnd = e;
         }
       }
     }
     for (final ev in widget.events) {
       if (ev.date != null) {
-        final d = DateTime(ev.date!.year, ev.date!.month, ev.date!.day)
-            .add(const Duration(days: 14));
+        final d = DateTime(
+          ev.date!.year,
+          ev.date!.month,
+          ev.date!.day,
+        ).add(const Duration(days: 14));
         if (d.isAfter(winEnd)) winEnd = d;
       }
     }
@@ -609,10 +660,14 @@ class _MilestoneTooltipBox extends StatelessWidget {
 
   String _statusLabel(String s) {
     switch (s) {
-      case 'achieved': return 'Achieved';
-      case 'at_risk':  return 'At Risk';
-      case 'missed':   return 'Missed';
-      default:         return 'Upcoming';
+      case 'achieved':
+        return 'Achieved';
+      case 'at_risk':
+        return 'At Risk';
+      case 'missed':
+        return 'Missed';
+      default:
+        return 'Upcoming';
     }
   }
 
@@ -628,7 +683,12 @@ class _MilestoneTooltipBox extends StatelessWidget {
           color: KColors.surface2,
           border: Border.all(color: color.withValues(alpha: 0.6)),
           borderRadius: BorderRadius.circular(4),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 8)],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.3),
+              blurRadius: 8,
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -639,43 +699,63 @@ class _MilestoneTooltipBox extends StatelessWidget {
                 Icon(Icons.diamond, size: 11, color: color),
                 const SizedBox(width: 5),
                 Flexible(
-                  child: Text(milestone.name,
-                      style: TextStyle(
-                          color: color,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600)),
+                  child: Text(
+                    milestone.name,
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
                 if (milestone.isHardDeadline) ...[
                   const SizedBox(width: 4),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 1,
+                    ),
                     decoration: BoxDecoration(
                       color: KColors.red.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(2),
                     ),
-                    child: const Text('HARD',
-                        style: TextStyle(color: KColors.red, fontSize: 8, fontWeight: FontWeight.w700)),
+                    child: Text(
+                      'HARD',
+                      style: TextStyle(
+                        color: KColors.red,
+                        fontSize: 8,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
                 ],
               ],
             ),
             const SizedBox(height: 4),
-            Text(milestone.date,
-                style: const TextStyle(color: KColors.textDim, fontSize: 11)),
+            Text(
+              milestone.date,
+              style: TextStyle(color: KColors.textDim, fontSize: 11),
+            ),
             const SizedBox(height: 2),
-            Text(_statusLabel(milestone.status),
-                style: TextStyle(color: color, fontSize: 11)),
+            Text(
+              _statusLabel(milestone.status),
+              style: TextStyle(color: color, fontSize: 11),
+            ),
             if (milestone.ownerName != null) ...[
               const SizedBox(height: 2),
-              Text('Owner: ${milestone.ownerName}',
-                  style: const TextStyle(color: KColors.textDim, fontSize: 11)),
+              Text(
+                'Owner: ${milestone.ownerName}',
+                style: TextStyle(color: KColors.textDim, fontSize: 11),
+              ),
             ],
             if (milestone.notes != null && milestone.notes!.isNotEmpty) ...[
               const SizedBox(height: 4),
-              Text(milestone.notes!,
-                  style: const TextStyle(color: KColors.textMuted, fontSize: 10),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis),
+              Text(
+                milestone.notes!,
+                style: TextStyle(color: KColors.textMuted, fontSize: 10),
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+              ),
             ],
           ],
         ),
@@ -696,10 +776,14 @@ class _LeftPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height),
-        Paint()..color = KColors.surface);
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, _kHeaderH),
-        Paint()..color = KColors.surface2);
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      Paint()..color = KColors.surface,
+    );
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, size.width, _kHeaderH),
+      Paint()..color = KColors.surface2,
+    );
 
     for (final row in rows) {
       if (row.isLane) {
@@ -708,96 +792,115 @@ class _LeftPainter extends CustomPainter {
           Paint()..color = KColors.amberDim,
         );
         _drawText(
-            canvas,
-            row.label.toUpperCase(),
-            const TextStyle(
-                color: KColors.amber,
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.1),
-            Offset(10, row.y + (row.h - 10) / 2),
-            maxWidth: size.width - 14);
+          canvas,
+          row.label.toUpperCase(),
+          TextStyle(
+            color: KColors.amber,
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.1,
+          ),
+          Offset(10, row.y + (row.h - 10) / 2),
+          maxWidth: size.width - 14,
+        );
       } else if (row.isKeyDates) {
         _drawText(
-            canvas,
-            '◆  Key Dates',
-            const TextStyle(
-                color: KColors.textDim,
-                fontSize: 10,
-                fontWeight: FontWeight.w500),
-            Offset(10, row.y + (row.h - 11) / 2),
-            maxWidth: size.width - 14);
+          canvas,
+          '◆  Key Dates',
+          TextStyle(
+            color: KColors.textDim,
+            fontSize: 10,
+            fontWeight: FontWeight.w500,
+          ),
+          Offset(10, row.y + (row.h - 11) / 2),
+          maxWidth: size.width - 14,
+        );
         canvas.drawLine(
-            Offset(0, row.y + row.h),
-            Offset(size.width, row.y + row.h),
-            Paint()
-              ..color = KColors.border
-              ..strokeWidth = 0.5);
+          Offset(0, row.y + row.h),
+          Offset(size.width, row.y + row.h),
+          Paint()
+            ..color = KColors.border
+            ..strokeWidth = 0.5,
+        );
       } else {
         final ws = row.ws!;
         // Status dot — centred in the parent bar zone
         canvas.drawCircle(
-            Offset(10, row.y + _kRowH / 2),
-            4,
-            Paint()..color = _statusDot(ws.status));
+          Offset(10, row.y + _kRowH / 2),
+          4,
+          Paint()..color = _statusDot(ws.status),
+        );
         _drawText(
-            canvas,
-            ws.name,
-            const TextStyle(
-                color: KColors.text,
-                fontSize: 11,
-                fontWeight: FontWeight.w500),
-            Offset(22, row.y + (_kRowH - 12) / 2),
-            maxWidth: size.width - 28);
+          canvas,
+          ws.name,
+          TextStyle(
+            color: KColors.text,
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+          ),
+          Offset(22, row.y + (_kRowH - 12) / 2),
+          maxWidth: size.width - 28,
+        );
 
         // Activity sub-rows
         for (int i = 0; i < row.activities.length; i++) {
           final act = row.activities[i];
           final actY = row.y + _kRowH + i * _kActivityRowH;
           canvas.drawLine(
-              Offset(16, actY),
-              Offset(size.width, actY),
-              Paint()
-                ..color = KColors.border
-                ..strokeWidth = 0.5);
+            Offset(16, actY),
+            Offset(size.width, actY),
+            Paint()
+              ..color = KColors.border
+              ..strokeWidth = 0.5,
+          );
           canvas.drawCircle(
-              Offset(20, actY + _kActivityRowH / 2),
-              3,
-              Paint()..color = _statusDot(act.status));
+            Offset(20, actY + _kActivityRowH / 2),
+            3,
+            Paint()..color = _statusDot(act.status),
+          );
           _drawText(
-              canvas,
-              act.name,
-              const TextStyle(color: KColors.textDim, fontSize: 9),
-              Offset(28, actY + (_kActivityRowH - 10) / 2),
-              maxWidth: size.width - 32);
+            canvas,
+            act.name,
+            TextStyle(color: KColors.textDim, fontSize: 9),
+            Offset(28, actY + (_kActivityRowH - 10) / 2),
+            maxWidth: size.width - 32,
+          );
         }
 
         // Row separator
         canvas.drawLine(
-            Offset(0, row.y + row.h),
-            Offset(size.width, row.y + row.h),
-            Paint()
-              ..color = KColors.border
-              ..strokeWidth = 0.5);
+          Offset(0, row.y + row.h),
+          Offset(size.width, row.y + row.h),
+          Paint()
+            ..color = KColors.border
+            ..strokeWidth = 0.5,
+        );
       }
     }
 
     // Events label
     final evY = rows.isEmpty ? _kHeaderH : rows.last.y + rows.last.h;
     _drawText(
-        canvas,
-        'EVENTS',
-        const TextStyle(
-            color: KColors.textMuted,
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.1),
-        Offset(10, evY + 6),
-        maxWidth: size.width - 16);
+      canvas,
+      'EVENTS',
+      TextStyle(
+        color: KColors.textMuted,
+        fontSize: 10,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.1,
+      ),
+      Offset(10, evY + 6),
+      maxWidth: size.width - 16,
+    );
   }
 
-  void _drawText(Canvas canvas, String text, TextStyle style, Offset offset,
-      {double maxWidth = 140}) {
+  void _drawText(
+    Canvas canvas,
+    String text,
+    TextStyle style,
+    Offset offset, {
+    double maxWidth = 140,
+  }) {
     final tp = TextPainter(
       text: TextSpan(text: text, style: style),
       textDirection: TextDirection.ltr,
@@ -877,7 +980,10 @@ class _RightPainter extends CustomPainter {
       if (cursor.weekday == DateTime.monday) {
         final x = _xFor(cursor);
         canvas.drawLine(
-            Offset(x, _kHeaderH), Offset(x, size.height), gridPaint);
+          Offset(x, _kHeaderH),
+          Offset(x, size.height),
+          gridPaint,
+        );
       }
       cursor = cursor.add(const Duration(days: 1));
     }
@@ -888,15 +994,19 @@ class _RightPainter extends CustomPainter {
       Rect.fromLTWH(0, 0, size.width, _kHeaderH),
       Paint()..color = KColors.surface2,
     );
-    canvas.drawLine(Offset(0, _kHeaderH), Offset(size.width, _kHeaderH),
-        Paint()
-          ..color = KColors.border
-          ..strokeWidth = 1);
+    canvas.drawLine(
+      Offset(0, _kHeaderH),
+      Offset(size.width, _kHeaderH),
+      Paint()
+        ..color = KColors.border
+        ..strokeWidth = 1,
+    );
 
     final monthStyle = TextStyle(
-        color: const Color(0xFF8EA8C0).withValues(alpha: 0.9),
-        fontSize: 10,
-        fontWeight: FontWeight.w600);
+      color: const Color(0xFF8EA8C0).withValues(alpha: 0.9),
+      fontSize: 10,
+      fontWeight: FontWeight.w600,
+    );
     const weekStyle = TextStyle(color: Color(0xFF4A6070), fontSize: 8);
 
     DateTime cursor = winStart;
@@ -953,12 +1063,14 @@ class _RightPainter extends CustomPainter {
             canvas,
             ws.name,
             TextStyle(
-                color: (ws.status == 'not_started'
-                        ? KColors.textDim
-                        : _barStroke(ws.status))
-                    .withValues(alpha: opacity),
-                fontSize: 10,
-                fontWeight: FontWeight.w600),
+              color:
+                  (ws.status == 'not_started'
+                          ? KColors.textDim
+                          : _barStroke(ws.status))
+                      .withValues(alpha: opacity),
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
             Offset(x1 + 5, barY + (_kBarH - 10) / 2),
             maxWidth: barW - 8,
           );
@@ -981,7 +1093,10 @@ class _RightPainter extends CustomPainter {
       final x2 = _xFor(act.end!.add(const Duration(days: 1)));
       final barW = (x2 - x1).clamp(4.0, double.infinity);
       final barY =
-          row.y + _kRowH + i * _kActivityRowH + (_kActivityRowH - _kActivityBarH) / 2;
+          row.y +
+          _kRowH +
+          i * _kActivityRowH +
+          (_kActivityRowH - _kActivityBarH) / 2;
 
       final fillRect = Rect.fromLTWH(x1, barY, barW, _kActivityBarH);
 
@@ -1005,11 +1120,12 @@ class _RightPainter extends CustomPainter {
           canvas,
           label,
           TextStyle(
-              color: act.status == 'not_started'
-                  ? KColors.textDim
-                  : _barStroke(act.status),
-              fontSize: 8,
-              fontWeight: FontWeight.w500),
+            color: act.status == 'not_started'
+                ? KColors.textDim
+                : _barStroke(act.status),
+            fontSize: 8,
+            fontWeight: FontWeight.w500,
+          ),
           Offset(x1 + 4, barY + (_kActivityBarH - 9) / 2),
           maxWidth: barW - 6,
         );
@@ -1066,15 +1182,19 @@ class _RightPainter extends CustomPainter {
       ..strokeWidth = 1;
     while (x < 120) {
       canvas.drawLine(
-          Offset(x, barY + _kBarH / 2),
-          Offset(math.min(x + dashW, 120), barY + _kBarH / 2),
-          paint);
+        Offset(x, barY + _kBarH / 2),
+        Offset(math.min(x + dashW, 120), barY + _kBarH / 2),
+        paint,
+      );
       x += dashW + gapW;
     }
-    _drawText(canvas, 'no dates set',
-        const TextStyle(color: KColors.textMuted, fontSize: 9),
-        Offset(8, barY + (_kBarH - 10) / 2),
-        maxWidth: 100);
+    _drawText(
+      canvas,
+      'no dates set',
+      TextStyle(color: KColors.textMuted, fontSize: 9),
+      Offset(8, barY + (_kBarH - 10) / 2),
+      maxWidth: 100,
+    );
   }
 
   void _drawDependencyArrows(Canvas canvas, Size size) {
@@ -1127,7 +1247,11 @@ class _RightPainter extends CustomPainter {
       ..lineTo(tip.dx - size, tip.dy + size / 2)
       ..close();
     canvas.drawPath(
-        path, Paint()..color = paint.color..style = PaintingStyle.fill);
+      path,
+      Paint()
+        ..color = paint.color
+        ..style = PaintingStyle.fill,
+    );
   }
 
   void _drawTodayLine(Canvas canvas, Size size) {
@@ -1142,32 +1266,41 @@ class _RightPainter extends CustomPainter {
     double y = _kHeaderH;
     while (y < size.height) {
       canvas.drawLine(
-          Offset(x, y),
-          Offset(x, math.min(y + dash, size.height)),
-          paint);
+        Offset(x, y),
+        Offset(x, math.min(y + dash, size.height)),
+        paint,
+      );
       y += dash + gap;
     }
 
-    _drawText(canvas, 'Today',
-        const TextStyle(
-            color: KColors.amber, fontSize: 8, fontWeight: FontWeight.w700),
-        Offset(x - 14, _kHeaderH + 3),
-        maxWidth: 36);
+    _drawText(
+      canvas,
+      'Today',
+      TextStyle(color: KColors.amber, fontSize: 8, fontWeight: FontWeight.w700),
+      Offset(x - 14, _kHeaderH + 3),
+      maxWidth: 36,
+    );
   }
 
   void _drawEvents(Canvas canvas, Size size) {
     final evY = rows.isEmpty ? _kHeaderH : rows.last.y + rows.last.h;
 
-    canvas.drawLine(Offset(0, evY), Offset(size.width, evY),
-        Paint()
-          ..color = KColors.border
-          ..strokeWidth = 0.5);
+    canvas.drawLine(
+      Offset(0, evY),
+      Offset(size.width, evY),
+      Paint()
+        ..color = KColors.border
+        ..strokeWidth = 0.5,
+    );
 
     final axisY = evY + _kEventH / 2;
-    canvas.drawLine(Offset(0, axisY), Offset(size.width, axisY),
-        Paint()
-          ..color = const Color(0xFF1C2A38)
-          ..strokeWidth = 1.0);
+    canvas.drawLine(
+      Offset(0, axisY),
+      Offset(size.width, axisY),
+      Paint()
+        ..color = const Color(0xFF1C2A38)
+        ..strokeWidth = 1.0,
+    );
 
     final placed = <double>[];
     final dotPositions = <String, Offset>{};
@@ -1186,13 +1319,19 @@ class _RightPainter extends CustomPainter {
 
       if (ev.id != null) dotPositions[ev.id!] = Offset(x, dotY);
 
-      canvas.drawCircle(Offset(x, dotY), 5,
-          Paint()..color = color.withValues(alpha: isPast ? 0.5 : 1.0));
-      canvas.drawCircle(Offset(x, dotY), 5,
-          Paint()
-            ..color = color.withValues(alpha: 0.4)
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 1);
+      canvas.drawCircle(
+        Offset(x, dotY),
+        5,
+        Paint()..color = color.withValues(alpha: isPast ? 0.5 : 1.0),
+      );
+      canvas.drawCircle(
+        Offset(x, dotY),
+        5,
+        Paint()
+          ..color = color.withValues(alpha: 0.4)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1,
+      );
     }
 
     final linkPaint = Paint()
@@ -1221,8 +1360,7 @@ class _RightPainter extends CustomPainter {
     double traveled = 0;
     bool drawing = true;
     while (traveled < dist) {
-      final seg =
-          math.min(traveled + (drawing ? dashLen : gapLen), dist);
+      final seg = math.min(traveled + (drawing ? dashLen : gapLen), dist);
       if (drawing) {
         canvas.drawLine(
           Offset(from.dx + ux * traveled, from.dy + uy * traveled),
@@ -1235,8 +1373,13 @@ class _RightPainter extends CustomPainter {
     }
   }
 
-  void _drawText(Canvas canvas, String text, TextStyle style, Offset offset,
-      {double maxWidth = 100}) {
+  void _drawText(
+    Canvas canvas,
+    String text,
+    TextStyle style,
+    Offset offset, {
+    double maxWidth = 100,
+  }) {
     final tp = TextPainter(
       text: TextSpan(text: text, style: style),
       textDirection: TextDirection.ltr,
@@ -1247,9 +1390,19 @@ class _RightPainter extends CustomPainter {
   }
 
   String _monthAbbr(int m) => const [
-        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-      ][m - 1];
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ][m - 1];
 
   @override
   bool shouldRepaint(_RightPainter old) =>

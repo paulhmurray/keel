@@ -34,9 +34,11 @@ class ProgrammeView extends StatelessWidget {
     final projectId = context.watch<ProjectProvider>().currentProjectId;
 
     if (projectId == null) {
-      return const Center(
-        child: Text('Select a project to view programme details.',
-            style: TextStyle(color: KColors.textDim)),
+      return Center(
+        child: Text(
+          'Select a project to view programme details.',
+          style: TextStyle(color: KColors.textDim),
+        ),
       );
     }
 
@@ -90,8 +92,7 @@ class _OverviewBody extends StatelessWidget {
             final lastSnapshot = snapSnap.data;
 
             return StreamBuilder<ProgrammeOverviewState?>(
-              stream: db.programmeOverviewStateDao
-                  .watchForProject(projectId),
+              stream: db.programmeOverviewStateDao.watchForProject(projectId),
               builder: (context, ovSnap) {
                 final overviewState = ovSnap.data;
 
@@ -103,15 +104,12 @@ class _OverviewBody extends StatelessWidget {
                       // Header
                       Row(
                         children: [
-                          const Icon(Icons.dashboard,
-                              color: KColors.amber, size: 18),
+                          Icon(Icons.dashboard, color: KColors.amber, size: 18),
                           const SizedBox(width: 8),
                           Flexible(
                             child: Text(
                               'PROGRAMME OVERVIEW · $projectName',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineSmall,
+                              style: Theme.of(context).textTheme.headlineSmall,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -119,12 +117,17 @@ class _OverviewBody extends StatelessWidget {
                           if (onNavigateToCharter != null)
                             TextButton.icon(
                               onPressed: onNavigateToCharter,
-                              icon: const Icon(Icons.article_outlined,
-                                  size: 13),
-                              label: const Text('View Charter →',
-                                  style: TextStyle(fontSize: 11)),
+                              icon: const Icon(
+                                Icons.article_outlined,
+                                size: 13,
+                              ),
+                              label: const Text(
+                                'View Charter →',
+                                style: TextStyle(fontSize: 11),
+                              ),
                               style: TextButton.styleFrom(
-                                  foregroundColor: KColors.textDim),
+                                foregroundColor: KColors.textDim,
+                              ),
                             ),
                         ],
                       ),
@@ -154,8 +157,7 @@ class _OverviewBody extends StatelessWidget {
 
                       // Pressures — what needs the programme manager's hand,
                       // including finance breaches and low contingency.
-                      PressuresSection(
-                          projectId: projectId, db: db),
+                      PressuresSection(projectId: projectId, db: db),
                       const SizedBox(height: 24),
 
                       // Narrative
@@ -186,7 +188,7 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 10,
         fontWeight: FontWeight.w600,
         letterSpacing: 0.15,

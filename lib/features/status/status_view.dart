@@ -35,9 +35,12 @@ class StatusView extends StatelessWidget {
   Widget build(BuildContext context) {
     final project = context.watch<ProjectProvider>().currentProject;
     if (project == null) {
-      return const Center(
-          child: Text('Select a project.',
-              style: TextStyle(color: KColors.textDim)));
+      return Center(
+        child: Text(
+          'Select a project.',
+          style: TextStyle(color: KColors.textDim),
+        ),
+      );
     }
     return _StatusContent(project: project);
   }
@@ -90,33 +93,36 @@ class _StatusContentState extends State<_StatusContent> {
 
   Future<void> _load() async {
     final db = context.read<AppDatabase>();
-    setState(() { _loading = true; _loadError = null; });
+    setState(() {
+      _loading = true;
+      _loadError = null;
+    });
     try {
       // Trigger snapshot if needed (fire and forget)
       StatusSnapshotScheduler.maybeCreateSnapshot(db, _projectId);
 
       final wps = await db.programmeGanttDao.getWorkPackages(_projectId);
-      final allActs =
-          await db.programmeGanttDao.getActivitiesForProject(_projectId);
-      final risks    = await db.raidDao.getRisksForProject(_projectId);
-      final decisions =
-          await db.decisionsDao.getDecisionsForProject(_projectId);
-      final actions  = await db.actionsDao.getActionsForProject(_projectId);
-      final header   = await db.programmeGanttDao.getHeader(_projectId);
+      final allActs = await db.programmeGanttDao.getActivitiesForProject(
+        _projectId,
+      );
+      final risks = await db.raidDao.getRisksForProject(_projectId);
+      final decisions = await db.decisionsDao.getDecisionsForProject(
+        _projectId,
+      );
+      final actions = await db.actionsDao.getActionsForProject(_projectId);
+      final header = await db.programmeGanttDao.getHeader(_projectId);
 
       // Parse month labels
       List<String> months = [];
       if (header?.monthLabels != null) {
         try {
-          months =
-              (jsonDecode(header!.monthLabels!) as List).cast<String>();
+          months = (jsonDecode(header!.monthLabels!) as List).cast<String>();
         } catch (_) {}
       }
       if (months.isEmpty) months = List.generate(24, (i) => 'M$i');
 
       // Snapshot for trend
-      final lastSnapshot =
-          await db.statusSnapshotDao.getMostRecent(_projectId);
+      final lastSnapshot = await db.statusSnapshotDao.getMostRecent(_projectId);
       final prevWsRag = lastSnapshot != null
           ? StatusCalculator.parseWorkstreamRag(lastSnapshot.workstreamRag)
           : <String, String>{};
@@ -126,16 +132,17 @@ class _StatusContentState extends State<_StatusContent> {
 
       // Compute RAGs
       final programmeRag = StatusCalculator.computeProgrammeRag(wps);
-      final programmeTrend =
-          StatusCalculator.computeTrend(programmeRag, prevProgrammeRag);
+      final programmeTrend = StatusCalculator.computeTrend(
+        programmeRag,
+        prevProgrammeRag,
+      );
 
       String monthLabel(int idx) =>
           idx >= 0 && idx < months.length ? months[idx] : 'M$idx';
       final wsStatuses = wps.map((wp) {
         final rag = ragFromString(wp.ragStatus);
         final prevRagStr = prevWsRag[wp.id];
-        final prevRag =
-            prevRagStr != null ? ragFromString(prevRagStr) : null;
+        final prevRag = prevRagStr != null ? ragFromString(prevRagStr) : null;
         final trend = StatusCalculator.computeTrend(rag, prevRag);
         final span = StatusCalculator.wpMonthSpan(wp, allActs);
         return WorkstreamRagStatus(
@@ -146,27 +153,26 @@ class _StatusContentState extends State<_StatusContent> {
           spanLabel: span == null
               ? null
               : span.start == span.end
-                  ? monthLabel(span.start)
-                  : '${monthLabel(span.start)} – ${monthLabel(span.end)}',
+              ? monthLabel(span.start)
+              : '${monthLabel(span.start)} – ${monthLabel(span.end)}',
         );
       }).toList();
 
       // Upcoming milestones
       final upcoming = StatusCalculator.upcomingMilestones(
-          allActs, months, month0Date: header?.month0Date);
+        allActs,
+        months,
+        month0Date: header?.month0Date,
+      );
 
       // Top risks
       final top = StatusCalculator.topRisks(risks, limit: 5);
       final prevTop = lastSnapshot == null
           ? null
-          : {
-              for (final r in SnapshotDecoder.topRisks(lastSnapshot)) r.id: r
-            };
+          : {for (final r in SnapshotDecoder.topRisks(lastSnapshot)) r.id: r};
 
       // Pending decisions (sorted by due date)
-      final pending = decisions
-          .where((d) => d.status == 'pending')
-          .toList()
+      final pending = decisions.where((d) => d.status == 'pending').toList()
         ..sort((a, b) {
           if (a.dueDate == null && b.dueDate == null) return 0;
           if (a.dueDate == null) return 1;
@@ -176,10 +182,14 @@ class _StatusContentState extends State<_StatusContent> {
 
       // Counts
       final today = DateTime.now().toIso8601String().substring(0, 10);
-      final overdueCount = actions.where((a) =>
-          a.status == 'open' &&
-          a.dueDate != null &&
-          a.dueDate!.compareTo(today) < 0).length;
+      final overdueCount = actions
+          .where(
+            (a) =>
+                a.status == 'open' &&
+                a.dueDate != null &&
+                a.dueDate!.compareTo(today) < 0,
+          )
+          .length;
       final openCount = actions.where((a) => a.status == 'open').length;
       final openRisksCount = risks.where((r) => r.status == 'open').length;
 
@@ -188,21 +198,19 @@ class _StatusContentState extends State<_StatusContent> {
       final pp = await db.playbookDao.getProjectPlaybook(_projectId);
       CurrentStage? current;
       if (pp != null) {
-        final stages =
-            await db.playbookDao.getStagesForPlaybook(pp.playbookId);
-        final progresses =
-            await db.playbookDao.getProgressForProjectPlaybook(pp.id);
+        final stages = await db.playbookDao.getStagesForPlaybook(pp.playbookId);
+        final progresses = await db.playbookDao.getProgressForProjectPlaybook(
+          pp.id,
+        );
         current = resolveCurrentStage(stages: stages, progresses: progresses);
       }
 
       // Finance — approved budget + latest forecast/actuals (v2).
-      final approvedBudget =
-          await db.financeDao.getApprovedBudget(_projectId);
+      final approvedBudget = await db.financeDao.getApprovedBudget(_projectId);
       final budgetTotals = approvedBudget == null
           ? null
           : await db.financeDao.getTotals(approvedBudget.id);
-      final financeCategories =
-          await db.financeDao.getCategories(_projectId);
+      final financeCategories = await db.financeDao.getCategories(_projectId);
       int? forecastTotal;
       String? forecastPeriod;
       int? varianceBp;
@@ -211,22 +219,24 @@ class _StatusContentState extends State<_StatusContent> {
         final snapshots = await db.financeDao.getSnapshots(_projectId);
         final snapshot =
             snapshots.where((s) => s.status == 'working').firstOrNull ??
-                snapshots.firstOrNull;
+            snapshots.firstOrNull;
         if (snapshot != null) {
           final ft = await db.financeDao.getForecastTotals(snapshot.id);
           forecastTotal = ft.totalMinor;
           forecastPeriod = snapshot.period;
           varianceBp = VarianceRow.bpOf(
-              ft.totalMinor - budgetTotals!.totalMinor,
-              budgetTotals.totalMinor);
+            ft.totalMinor - budgetTotals!.totalMinor,
+            budgetTotals.totalMinor,
+          );
         }
         final actuals = await db.financeDao.getActualsTotals(_projectId);
         if (actuals.totalMinor != 0) actualsToDate = actuals.totalMinor;
       }
       // Programme roll-up over linked projects' cascaded finance (empty
       // on a plain project, so the panel simply omits it).
-      final cascadedBudgets =
-          await db.financeDao.getCascadedBudgets(_projectId);
+      final cascadedBudgets = await db.financeDao.getCascadedBudgets(
+        _projectId,
+      );
       ProgrammeFinance? portfolio;
       final portfolioNames = <String, String>{};
       if (cascadedBudgets.isNotEmpty) {
@@ -235,8 +245,9 @@ class _StatusContentState extends State<_StatusContent> {
           budgets: cascadedBudgets,
           budgetLines: await db.financeDao.getCascadedBudgetLines(_projectId),
           snapshots: await db.financeDao.getCascadedSnapshots(_projectId),
-          forecastLines:
-              await db.financeDao.getCascadedForecastLines(_projectId),
+          forecastLines: await db.financeDao.getCascadedForecastLines(
+            _projectId,
+          ),
           actuals: await db.financeDao.getCascadedActuals(_projectId),
           merges: await db.financeDao.getMerges(_projectId),
         );
@@ -252,10 +263,13 @@ class _StatusContentState extends State<_StatusContent> {
       var warnBp = 2000;
       if (funding.isNotEmpty) {
         contingency = computeLedger(
-            approvals: funding,
-            movements: await db.financeDao.getMovements(_projectId));
-        warnBp = (await db.financeDao.getFinanceSettings(_projectId))
-                ?.contingencyWarnBp ??
+          approvals: funding,
+          movements: await db.financeDao.getMovements(_projectId),
+        );
+        warnBp =
+            (await db.financeDao.getFinanceSettings(
+              _projectId,
+            ))?.contingencyWarnBp ??
             2000;
       }
 
@@ -271,25 +285,23 @@ class _StatusContentState extends State<_StatusContent> {
         _forecastPeriod = forecastPeriod;
         _varianceBp = varianceBp;
         _actualsToDateMinor = actualsToDate;
-        _categoryNames = {
-          for (final c in financeCategories) c.id: c.name,
-        };
+        _categoryNames = {for (final c in financeCategories) c.id: c.name};
         _data = ProgrammeStatusData(
-          programmeRag:        programmeRag,
-          programmeTrend:      programmeTrend,
-          previousRagLabel:    prevProgrammeRag?.label,
-          workstreams:         wsStatuses,
-          upcomingMilestones:  upcoming,
-          topRisks:            top,
-          previousTopRisks:    prevTop,
-          pendingDecisions:    pending,
+          programmeRag: programmeRag,
+          programmeTrend: programmeTrend,
+          previousRagLabel: prevProgrammeRag?.label,
+          workstreams: wsStatuses,
+          upcomingMilestones: upcoming,
+          topRisks: top,
+          previousTopRisks: prevTop,
+          pendingDecisions: pending,
           overdueActionsCount: overdueCount,
-          openActionsCount:    openCount,
-          openRisksCount:      openRisksCount,
-          projectPlaybook:     pp,
-          currentStage:        current?.stage,
-          stageProgress:       current?.progress,
-          playbookStagesDone:  current?.stagesDone ?? 0,
+          openActionsCount: openCount,
+          openRisksCount: openRisksCount,
+          projectPlaybook: pp,
+          currentStage: current?.stage,
+          stageProgress: current?.progress,
+          playbookStagesDone: current?.stagesDone ?? 0,
           playbookStagesTotal: current?.stagesTotal ?? 0,
           playbookAllComplete: current?.allComplete ?? false,
         );
@@ -297,22 +309,26 @@ class _StatusContentState extends State<_StatusContent> {
         _loading = false;
       });
     } catch (e) {
-      if (mounted) setState(() { _loadError = e.toString(); _loading = false; });
+      if (mounted)
+        setState(() {
+          _loadError = e.toString();
+          _loading = false;
+        });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsProvider>();
-    final now      = DateTime.now();
+    final now = DateTime.now();
 
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
     if (_loadError != null) {
       return Center(
-          child: Text('Error: $_loadError',
-              style: const TextStyle(color: KColors.red)));
+        child: Text('Error: $_loadError', style: TextStyle(color: KColors.red)),
+      );
     }
 
     final data = _data!;
@@ -323,76 +339,81 @@ class _StatusContentState extends State<_StatusContent> {
         // ── Top bar ──────────────────────────────────────────────────────────
         Padding(
           padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-          child: Row(children: [
-            const Icon(Icons.monitor_heart_outlined,
-                color: KColors.amber, size: 22),
-            const SizedBox(width: 10),
-            Flexible(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('STATUS — ${widget.project.name}',
+          child: Row(
+            children: [
+              Icon(
+                Icons.monitor_heart_outlined,
+                color: KColors.amber,
+                size: 22,
+              ),
+              const SizedBox(width: 10),
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'STATUS — ${widget.project.name}',
                       style: Theme.of(context).textTheme.headlineSmall,
-                      overflow: TextOverflow.ellipsis),
-                  Text(
-                    'Week of ${_formatDate(now)}  ·  '
-                    'Weekly programme health',
-                    style: const TextStyle(
-                        color: KColors.textMuted, fontSize: 11),
-                  ),
-                ],
-              ),
-            ),
-            const Spacer(),
-            // History / Live toggle
-            OutlinedButton.icon(
-              onPressed: () =>
-                  setState(() => _historyMode = !_historyMode),
-              icon: Icon(
-                  _historyMode
-                      ? Icons.show_chart
-                      : Icons.history,
-                  size: 14),
-              label: Text(_historyMode ? 'Live' : 'History',
-                  style: const TextStyle(fontSize: 12)),
-            ),
-            const SizedBox(width: 8),
-            // Snapshot now button (live mode only)
-            if (!_historyMode) ...[
-              OutlinedButton.icon(
-                onPressed: () async {
-                  final db = context.read<AppDatabase>();
-                  await StatusSnapshotScheduler.createNow(
-                    db,
-                    _projectId,
-                    narrative: _narrative,
-                  );
-                  _load();
-                },
-                icon: const Icon(Icons.camera_alt_outlined, size: 14),
-                label:
-                    const Text('Snapshot', style: TextStyle(fontSize: 12)),
-              ),
-              const SizedBox(width: 8),
-            ],
-            // Export button
-            ElevatedButton.icon(
-              onPressed: () => showDialog(
-                context: context,
-                builder: (_) => StatusExportDialog(
-                  projectName: widget.project.name,
-                  data:        data,
-                  monthLabels: _monthLabels,
-                  narrative:   _narrative,
-                  weekOf:      now,
-                  db:          context.read<AppDatabase>(),
-                  projectId:   _projectId,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      'Week of ${_formatDate(now)}  ·  '
+                      'Weekly programme health',
+                      style: TextStyle(color: KColors.textMuted, fontSize: 11),
+                    ),
+                  ],
                 ),
               ),
-              icon: const Icon(Icons.file_download_outlined, size: 14),
-              label: const Text('Export', style: TextStyle(fontSize: 12)),
-            ),
-          ]),
+              const Spacer(),
+              // History / Live toggle
+              OutlinedButton.icon(
+                onPressed: () => setState(() => _historyMode = !_historyMode),
+                icon: Icon(
+                  _historyMode ? Icons.show_chart : Icons.history,
+                  size: 14,
+                ),
+                label: Text(
+                  _historyMode ? 'Live' : 'History',
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Snapshot now button (live mode only)
+              if (!_historyMode) ...[
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final db = context.read<AppDatabase>();
+                    await StatusSnapshotScheduler.createNow(
+                      db,
+                      _projectId,
+                      narrative: _narrative,
+                    );
+                    _load();
+                  },
+                  icon: const Icon(Icons.camera_alt_outlined, size: 14),
+                  label: const Text('Snapshot', style: TextStyle(fontSize: 12)),
+                ),
+                const SizedBox(width: 8),
+              ],
+              // Export button
+              ElevatedButton.icon(
+                onPressed: () => showDialog(
+                  context: context,
+                  builder: (_) => StatusExportDialog(
+                    projectName: widget.project.name,
+                    data: data,
+                    monthLabels: _monthLabels,
+                    narrative: _narrative,
+                    weekOf: now,
+                    db: context.read<AppDatabase>(),
+                    projectId: _projectId,
+                  ),
+                ),
+                icon: const Icon(Icons.file_download_outlined, size: 14),
+                label: const Text('Export', style: TextStyle(fontSize: 12)),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 16),
         // ── Body ─────────────────────────────────────────────────────────────
@@ -404,118 +425,130 @@ class _StatusContentState extends State<_StatusContent> {
             ),
           )
         else
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Programme RAG
-                _SectionLabel('PROGRAMME RAG'),
-                ProgrammeRagWidget(
-                  rag:              data.programmeRag,
-                  trend:            data.programmeTrend,
-                  previousRagLabel: data.previousRagLabel,
-                  projectId:        _projectId,
-                  db:               context.read<AppDatabase>(),
-                  wps: data.workstreams.map((w) => w.wp).toList(),
-                ),
-                RagSparkline(projectId: _projectId),
-                const SizedBox(height: 20),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Programme RAG
+                  _SectionLabel('PROGRAMME RAG'),
+                  ProgrammeRagWidget(
+                    rag: data.programmeRag,
+                    trend: data.programmeTrend,
+                    previousRagLabel: data.previousRagLabel,
+                    projectId: _projectId,
+                    db: context.read<AppDatabase>(),
+                    wps: data.workstreams.map((w) => w.wp).toList(),
+                  ),
+                  RagSparkline(projectId: _projectId),
+                  const SizedBox(height: 20),
 
-                // Workstreams
-                _SectionLabel('WORKSTREAMS'),
-                WorkstreamHealthTable(workstreams: data.workstreams),
-                const SizedBox(height: 20),
+                  // Workstreams
+                  _SectionLabel('WORKSTREAMS'),
+                  WorkstreamHealthTable(workstreams: data.workstreams),
+                  const SizedBox(height: 20),
 
-                // Upcoming milestones
-                _SectionLabel('UPCOMING MILESTONES (NEXT 3 MONTHS)'),
-                UpcomingMilestonesList(
-                  milestones:  data.upcomingMilestones,
-                  monthLabels: _monthLabels,
-                ),
-                const SizedBox(height: 20),
+                  // Upcoming milestones
+                  _SectionLabel('UPCOMING MILESTONES (NEXT 3 MONTHS)'),
+                  UpcomingMilestonesList(
+                    milestones: data.upcomingMilestones,
+                    monthLabels: _monthLabels,
+                  ),
+                  const SizedBox(height: 20),
 
-                // Top risks
-                _SectionLabel('TOP RISKS'),
-                TopRisksPanel(
+                  // Top risks
+                  _SectionLabel('TOP RISKS'),
+                  TopRisksPanel(
                     risks: data.topRisks,
-                    previous: data.previousTopRisks),
-                const SizedBox(height: 20),
+                    previous: data.previousTopRisks,
+                  ),
+                  const SizedBox(height: 20),
 
-                // Pending decisions
-                _SectionLabel('PENDING DECISIONS'),
-                PendingDecisionsPanel(decisions: data.pendingDecisions),
-                const SizedBox(height: 20),
+                  // Pending decisions
+                  _SectionLabel('PENDING DECISIONS'),
+                  PendingDecisionsPanel(decisions: data.pendingDecisions),
+                  const SizedBox(height: 20),
 
-                // Playbook stage
-                _SectionLabel('CURRENT PLAYBOOK STAGE'),
-                PlaybookStageSummary(
-                  stage:    data.currentStage,
-                  progress: data.stageProgress,
-                  attached: data.projectPlaybook != null,
-                  stagesDone: data.playbookStagesDone,
-                  stagesTotal: data.playbookStagesTotal,
-                  allComplete: data.playbookAllComplete,
-                ),
-                const SizedBox(height: 20),
+                  // Playbook stage
+                  _SectionLabel('CURRENT PLAYBOOK STAGE'),
+                  PlaybookStageSummary(
+                    stage: data.currentStage,
+                    progress: data.stageProgress,
+                    attached: data.projectPlaybook != null,
+                    stagesDone: data.playbookStagesDone,
+                    stagesTotal: data.playbookStagesTotal,
+                    allComplete: data.playbookAllComplete,
+                  ),
+                  const SizedBox(height: 20),
 
-                // Finance — approved budget only
-                _SectionLabel('FINANCIAL SUMMARY'),
-                FinancialSummaryPanel(
-                  approvedBudget:     _approvedBudget,
-                  totals:             _budgetTotals,
-                  categoryNames:      _categoryNames,
-                  forecastTotalMinor: _forecastTotalMinor,
-                  forecastPeriod:     _forecastPeriod,
-                  varianceBp:         _varianceBp,
-                  actualsToDateMinor: _actualsToDateMinor,
-                  portfolio:          _portfolio,
-                  projectNames:       _portfolioNames,
-                  contingency:        _contingency,
-                  contingencyWarnBp:  _contingencyWarnBp,
-                ),
-                const SizedBox(height: 20),
+                  // Finance — approved budget only
+                  _SectionLabel('FINANCIAL SUMMARY'),
+                  FinancialSummaryPanel(
+                    approvedBudget: _approvedBudget,
+                    totals: _budgetTotals,
+                    categoryNames: _categoryNames,
+                    forecastTotalMinor: _forecastTotalMinor,
+                    forecastPeriod: _forecastPeriod,
+                    varianceBp: _varianceBp,
+                    actualsToDateMinor: _actualsToDateMinor,
+                    portfolio: _portfolio,
+                    projectNames: _portfolioNames,
+                    contingency: _contingency,
+                    contingencyWarnBp: _contingencyWarnBp,
+                  ),
+                  const SizedBox(height: 20),
 
-                // Counts
-                _SectionLabel('COUNTS'),
-                StatusCountsRow(
-                  overdueActions:    data.overdueActionsCount,
-                  openActions:       data.openActionsCount,
-                  pendingDecisions:  data.pendingDecisionsCount,
-                  openRisks:         data.openRisksCount,
-                ),
-                const SizedBox(height: 24),
+                  // Counts
+                  _SectionLabel('COUNTS'),
+                  StatusCountsRow(
+                    overdueActions: data.overdueActionsCount,
+                    openActions: data.openActionsCount,
+                    pendingDecisions: data.pendingDecisionsCount,
+                    openRisks: data.openRisksCount,
+                  ),
+                  const SizedBox(height: 24),
 
-                // Narrative
-                _SectionLabel('STATUS NARRATIVE'),
-                StatusNarrativePanel(
-                  data:              data,
-                  settings:          settings,
-                  projectName:       widget.project.name,
-                  isProgramme:       widget.project.kind == 'programme',
-                  initialNarrative:  _narrative,
-                  onNarrativeChanged: (v) => setState(() => _narrative = v),
-                ),
-                // What the codes in the narrative mean — the same list the
-                // export carries, so the page previews what Bart will read.
-                ReferencedItemsPanel(
-                  db: context.read<AppDatabase>(),
-                  projectId: _projectId,
-                  narrative: _narrative,
-                ),
-              ],
+                  // Narrative
+                  _SectionLabel('STATUS NARRATIVE'),
+                  StatusNarrativePanel(
+                    data: data,
+                    settings: settings,
+                    projectName: widget.project.name,
+                    isProgramme: widget.project.kind == 'programme',
+                    initialNarrative: _narrative,
+                    onNarrativeChanged: (v) => setState(() => _narrative = v),
+                  ),
+                  // What the codes in the narrative mean — the same list the
+                  // export carries, so the page previews what Bart will read.
+                  ReferencedItemsPanel(
+                    db: context.read<AppDatabase>(),
+                    projectId: _projectId,
+                    narrative: _narrative,
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
       ],
     );
   }
 
   String _formatDate(DateTime d) {
     const months = [
-      '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      '',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${d.day} ${months[d.month]} ${d.year}';
   }
@@ -533,12 +566,15 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Text(text,
-          style: const TextStyle(
-              color: KColors.textMuted,
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.15)),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: KColors.textMuted,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.15,
+        ),
+      ),
     );
   }
 }

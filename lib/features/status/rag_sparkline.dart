@@ -14,11 +14,7 @@ class RagSparkline extends StatelessWidget {
   final String projectId;
   final int maxWeeks;
 
-  const RagSparkline({
-    super.key,
-    required this.projectId,
-    this.maxWeeks = 12,
-  });
+  const RagSparkline({super.key, required this.projectId, this.maxWeeks = 12});
 
   @override
   Widget build(BuildContext context) {
@@ -29,10 +25,7 @@ class RagSparkline extends StatelessWidget {
         if (!snap.hasData) {
           return const SizedBox(height: 18);
         }
-        return _RagSparklineView(
-          snapshots: snap.data!,
-          maxWeeks: maxWeeks,
-        );
+        return _RagSparklineView(snapshots: snap.data!, maxWeeks: maxWeeks);
       },
     );
   }
@@ -45,10 +38,7 @@ class _RagSparklineView extends StatelessWidget {
   final List<StatusSnapshot> snapshots;
   final int maxWeeks;
 
-  const _RagSparklineView({
-    required this.snapshots,
-    required this.maxWeeks,
-  });
+  const _RagSparklineView({required this.snapshots, required this.maxWeeks});
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +49,7 @@ class _RagSparklineView extends StatelessWidget {
           snapshots.isEmpty
               ? 'No snapshots yet — take a snapshot to start tracking trend.'
               : 'Take more snapshots to see RAG trend over time.',
-          style: const TextStyle(color: KColors.textMuted, fontSize: 11),
+          style: TextStyle(color: KColors.textMuted, fontSize: 11),
         ),
       );
     }
@@ -73,17 +63,20 @@ class _RagSparklineView extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const Text('RAG TREND',
-              style: TextStyle(
-                color: KColors.textDim,
-                fontSize: 10,
-                letterSpacing: 0.6,
-                fontWeight: FontWeight.w600,
-              )),
+          Text(
+            'RAG TREND',
+            style: TextStyle(
+              color: KColors.textDim,
+              fontSize: 10,
+              letterSpacing: 0.6,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           const SizedBox(width: 10),
           for (final s in ordered) ...[
             Tooltip(
-              message: '${fmt.format(s.weekEnding)} — '
+              message:
+                  '${fmt.format(s.weekEnding)} — '
                   '${_ragLabel(s.programmeRag)}',
               child: Container(
                 width: 12,
@@ -105,7 +98,9 @@ class _RagSparklineView extends StatelessWidget {
 /// Picks the last [maxWeeks] snapshots in chronological order
 /// (oldest left → newest right). Pure function — exposed for testing.
 List<StatusSnapshot> sparklineSlice(
-    List<StatusSnapshot> mostRecentFirst, int maxWeeks) {
+  List<StatusSnapshot> mostRecentFirst,
+  int maxWeeks,
+) {
   if (mostRecentFirst.isEmpty) return const [];
   final taken = mostRecentFirst.take(maxWeeks).toList();
   return taken.reversed.toList();

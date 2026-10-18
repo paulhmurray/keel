@@ -39,21 +39,22 @@ class TemplatesGalleryView extends StatelessWidget {
                 const SizedBox(height: 12),
                 _GalleryGrid(
                   children: yours
-                      .map((t) => _YourTemplateCard(
-                            template: t,
-                            onOpen: () {
-                              context.analytics.track(
-                                KeelEvents.templateOpened,
-                                props: {
-                                  KeelEventProps.templateType:
-                                      t.templateType,
-                                },
-                              );
-                              onOpen(t.id);
-                            },
-                            onAction: (action) =>
-                                _handleAction(context, t, action),
-                          ))
+                      .map(
+                        (t) => _YourTemplateCard(
+                          template: t,
+                          onOpen: () {
+                            context.analytics.track(
+                              KeelEvents.templateOpened,
+                              props: {
+                                KeelEventProps.templateType: t.templateType,
+                              },
+                            );
+                            onOpen(t.id);
+                          },
+                          onAction: (action) =>
+                              _handleAction(context, t, action),
+                        ),
+                      )
                       .toList(),
                 ),
                 const SizedBox(height: 32),
@@ -62,10 +63,12 @@ class TemplatesGalleryView extends StatelessWidget {
               const SizedBox(height: 12),
               _GalleryGrid(
                 children: TemplateRegistry.available
-                    .map((def) => _AvailableTemplateCard(
-                          def: def,
-                          onTap: () => _createInstance(context, def),
-                        ))
+                    .map(
+                      (def) => _AvailableTemplateCard(
+                        def: def,
+                        onTap: () => _createInstance(context, def),
+                      ),
+                    )
                     .toList(),
               ),
             ],
@@ -76,19 +79,21 @@ class TemplatesGalleryView extends StatelessWidget {
   }
 
   Future<void> _createInstance(
-      BuildContext context, TemplateDefinition def) async {
-    final ctrl =
-        TextEditingController(text: 'New ${def.name.toLowerCase()}');
+    BuildContext context,
+    TemplateDefinition def,
+  ) async {
+    final ctrl = TextEditingController(text: 'New ${def.name.toLowerCase()}');
     final name = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: KColors.surface,
         title: Text(
           'Create new ${def.name}',
-          style: const TextStyle(
-              color: KColors.amber,
-              fontSize: 14,
-              fontWeight: FontWeight.w700),
+          style: TextStyle(
+            color: KColors.amber,
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         content: TextField(
           controller: ctrl,
@@ -130,7 +135,10 @@ class TemplatesGalleryView extends StatelessWidget {
   }
 
   Future<void> _handleAction(
-      BuildContext context, CanvasTemplate t, _TemplateRowAction a) async {
+    BuildContext context,
+    CanvasTemplate t,
+    _TemplateRowAction a,
+  ) async {
     final db = context.read<AppDatabase>();
     switch (a) {
       case _TemplateRowAction.rename:
@@ -139,8 +147,10 @@ class TemplatesGalleryView extends StatelessWidget {
           context: context,
           builder: (ctx) => AlertDialog(
             backgroundColor: KColors.surface,
-            title: const Text('Rename template',
-                style: TextStyle(color: KColors.amber)),
+            title: Text(
+              'Rename template',
+              style: TextStyle(color: KColors.amber),
+            ),
             content: TextField(
               controller: ctrl,
               autofocus: true,
@@ -180,12 +190,13 @@ class TemplatesGalleryView extends StatelessWidget {
           context: context,
           builder: (ctx) => AlertDialog(
             backgroundColor: KColors.surface,
-            title: const Text('Delete template?',
-                style: TextStyle(color: KColors.amber)),
+            title: Text(
+              'Delete template?',
+              style: TextStyle(color: KColors.amber),
+            ),
             content: Text(
               '"${t.name}" will be permanently removed.',
-              style: const TextStyle(
-                  color: KColors.textDim, fontSize: 12.5),
+              style: TextStyle(color: KColors.textDim, fontSize: 12.5),
             ),
             actions: [
               TextButton(
@@ -221,7 +232,7 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       label.toUpperCase(),
-      style: const TextStyle(
+      style: TextStyle(
         color: KColors.amber,
         fontSize: 11,
         fontWeight: FontWeight.w700,
@@ -238,11 +249,7 @@ class _GalleryGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 14,
-      runSpacing: 14,
-      children: children,
-    );
+    return Wrap(spacing: 14, runSpacing: 14, children: children);
   }
 }
 
@@ -275,7 +282,7 @@ class _AvailableTemplateCard extends StatelessWidget {
               const SizedBox(height: 14),
               Text(
                 def.name,
-                style: const TextStyle(
+                style: TextStyle(
                   color: KColors.text,
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
@@ -285,7 +292,7 @@ class _AvailableTemplateCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   def.description,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: KColors.textDim,
                     fontSize: 11.5,
                     height: 1.35,
@@ -335,24 +342,33 @@ class _YourTemplateCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(def?.icon ?? Icons.description_outlined,
-                      size: 18, color: KColors.amber),
+                  Icon(
+                    def?.icon ?? Icons.description_outlined,
+                    size: 18,
+                    color: KColors.amber,
+                  ),
                   const Spacer(),
                   PopupMenuButton<_TemplateRowAction>(
                     tooltip: 'Template actions',
-                    icon: const Icon(Icons.more_horiz,
-                        size: 16, color: KColors.textMuted),
+                    icon: Icon(
+                      Icons.more_horiz,
+                      size: 16,
+                      color: KColors.textMuted,
+                    ),
                     onSelected: onAction,
                     itemBuilder: (_) => const [
                       PopupMenuItem(
-                          value: _TemplateRowAction.rename,
-                          child: Text('Rename')),
+                        value: _TemplateRowAction.rename,
+                        child: Text('Rename'),
+                      ),
                       PopupMenuItem(
-                          value: _TemplateRowAction.duplicate,
-                          child: Text('Duplicate')),
+                        value: _TemplateRowAction.duplicate,
+                        child: Text('Duplicate'),
+                      ),
                       PopupMenuItem(
-                          value: _TemplateRowAction.delete,
-                          child: Text('Delete')),
+                        value: _TemplateRowAction.delete,
+                        child: Text('Delete'),
+                      ),
                     ],
                   ),
                 ],
@@ -360,7 +376,7 @@ class _YourTemplateCard extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 template.name,
-                style: const TextStyle(
+                style: TextStyle(
                   color: KColors.text,
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
@@ -372,10 +388,7 @@ class _YourTemplateCard extends StatelessWidget {
               Text(
                 '${def?.name ?? template.templateType}  ·  '
                 'edited ${_relativeTime(template.updatedAt)}',
-                style: const TextStyle(
-                  color: KColors.textMuted,
-                  fontSize: 10.5,
-                ),
+                style: TextStyle(color: KColors.textMuted, fontSize: 10.5),
               ),
             ],
           ),

@@ -75,15 +75,14 @@ class _DragGhost extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.bubble_chart_outlined,
-              size: 14, color: KColors.amber),
+          Icon(Icons.bubble_chart_outlined, size: 14, color: KColors.amber),
           const SizedBox(width: 8),
           Flexible(
             child: Text(
               title.isEmpty ? '($itemType)' : title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: TextStyle(
                 color: KColors.text,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,

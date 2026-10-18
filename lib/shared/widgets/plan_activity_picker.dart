@@ -34,13 +34,15 @@ class PlanActivityPicker extends StatelessWidget {
     required List<TimelineWorkPackage> workPackages,
     required List<TimelineActivity> activities,
   }) {
-    final act = activities
-        .cast<TimelineActivity?>()
-        .firstWhere((a) => a?.id == activityId, orElse: () => null);
+    final act = activities.cast<TimelineActivity?>().firstWhere(
+      (a) => a?.id == activityId,
+      orElse: () => null,
+    );
     if (act == null) return activityId;
-    final wp = workPackages
-        .cast<TimelineWorkPackage?>()
-        .firstWhere((w) => w?.id == act.workPackageId, orElse: () => null);
+    final wp = workPackages.cast<TimelineWorkPackage?>().firstWhere(
+      (w) => w?.id == act.workPackageId,
+      orElse: () => null,
+    );
     final prefix = wp != null ? '[${wp.shortCode ?? wp.name}] ' : '';
     return '$prefix${act.name}';
   }
@@ -48,45 +50,51 @@ class PlanActivityPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = <DropdownMenuItem<String?>>[];
-    items.add(const DropdownMenuItem<String?>(
+    items.add(
+      DropdownMenuItem<String?>(
         value: null,
-        child: Text('— none —', style: TextStyle(color: KColors.textDim))));
+        child: Text('— none —', style: TextStyle(color: KColors.textDim)),
+      ),
+    );
 
     for (final wp in workPackages) {
-      final wpActs =
-          activities.where((a) => a.workPackageId == wp.id).toList();
+      final wpActs = activities.where((a) => a.workPackageId == wp.id).toList();
       if (wpActs.isEmpty) continue;
-      items.add(DropdownMenuItem<String?>(
-        enabled: false,
-        value: '__header__${wp.id}',
-        child: Text(
-          wp.shortCode ?? wp.name,
-          style: const TextStyle(
+      items.add(
+        DropdownMenuItem<String?>(
+          enabled: false,
+          value: '__header__${wp.id}',
+          child: Text(
+            wp.shortCode ?? wp.name,
+            style: TextStyle(
               color: KColors.textMuted,
               fontSize: 10,
               fontWeight: FontWeight.w700,
-              letterSpacing: 0.5),
-        ),
-      ));
-      for (final act in wpActs) {
-        final prefix = _kTypeIcons[act.activityType] ?? '';
-        items.add(DropdownMenuItem<String?>(
-          value: act.id,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 8),
-            child: Text(
-              '$prefix${act.name}',
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 12),
+              letterSpacing: 0.5,
             ),
           ),
-        ));
+        ),
+      );
+      for (final act in wpActs) {
+        final prefix = _kTypeIcons[act.activityType] ?? '';
+        items.add(
+          DropdownMenuItem<String?>(
+            value: act.id,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: Text(
+                '$prefix${act.name}',
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 12),
+              ),
+            ),
+          ),
+        );
       }
     }
 
     // A stale id (activity deleted) would crash the dropdown; show none.
-    final safeValue =
-        activities.any((a) => a.id == value) ? value : null;
+    final safeValue = activities.any((a) => a.id == value) ? value : null;
 
     return DropdownButtonFormField<String?>(
       value: safeValue,

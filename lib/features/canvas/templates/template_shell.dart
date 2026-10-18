@@ -70,7 +70,7 @@ class _TemplateShellState extends State<TemplateShell> {
           // Either still loading the first event or the template was
           // deleted out from under us — either way show a neutral
           // placeholder rather than blowing up.
-          return const Center(
+          return Center(
             child: Text(
               'Template not found.',
               style: TextStyle(color: KColors.textMuted),
@@ -94,17 +94,14 @@ class _TemplateShellState extends State<TemplateShell> {
               onBack: widget.onBack,
               onPresentation: (def?.supportsFullscreen ?? false)
                   ? () => openTemplatePresentation(
-                        context,
-                        title: t.name,
-                        icon: def?.icon ??
-                            Icons.dashboard_customize_outlined,
-                        child: _dispatchBody(t, def),
-                      )
+                      context,
+                      title: t.name,
+                      icon: def?.icon ?? Icons.dashboard_customize_outlined,
+                      child: _dispatchBody(t, def),
+                    )
                   : null,
             ),
-            Expanded(
-              child: _dispatchBody(t, def),
-            ),
+            Expanded(child: _dispatchBody(t, def)),
           ],
         );
       },
@@ -162,11 +159,9 @@ class _ShellHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: KColors.surface,
-        border: Border(
-          bottom: BorderSide(color: KColors.border, width: 1),
-        ),
+        border: Border(bottom: BorderSide(color: KColors.border, width: 1)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -175,27 +170,28 @@ class _ShellHeader extends StatelessWidget {
             tooltip: 'Back to Templates',
             visualDensity: VisualDensity.compact,
             onPressed: onBack,
-            icon: const Icon(Icons.arrow_back,
-                size: 18, color: KColors.textDim),
+            icon: Icon(Icons.arrow_back, size: 18, color: KColors.textDim),
           ),
           const SizedBox(width: 4),
-          Icon(definition?.icon ?? Icons.description_outlined,
-              size: 16, color: KColors.amber),
+          Icon(
+            definition?.icon ?? Icons.description_outlined,
+            size: 16,
+            color: KColors.amber,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: editingTitle
                 ? TextField(
                     controller: titleCtrl,
                     autofocus: true,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: KColors.text,
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                     ),
                     decoration: const InputDecoration(
                       isDense: true,
-                      contentPadding:
-                          EdgeInsets.symmetric(vertical: 4),
+                      contentPadding: EdgeInsets.symmetric(vertical: 4),
                       border: InputBorder.none,
                     ),
                     onSubmitted: onCommitEdit,
@@ -207,7 +203,7 @@ class _ShellHeader extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 4),
                       child: Text(
                         template.name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: KColors.text,
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
@@ -220,10 +216,7 @@ class _ShellHeader extends StatelessWidget {
           Text(
             '${definition?.name ?? template.templateType}  ·  '
             'edited ${_relativeTime(template.updatedAt)}',
-            style: const TextStyle(
-              color: KColors.textMuted,
-              fontSize: 11,
-            ),
+            style: TextStyle(color: KColors.textMuted, fontSize: 11),
           ),
           if (onPresentation != null) ...[
             const SizedBox(width: 12),
@@ -233,9 +226,11 @@ class _ShellHeader extends StatelessWidget {
               label: const Text('Presentation'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: KColors.amber,
-                side: const BorderSide(color: KColors.amber),
+                side: BorderSide(color: KColors.amber),
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 6),
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 textStyle: const TextStyle(fontSize: 12),
                 minimumSize: const Size(0, 30),
               ),
@@ -264,12 +259,15 @@ class _ComingSoonBody extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(definition?.icon ?? Icons.construction,
-                  size: 28, color: KColors.amber),
+              Icon(
+                definition?.icon ?? Icons.construction,
+                size: 28,
+                color: KColors.amber,
+              ),
               const SizedBox(height: 14),
               Text(
                 '$name coming next',
-                style: const TextStyle(
+                style: TextStyle(
                   color: KColors.text,
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -282,7 +280,7 @@ class _ComingSoonBody extends StatelessWidget {
                 'Until then, the saved record is here whenever you '
                 'come back.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   color: KColors.textDim,
                   fontSize: 12.5,
                   height: 1.45,

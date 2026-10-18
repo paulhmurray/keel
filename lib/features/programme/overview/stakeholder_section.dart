@@ -9,27 +9,31 @@ import 'role_row_helpers.dart';
 
 // ─── Engagement status metadata ───────────────────────────────────────────────
 const _kEngagementOptions = [
-  ('not_started',        'Not started'),
-  ('engaged',            'Engaged'),
-  ('gap_action_required','Gap — action required'),
-  ('not_engaged',        'Not engaged'),
-  ('complete',           'Complete'),
+  ('not_started', 'Not started'),
+  ('engaged', 'Engaged'),
+  ('gap_action_required', 'Gap — action required'),
+  ('not_engaged', 'Not engaged'),
+  ('complete', 'Complete'),
 ];
 
 const _kPriorityOptions = [
   ('critical', 'Critical'),
-  ('high',     'High'),
-  ('medium',   'Medium'),
-  ('low',      'Low'),
+  ('high', 'High'),
+  ('medium', 'Medium'),
+  ('low', 'Low'),
 ];
 
 Widget _engagementChip(String? status) {
   final (label, color, bg) = switch (status) {
-    'engaged'            => ('● Engaged',         KColors.phosphor, KColors.phosDim),
-    'gap_action_required'=> ('⚠ Gap — action req', KColors.red,      KColors.redDim),
-    'not_engaged'        => ('○ Not engaged',      KColors.amber,    KColors.amberDim),
-    'complete'           => ('✓ Complete',         KColors.phosphor, KColors.phosDim),
-    _                    => ('— Not started',      KColors.textMuted, Colors.transparent),
+    'engaged' => ('● Engaged', KColors.phosphor, KColors.phosDim),
+    'gap_action_required' => (
+      '⚠ Gap — action req',
+      KColors.red,
+      KColors.redDim,
+    ),
+    'not_engaged' => ('○ Not engaged', KColors.amber, KColors.amberDim),
+    'complete' => ('✓ Complete', KColors.phosphor, KColors.phosDim),
+    _ => ('— Not started', KColors.textMuted, Colors.transparent),
   };
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -40,9 +44,10 @@ Widget _engagementChip(String? status) {
           ? Border.all(color: KColors.border2)
           : null,
     ),
-    child: Text(label,
-        style: TextStyle(
-            color: color, fontSize: 10, fontWeight: FontWeight.w600)),
+    child: Text(
+      label,
+      style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600),
+    ),
   );
 }
 
@@ -126,7 +131,7 @@ class _TierGroup extends StatelessWidget {
             children: [
               Text(
                 tierLabel,
-                style: const TextStyle(
+                style: TextStyle(
                   color: KColors.textDim,
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
@@ -139,16 +144,13 @@ class _TierGroup extends StatelessWidget {
                   '$_filledCount of $_applicableCount filled',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: KColors.textMuted,
-                    fontSize: 10,
-                  ),
+                  style: TextStyle(color: KColors.textMuted, fontSize: 10),
                 ),
               ),
             ],
           ),
         ),
-        const Divider(color: KColors.border, height: 8),
+        Divider(color: KColors.border, height: 8),
 
         // Applicable roles
         for (final role in visible)
@@ -192,24 +194,25 @@ class _TierGroup extends StatelessWidget {
     if (name == null || name.isEmpty) return;
     final uuid = const Uuid();
     final now = DateTime.now();
-    await db.stakeholderRoleDao.upsert(StakeholderRolesCompanion.insert(
-      id: uuid.v4(),
-      projectId: projectId,
-      roleName: name,
-      roleType: tierType,
-      isScaffold: const Value(false),
-      isApplicable: const Value(true),
-      sortOrder: Value(
-          roles.fold(0, (m, r) => r.sortOrder > m ? r.sortOrder : m) + 1),
-      createdAt: Value(now),
-      updatedAt: Value(now),
-    ));
+    await db.stakeholderRoleDao.upsert(
+      StakeholderRolesCompanion.insert(
+        id: uuid.v4(),
+        projectId: projectId,
+        roleName: name,
+        roleType: tierType,
+        isScaffold: const Value(false),
+        isApplicable: const Value(true),
+        sortOrder: Value(
+          roles.fold(0, (m, r) => r.sortOrder > m ? r.sortOrder : m) + 1,
+        ),
+        createdAt: Value(now),
+        updatedAt: Value(now),
+      ),
+    );
   }
 
   Future<String?> _promptRoleName(BuildContext context) async {
-    final existing = roles
-        .map((r) => r.roleName.toLowerCase().trim())
-        .toSet();
+    final existing = roles.map((r) => r.roleName.toLowerCase().trim()).toSet();
     final suggestions = (stakeholderSuggestions[tierType] ?? const <String>[])
         .where((s) => !existing.contains(s.toLowerCase().trim()))
         .toList();
@@ -253,9 +256,7 @@ class _StakeholderRoleRow extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: KColors.surface,
-        border: Border.all(
-          color: _filled ? KColors.border2 : KColors.border,
-        ),
+        border: Border.all(color: _filled ? KColors.border2 : KColors.border),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Row(
@@ -286,33 +287,35 @@ class _StakeholderRoleRow extends StatelessWidget {
                   if (_filled && _person != null) ...[
                     const SizedBox(height: 2),
                     Text(
-                      [_person!.name, _person!.role, _person!.organisation]
-                          .where((s) => s != null && s.isNotEmpty)
-                          .join(' · '),
-                      style: const TextStyle(
-                          color: KColors.textDim, fontSize: 11),
+                      [
+                        _person!.name,
+                        _person!.role,
+                        _person!.organisation,
+                      ].where((s) => s != null && s.isNotEmpty).join(' · '),
+                      style: TextStyle(color: KColors.textDim, fontSize: 11),
                     ),
                   ] else if (hint.isNotEmpty) ...[
                     const SizedBox(height: 2),
                     Text(
                       hint,
-                      style: const TextStyle(
-                          color: KColors.textMuted, fontSize: 11),
+                      style: TextStyle(color: KColors.textMuted, fontSize: 11),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
                   if (isCritical && !_filled) ...[
                     const SizedBox(height: 4),
-                    const Row(
+                    Row(
                       children: [
-                        Icon(Icons.warning_amber_rounded,
-                            size: 11, color: KColors.amber),
+                        Icon(
+                          Icons.warning_amber_rounded,
+                          size: 11,
+                          color: KColors.amber,
+                        ),
                         SizedBox(width: 4),
                         Text(
                           'Required — every programme needs one',
-                          style:
-                              TextStyle(color: KColors.amber, fontSize: 10),
+                          style: TextStyle(color: KColors.amber, fontSize: 10),
                         ),
                       ],
                     ),
@@ -332,33 +335,42 @@ class _StakeholderRoleRow extends StatelessWidget {
                         if (role.gapFlag)
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: KColors.redDim,
                               borderRadius: BorderRadius.circular(3),
                             ),
-                            child: const Text('⚠ GAP',
-                                style: TextStyle(
-                                    color: KColors.red,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700)),
+                            child: Text(
+                              '⚠ GAP',
+                              style: TextStyle(
+                                color: KColors.red,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ),
                       ],
                     ),
                   ],
                   if (role.gapFlag && role.gapDescription != null) ...[
                     const SizedBox(height: 4),
-                    Text(role.gapDescription!,
-                        style: const TextStyle(
-                            color: KColors.red, fontSize: 10)),
+                    Text(
+                      role.gapDescription!,
+                      style: TextStyle(color: KColors.red, fontSize: 10),
+                    ),
                   ],
                   if (role.functionalArea != null) ...[
                     const SizedBox(height: 3),
-                    Text(role.functionalArea!,
-                        style: const TextStyle(
-                            color: KColors.textMuted,
-                            fontSize: 10,
-                            fontStyle: FontStyle.italic)),
+                    Text(
+                      role.functionalArea!,
+                      style: TextStyle(
+                        color: KColors.textMuted,
+                        fontSize: 10,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
                   ],
                 ],
               ),
@@ -370,10 +382,7 @@ class _StakeholderRoleRow extends StatelessWidget {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                RoleSmallButton(
-                  label: 'Assign',
-                  onTap: () => _assign(context),
-                ),
+                RoleSmallButton(label: 'Assign', onTap: () => _assign(context)),
                 const SizedBox(width: 6),
                 RoleMoreMenu(
                   onMarkNA: () => _markNA(),
@@ -388,10 +397,7 @@ class _StakeholderRoleRow extends StatelessWidget {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                RoleSmallButton(
-                  label: 'Change',
-                  onTap: () => _assign(context),
-                ),
+                RoleSmallButton(label: 'Change', onTap: () => _assign(context)),
                 const SizedBox(width: 6),
                 RoleMoreMenu(
                   onMarkNA: () => _markNA(),
@@ -416,28 +422,34 @@ class _StakeholderRoleRow extends StatelessWidget {
       title: 'Assign Stakeholder',
     );
     if (person != null) {
-      await db.stakeholderRoleDao.updateRole(StakeholderRolesCompanion(
-        id: Value(role.id),
-        personId: Value(person.id),
-        updatedAt: Value(DateTime.now()),
-      ));
+      await db.stakeholderRoleDao.updateRole(
+        StakeholderRolesCompanion(
+          id: Value(role.id),
+          personId: Value(person.id),
+          updatedAt: Value(DateTime.now()),
+        ),
+      );
     }
   }
 
   Future<void> _markNA() async {
-    await db.stakeholderRoleDao.updateRole(StakeholderRolesCompanion(
-      id: Value(role.id),
-      isApplicable: const Value(false),
-      updatedAt: Value(DateTime.now()),
-    ));
+    await db.stakeholderRoleDao.updateRole(
+      StakeholderRolesCompanion(
+        id: Value(role.id),
+        isApplicable: const Value(false),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
   }
 
   Future<void> _removePerson() async {
-    await db.stakeholderRoleDao.updateRole(StakeholderRolesCompanion(
-      id: Value(role.id),
-      personId: const Value(null),
-      updatedAt: Value(DateTime.now()),
-    ));
+    await db.stakeholderRoleDao.updateRole(
+      StakeholderRolesCompanion(
+        id: Value(role.id),
+        personId: const Value(null),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
   }
 
   Future<void> _editDetails(BuildContext context) async {
@@ -450,11 +462,13 @@ class _StakeholderRoleRow extends StatelessWidget {
   Future<void> _rename(BuildContext context) async {
     final name = await promptRenameRole(context, role.roleName);
     if (name == null || name.isEmpty || name == role.roleName) return;
-    await db.stakeholderRoleDao.updateRole(StakeholderRolesCompanion(
-      id: Value(role.id),
-      roleName: Value(name),
-      updatedAt: Value(DateTime.now()),
-    ));
+    await db.stakeholderRoleDao.updateRole(
+      StakeholderRolesCompanion(
+        id: Value(role.id),
+        roleName: Value(name),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
   }
 
   Future<void> _delete(BuildContext context) async {
@@ -475,10 +489,10 @@ class _PriorityBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (label, color, bg) = switch (priority) {
-      'critical' => ('● Critical', KColors.red,      KColors.redDim),
-      'high'     => ('▲ High',     KColors.amber,    KColors.amberDim),
-      'medium'   => ('◆ Medium',   KColors.phosphor, KColors.phosDim),
-      _          => ('○ Low',      KColors.textMuted, Colors.transparent),
+      'critical' => ('● Critical', KColors.red, KColors.redDim),
+      'high' => ('▲ High', KColors.amber, KColors.amberDim),
+      'medium' => ('◆ Medium', KColors.phosphor, KColors.phosDim),
+      _ => ('○ Low', KColors.textMuted, Colors.transparent),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -489,9 +503,14 @@ class _PriorityBadge extends StatelessWidget {
             ? Border.all(color: KColors.border2)
             : null,
       ),
-      child: Text(label,
-          style: TextStyle(
-              color: color, fontSize: 10, fontWeight: FontWeight.w600)),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }
@@ -511,8 +530,7 @@ class _StakeholderDetailsDialog extends StatefulWidget {
       _StakeholderDetailsDialogState();
 }
 
-class _StakeholderDetailsDialogState
-    extends State<_StakeholderDetailsDialog> {
+class _StakeholderDetailsDialogState extends State<_StakeholderDetailsDialog> {
   late final TextEditingController _areaCtrl;
   late final TextEditingController _relevanceCtrl;
   late final TextEditingController _gapDescCtrl;
@@ -524,12 +542,12 @@ class _StakeholderDetailsDialogState
   void initState() {
     super.initState();
     final r = widget.role;
-    _areaCtrl       = TextEditingController(text: r.functionalArea ?? '');
-    _relevanceCtrl  = TextEditingController(text: r.integrationRelevance ?? '');
-    _gapDescCtrl    = TextEditingController(text: r.gapDescription ?? '');
-    _priority        = r.priority;
+    _areaCtrl = TextEditingController(text: r.functionalArea ?? '');
+    _relevanceCtrl = TextEditingController(text: r.integrationRelevance ?? '');
+    _gapDescCtrl = TextEditingController(text: r.gapDescription ?? '');
+    _priority = r.priority;
     _engagementStatus = r.engagementStatus;
-    _gapFlag         = r.gapFlag;
+    _gapFlag = r.gapFlag;
   }
 
   @override
@@ -541,19 +559,26 @@ class _StakeholderDetailsDialogState
   }
 
   Future<void> _save() async {
-    await widget.db.stakeholderRoleDao.updateRole(StakeholderRolesCompanion(
-      id: Value(widget.role.id),
-      functionalArea:       Value(_areaCtrl.text.trim().isEmpty
-          ? null : _areaCtrl.text.trim()),
-      integrationRelevance: Value(_relevanceCtrl.text.trim().isEmpty
-          ? null : _relevanceCtrl.text.trim()),
-      priority:             Value(_priority),
-      engagementStatus:     Value(_engagementStatus),
-      gapFlag:              Value(_gapFlag),
-      gapDescription:       Value(_gapDescCtrl.text.trim().isEmpty
-          ? null : _gapDescCtrl.text.trim()),
-      updatedAt:            Value(DateTime.now()),
-    ));
+    await widget.db.stakeholderRoleDao.updateRole(
+      StakeholderRolesCompanion(
+        id: Value(widget.role.id),
+        functionalArea: Value(
+          _areaCtrl.text.trim().isEmpty ? null : _areaCtrl.text.trim(),
+        ),
+        integrationRelevance: Value(
+          _relevanceCtrl.text.trim().isEmpty
+              ? null
+              : _relevanceCtrl.text.trim(),
+        ),
+        priority: Value(_priority),
+        engagementStatus: Value(_engagementStatus),
+        gapFlag: Value(_gapFlag),
+        gapDescription: Value(
+          _gapDescCtrl.text.trim().isEmpty ? null : _gapDescCtrl.text.trim(),
+        ),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
     if (mounted) Navigator.of(context).pop();
   }
 
@@ -570,20 +595,24 @@ class _StakeholderDetailsDialogState
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Stakeholder Details — ${widget.role.roleName}',
-                  style: const TextStyle(
-                      color: KColors.text,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600)),
+              Text(
+                'Stakeholder Details — ${widget.role.roleName}',
+                style: TextStyle(
+                  color: KColors.text,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               const SizedBox(height: 16),
 
               // Functional area
               TextField(
                 controller: _areaCtrl,
-                style: const TextStyle(color: KColors.text, fontSize: 13),
+                style: TextStyle(color: KColors.text, fontSize: 13),
                 decoration: const InputDecoration(
-                    labelText: 'Functional area',
-                    hintText: 'e.g. Technology and Integration'),
+                  labelText: 'Functional area',
+                  hintText: 'e.g. Technology and Integration',
+                ),
               ),
               const SizedBox(height: 12),
 
@@ -604,8 +633,9 @@ class _StakeholderDetailsDialogState
               // Engagement status
               DropdownButtonFormField<String>(
                 value: _engagementStatus,
-                decoration:
-                    const InputDecoration(labelText: 'Engagement status'),
+                decoration: const InputDecoration(
+                  labelText: 'Engagement status',
+                ),
                 dropdownColor: KColors.surface2,
                 items: [
                   const DropdownMenuItem(value: null, child: Text('— None')),
@@ -621,50 +651,56 @@ class _StakeholderDetailsDialogState
                 controller: _relevanceCtrl,
                 minLines: 2,
                 maxLines: 4,
-                style: const TextStyle(color: KColors.text, fontSize: 13),
+                style: TextStyle(color: KColors.text, fontSize: 13),
                 decoration: const InputDecoration(
-                    labelText: 'Integration relevance',
-                    hintText: 'Describe why this stakeholder matters'),
+                  labelText: 'Integration relevance',
+                  hintText: 'Describe why this stakeholder matters',
+                ),
               ),
               const SizedBox(height: 12),
 
               // Gap flag + description
-              Row(children: [
-                Checkbox(
-                  value: _gapFlag,
-                  onChanged: (v) => setState(() => _gapFlag = v ?? false),
-                ),
-                const Text('Gap — action required',
-                    style: TextStyle(color: KColors.text, fontSize: 13)),
-              ]),
+              Row(
+                children: [
+                  Checkbox(
+                    value: _gapFlag,
+                    onChanged: (v) => setState(() => _gapFlag = v ?? false),
+                  ),
+                  Text(
+                    'Gap — action required',
+                    style: TextStyle(color: KColors.text, fontSize: 13),
+                  ),
+                ],
+              ),
               if (_gapFlag) ...[
                 const SizedBox(height: 8),
                 TextField(
                   controller: _gapDescCtrl,
                   minLines: 2,
                   maxLines: 3,
-                  style: const TextStyle(color: KColors.text, fontSize: 13),
+                  style: TextStyle(color: KColors.text, fontSize: 13),
                   decoration: const InputDecoration(
-                      labelText: 'Gap description'),
+                    labelText: 'Gap description',
+                  ),
                 ),
               ],
               const SizedBox(height: 20),
 
               // Buttons
-              Row(children: [
-                const Spacer(),
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancel',
-                      style:
-                          TextStyle(color: KColors.textDim, fontSize: 12)),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: _save,
-                  child: const Text('Save'),
-                ),
-              ]),
+              Row(
+                children: [
+                  const Spacer(),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(color: KColors.textDim, fontSize: 12),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(onPressed: _save, child: const Text('Save')),
+                ],
+              ),
             ],
           ),
         ),

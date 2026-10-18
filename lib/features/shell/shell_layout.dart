@@ -73,7 +73,8 @@ sealed class _KeyNode {
 
 /// Branch node: shows a sub-menu. [onEnter] fires immediately when selected.
 class _MenuNode extends _KeyNode {
-  @override final String description;
+  @override
+  final String description;
   final Map<String, _KeyNode> children;
   final VoidCallback? onEnter;
   _MenuNode(this.description, this.children, {this.onEnter});
@@ -81,7 +82,8 @@ class _MenuNode extends _KeyNode {
 
 /// Leaf node: executes [action] and closes the leader HUD.
 class _ActionNode extends _KeyNode {
-  @override final String description;
+  @override
+  final String description;
   final VoidCallback action;
   _ActionNode(this.description, this.action);
 }
@@ -93,7 +95,10 @@ class _ActionNode extends _KeyNode {
 enum _GanttLayoutMode { normal, expanded, presentation }
 
 class _ShellLayoutState extends State<ShellLayout> {
-  int _selectedIndex = 0;
+  // A theme change rebuilds the whole app from a new key; remember the
+  // section so the user stays where they were (on Settings, picking).
+  static int? _rememberedIndex;
+  int _selectedIndex = _rememberedIndex ?? 0;
   // Set once the first project is known: a project opens on Helm, a
   // programme on its overview. Until then the default index stands.
   bool _landingResolved = false;
@@ -180,8 +185,10 @@ class _ShellLayoutState extends State<ShellLayout> {
             : saved.clamp(_rightPanelMinWidth, _rightPanelMaxWidth);
       }
       if (savedDock != null) {
-        _journalDockWidth =
-            savedDock.clamp(_journalDockMinWidth, _journalDockMaxWidth);
+        _journalDockWidth = savedDock.clamp(
+          _journalDockMinWidth,
+          _journalDockMaxWidth,
+        );
       }
     });
   }
@@ -201,14 +208,17 @@ class _ShellLayoutState extends State<ShellLayout> {
       builder: (ctx) => AlertDialog(
         title: const Text('Unsaved note in split view'),
         content: const Text(
-            'The docked journal has unsaved changes. Discard them?'),
+          'The docked journal has unsaved changes. Discard them?',
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Keep editing')),
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Keep editing'),
+          ),
           ElevatedButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Discard')),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Discard'),
+          ),
         ],
       ),
     );
@@ -257,6 +267,7 @@ class _ShellLayoutState extends State<ShellLayout> {
   @override
   void initState() {
     super.initState();
+    if (_rememberedIndex != null) _landingResolved = true;
     _rootMenu = _buildRootMenu();
     _loadRightPanelWidth();
     if (!kIsWeb) {
@@ -269,7 +280,8 @@ class _ShellLayoutState extends State<ShellLayout> {
     _dbChangeSub = db.watchAnyChange().listen((_) {
       if (!mounted) return;
       syncProvider.markLocalChange(
-          context.read<ProjectProvider>().currentProjectId);
+        context.read<ProjectProvider>().currentProjectId,
+      );
     });
 
     // Best-effort: refresh programme links + cascade data on launch so a
@@ -328,14 +340,16 @@ class _ShellLayoutState extends State<ShellLayout> {
         await db.programmeLinksDao.refreshPendingLinks(
           remoteUserId: sync.userId,
           remote: SyncLinksGateway(
-              client: SyncClient(baseUrl: sync.serverUrl),
-              accessToken: token),
+            client: SyncClient(baseUrl: sync.serverUrl),
+            accessToken: token,
+          ),
         );
       }
       if (!mounted) return;
       final links = await db.programmeLinksDao.getLinksForEntity(project.id);
-      final hasLocalLink = links
-          .any((l) => l.status == 'active' && l.partnerLocalId != null);
+      final hasLocalLink = links.any(
+        (l) => l.status == 'active' && l.partnerLocalId != null,
+      );
       if (hasLocalLink) {
         // Same-machine: reconcile both sides (push partner project, pull
         // this entity) regardless of which side we're viewing.
@@ -343,7 +357,8 @@ class _ShellLayoutState extends State<ShellLayout> {
       } else if (project.kind == 'programme') {
         // Cascaded copies are derived data, not local edits.
         await sync.withoutMarkingChanges(
-            () => buildCascadeServiceWith(db, sync).pullForProgramme(project.id));
+          () => buildCascadeServiceWith(db, sync).pullForProgramme(project.id),
+        );
       }
       if (mounted) setState(() => _cascadeRefreshSeq++);
     } catch (_) {
@@ -408,104 +423,223 @@ class _ShellLayoutState extends State<ShellLayout> {
 
   _MenuNode _buildRootMenu() {
     return _MenuNode('Navigate to…', {
-      ' ':  _ActionNode('Home', () {
+      ' ': _ActionNode('Home', () {
         _selectedIndex = landingIndexFor(
-            isProgramme: context.read<ProjectProvider>().isProgramme);
+          isProgramme: context.read<ProjectProvider>().isProgramme,
+        );
       }),
-      'h':  _ActionNode('Helm — my day', () { _selectedIndex = 16; }),
-      't':  _MenuNode('Canvas', {
-        'n': _ActionNode('Quick-capture', () {
+      'h': _ActionNode('Helm — my day', () {
+        _selectedIndex = 16;
+      }),
+      't': _MenuNode(
+        'Canvas',
+        {
+          'n': _ActionNode('Quick-capture', () {
+            _selectedIndex = 1;
+            _canvasInitialQuickCapture = true;
+            _canvasNavSeq++;
+          }),
+        },
+        onEnter: () {
           _selectedIndex = 1;
-          _canvasInitialQuickCapture = true;
+          _canvasInitialQuickCapture = false;
           _canvasNavSeq++;
-        }),
-      }, onEnter: () {
-        _selectedIndex = 1;
-        _canvasInitialQuickCapture = false;
-        _canvasNavSeq++;
+        },
+      ),
+      'R': _ActionNode('Reports', () {
+        _selectedIndex = 8;
       }),
-      'R':  _ActionNode('Reports',     () { _selectedIndex = 8; }),
-      'd':  _MenuNode('Decisions', {
-        'n': _ActionNode('New decision', () {
-          _selectedIndex = 3; _decisionsTriggerNew = true; _decisionsNavSeq++;
-        }),
-      }, onEnter: () {
-        _selectedIndex = 3; _decisionsTriggerNew = false; _decisionsNavSeq++;
+      'd': _MenuNode(
+        'Decisions',
+        {
+          'n': _ActionNode('New decision', () {
+            _selectedIndex = 3;
+            _decisionsTriggerNew = true;
+            _decisionsNavSeq++;
+          }),
+        },
+        onEnter: () {
+          _selectedIndex = 3;
+          _decisionsTriggerNew = false;
+          _decisionsNavSeq++;
+        },
+      ),
+      'p': _ActionNode('People', () {
+        _selectedIndex = 4;
       }),
-      'p':  _ActionNode('People',     () { _selectedIndex = 4; }),
-      'a':  _ActionNode('Actions',    () { _selectedIndex = 5; }),
-      'i':  _ActionNode('Inbox',      () { _selectedIndex = 6; }),
-      'c':  _MenuNode('Context', {
-        'e': _MenuNode('Entries', {
-          'n': _ActionNode('New entry', () {
-            _selectedIndex = 7; _contextInitialTab = 0; _contextTriggerNew = true; _contextNavSeq++;
-          }),
-        }, onEnter: () {
-          _selectedIndex = 7; _contextInitialTab = 0; _contextTriggerNew = false; _contextNavSeq++;
-        }),
-        'd': _MenuNode('Documents', {
-          'n': _ActionNode('Upload document', () {
-            _selectedIndex = 7; _contextInitialTab = 1; _contextTriggerNew = true; _contextNavSeq++;
-          }),
-        }, onEnter: () {
-          _selectedIndex = 7; _contextInitialTab = 1; _contextTriggerNew = false; _contextNavSeq++;
-        }),
-        'g': _MenuNode('Glossary', {
-          'n': _ActionNode('New term', () {
-            _selectedIndex = 7; _contextInitialTab = 2; _contextTriggerNew = true; _contextNavSeq++;
-          }),
-        }, onEnter: () {
-          _selectedIndex = 7; _contextInitialTab = 2; _contextTriggerNew = false; _contextNavSeq++;
-        }),
+      'a': _ActionNode('Actions', () {
+        _selectedIndex = 5;
       }),
-      'r':  _MenuNode('RAID', {
-        'r': _MenuNode('Risks', {
-          'n': _ActionNode('New risk', () {
-            _selectedIndex = 2; _raidInitialTab = 0; _raidTriggerNew = true; _raidNavSeq++;
-          }),
-        }, onEnter: () {
-          _selectedIndex = 2; _raidInitialTab = 0; _raidTriggerNew = false; _raidNavSeq++;
-        }),
-        'a': _MenuNode('Assumptions', {
-          'n': _ActionNode('New assumption', () {
-            _selectedIndex = 2; _raidInitialTab = 1; _raidTriggerNew = true; _raidNavSeq++;
-          }),
-        }, onEnter: () {
-          _selectedIndex = 2; _raidInitialTab = 1; _raidTriggerNew = false; _raidNavSeq++;
-        }),
-        'i': _MenuNode('Issues', {
-          'n': _ActionNode('New issue', () {
-            _selectedIndex = 2; _raidInitialTab = 2; _raidTriggerNew = true; _raidNavSeq++;
-          }),
-        }, onEnter: () {
-          _selectedIndex = 2; _raidInitialTab = 2; _raidTriggerNew = false; _raidNavSeq++;
-        }),
-        'd': _MenuNode('Dependencies', {
-          'n': _ActionNode('New dependency', () {
-            _selectedIndex = 2; _raidInitialTab = 3; _raidTriggerNew = true; _raidNavSeq++;
-          }),
-        }, onEnter: () {
-          _selectedIndex = 2; _raidInitialTab = 3; _raidTriggerNew = false; _raidNavSeq++;
-        }),
+      'i': _ActionNode('Inbox', () {
+        _selectedIndex = 6;
       }),
-      'j':  _MenuNode('Journal', {
-        'n': _ActionNode('New entry (split view)', () {
-          _openJournalDock();
-        }),
-        'q': _ActionNode('Quick capture', () { _openJournalOverlay(); }),
-      }, onEnter: () { _selectedIndex = 10; }),
-      'P':  _ActionNode('Playbook',   () { _selectedIndex = 11; }),
-      'g':  _ActionNode('Plan',       () { _selectedIndex = 12; }),
-      's':  _ActionNode('Status',     () { _selectedIndex = 13; }),
-      'S':  _ActionNode('Settings',   () { _selectedIndex = 9; }),
-      'C':  _ActionNode('Charter',    () { _selectedIndex = 14; }),
-      'f':  _MenuNode('Finance', {
-        'n': _ActionNode('New budget line', () {
-          _selectedIndex = 15; _financeTriggerNew = true; _financeNavSeq++;
-        }),
-      }, onEnter: () {
-        _selectedIndex = 15; _financeTriggerNew = false; _financeNavSeq++;
+      'c': _MenuNode('Context', {
+        'e': _MenuNode(
+          'Entries',
+          {
+            'n': _ActionNode('New entry', () {
+              _selectedIndex = 7;
+              _contextInitialTab = 0;
+              _contextTriggerNew = true;
+              _contextNavSeq++;
+            }),
+          },
+          onEnter: () {
+            _selectedIndex = 7;
+            _contextInitialTab = 0;
+            _contextTriggerNew = false;
+            _contextNavSeq++;
+          },
+        ),
+        'd': _MenuNode(
+          'Documents',
+          {
+            'n': _ActionNode('Upload document', () {
+              _selectedIndex = 7;
+              _contextInitialTab = 1;
+              _contextTriggerNew = true;
+              _contextNavSeq++;
+            }),
+          },
+          onEnter: () {
+            _selectedIndex = 7;
+            _contextInitialTab = 1;
+            _contextTriggerNew = false;
+            _contextNavSeq++;
+          },
+        ),
+        'g': _MenuNode(
+          'Glossary',
+          {
+            'n': _ActionNode('New term', () {
+              _selectedIndex = 7;
+              _contextInitialTab = 2;
+              _contextTriggerNew = true;
+              _contextNavSeq++;
+            }),
+          },
+          onEnter: () {
+            _selectedIndex = 7;
+            _contextInitialTab = 2;
+            _contextTriggerNew = false;
+            _contextNavSeq++;
+          },
+        ),
       }),
+      'r': _MenuNode('RAID', {
+        'r': _MenuNode(
+          'Risks',
+          {
+            'n': _ActionNode('New risk', () {
+              _selectedIndex = 2;
+              _raidInitialTab = 0;
+              _raidTriggerNew = true;
+              _raidNavSeq++;
+            }),
+          },
+          onEnter: () {
+            _selectedIndex = 2;
+            _raidInitialTab = 0;
+            _raidTriggerNew = false;
+            _raidNavSeq++;
+          },
+        ),
+        'a': _MenuNode(
+          'Assumptions',
+          {
+            'n': _ActionNode('New assumption', () {
+              _selectedIndex = 2;
+              _raidInitialTab = 1;
+              _raidTriggerNew = true;
+              _raidNavSeq++;
+            }),
+          },
+          onEnter: () {
+            _selectedIndex = 2;
+            _raidInitialTab = 1;
+            _raidTriggerNew = false;
+            _raidNavSeq++;
+          },
+        ),
+        'i': _MenuNode(
+          'Issues',
+          {
+            'n': _ActionNode('New issue', () {
+              _selectedIndex = 2;
+              _raidInitialTab = 2;
+              _raidTriggerNew = true;
+              _raidNavSeq++;
+            }),
+          },
+          onEnter: () {
+            _selectedIndex = 2;
+            _raidInitialTab = 2;
+            _raidTriggerNew = false;
+            _raidNavSeq++;
+          },
+        ),
+        'd': _MenuNode(
+          'Dependencies',
+          {
+            'n': _ActionNode('New dependency', () {
+              _selectedIndex = 2;
+              _raidInitialTab = 3;
+              _raidTriggerNew = true;
+              _raidNavSeq++;
+            }),
+          },
+          onEnter: () {
+            _selectedIndex = 2;
+            _raidInitialTab = 3;
+            _raidTriggerNew = false;
+            _raidNavSeq++;
+          },
+        ),
+      }),
+      'j': _MenuNode(
+        'Journal',
+        {
+          'n': _ActionNode('New entry (split view)', () {
+            _openJournalDock();
+          }),
+          'q': _ActionNode('Quick capture', () {
+            _openJournalOverlay();
+          }),
+        },
+        onEnter: () {
+          _selectedIndex = 10;
+        },
+      ),
+      'P': _ActionNode('Playbook', () {
+        _selectedIndex = 11;
+      }),
+      'g': _ActionNode('Plan', () {
+        _selectedIndex = 12;
+      }),
+      's': _ActionNode('Status', () {
+        _selectedIndex = 13;
+      }),
+      'S': _ActionNode('Settings', () {
+        _selectedIndex = 9;
+      }),
+      'C': _ActionNode('Charter', () {
+        _selectedIndex = 14;
+      }),
+      'f': _MenuNode(
+        'Finance',
+        {
+          'n': _ActionNode('New budget line', () {
+            _selectedIndex = 15;
+            _financeTriggerNew = true;
+            _financeNavSeq++;
+          }),
+        },
+        onEnter: () {
+          _selectedIndex = 15;
+          _financeTriggerNew = false;
+          _financeNavSeq++;
+        },
+      ),
     });
   }
 
@@ -573,6 +707,7 @@ class _ShellLayoutState extends State<ShellLayout> {
 
   @override
   void dispose() {
+    _rememberedIndex = _selectedIndex;
     _dbChangeSub?.cancel();
     _projectProvider?.removeListener(_onProjectChanged);
     if (!kIsWeb) {
@@ -783,9 +918,11 @@ class _ShellLayoutState extends State<ShellLayout> {
     await sync.syncProject(projectId, pwd, db);
     if (!mounted) return;
     if (sync.status == SyncStatus.error) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Sync failed: ${sync.lastError ?? 'unknown error'}'),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Sync failed: ${sync.lastError ?? 'unknown error'}'),
+        ),
+      );
     }
   }
 
@@ -798,11 +935,8 @@ class _ShellLayoutState extends State<ShellLayout> {
       context: context,
       barrierDismissible: false,
       barrierColor: Colors.black.withValues(alpha: 0.7),
-      pageBuilder: (_, __, ___) => JournalOverlay(
-        projectId: projectId,
-        db: db,
-        settings: settings,
-      ),
+      pageBuilder: (_, __, ___) =>
+          JournalOverlay(projectId: projectId, db: db, settings: settings),
     );
   }
 
@@ -861,26 +995,35 @@ class _ShellLayoutState extends State<ShellLayout> {
       case SearchKind.risk:
         _openRiskFromSidebar(hit.payload as Risk);
       case SearchKind.issue:
-        _openRaidItem(tab: 2, builder: (_) => IssueFormDialog(
-              projectId: projectId,
-              db: db,
-              issue: hit.payload as Issue,
-              startInViewMode: true,
-            ));
+        _openRaidItem(
+          tab: 2,
+          builder: (_) => IssueFormDialog(
+            projectId: projectId,
+            db: db,
+            issue: hit.payload as Issue,
+            startInViewMode: true,
+          ),
+        );
       case SearchKind.assumption:
-        _openRaidItem(tab: 1, builder: (_) => AssumptionFormDialog(
-              projectId: projectId,
-              db: db,
-              assumption: hit.payload as Assumption,
-              startInViewMode: true,
-            ));
+        _openRaidItem(
+          tab: 1,
+          builder: (_) => AssumptionFormDialog(
+            projectId: projectId,
+            db: db,
+            assumption: hit.payload as Assumption,
+            startInViewMode: true,
+          ),
+        );
       case SearchKind.dependency:
-        _openRaidItem(tab: 3, builder: (_) => DependencyFormDialog(
-              projectId: projectId,
-              db: db,
-              dependency: hit.payload as ProgramDependency,
-              startInViewMode: true,
-            ));
+        _openRaidItem(
+          tab: 3,
+          builder: (_) => DependencyFormDialog(
+            projectId: projectId,
+            db: db,
+            dependency: hit.payload as ProgramDependency,
+            startInViewMode: true,
+          ),
+        );
       case SearchKind.action:
         _openActionFromSidebar(hit.payload as ProjectAction);
       case SearchKind.decision:
@@ -1183,8 +1326,7 @@ class _ShellLayoutState extends State<ShellLayout> {
   Widget _buildView() {
     // The project overview is gone: a project asked for index 0 (an old
     // leader binding, a stale index) gets Helm instead.
-    if (_selectedIndex == 0 &&
-        !context.read<ProjectProvider>().isProgramme) {
+    if (_selectedIndex == 0 && !context.read<ProjectProvider>().isProgramme) {
       _selectedIndex = 16;
     }
     switch (_selectedIndex) {
@@ -1212,11 +1354,18 @@ class _ShellLayoutState extends State<ShellLayout> {
         final doNew = _raidTriggerNew;
         _raidInitialTab = null;
         _raidTriggerNew = false;
-        return RaidView(key: ValueKey(_raidNavSeq), initialTab: tab, triggerNew: doNew);
+        return RaidView(
+          key: ValueKey(_raidNavSeq),
+          initialTab: tab,
+          triggerNew: doNew,
+        );
       case 3:
         final doNew = _decisionsTriggerNew;
         _decisionsTriggerNew = false;
-        return DecisionsView(key: ValueKey(_decisionsNavSeq), triggerNew: doNew);
+        return DecisionsView(
+          key: ValueKey(_decisionsNavSeq),
+          triggerNew: doNew,
+        );
       case 4:
         return const PeopleView();
       case 5:
@@ -1229,7 +1378,11 @@ class _ShellLayoutState extends State<ShellLayout> {
         // Consume so re-renders don't retrigger
         _contextInitialTab = null;
         _contextTriggerNew = false;
-        return ContextView(key: ValueKey(_contextNavSeq), initialTab: tab, triggerNew: doNew);
+        return ContextView(
+          key: ValueKey(_contextNavSeq),
+          initialTab: tab,
+          triggerNew: doNew,
+        );
       case 8:
         return const ReportsView();
       case 9:
@@ -1287,8 +1440,7 @@ class _ShellLayoutState extends State<ShellLayout> {
     final projectId = context.watch<ProjectProvider>().currentProjectId;
 
     // Presentation mode: full-screen gantt, no chrome
-    if (_selectedIndex == 12 &&
-        _ganttMode == _GanttLayoutMode.presentation) {
+    if (_selectedIndex == 12 && _ganttMode == _GanttLayoutMode.presentation) {
       return Scaffold(
         backgroundColor: KColors.bg,
         body: ProgrammeGanttView(
@@ -1323,8 +1475,8 @@ class _ShellLayoutState extends State<ShellLayout> {
                 final watermarkOpacity = projectId == null
                     ? 0.75
                     : _selectedIndex == 0
-                        ? 0.55
-                        : 0.40;
+                    ? 0.55
+                    : 0.40;
 
                 return Row(
                   children: [
@@ -1350,12 +1502,10 @@ class _ShellLayoutState extends State<ShellLayout> {
                                     setState(() => _selectedIndex = 0),
                                 onNavigateToHelm: () =>
                                     setState(() => _selectedIndex = 16),
-                                onOpenRisk: (r) =>
-                                    _openRiskFromSidebar(r),
+                                onOpenRisk: (r) => _openRiskFromSidebar(r),
                                 onOpenDecision: (d) =>
                                     _openDecisionFromSidebar(d),
-                                onOpenAction: (a) =>
-                                    _openActionFromSidebar(a),
+                                onOpenAction: (a) => _openActionFromSidebar(a),
                                 onOpenJournal: (e) =>
                                     _openJournalFromSidebar(e),
                                 onOpenPlaybookStage: (sid) =>
@@ -1370,7 +1520,8 @@ class _ShellLayoutState extends State<ShellLayout> {
                       _PanelToggle(
                         visible: _leftPanelVisible,
                         onToggle: () => setState(
-                            () => _leftPanelVisible = !_leftPanelVisible),
+                          () => _leftPanelVisible = !_leftPanelVisible,
+                        ),
                         isLeft: true,
                       ),
 
@@ -1379,8 +1530,7 @@ class _ShellLayoutState extends State<ShellLayout> {
                     // Navigation rail
                     KeelNavRail(
                       selectedIndex: _selectedIndex,
-                      isProgramme:
-                          context.watch<ProjectProvider>().isProgramme,
+                      isProgramme: context.watch<ProjectProvider>().isProgramme,
                       onSearch: _openSearchPalette,
                       onDestinationSelected: (i) {
                         setState(() {
@@ -1412,7 +1562,8 @@ class _ShellLayoutState extends State<ShellLayout> {
                           ),
                           if (projectId == null && _selectedIndex != 9)
                             _OnboardingScreen(
-                              onNewProject: () => _showNewProjectDialog(context),
+                              onNewProject: () =>
+                                  _showNewProjectDialog(context),
                               onLoadDemo: () => _loadDemo(context),
                             )
                           else
@@ -1442,10 +1593,11 @@ class _ShellLayoutState extends State<ShellLayout> {
                           onHorizontalDragStart: (_) =>
                               setState(() => _resizingJournalDock = true),
                           onHorizontalDragUpdate: (d) => setState(() {
-                            _journalDockWidth =
-                                (_journalDockWidth - d.delta.dx).clamp(
-                                    _journalDockMinWidth,
-                                    _journalDockMaxWidth);
+                            _journalDockWidth = (_journalDockWidth - d.delta.dx)
+                                .clamp(
+                                  _journalDockMinWidth,
+                                  _journalDockMaxWidth,
+                                );
                           }),
                           onHorizontalDragEnd: (_) {
                             setState(() => _resizingJournalDock = false);
@@ -1465,14 +1617,13 @@ class _ShellLayoutState extends State<ShellLayout> {
                           key: _journalDockKey,
                           projectId: projectId,
                           db: context.read<AppDatabase>(),
-                          settings:
-                              context.read<SettingsProvider>().settings,
+                          settings: context.read<SettingsProvider>().settings,
                           // A stale entry from another project reverts
                           // the dock to a fresh note.
                           existingEntry:
                               _journalDockEntry?.projectId == projectId
-                                  ? _journalDockEntry
-                                  : null,
+                              ? _journalDockEntry
+                              : null,
                           docked: true,
                           onCloseDock: () => setState(() {
                             _journalDockVisible = false;
@@ -1489,7 +1640,8 @@ class _ShellLayoutState extends State<ShellLayout> {
                       _PanelToggle(
                         visible: _rightPanelVisible,
                         onToggle: () => setState(
-                            () => _rightPanelVisible = !_rightPanelVisible),
+                          () => _rightPanelVisible = !_rightPanelVisible,
+                        ),
                         isLeft: false,
                       ),
 
@@ -1502,10 +1654,11 @@ class _ShellLayoutState extends State<ShellLayout> {
                           onHorizontalDragStart: (_) =>
                               setState(() => _resizingRightPanel = true),
                           onHorizontalDragUpdate: (d) => setState(() {
-                            _rightPanelWidth =
-                                (_rightPanelWidth - d.delta.dx).clamp(
-                                    _rightPanelMinWidth,
-                                    _rightPanelMaxWidth);
+                            _rightPanelWidth = (_rightPanelWidth - d.delta.dx)
+                                .clamp(
+                                  _rightPanelMinWidth,
+                                  _rightPanelMaxWidth,
+                                );
                           }),
                           onHorizontalDragEnd: (_) {
                             setState(() => _resizingRightPanel = false);
@@ -1530,8 +1683,8 @@ class _ShellLayoutState extends State<ShellLayout> {
                       child: showRight
                           ? ClipRect(
                               child: ClaudePanel(
-                                isWide: _rightPanelWidth >=
-                                    _rightPanelWideWidth,
+                                isWide:
+                                    _rightPanelWidth >= _rightPanelWideWidth,
                                 onToggleWidth: _toggleRightPanelWide,
                               ),
                             )
@@ -1565,7 +1718,7 @@ class _LeaderHud extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: KColors.surface,
-        border: const Border(top: BorderSide(color: KColors.border2)),
+        border: Border(top: BorderSide(color: KColors.border2)),
       ),
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 14),
       child: Column(
@@ -1576,45 +1729,53 @@ class _LeaderHud extends StatelessWidget {
           Row(
             children: [
               // Prefix breadcrumb — each part in its own chip
-              ...prefix.split(' ').map((part) => Padding(
-                    padding: const EdgeInsets.only(right: 4),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 9, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: KColors.amber.withValues(alpha: 0.15),
-                        border: Border.all(color: KColors.amber),
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                      child: Text(
-                        part,
-                        style: GoogleFonts.jetBrainsMono(
-                          color: KColors.amber,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
+              ...prefix
+                  .split(' ')
+                  .map(
+                    (part) => Padding(
+                      padding: const EdgeInsets.only(right: 4),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 9,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: KColors.amber.withValues(alpha: 0.15),
+                          border: Border.all(color: KColors.amber),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        child: Text(
+                          part,
+                          style: GoogleFonts.jetBrainsMono(
+                            color: KColors.amber,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     ),
-                  )),
+                  ),
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
                   menu.description,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                      color: KColors.textDim,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    color: KColors.textDim,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
               const Spacer(),
-              const Text(
+              Text(
                 'ESC  cancel',
                 style: TextStyle(
-                    color: KColors.textMuted,
-                    fontSize: 11,
-                    fontFamily: 'monospace'),
+                  color: KColors.textMuted,
+                  fontSize: 11,
+                  fontFamily: 'monospace',
+                ),
               ),
             ],
           ),
@@ -1677,12 +1838,11 @@ class _ChordChip extends StatelessWidget {
         const SizedBox(width: 6),
         Text(
           description,
-          style: const TextStyle(color: KColors.textDim, fontSize: 12),
+          style: TextStyle(color: KColors.textDim, fontSize: 12),
         ),
         if (hasChildren) ...[
           const SizedBox(width: 3),
-          const Text('›',
-              style: TextStyle(color: KColors.textMuted, fontSize: 12)),
+          Text('›', style: TextStyle(color: KColors.textMuted, fontSize: 12)),
         ],
         const SizedBox(width: 20),
       ],
@@ -1714,9 +1874,13 @@ class _ThreeViewTourDialog extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Each nav item gives you a different lens on your work.',
-            style: TextStyle(color: KColors.textDim, fontSize: 12, fontWeight: FontWeight.normal),
+            style: TextStyle(
+              color: KColors.textDim,
+              fontSize: 12,
+              fontWeight: FontWeight.normal,
+            ),
           ),
         ],
       ),
@@ -1800,7 +1964,7 @@ class _TourItem extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   color: KColors.text,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
@@ -1810,7 +1974,7 @@ class _TourItem extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 description,
-                style: const TextStyle(
+                style: TextStyle(
                   color: KColors.textDim,
                   fontSize: 12,
                   height: 1.5,
@@ -1845,55 +2009,65 @@ class _OnboardingScreen extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(top: 60.0),
           child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'STAY THE COURSE',
-            style: GoogleFonts.syne(
-              color: KColors.amber,
-              fontSize: 28,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.25,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'TPM COMMAND CENTRE',
-            style: GoogleFonts.jetBrainsMono(
-              color: KColors.textDim,
-              fontSize: 11,
-              letterSpacing: 0.25,
-            ),
-          ),
-          const SizedBox(height: 48),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              ElevatedButton.icon(
-                onPressed: onNewProject,
-                icon: const Icon(Icons.add, size: 16),
-                label: const Text('New Project'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              Text(
+                'STAY THE COURSE',
+                style: GoogleFonts.syne(
+                  color: KColors.amber,
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.25,
                 ),
               ),
-              OutlinedButton.icon(
-                onPressed: onLoadDemo,
-                icon: const Icon(Icons.science_outlined, size: 16, color: KColors.phosphor),
-                label: const Text(
-                  'Load Demo Data',
-                  style: TextStyle(color: KColors.phosphor),
+              const SizedBox(height: 8),
+              Text(
+                'TPM COMMAND CENTRE',
+                style: GoogleFonts.jetBrainsMono(
+                  color: KColors.textDim,
+                  fontSize: 11,
+                  letterSpacing: 0.25,
                 ),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                  side: const BorderSide(color: KColors.phosphor, width: 1),
-                ),
+              ),
+              const SizedBox(height: 48),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: onNewProject,
+                    icon: const Icon(Icons.add, size: 16),
+                    label: const Text('New Project'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 14,
+                      ),
+                    ),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: onLoadDemo,
+                    icon: Icon(
+                      Icons.science_outlined,
+                      size: 16,
+                      color: KColors.phosphor,
+                    ),
+                    label: Text(
+                      'Load Demo Data',
+                      style: TextStyle(color: KColors.phosphor),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 14,
+                      ),
+                      side: BorderSide(color: KColors.phosphor, width: 1),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
         ),
       ],
     );
@@ -1919,7 +2093,7 @@ class _TopBar extends StatelessWidget {
 
     return Container(
       height: 64,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: KColors.surface,
         border: Border(bottom: BorderSide(color: KColors.border, width: 1)),
       ),
@@ -2015,8 +2189,11 @@ class _KeybindingsButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(4),
           ),
           alignment: Alignment.center,
-          child: const Icon(Icons.keyboard_outlined,
-              size: 14, color: KColors.textMuted),
+          child: Icon(
+            Icons.keyboard_outlined,
+            size: 14,
+            color: KColors.textMuted,
+          ),
         ),
       );
     }
@@ -2032,7 +2209,7 @@ class _KeybindingsButton extends StatelessWidget {
           onTap: () => showDialog(
             context: context,
             builder: (_) => AlertDialog(
-              title: const Row(
+              title: Row(
                 children: [
                   Icon(Icons.keyboard_outlined, size: 16, color: KColors.amber),
                   SizedBox(width: 8),
@@ -2045,9 +2222,7 @@ class _KeybindingsButton extends StatelessWidget {
               content: const SizedBox(
                 width: 420,
                 height: 500,
-                child: SingleChildScrollView(
-                  child: KeybindingsTable(),
-                ),
+                child: SingleChildScrollView(child: KeybindingsTable()),
               ),
               actions: [
                 TextButton(
@@ -2066,8 +2241,11 @@ class _KeybindingsButton extends StatelessWidget {
               borderRadius: BorderRadius.circular(4),
             ),
             alignment: Alignment.center,
-            child: const Icon(Icons.keyboard_outlined,
-                size: 14, color: KColors.textDim),
+            child: Icon(
+              Icons.keyboard_outlined,
+              size: 14,
+              color: KColors.textDim,
+            ),
           ),
         ),
       ),
@@ -2117,7 +2295,9 @@ class _TopBarProjectSelector extends StatelessWidget {
                   hint: Text(
                     'Select project…',
                     style: GoogleFonts.jetBrainsMono(
-                        color: KColors.textDim, fontSize: 14),
+                      color: KColors.textDim,
+                      fontSize: 14,
+                    ),
                   ),
                   items: [
                     ...projects.map((p) {
@@ -2130,7 +2310,9 @@ class _TopBarProjectSelector extends StatelessWidget {
                             // knows which kind they're switching to.
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 4, vertical: 1),
+                                horizontal: 4,
+                                vertical: 1,
+                              ),
                               decoration: BoxDecoration(
                                 color: isProg
                                     ? KColors.amberDim.withValues(alpha: 0.7)
@@ -2157,11 +2339,14 @@ class _TopBarProjectSelector extends StatelessWidget {
                             ),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: Text(p.name,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.jetBrainsMono(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600)),
+                              child: Text(
+                                p.name,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.jetBrainsMono(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
                           ],
                         ),
@@ -2171,11 +2356,15 @@ class _TopBarProjectSelector extends StatelessWidget {
                       value: '__new_project__',
                       child: Row(
                         children: [
-                          const Icon(Icons.add, size: 14, color: KColors.amber),
+                          Icon(Icons.add, size: 14, color: KColors.amber),
                           const SizedBox(width: 4),
-                          Text('New Project',
-                              style: GoogleFonts.jetBrainsMono(
-                                  color: KColors.amber, fontSize: 12)),
+                          Text(
+                            'New Project',
+                            style: GoogleFonts.jetBrainsMono(
+                              color: KColors.amber,
+                              fontSize: 12,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -2183,12 +2372,19 @@ class _TopBarProjectSelector extends StatelessWidget {
                       value: '__new_programme__',
                       child: Row(
                         children: [
-                          const Icon(Icons.workspaces_outlined,
-                              size: 14, color: KColors.amber),
+                          Icon(
+                            Icons.workspaces_outlined,
+                            size: 14,
+                            color: KColors.amber,
+                          ),
                           const SizedBox(width: 4),
-                          Text('New Programme',
-                              style: GoogleFonts.jetBrainsMono(
-                                  color: KColors.amber, fontSize: 12)),
+                          Text(
+                            'New Programme',
+                            style: GoogleFonts.jetBrainsMono(
+                              color: KColors.amber,
+                              fontSize: 12,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -2196,23 +2392,36 @@ class _TopBarProjectSelector extends StatelessWidget {
                       value: '__demo__',
                       child: Row(
                         children: [
-                          const Icon(Icons.science_outlined,
-                              size: 14, color: KColors.phosphor),
+                          Icon(
+                            Icons.science_outlined,
+                            size: 14,
+                            color: KColors.phosphor,
+                          ),
                           const SizedBox(width: 4),
-                          Text('Load Demo Data',
-                              style: GoogleFonts.jetBrainsMono(
-                                  color: KColors.phosphor, fontSize: 12)),
+                          Text(
+                            'Load Demo Data',
+                            style: GoogleFonts.jetBrainsMono(
+                              color: KColors.phosphor,
+                              fontSize: 12,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ],
                   onChanged: (val) {
                     if (val == '__new_project__') {
-                      _showNewProjectDialog(context, projectProvider,
-                          kind: 'project');
+                      _showNewProjectDialog(
+                        context,
+                        projectProvider,
+                        kind: 'project',
+                      );
                     } else if (val == '__new_programme__') {
-                      _showNewProjectDialog(context, projectProvider,
-                          kind: 'programme');
+                      _showNewProjectDialog(
+                        context,
+                        projectProvider,
+                        kind: 'programme',
+                      );
                     } else if (val == '__demo__') {
                       _loadDemo(context, projectProvider);
                     } else if (val != null) {
@@ -2231,10 +2440,13 @@ class _TopBarProjectSelector extends StatelessWidget {
             child: InkWell(
               borderRadius: BorderRadius.circular(3),
               onTap: () => _confirmDelete(context, current, projectProvider),
-              child: const Padding(
+              child: Padding(
                 padding: EdgeInsets.all(4),
-                child: Icon(Icons.delete_outline,
-                    size: 14, color: KColors.textMuted),
+                child: Icon(
+                  Icons.delete_outline,
+                  size: 14,
+                  color: KColors.textMuted,
+                ),
               ),
             ),
           ),
@@ -2243,20 +2455,20 @@ class _TopBarProjectSelector extends StatelessWidget {
     );
   }
 
-  void _loadDemo(
-      BuildContext context, ProjectProvider projectProvider) async {
+  void _loadDemo(BuildContext context, ProjectProvider projectProvider) async {
     await projectProvider.loadDemoProject();
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Horizon Programme demo project loaded.')),
+        const SnackBar(content: Text('Horizon Programme demo project loaded.')),
       );
     }
   }
 
   void _showNewProjectDialog(
-      BuildContext context, ProjectProvider projectProvider,
-      {String kind = 'project'}) {
+    BuildContext context,
+    ProjectProvider projectProvider, {
+    String kind = 'project',
+  }) {
     final nameCtrl = TextEditingController();
     String? startDate;
     String? copyFromId;
@@ -2276,16 +2488,17 @@ class _TopBarProjectSelector extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (isProgramme) ...[
-                  const Align(
+                  Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
                       'Programmes are containers that receive cascaded '
                       'work packages, risks, and reports from linked '
                       'projects. You can link projects in Phase B.',
                       style: TextStyle(
-                          color: KColors.textDim,
-                          fontSize: 12,
-                          height: 1.4),
+                        color: KColors.textDim,
+                        fontSize: 12,
+                        height: 1.4,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -2294,14 +2507,16 @@ class _TopBarProjectSelector extends StatelessWidget {
                   controller: nameCtrl,
                   autofocus: true,
                   decoration: InputDecoration(
-                    labelText: isProgramme
-                        ? 'Programme name'
-                        : 'Project name',
+                    labelText: isProgramme ? 'Programme name' : 'Project name',
                   ),
                   onSubmitted: (_) => _create(
-                      ctx, nameCtrl, startDate, copyFromId,
-                      projectProvider,
-                      kind: kind),
+                    ctx,
+                    nameCtrl,
+                    startDate,
+                    copyFromId,
+                    projectProvider,
+                    kind: kind,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 DatePickerField(
@@ -2348,9 +2563,13 @@ class _TopBarProjectSelector extends StatelessWidget {
             ),
             ElevatedButton(
               onPressed: () => _create(
-                  ctx, nameCtrl, startDate, copyFromId,
-                  projectProvider,
-                  kind: kind),
+                ctx,
+                nameCtrl,
+                startDate,
+                copyFromId,
+                projectProvider,
+                kind: kind,
+              ),
               child: const Text('Create'),
             ),
           ],
@@ -2360,12 +2579,13 @@ class _TopBarProjectSelector extends StatelessWidget {
   }
 
   void _create(
-      BuildContext ctx,
-      TextEditingController controller,
-      String? startDate,
-      String? copyFromId,
-      ProjectProvider projectProvider,
-      {String kind = 'project'}) {
+    BuildContext ctx,
+    TextEditingController controller,
+    String? startDate,
+    String? copyFromId,
+    ProjectProvider projectProvider, {
+    String kind = 'project',
+  }) {
     final name = controller.text.trim();
     if (name.isNotEmpty) {
       projectProvider.createProject(
@@ -2378,8 +2598,11 @@ class _TopBarProjectSelector extends StatelessWidget {
     }
   }
 
-  void _confirmDelete(BuildContext context, Project project,
-      ProjectProvider projectProvider) {
+  void _confirmDelete(
+    BuildContext context,
+    Project project,
+    ProjectProvider projectProvider,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -2540,17 +2763,22 @@ class _PulseDot extends StatefulWidget {
   State<_PulseDot> createState() => _PulseDotState();
 }
 
-class _PulseDotState extends State<_PulseDot> with SingleTickerProviderStateMixin {
+class _PulseDotState extends State<_PulseDot>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
   late final Animation<double> _anim;
 
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(seconds: 2))
-      ..repeat(reverse: true);
-    _anim = Tween(begin: 1.0, end: 0.25)
-        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+    _anim = Tween(
+      begin: 1.0,
+      end: 0.25,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -2568,7 +2796,10 @@ class _PulseDotState extends State<_PulseDot> with SingleTickerProviderStateMixi
         child: Container(
           width: 8,
           height: 8,
-          decoration: BoxDecoration(color: widget.color, shape: BoxShape.circle),
+          decoration: BoxDecoration(
+            color: widget.color,
+            shape: BoxShape.circle,
+          ),
         ),
       ),
     );
@@ -2604,12 +2835,8 @@ class _PanelToggle extends StatelessWidget {
       color: KColors.surface,
       child: InkWell(
         onTap: onToggle,
-        child: Center(
-          child: Icon(icon, size: 14, color: KColors.textMuted),
-        ),
+        child: Center(child: Icon(icon, size: 14, color: KColors.textMuted)),
       ),
     );
   }
 }
-
-

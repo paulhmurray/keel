@@ -17,14 +17,14 @@ Color parseHexColor(String hex) {
 enum TimelineEventType { action, decision, issue, dependency }
 
 class TimelineEvent {
-  final String? id;            // DB action id — used for linked-line lookup
+  final String? id; // DB action id — used for linked-line lookup
   final String title;
   final String? ref;
   final DateTime? date;
   final TimelineEventType type;
   final String? owner;
-  final Object? item;          // original DB object for tap handlers
-  final Color? categoryColor;  // overrides default type colour in charts
+  final Object? item; // original DB object for tap handlers
+  final Color? categoryColor; // overrides default type colour in charts
   final String? linkedActionId; // draws a dotted line to this action in Gantt
 
   const TimelineEvent({
@@ -103,7 +103,10 @@ class _TimelineChartState extends State<TimelineChart> {
       final daysFromStart = todayNorm.difference(windowStart).inDays;
       final todayX = daysFromStart * pxPerDay;
       // Centre today with a ~120px left margin so context is visible
-      final target = (todayX - 120).clamp(0.0, _scrollController.position.maxScrollExtent);
+      final target = (todayX - 120).clamp(
+        0.0,
+        _scrollController.position.maxScrollExtent,
+      );
       _scrollController.jumpTo(target);
     });
   }
@@ -137,9 +140,21 @@ class _TimelineChartState extends State<TimelineChart> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (widget.compact)
-          _buildCompactChart(context, todayNorm, windowStart, windowEnd, totalDays)
+          _buildCompactChart(
+            context,
+            todayNorm,
+            windowStart,
+            windowEnd,
+            totalDays,
+          )
         else
-          _buildScrollableChart(context, todayNorm, windowStart, windowEnd, totalDays),
+          _buildScrollableChart(
+            context,
+            todayNorm,
+            windowStart,
+            windowEnd,
+            totalDays,
+          ),
         const SizedBox(height: 8),
         _LegendRow(compact: widget.compact),
       ],
@@ -229,7 +244,8 @@ class _TimelineChartState extends State<TimelineChart> {
     double left = pos.dx - tooltipWidth / 2;
     double top = pos.dy - tooltipHeight - 8;
     if (left < 0) left = 0;
-    if (left + tooltipWidth > availableWidth) left = availableWidth - tooltipWidth;
+    if (left + tooltipWidth > availableWidth)
+      left = availableWidth - tooltipWidth;
     if (top < 0) top = pos.dy + 12;
 
     return Positioned(
@@ -246,10 +262,7 @@ class _TimelineChartState extends State<TimelineChart> {
           ),
           child: Text(
             _tooltipText!,
-            style: const TextStyle(
-              color: Color(0xFFE0E8F0),
-              fontSize: 11,
-            ),
+            style: const TextStyle(color: Color(0xFFE0E8F0), fontSize: 11),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -366,7 +379,9 @@ class _TimelineChartState extends State<TimelineChart> {
 
       if (preferAbove) {
         // Check if overlap above (within 14px)
-        final hasOverlapAbove = abovePlacements.any((px) => (px - x).abs() < 14);
+        final hasOverlapAbove = abovePlacements.any(
+          (px) => (px - x).abs() < 14,
+        );
         if (hasOverlapAbove) {
           placeAbove = false; // flip to below
         } else {
@@ -374,7 +389,9 @@ class _TimelineChartState extends State<TimelineChart> {
         }
       } else {
         // Check if overlap below
-        final hasOverlapBelow = belowPlacements.any((px) => (px - x).abs() < 14);
+        final hasOverlapBelow = belowPlacements.any(
+          (px) => (px - x).abs() < 14,
+        );
         if (hasOverlapBelow) {
           placeAbove = true; // flip to above
         } else {
@@ -392,9 +409,7 @@ class _TimelineChartState extends State<TimelineChart> {
       }
 
       final offsetFromAxis = dotRadius + 8 + (placeAbove ? 0 : 0);
-      final y = placeAbove
-          ? axisY - offsetFromAxis
-          : axisY + offsetFromAxis;
+      final y = placeAbove ? axisY - offsetFromAxis : axisY + offsetFromAxis;
 
       // Clamp y to chart bounds
       final yFinal = y.clamp(dotRadius + 2, chartHeight - dotRadius - 2);
@@ -408,18 +423,22 @@ class _TimelineChartState extends State<TimelineChart> {
       final label = (e.ref != null && e.ref!.isNotEmpty)
           ? '${e.ref} ${e.title}'
           : e.title;
-      final shortLabel = label.length > 18 ? '${label.substring(0, 18)}…' : label;
+      final shortLabel = label.length > 18
+          ? '${label.substring(0, 18)}…'
+          : label;
 
-      placed.add(_PlacedDot(
-        x: x,
-        y: yFinal,
-        color: color,
-        opacity: opacity,
-        label: shortLabel,
-        fullLabel: label,
-        aboveAxis: placeAbove,
-        dotRadius: dotRadius,
-      ));
+      placed.add(
+        _PlacedDot(
+          x: x,
+          y: yFinal,
+          color: color,
+          opacity: opacity,
+          label: shortLabel,
+          fullLabel: label,
+          aboveAxis: placeAbove,
+          dotRadius: dotRadius,
+        ),
+      );
     }
 
     return placed;
@@ -629,7 +648,7 @@ class _TimelinePainter extends CustomPainter {
     }
 
     // "Today" label
-    const labelStyle = TextStyle(
+    final labelStyle = TextStyle(
       color: KColors.amber,
       fontSize: 10,
       fontWeight: FontWeight.w600,
@@ -665,10 +684,7 @@ class _TimelinePainter extends CustomPainter {
   }
 
   void _drawDotLabel(Canvas canvas, Size size, _PlacedDot dot, double axisY) {
-    const labelStyle = TextStyle(
-      color: Color(0xFF8EA8C0),
-      fontSize: 10,
-    );
+    const labelStyle = TextStyle(color: Color(0xFF8EA8C0), fontSize: 10);
 
     final offsetY = dot.aboveAxis
         ? dot.y - dot.dotRadius - 11
@@ -705,8 +721,18 @@ class _TimelinePainter extends CustomPainter {
 
   String _monthAbbr(int month) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return months[month - 1];
   }
@@ -730,7 +756,7 @@ class _LegendRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const items = [
+    final items = [
       (label: 'Actions', color: KColors.amber),
       (label: 'Decisions', color: KColors.blue),
       (label: 'Issues', color: KColors.amber),
