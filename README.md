@@ -40,6 +40,17 @@ Grab the latest release for your platform from the [Releases](../../releases/lat
 | macOS    | `keel-macos.dmg`                                                      |
 | Linux    | `keel-linux.tar.gz`                                                   |
 
+### Releasing (maintainers)
+
+Tag `vX.Y.Z` after bumping `pubspec.yaml`. GitHub Actions builds Linux and Windows. Start the macOS build on Codemagic by hand (from the tag, or from master; it attaches to the latest tag). Codemagic needs, in the `apple_credentials` group: the App Store Connect API key variables and `CERTIFICATE_PRIVATE_KEY`, an RSA private key in PEM form used to fetch or create the Developer ID Application certificate. Generate it once and keep it:
+
+```bash
+ssh-keygen -t rsa -b 2048 -m PEM -f codemagic_private_key -q -N ""
+cat codemagic_private_key   # paste as CERTIFICATE_PRIVATE_KEY (secure)
+```
+
+The pipeline fails rather than ship an unnotarized build.
+
 ### Installation
 
 **Windows (installer)**
