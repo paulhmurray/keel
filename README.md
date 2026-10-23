@@ -42,11 +42,27 @@ Grab the latest release for your platform from the [Releases](../../releases/lat
 
 ### Releasing (maintainers)
 
-Tag `vX.Y.Z` after bumping `pubspec.yaml`. GitHub Actions builds Linux and Windows. Start the macOS build on Codemagic by hand (from the tag, or from master; it attaches to the latest tag). Codemagic needs, in the `apple_credentials` group: the App Store Connect API key variables and `CERTIFICATE_PRIVATE_KEY`, an RSA private key in PEM form used to fetch or create the Developer ID Application certificate. Generate it once and keep it:
+Tag `vX.Y.Z` after bumping `pubspec.yaml`. GitHub Actions builds Linux and Windows. Start the macOS build on Codemagic by hand (from the tag, or from master; it attaches to the latest tag). Codemagic needs, in the `apple_credentials` group: the App Store Connect API key variables and `CERTIFICATE_PRIVATE_KEY`, an RSA private key in PEM form used to fetch the Developer ID Application certificate. Generate it once and keep it (both files are gitignored):
 
 ```bash
 ssh-keygen -t rsa -b 2048 -m PEM -f codemagic_private_key -q -N ""
 cat codemagic_private_key   # paste as CERTIFICATE_PRIVATE_KEY (secure)
+```
+
+The Developer ID Application certificate itself must be created once by hand. Apple only lets the Account Holder create Developer ID certificates, so the App Store Connect API (and therefore the pipeline) cannot; it returns 403 "This operation can only be performed by the Account Holder". Make a CSR from the same key and upload it:
+
+```bash
+openssl req -new -key codemagic_private_key \
+  -out keel-developer-id.certSigningRequest -subj "/CN=Keel"
+```
+
+Then, signed in to developer.apple.com as the Account Holder: Certificates → + → Developer ID Application → upload the CSR → Continue. Nothing needs installing locally; the pipeline downloads the certificate that matches `CERTIFICATE_PRIVATE_KEY` on every build. Apple caps a team at five Developer ID Application certificates, so revoke a stale one if the portal refuses. Certificates issued now come from Apple's G2 authority and are valid for one year, so expect to repeat this step annually.
+
+To confirm a certificate was issued from this key, download its `.cer` from the portal and compare public-key hashes; they must be identical:
+
+```bash
+openssl x509 -inform DER -in developerID_application.cer -noout -pubkey | openssl md5
+openssl rsa -in codemagic_private_key -pubout 2>/dev/null | openssl md5
 ```
 
 The pipeline fails rather than ship an unnotarized build.

@@ -44,20 +44,46 @@ workflows:
           # Initialize the keychain, then fetch the Developer ID Application
           # certificate that matches CERTIFICATE_PRIVATE_KEY (an RSA key
           # kept in the apple_credentials group — see README "Releasing").
-          # Only when none exists is one created: Apple caps Developer ID
-          # certificates per team, so a create-per-build would exhaust it.
+          # The certificate is NOT created here: Apple only lets the
+          # Account Holder create Developer ID certificates, and an App
+          # Store Connect API key can never hold that role (the API
+          # returns 403 "This operation can only be performed by the
+          # Account Holder"). It is created once, by hand, from a CSR
+          # made with the same key — steps in the README.
+          #
+          # Deliberately NO --type filter. Certificates the portal issues
+          # now come from Apple's G2 authority and the API reports them as
+          # DEVELOPER_ID_APPLICATION_G2, so filtering on
+          # DEVELOPER_ID_APPLICATION returns nothing, and the API has
+          # rejected the G2 value as a filter. Listing everything and
+          # letting --certificate-key pick the match avoids both.
           : "${CERTIFICATE_PRIVATE_KEY:?CERTIFICATE_PRIVATE_KEY is not set in the apple_credentials group}"
+          app-store-connect --version
           keychain initialize
           app-store-connect certificates list \
-            --type DEVELOPER_ID_APPLICATION \
             --certificate-key @env:CERTIFICATE_PRIVATE_KEY \
             --save
           if [ -z "$(ls -A "$HOME/Library/MobileDevice/Certificates" 2>/dev/null)" ]; then
-            echo "No Developer ID Application certificate matches the key — creating one"
-            app-store-connect certificates create \
-              --type DEVELOPER_ID_APPLICATION \
-              --certificate-key @env:CERTIFICATE_PRIVATE_KEY \
-              --save
+            cat >&2 <<'MSG'
+          ERROR: no certificate in the Apple Developer portal matches
+          CERTIFICATE_PRIVATE_KEY. The API cannot create one (Account Holder
+          only). Either no Developer ID Application certificate was created
+          from this key, or CERTIFICATE_PRIVATE_KEY in the apple_credentials
+          group is a different key. Fix, as the Account Holder:
+            1. openssl req -new -key codemagic_private_key \
+                 -out keel-developer-id.certSigningRequest -subj "/CN=Keel"
+            2. developer.apple.com -> Certificates -> + -> Developer ID
+               Application -> upload the CSR -> Continue.
+            3. Download the .cer and confirm it matches the key:
+                 openssl x509 -inform DER -in developerID_application.cer \
+                   -noout -pubkey | openssl md5
+                 openssl rsa -in codemagic_private_key -pubout 2>/dev/null \
+                   | openssl md5
+               The two hashes must be identical.
+            4. Re-run this build.
+          See README "Releasing".
+          MSG
+            exit 1
           fi
           keychain add-certificates
           keychain list-certificates
