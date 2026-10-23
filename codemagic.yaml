@@ -60,10 +60,17 @@ workflows:
           : "${CERTIFICATE_PRIVATE_KEY:?CERTIFICATE_PRIVATE_KEY is not set in the apple_credentials group}"
           app-store-connect --version
           keychain initialize
+          # One explicit directory for save, check and import. The CLI's
+          # default moved from ~/Library/MobileDevice/Certificates to
+          # ~/Library/Developer/Xcode/UserData/Certificates, which broke a
+          # check that assumed the old path.
+          CERT_DIR=/tmp/certs/signing
+          mkdir -p "$CERT_DIR"
           app-store-connect certificates list \
             --certificate-key @env:CERTIFICATE_PRIVATE_KEY \
+            --certificates-dir "$CERT_DIR" \
             --save
-          if [ -z "$(ls -A "$HOME/Library/MobileDevice/Certificates" 2>/dev/null)" ]; then
+          if [ -z "$(ls -A "$CERT_DIR" 2>/dev/null)" ]; then
             cat >&2 <<'MSG'
           ERROR: no certificate in the Apple Developer portal matches
           CERTIFICATE_PRIVATE_KEY. The API cannot create one (Account Holder
@@ -85,7 +92,7 @@ workflows:
           MSG
             exit 1
           fi
-          keychain add-certificates
+          keychain add-certificates --certificate "$CERT_DIR"/*.p12
           keychain list-certificates
 
           APP=$(find build/macos/Build/Products/Release -name "*.app" -maxdepth 1 | head -1)
