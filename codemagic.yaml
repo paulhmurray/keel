@@ -93,6 +93,14 @@ workflows:
             exit 1
           fi
           keychain add-certificates --certificate "$CERT_DIR"/*.p12
+          # The G2 certificate chains to Apple's "Developer ID Certification
+          # Authority (G2)" intermediate, which the build keychain does not
+          # carry. Without it codesign fails with "unable to build chain to
+          # self-signed root" / errSecInternalComponent. Import it from Apple.
+          KEYCHAIN=$(security default-keychain | xargs)
+          curl -sfL https://www.apple.com/certificateauthority/DeveloperIDG2CA.cer \
+            -o "$CERT_DIR/DeveloperIDG2CA.cer"
+          security import "$CERT_DIR/DeveloperIDG2CA.cer" -k "$KEYCHAIN" -T /usr/bin/codesign
           keychain list-certificates
 
           APP=$(find build/macos/Build/Products/Release -name "*.app" -maxdepth 1 | head -1)
