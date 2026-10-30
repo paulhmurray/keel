@@ -507,6 +507,23 @@ class ProgrammePulse {
 
 // ── Computation ─────────────────────────────────────────────────────────────
 
+/// Settled statuses: dealt with but still on the books (an accepted risk is
+/// a decision already made, not open exposure). Mirrors the RAID registers'
+/// own definition; kept here so the pulse depends only on the stable
+/// [isTerminalStatus] API.
+const Map<RaidKind, Set<String>> _kPulseSettled = {
+  RaidKind.risk: {'accepted'},
+  RaidKind.assumption: {'validated', 'invalidated'},
+  RaidKind.issue: {'resolved'},
+  RaidKind.dependency: {'resolved'},
+  RaidKind.decision: {},
+};
+
+/// Neither closed nor settled: still being worked, so it counts.
+bool _isLive(RaidKind kind, String status) =>
+    !isTerminalStatus(kind, status) &&
+    !_kPulseSettled[kind]!.contains(status.toLowerCase());
+
 ProgrammePulse computeProgrammePulse(ProgrammePulseInputs i, {DateTime? now}) {
   final today = now ?? DateTime.now();
   final todayIso = isoDate(today);
@@ -575,11 +592,11 @@ ProgrammePulse computeProgrammePulse(ProgrammePulseInputs i, {DateTime? now}) {
 
   // ── RAID ──
   final liveRisks =
-      i.risks.where((r) => isActiveStatus(RaidKind.risk, r.status)).toList();
+      i.risks.where((r) => _isLive(RaidKind.risk, r.status)).toList();
   final liveIssues =
-      i.issues.where((x) => isActiveStatus(RaidKind.issue, x.status)).toList();
+      i.issues.where((x) => _isLive(RaidKind.issue, x.status)).toList();
   final liveDeps = i.dependencies
-      .where((d) => isActiveStatus(RaidKind.dependency, d.status))
+      .where((d) => _isLive(RaidKind.dependency, d.status))
       .toList();
   final raid = PulseRaid(
     openRisks: liveRisks.length,
@@ -593,7 +610,7 @@ ProgrammePulse computeProgrammePulse(ProgrammePulseInputs i, {DateTime? now}) {
         liveRisks.where((r) => reviewOverdue(r.nextReviewAt, today)).length,
     openDependencies: liveDeps.length,
     topRisks: [
-      for (final r in topRisks(i.risks, limit: 5, today: today))
+      for (final r in topRisks(liveRisks, limit: 5, today: today))
         PulseTopRisk(
           title: (r.title == null || r.title!.isEmpty) ? r.description : r.title!,
           likelihood: r.likelihood,
@@ -607,7 +624,7 @@ ProgrammePulse computeProgrammePulse(ProgrammePulseInputs i, {DateTime? now}) {
 
   // ── Decisions ──
   final openDecisions = i.decisions
-      .where((d) => isActiveStatus(RaidKind.decision, d.status))
+      .where((d) => _isLive(RaidKind.decision, d.status))
       .toList();
   var oldest = 0;
   var pastNeedBy = 0;
