@@ -1137,6 +1137,29 @@ class JsonExporter {
       };
     }
 
+    // Portfolio tier — pulses received from linked programmes. Owned by
+    // the portfolio entity, so they ride in its blob and the overview is
+    // intact on a freshly-synced machine without waiting for a re-pull.
+    final portfolioPulses =
+        await db.portfolioPulsesDao.getForPortfolio(projectId);
+    if (portfolioPulses.isNotEmpty) {
+      data['portfolio_pulses'] = portfolioPulses
+          .map((r) => {
+                'id': r.id,
+                'source_programme_id': r.sourceProgrammeId,
+                'source_programme_name': r.sourceProgrammeName,
+                'link_code': r.linkCode,
+                'week_of': r.weekOf,
+                'captured_at': r.capturedAt.toIso8601String(),
+                'computed_rag': r.computedRag,
+                'reported_rag': r.reportedRag,
+                'completeness': r.completeness,
+                'payload': r.payload,
+                'updated_at': r.updatedAt.toIso8601String(),
+              })
+          .toList();
+    }
+
     return data;
   }
 

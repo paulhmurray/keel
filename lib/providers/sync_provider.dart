@@ -501,9 +501,15 @@ class SyncProvider extends ChangeNotifier {
       final p = await db.projectDao.getProjectById(id);
       if (p != null) entities.add(p);
     }
-    // Projects (push up) before programmes (pull down).
-    entities.sort((a, b) =>
-        (a.kind == 'programme' ? 1 : 0) - (b.kind == 'programme' ? 1 : 0));
+    // Projects (push up) before programmes (pull down, then push their
+    // pulse up) before portfolios (pull pulses), so one pass fills every
+    // tier on a single install.
+    int tier(Project p) => switch (p.kind) {
+          'portfolio' => 2,
+          'programme' => 1,
+          _ => 0,
+        };
+    entities.sort((a, b) => tier(a) - tier(b));
     for (final e in entities) {
       try {
         await reconcileCascade(db: db, cascade: cascade, projectId: e.id);

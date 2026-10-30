@@ -9,6 +9,9 @@ class KeelNavRail extends StatelessWidget {
   // of the rail is identical for V1; per-section divergence happens
   // inside each view based on ProjectProvider.isProgramme.
   final bool isProgramme;
+  // A portfolio has a reduced rail: Helm (the user's day), its overview
+  // and Settings. Everything else is a programme/project surface.
+  final bool isPortfolio;
   // Opens the project-wide find palette (Ctrl+K). Hidden when null.
   final VoidCallback? onSearch;
 
@@ -17,6 +20,7 @@ class KeelNavRail extends StatelessWidget {
     required this.selectedIndex,
     required this.onDestinationSelected,
     this.isProgramme = false,
+    this.isPortfolio = false,
     this.onSearch,
   });
 
@@ -48,7 +52,15 @@ class KeelNavRail extends StatelessWidget {
                   const _NavDivider(),
                   // A programme keeps its overview; a project's home is
                   // Helm, so it has no overview item.
-                  if (isProgramme)
+                  if (isPortfolio)
+                    _NavItem(
+                      icon: Icons.account_balance_wallet_outlined,
+                      label: 'Port',
+                      index: 0,
+                      selected: selectedIndex == 0,
+                      onTap: onDestinationSelected,
+                    )
+                  else if (isProgramme)
                     _NavItem(
                       icon: Icons.workspaces_outlined,
                       label: 'Prog',
@@ -56,6 +68,7 @@ class KeelNavRail extends StatelessWidget {
                       selected: selectedIndex == 0,
                       onTap: onDestinationSelected,
                     ),
+                  if (!isPortfolio) ...[
                   _NavItem(
                     icon: Icons.bubble_chart_outlined,
                     label: 'Canvas',
@@ -159,6 +172,7 @@ class KeelNavRail extends StatelessWidget {
                     selected: selectedIndex == 11,
                     onTap: onDestinationSelected,
                   ),
+                  ],
                   const SizedBox(height: 8),
                 ],
               ),

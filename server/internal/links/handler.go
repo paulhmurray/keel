@@ -44,7 +44,7 @@ func NewHandlerWithDB(db dbPool) *Handler {
 
 type claimRequest struct {
 	EntityID string `json:"entity_id" binding:"required"`
-	Kind     string `json:"kind" binding:"required,oneof=project programme"`
+	Kind     string `json:"kind" binding:"required,oneof=project programme portfolio"`
 	Name     string `json:"name" binding:"required"`
 }
 
@@ -217,11 +217,11 @@ func (h *Handler) ClaimSide(c *gin.Context) {
 		return
 	}
 
-	// Don't allow linking two entities of the same kind. A project
-	// links to a programme (or vice versa), never project↔project.
-	if existing.SideAKind == req.Kind {
+	// Only adjacent tiers link: project↔programme, programme↔portfolio.
+	// Never the same kind, never project↔portfolio.
+	if !kindsMayLink(existing.SideAKind, req.Kind) {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "link sides must be one project + one programme",
+			"error": "link sides must be project + programme, or programme + portfolio",
 		})
 		return
 	}
@@ -538,4 +538,14 @@ func (h *Handler) DeleteCascadeItem(c *gin.Context) {
 		return
 	}
 	c.Status(http.StatusNoContent)
+}
+
+// kindsMayLink reports whether two entity kinds can sit on one link.
+// The tiers are project → programme → portfolio; a link joins adjacent
+// tiers only, so a programme is the only kind that pairs with both others.
+func kindsMayLink(a, b string) bool {
+	if a == b {
+		return false
+	}
+	return a == "programme" || b == "programme"
 }

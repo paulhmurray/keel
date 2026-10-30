@@ -106,7 +106,7 @@ class PerProjectPulse extends StatelessWidget {
       activities: await db.programmeGanttDao.getActivitiesForProject(
         programmeId,
       ),
-      links: await db.programmeLinksDao.getLinksForEntity(programmeId),
+      links: await db.programmeLinksDao.getProjectLinksForProgramme(programmeId),
     );
     return _PulseData(rows);
   }
@@ -257,7 +257,11 @@ class _ProjectPulseRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    // A same-machine project opens from its row (portfolio → programme →
+    // project drill-down); a remote one has no local row to open.
+    final pp = context.read<ProjectProvider>();
+    final isLocal = pp.projects.any((p) => p.id == row.sourceId);
+    final content = Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
       decoration: BoxDecoration(
         border: isLast
@@ -289,6 +293,11 @@ class _ProjectPulseRow extends StatelessWidget {
                     if (row.shareLevel != null) ...[
                       const SizedBox(width: 8),
                       _ShareTag(full: row.isFullShare),
+                    ],
+                    if (isLocal) ...[
+                      const SizedBox(width: 8),
+                      Icon(Icons.open_in_new,
+                          size: 12, color: KColors.textMuted),
                     ],
                   ],
                 ),
@@ -330,6 +339,16 @@ class _ProjectPulseRow extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+    if (!isLocal) return content;
+    return Tooltip(
+      message: 'Open $label',
+      waitDuration: const Duration(milliseconds: 600),
+      child: InkWell(
+        onTap: () => pp.selectProjectById(row.sourceId),
+        hoverColor: KColors.surface2,
+        child: content,
       ),
     );
   }

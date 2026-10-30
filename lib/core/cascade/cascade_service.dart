@@ -4,6 +4,8 @@ import 'package:drift/drift.dart';
 
 import '../database/database.dart';
 import '../finance/contingency_ledger.dart';
+import '../portfolio/programme_pulse.dart';
+import '../portfolio/programme_pulse_builder.dart';
 import '../raid/risk_rating.dart';
 import 'cascade_plan_detail.dart';
 
@@ -44,6 +46,11 @@ class CascadeKinds {
   // Programme → PROJECT (the one downward kind): what the programme has
   // allocated to this project, with the movement history behind it.
   static const allocation = 'allocation';
+
+  /// Programme → portfolio: the weekly computed pulse. The only kind that
+  /// flows over an upward programme link. Not gated by share level — it
+  /// is the programme's statement about itself, not a project's data.
+  static const pulse = 'pulse';
 }
 
 /// How much of a project a link carries. Stored on ProgrammeLinks.
@@ -751,8 +758,8 @@ class CascadeService {
 
   Future<void> pushAllocation(String programmeId, String linkedProjectId) async {
     if (gateway == null) return;
-    final links = (await _activeLinksForEntity(programmeId))
-        .where((l) => l.ownerKind == 'programme' && l.partnerLocalId == linkedProjectId)
+    final links = (await _downwardLinksForProgramme(programmeId))
+        .where((l) => l.partnerLocalId == linkedProjectId)
         .toList();
     if (links.isEmpty) return;
     final programme = await db.projectDao.getProjectById(programmeId);
@@ -799,8 +806,8 @@ class CascadeService {
   /// movements yet, so a zero allocation still reads as "none" downstream.
   Future<void> pushAllAllocations(String programmeId) async {
     if (gateway == null) return;
-    final links = (await _activeLinksForEntity(programmeId))
-        .where((l) => l.ownerKind == 'programme' && l.partnerLocalId != null);
+    final links = (await _downwardLinksForProgramme(programmeId))
+        .where((l) => l.partnerLocalId != null);
     for (final l in links) {
       await pushAllocation(programmeId, l.partnerLocalId!);
     }
@@ -974,7 +981,9 @@ class CascadeService {
   Future<int> pullForProgramme(String programmeId) async {
     if (gateway == null) return 0;
     await _purgeSelfCopies(programmeId);
-    final links = await _activeLinksForEntity(programmeId);
+    // Downward links only: a programme's upward (portfolio) channel holds
+    // nothing but its own pulses.
+    final links = await _downwardLinksForProgramme(programmeId);
     var applied = 0;
     for (final link in links) {
       try {
@@ -1060,6 +1069,93 @@ class CascadeService {
     return applied;
   }
 
+  // ── Pulse (programme → portfolio) ─────────────────────────────────────────
+  //
+  // The portfolio tier receives ONE computed payload per programme per ISO
+  // week rather than every row. The payload is the portfolio's minimum data
+  // standard (core/portfolio/programme_pulse.dart). Pushed after the
+  // programme has pulled its projects, so it reflects fresh cascaded data.
+
+  /// Computes and pushes this week's pulse to every active portfolio link.
+  /// Returns the pulse, or null when the programme has no portfolio link
+  /// (nothing is computed in that case).
+  Future<ProgrammePulse?> pushPulse(String programmeId, {DateTime? now}) async {
+    if (gateway == null) return null;
+    final links = await _upwardLinksForProgramme(programmeId);
+    if (links.isEmpty) return null;
+    final inputs = await buildProgrammePulseInputs(db, programmeId);
+    if (inputs == null) return null;
+    final when = now ?? DateTime.now();
+    final pulse = computeProgrammePulse(inputs, now: when);
+    final payload = pulse.toJson();
+    final itemId = pulseItemId(programmeId, when);
+    for (final link in links) {
+      try {
+        await gateway!.push(
+          code: link.code,
+          sourceEntityId: programmeId,
+          itemKind: CascadeKinds.pulse,
+          itemId: itemId,
+          payload: payload,
+        );
+      } catch (_) {
+        // Best-effort — the next reconcile re-pushes the week's pulse.
+      }
+    }
+    return pulse;
+  }
+
+  /// Portfolio side: pull every linked programme's channel and apply the
+  /// pulses. Only the pulse kind applies here. Returns the number applied.
+  Future<int> pullForPortfolio(String portfolioId) async {
+    if (gateway == null) return 0;
+    final links = (await _activeLinksForEntity(portfolioId))
+        .where((l) => l.ownerKind == LinkKinds.portfolio)
+        .toList();
+    var applied = 0;
+    for (final link in links) {
+      try {
+        final snap = await gateway!.pull(code: link.code);
+        for (final rec in snap.items) {
+          if (rec.sourceEntityId == portfolioId) continue;
+          if (rec.itemKind != CascadeKinds.pulse) continue;
+          await _applyPulse(portfolioId, link.code, rec);
+          applied++;
+        }
+      } catch (_) {
+        // Continue with the next link.
+      }
+    }
+    return applied;
+  }
+
+  Future<void> _applyPulse(
+      String portfolioId, String linkCode, CascadeRecord rec) async {
+    // The item id already embeds the programme id + week, so it is
+    // collision-safe across programmes without a further prefix.
+    final id = rec.itemId;
+    if (rec.deleted) {
+      await db.portfolioPulsesDao.deleteById(id);
+      return;
+    }
+    final pulse = ProgrammePulse.fromJson(rec.payload);
+    await db.portfolioPulsesDao.upsert(PortfolioPulsesCompanion(
+      id: Value(id),
+      portfolioId: Value(portfolioId),
+      sourceProgrammeId: Value(rec.sourceEntityId),
+      sourceProgrammeName: Value(
+          pulse.programmeName.isEmpty ? null : pulse.programmeName),
+      linkCode: Value(linkCode),
+      weekOf: Value(pulse.weekOf),
+      capturedAt: Value(pulse.capturedAt),
+      computedRag: Value(pulse.health.computedRag),
+      reportedRag: Value(pulse.health.reportedRag),
+      completeness: Value(pulse.completeness.score),
+      payload: Value(jsonEncode(rec.payload)),
+      updatedAt: Value(DateTime.now()),
+    ));
+  }
+
   // ── Internals ───────────────────────────────────────────────────────────
 
   /// Removes rows the programme once cascaded onto itself (native data
@@ -1108,6 +1204,24 @@ class CascadeService {
     final all = await db.programmeLinksDao.getLinksForEntity(id);
     return all.where((l) => l.status == 'active').toList();
   }
+
+  /// A programme's links DOWN to its projects — what pullForProgramme
+  /// reads and allocations go out over. Excludes the upward portfolio
+  /// link, which a programme also owns.
+  Future<List<ProgrammeLink>> _downwardLinksForProgramme(String id) async =>
+      (await _activeLinksForEntity(id))
+          .where((l) =>
+              l.ownerKind == LinkKinds.programme &&
+              l.partnerKind != LinkKinds.portfolio)
+          .toList();
+
+  /// A programme's links UP to a portfolio — the pulse goes out over these.
+  Future<List<ProgrammeLink>> _upwardLinksForProgramme(String id) async =>
+      (await _activeLinksForEntity(id))
+          .where((l) =>
+              l.ownerKind == LinkKinds.programme &&
+              l.partnerKind == LinkKinds.portfolio)
+          .toList();
 
   /// Links a PROJECT pushes over: its own active rows. A programme also
   /// owns link rows (the other side of each pair), and pushing its native

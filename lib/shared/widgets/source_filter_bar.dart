@@ -32,7 +32,7 @@ class SourceFilterBar extends StatelessWidget {
     }
     final db = context.read<AppDatabase>();
     return StreamBuilder<List<ProgrammeLink>>(
-      stream: db.programmeLinksDao.watchLinksForEntity(current.id),
+      stream: db.programmeLinksDao.watchProjectLinksForProgramme(current.id),
       builder: (context, snap) {
         final links = (snap.data ?? const <ProgrammeLink>[])
             .where((l) => l.status == 'active')

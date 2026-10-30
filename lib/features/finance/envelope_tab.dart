@@ -40,7 +40,8 @@ class EnvelopeTab extends StatelessWidget {
     final movements = await db.financeDao.getMovements(programmeId);
     final settings = await db.financeDao.getFinanceSettings(programmeId);
     final decisions = await db.decisionsDao.getDecisionsForProject(programmeId);
-    final links = await db.programmeLinksDao.getLinksForEntity(programmeId);
+    final links =
+        await db.programmeLinksDao.getProjectLinksForProgramme(programmeId);
     final rollup = computeProgrammeFinance(
       categories: await db.financeDao.getCascadedCategories(programmeId),
       budgets: await db.financeDao.getCascadedBudgets(programmeId),

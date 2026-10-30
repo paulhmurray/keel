@@ -5,6 +5,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:uuid/uuid.dart';
 import '../core/database/database.dart';
 import '../core/programme/scaffold_definitions.dart';
+import '../core/seed/portfolio_seed_service.dart';
 import '../core/seed/seed_service.dart';
 
 class ProjectProvider extends ChangeNotifier {
@@ -35,12 +36,22 @@ class ProjectProvider extends ChangeNotifier {
   /// active.
   bool get isProgramme => _currentProject?.kind == 'programme';
 
-  /// Convenience lists for the project picker — separates the two
-  /// kinds so the picker can group them.
+  /// Whether the active entity is a portfolio — the PMO tier that links
+  /// programmes and receives their weekly pulse. Portfolios have a
+  /// reduced shell (Overview + Settings).
+  bool get isPortfolio => _currentProject?.kind == 'portfolio';
+
+  /// The active entity's kind: 'project' | 'programme' | 'portfolio'.
+  String get currentKind => _currentProject?.kind ?? 'project';
+
+  /// Convenience lists for the project picker — separates the kinds so
+  /// the picker can group them.
   List<Project> get projectsOnly =>
-      _projects.where((p) => p.kind != 'programme').toList();
+      _projects.where((p) => p.kind != 'programme' && p.kind != 'portfolio').toList();
   List<Project> get programmesOnly =>
       _projects.where((p) => p.kind == 'programme').toList();
+  List<Project> get portfoliosOnly =>
+      _projects.where((p) => p.kind == 'portfolio').toList();
 
   Future<void> _loadProjects() async {
     _projects = await _db.projectDao.getAllProjects();
@@ -126,6 +137,20 @@ class ProjectProvider extends ChangeNotifier {
         kind: 'programme',
       );
 
+  /// Convenience wrapper for portfolio creation. A portfolio never seeds
+  /// the stakeholder/team scaffold: it holds no people of its own.
+  Future<void> createPortfolio(
+    String name, {
+    String? description,
+    String? startDate,
+  }) =>
+      createProject(
+        name,
+        description: description,
+        startDate: startDate,
+        kind: 'portfolio',
+      );
+
   Future<void> _seedScaffold(String projectId) async {
     final uuid = const Uuid();
     final now = DateTime.now();
@@ -165,6 +190,15 @@ class ProjectProvider extends ChangeNotifier {
   Future<void> loadDemoProject() async {
     await SeedService.seedDemoProject(_db);
     // Stream listener will pick up the new project and switch to it if needed
+  }
+
+  /// Seeds the PMO demo (portfolio → 3 programmes → 7 projects, cascaded)
+  /// and lands on the portfolio. Returns false if it was already loaded.
+  Future<bool> loadPortfolioDemo() async {
+    final created = await PortfolioSeedService.seed(_db);
+    await refreshProjects();
+    selectProjectById(PortfolioSeedService.portfolioId);
+    return created;
   }
 
   Future<void> refreshProjects() async {

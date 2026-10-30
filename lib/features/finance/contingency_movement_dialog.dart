@@ -79,7 +79,7 @@ class _ContingencyMovementDialogState extends State<ContingencyMovementDialog> {
     final names = {
       for (final p in context.read<ProjectProvider>().projects) p.id: p.name,
     };
-    final links = await widget.db.programmeLinksDao.getLinksForEntity(
+    final links = await widget.db.programmeLinksDao.getProjectLinksForProgramme(
       widget.programmeId,
     );
     final projects = <(String, String)>[

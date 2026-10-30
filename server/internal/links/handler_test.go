@@ -671,3 +671,56 @@ func TestCascade_DeleteMissingReturns404(t *testing.T) {
 		t.Fatalf("expected 404, got %d", w.Code)
 	}
 }
+
+// ---------------------------------------------------------------------------
+// Portfolio tier: adjacent tiers only
+// ---------------------------------------------------------------------------
+
+func TestClaim_PortfolioPairsWithProgramme(t *testing.T) {
+	db := &mockDB{rows: map[string]*linkRow{}}
+	h := NewHandlerWithDB(db)
+
+	doRequest(newRouter(h, userA), http.MethodPut, "/links/KL-PF/me",
+		map[string]string{"entity_id": "port-1", "kind": "portfolio", "name": "PMO"})
+	w := doRequest(newRouter(h, userB), http.MethodPut, "/links/KL-PF/me",
+		map[string]string{"entity_id": "prog-1", "kind": "programme", "name": "P"})
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+	var resp linkResponse
+	json.NewDecoder(w.Body).Decode(&resp)
+	if resp.SideA.Kind != "portfolio" || resp.SideB == nil || resp.SideB.Kind != "programme" {
+		t.Errorf("kinds mismatch: A=%+v B=%+v", resp.SideA, resp.SideB)
+	}
+}
+
+func TestClaim_ProjectCannotPairWithPortfolio(t *testing.T) {
+	db := &mockDB{rows: map[string]*linkRow{}}
+	h := NewHandlerWithDB(db)
+
+	doRequest(newRouter(h, userA), http.MethodPut, "/links/KL-PP/me",
+		map[string]string{"entity_id": "port-1", "kind": "portfolio", "name": "PMO"})
+	w := doRequest(newRouter(h, userB), http.MethodPut, "/links/KL-PP/me",
+		map[string]string{"entity_id": "proj-1", "kind": "project", "name": "Q"})
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 for project↔portfolio, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestKindsMayLink(t *testing.T) {
+	cases := map[[2]string]bool{
+		{"project", "programme"}:   true,
+		{"programme", "project"}:   true,
+		{"programme", "portfolio"}: true,
+		{"portfolio", "programme"}: true,
+		{"project", "portfolio"}:   false,
+		{"portfolio", "project"}:   false,
+		{"programme", "programme"}: false,
+		{"portfolio", "portfolio"}: false,
+	}
+	for k, want := range cases {
+		if got := kindsMayLink(k[0], k[1]); got != want {
+			t.Errorf("kindsMayLink(%q, %q) = %v, want %v", k[0], k[1], got, want)
+		}
+	}
+}

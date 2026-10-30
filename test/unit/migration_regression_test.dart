@@ -713,4 +713,40 @@ void main() {
     expect((await db.financeDao.getFinanceSettings('prog'))!.contingencyWarnBp, 1000);
     expect(await db.financeDao.getReceivedAllocations('prog'), isEmpty);
   });
+
+  test('upgrade from v67 creates portfolio_pulses', () async {
+    final dir = await Directory.systemTemp.createTemp('keel_mig_test');
+    addTearDown(() => dir.deleteSync(recursive: true));
+    final path = '${dir.path}/v67.db';
+    final raw = sqlite3.open(path);
+    raw.execute('''
+      CREATE TABLE projects (
+        id TEXT NOT NULL PRIMARY KEY,
+        name TEXT NOT NULL,
+        description TEXT,
+        start_date TEXT,
+        status TEXT NOT NULL DEFAULT 'active',
+        kind TEXT NOT NULL DEFAULT 'project',
+        parent_programme_id TEXT
+      );
+    ''');
+    raw.execute("INSERT INTO projects (id, name, kind) VALUES ('port', 'PMO', 'portfolio');");
+    raw.execute('PRAGMA user_version = 67;');
+    raw.dispose();
+
+    final db = AppDatabase.forTesting(NativeDatabase(File(path)));
+    addTearDown(db.close);
+    await db.portfolioPulsesDao.upsert(PortfolioPulsesCompanion.insert(
+      id: 'pulse:prog:2026-10-26',
+      portfolioId: 'port',
+      sourceProgrammeId: 'prog',
+      linkCode: const Value('KL-AAAA-AAAA-AAAA'),
+      weekOf: '2026-10-26',
+      capturedAt: DateTime(2026, 10, 30),
+      payload: '{}',
+    ));
+    final rows = await db.portfolioPulsesDao.getForPortfolio('port');
+    expect(rows.single.linkCode, 'KL-AAAA-AAAA-AAAA');
+    expect(rows.single.weekOf, '2026-10-26');
+  });
 }

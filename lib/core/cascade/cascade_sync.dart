@@ -13,7 +13,9 @@ import 'cascade_service.dart';
 ///   1. Activate any `pending_remote` links whose partner has since joined
 ///      (so a link paired between syncs starts flowing on this very call).
 ///   2. Then, depending on the entity kind:
-///      - **programme** → pull cascaded items down from every active link.
+///      - **programme** → pull cascaded items down from every active link,
+///        then push this week's pulse up to its portfolio (if linked).
+///      - **portfolio** → pull pulses from every linked programme.
 ///      - **project**   → replay every cascade-eligible row up to every
 ///        active linked programme. This is the path that was previously
 ///        only invoked at escalate-time, which silently dropped anything
@@ -50,7 +52,15 @@ Future<int> reconcileCascade({
   if (project.kind == 'programme') {
     final n = await cascade.pullForProgramme(project.id);
     await cascade.pushAllAllocations(project.id);
+    // Then tell the portfolio (if any) how we look this week — after the
+    // pull so the pulse reflects the freshest project data.
+    await cascade.pushPulse(project.id);
     return n;
+  }
+
+  // 2c) Portfolio side: pull the weekly pulse from every linked programme.
+  if (project.kind == 'portfolio') {
+    return cascade.pullForPortfolio(project.id);
   }
 
   // 2b) Project side: replay all cascade-eligible content up the links.

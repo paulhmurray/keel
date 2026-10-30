@@ -1773,21 +1773,30 @@ class _ProgrammeLinksSectionState extends State<_ProgrammeLinksSection> {
     if (project == null) return const SizedBox.shrink();
     final db = context.read<AppDatabase>();
     final isProgramme = project.kind == 'programme';
+    final isPortfolio = project.kind == 'portfolio';
 
     return _SettingsSection(
-      title: 'Programme Links',
-      icon: Icons.workspaces_outlined,
+      title: isPortfolio ? 'Portfolio Links' : 'Programme Links',
+      icon: isPortfolio
+          ? Icons.account_balance_wallet_outlined
+          : Icons.workspaces_outlined,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            isProgramme
-                ? 'Generate a code and share it with project managers — '
-                      'they\'ll paste it in their project\'s settings to '
-                      'connect. Or paste a code one of them sent you.'
-                : 'Generate a code and share it with your programme '
-                      'manager — they\'ll paste it in the programme\'s '
-                      'settings to connect. Or paste a code they sent you.',
+            isPortfolio
+                ? 'Generate a code and share it with programme managers — '
+                      'they\'ll paste it in their programme\'s settings to '
+                      'join this portfolio. Each linked programme then sends '
+                      'a weekly pulse. Or paste a code one of them sent you.'
+                : isProgramme
+                    ? 'Generate a code and share it with project managers — '
+                          'they\'ll paste it in their project\'s settings to '
+                          'connect. Paste a code a PM or a portfolio sent you '
+                          'to link to them.'
+                    : 'Generate a code and share it with your programme '
+                          'manager — they\'ll paste it in the programme\'s '
+                          'settings to connect. Or paste a code they sent you.',
             style: TextStyle(color: KColors.textDim, fontSize: 12),
           ),
           const SizedBox(height: 12),
@@ -1951,7 +1960,16 @@ class _LinkRow extends StatelessWidget {
     final partnerLabel =
         link.partnerName ??
         (isPending ? '(awaiting the other side)' : '(unknown partner)');
-    final partnerTag = link.partnerKind == 'programme' ? 'PROG' : 'PROJ';
+    final partnerTag = switch (link.partnerKind) {
+      'portfolio' => 'PORT',
+      'programme' => 'PROG',
+      _ => 'PROJ',
+    };
+    // Share level gates what a PROJECT sends its programme. The pulse a
+    // programme sends its portfolio is not gated, so the control is noise
+    // on portfolio links from either side.
+    final showShareLevel = link.partnerKind != 'portfolio' &&
+        link.ownerKind != 'portfolio';
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -1994,7 +2012,7 @@ class _LinkRow extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          if (!isPending && !isRevoked) ...[
+          if (!isPending && !isRevoked && showShareLevel) ...[
             _ShareLevelControl(link: link),
             const SizedBox(width: 8),
           ],

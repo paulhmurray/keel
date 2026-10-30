@@ -58,6 +58,39 @@ class RemoteLinkParty {
   });
 }
 
+/// Entity kinds that can sit on a link. Valid pairs are
+/// project↔programme and programme↔portfolio — never the same kind, never
+/// project↔portfolio. A programme therefore owns links in BOTH directions
+/// (down to projects, up to a portfolio); callers that enumerate a
+/// programme's links must say which they mean.
+class LinkKinds {
+  static const project = 'project';
+  static const programme = 'programme';
+  static const portfolio = 'portfolio';
+
+  /// The partner kind a fresh code from [ownerKind] is for. A programme
+  /// generating a code is inviting a project (its common case); joining a
+  /// portfolio is done by redeeming the portfolio's code.
+  static String defaultPartnerKind(String ownerKind) => switch (ownerKind) {
+        programme => project,
+        portfolio => programme,
+        _ => programme,
+      };
+
+  /// Every kind [ownerKind] may be linked to.
+  static Set<String> allowedPartnerKinds(String ownerKind) =>
+      switch (ownerKind) {
+        programme => {project, portfolio},
+        portfolio => {programme},
+        _ => {programme},
+      };
+
+  /// Links where the owner is the CHILD (data flows owner → partner).
+  static bool isUpward(ProgrammeLink l) =>
+      l.ownerKind == project ||
+      (l.ownerKind == programme && l.partnerKind == portfolio);
+}
+
 @DriftAccessor(tables: [ProgrammeLinks])
 class ProgrammeLinksDao extends DatabaseAccessor<AppDatabase>
     with _$ProgrammeLinksDaoMixin {
@@ -77,6 +110,29 @@ class ProgrammeLinksDao extends DatabaseAccessor<AppDatabase>
       (select(programmeLinks)
             ..where((t) => t.ownerEntityId.equals(entityId)))
           .get();
+
+  /// A programme's ACTIVE links down to its projects. A programme also
+  /// owns the upward link to its portfolio, so anything that means "my
+  /// linked projects" (allocation targets, source filter chips, per-project
+  /// pulse) must use this rather than filtering on partnerLocalId.
+  Future<List<ProgrammeLink>> getProjectLinksForProgramme(String programmeId) =>
+      (select(programmeLinks)
+            ..where((t) =>
+                t.ownerEntityId.equals(programmeId) &
+                t.ownerKind.equals(LinkKinds.programme) &
+                t.partnerKind.equals(LinkKinds.project) &
+                t.status.equals('active')))
+          .get();
+
+  Stream<List<ProgrammeLink>> watchProjectLinksForProgramme(
+          String programmeId) =>
+      (select(programmeLinks)
+            ..where((t) =>
+                t.ownerEntityId.equals(programmeId) &
+                t.ownerKind.equals(LinkKinds.programme) &
+                t.partnerKind.equals(LinkKinds.project) &
+                t.status.equals('active')))
+          .watch();
 
   Future<ProgrammeLink?> findByCode(String code) =>
       (select(programmeLinks)..where((t) => t.code.equals(code)))
@@ -100,10 +156,11 @@ class ProgrammeLinksDao extends DatabaseAccessor<AppDatabase>
   Future<String> generateCodeForEntity({
     required String ownerEntityId,
     required String ownerKind,
+    String? partnerKind,
   }) async {
     final code = _generateCode();
     final secret = _generateSecret();
-    final partnerKind = ownerKind == 'programme' ? 'project' : 'programme';
+    partnerKind ??= LinkKinds.defaultPartnerKind(ownerKind);
     await into(programmeLinks).insert(
       ProgrammeLinksCompanion.insert(
         id: const Uuid().v4(),
@@ -129,11 +186,18 @@ class ProgrammeLinksDao extends DatabaseAccessor<AppDatabase>
   ///
   /// Returns a tuple describing what landed: the local link id + a
   /// status enum for the caller to surface in toast / dialog text.
+  ///
+  /// [partnerKind] narrows what the code may belong to; when omitted every
+  /// kind [ownerKind] can pair with is accepted (a programme can redeem a
+  /// project's code OR a portfolio's), and the partner's actual kind is
+  /// recorded from the matching local row or, cross-machine, from the
+  /// server handshake.
   Future<({String id, RedeemOutcome outcome})> redeemCode({
     required String code,
     required String ownerEntityId,
     required String ownerKind,
     String? partnerNameHint,
+    String? partnerKind,
   }) async {
     // The pasted string is `routingCode#secret`. Only the routing code is
     // normalised/matched; the secret is case-sensitive base64url and kept
@@ -154,13 +218,17 @@ class ProgrammeLinksDao extends DatabaseAccessor<AppDatabase>
     }
 
     // Look for a same-machine partner — a row holding this code that
-    // belongs to a DIFFERENT entity of the partner's kind.
-    final partnerKind = ownerKind == 'programme' ? 'project' : 'programme';
+    // belongs to a DIFFERENT entity of a kind we can pair with.
+    final acceptable = partnerKind != null
+        ? {partnerKind}
+        : LinkKinds.allowedPartnerKinds(ownerKind);
     final localPartner = existingHere
         .where((r) =>
             r.ownerEntityId != ownerEntityId &&
-            r.ownerKind == partnerKind)
+            acceptable.contains(r.ownerKind))
         .toList();
+    final pendingPartnerKind =
+        partnerKind ?? LinkKinds.defaultPartnerKind(ownerKind);
 
     return transaction(() async {
       final id = const Uuid().v4();
@@ -178,7 +246,7 @@ class ProgrammeLinksDao extends DatabaseAccessor<AppDatabase>
             id: id,
             ownerEntityId: ownerEntityId,
             ownerKind: ownerKind,
-            partnerKind: partnerKind,
+            partnerKind: partner.ownerKind,
             partnerName: Value(partnerOwnerName),
             partnerLocalId: Value(partner.ownerEntityId),
             code: cleanCode,
@@ -195,6 +263,7 @@ class ProgrammeLinksDao extends DatabaseAccessor<AppDatabase>
         await (update(programmeLinks)
               ..where((t) => t.id.equals(partner.id)))
             .write(ProgrammeLinksCompanion(
+          partnerKind: Value(ownerKind),
           partnerLocalId: Value(ownerEntityId),
           partnerName: Value(myName),
           status: const Value('active'),
@@ -211,7 +280,7 @@ class ProgrammeLinksDao extends DatabaseAccessor<AppDatabase>
           id: id,
           ownerEntityId: ownerEntityId,
           ownerKind: ownerKind,
-          partnerKind: partnerKind,
+          partnerKind: pendingPartnerKind,
           partnerName: Value(partnerNameHint),
           code: cleanCode,
           linkSecret: Value(secret),
@@ -250,7 +319,24 @@ class ProgrammeLinksDao extends DatabaseAccessor<AppDatabase>
           partnerLocalId: Value(null),
         ));
       }
+      // A portfolio stops showing a programme the moment the link dies:
+      // its pulses (keyed by this code) go with the link, whichever side
+      // revoked. Same-machine the portfolio row is one of these two.
+      for (final r in [row, if (twin != null) twin]) {
+        await _dropPulsesForDeadLink(r);
+      }
     });
+  }
+
+  /// Every pulse a portfolio received over [link], once the link is dead.
+  /// No-op for non-portfolio rows.
+  Future<void> _dropPulsesForDeadLink(ProgrammeLink link) async {
+    if (link.ownerKind != LinkKinds.portfolio) return;
+    await (delete(attachedDatabase.portfolioPulses)
+          ..where((t) =>
+              t.portfolioId.equals(link.ownerEntityId) &
+              t.linkCode.equals(link.code)))
+        .go();
   }
 
   /// Hard-deletes a link row. Used by the settings UI to fully discard
@@ -270,6 +356,19 @@ class ProgrammeLinksDao extends DatabaseAccessor<AppDatabase>
               t.status.equals('active') & t.partnerLocalId.isNotNull()))
         .get();
     for (final r in rows) {
+      // A row whose OWN entity is gone (the project/programme was deleted
+      // but its link row outlived it) is garbage: revoke it, and never let
+      // it "heal" the partner's row back to active.
+      final owner = await (select(attachedDatabase.projects)
+            ..where((t) => t.id.equals(r.ownerEntityId)))
+          .getSingleOrNull();
+      if (owner == null) {
+        await (update(programmeLinks)..where((t) => t.id.equals(r.id)))
+            .write(const ProgrammeLinksCompanion(status: Value('revoked')));
+        await _dropPulsesForDeadLink(r);
+        changed++;
+        continue;
+      }
       final partnerId = r.partnerLocalId!;
       final partner = await (select(attachedDatabase.projects)
             ..where((t) => t.id.equals(partnerId)))
@@ -277,6 +376,7 @@ class ProgrammeLinksDao extends DatabaseAccessor<AppDatabase>
       if (partner == null) {
         await (update(programmeLinks)..where((t) => t.id.equals(r.id)))
             .write(const ProgrammeLinksCompanion(status: Value('revoked')));
+        await _dropPulsesForDeadLink(r);
         changed++;
         continue;
       }
@@ -344,9 +444,12 @@ class ProgrammeLinksDao extends DatabaseAccessor<AppDatabase>
     required String ownerKind,
     required String ownerName,
     required RemoteLinksGateway? remote,
+    String? partnerKind,
   }) async {
     final share = await generateCodeForEntity(
-        ownerEntityId: ownerEntityId, ownerKind: ownerKind);
+        ownerEntityId: ownerEntityId,
+        ownerKind: ownerKind,
+        partnerKind: partnerKind);
     if (remote == null) return share;
     try {
       // The server only ever gets the routing code, never the secret.
@@ -401,6 +504,9 @@ class ProgrammeLinksDao extends DatabaseAccessor<AppDatabase>
             .write(ProgrammeLinksCompanion(
           status: const Value('active'),
           partnerName: Value(partner.name),
+          // The server knows what joined (project / programme /
+          // portfolio); the pending row only guessed.
+          partnerKind: Value(partner.kind),
           // Partner is on a different machine — we don't have a local
           // id for them. The cache here is just the human-readable
           // identity sent by the server.
@@ -436,6 +542,7 @@ class ProgrammeLinksDao extends DatabaseAccessor<AppDatabase>
               .write(ProgrammeLinksCompanion(
             status: const Value('active'),
             partnerName: Value(partner.name),
+            partnerKind: Value(partner.kind),
           ));
           activated++;
         }

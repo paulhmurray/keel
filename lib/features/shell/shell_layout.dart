@@ -21,6 +21,7 @@ import '../../shared/theme/keel_colors.dart';
 import '../../shared/widgets/date_picker_field.dart';
 import '../../shared/widgets/keybindings_table.dart';
 import '../../shared/widgets/sync_password_dialog.dart';
+import '../portfolio/portfolio_view.dart';
 import '../programme/programme_view.dart';
 import '../canvas/canvas_view.dart';
 import '../timeline/gantt/programme_gantt_view.dart';
@@ -312,7 +313,7 @@ class _ShellLayoutState extends State<ShellLayout> {
     // Sitting on a home page → follow the new entity to its own home.
     final project = _projectProvider?.currentProject;
     if (project != null && isHomePage(_selectedIndex)) {
-      final home = landingIndexFor(isProgramme: project.kind == 'programme');
+      final home = landingIndexForKind(project.kind);
       if (home != _selectedIndex) setState(() => _selectedIndex = home);
     }
     _refreshCascade();
@@ -355,9 +356,16 @@ class _ShellLayoutState extends State<ShellLayout> {
         // this entity) regardless of which side we're viewing.
         await sync.replayCascadeForActivation(project.id, db);
       } else if (project.kind == 'programme') {
-        // Cascaded copies are derived data, not local edits.
+        // Cascaded copies are derived data, not local edits. Pull first so
+        // the pulse sent up to a portfolio reflects fresh project data.
+        await sync.withoutMarkingChanges(() async {
+          final svc = buildCascadeServiceWith(db, sync);
+          await svc.pullForProgramme(project.id);
+          await svc.pushPulse(project.id);
+        });
+      } else if (project.kind == 'portfolio') {
         await sync.withoutMarkingChanges(
-          () => buildCascadeServiceWith(db, sync).pullForProgramme(project.id),
+          () => buildCascadeServiceWith(db, sync).pullForPortfolio(project.id),
         );
       }
       if (mounted) setState(() => _cascadeRefreshSeq++);
@@ -424,8 +432,8 @@ class _ShellLayoutState extends State<ShellLayout> {
   _MenuNode _buildRootMenu() {
     return _MenuNode('Navigate to…', {
       ' ': _ActionNode('Home', () {
-        _selectedIndex = landingIndexFor(
-          isProgramme: context.read<ProjectProvider>().isProgramme,
+        _selectedIndex = landingIndexForKind(
+          context.read<ProjectProvider>().currentKind,
         );
       }),
       'h': _ActionNode('Helm — my day', () {
@@ -651,7 +659,7 @@ class _ShellLayoutState extends State<ShellLayout> {
       final current = context.read<ProjectProvider>().currentProject;
       if (current != null) {
         _landingResolved = true;
-        final home = landingIndexFor(isProgramme: current.kind == 'programme');
+        final home = landingIndexForKind(current.kind);
         if (home != _selectedIndex) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) setState(() => _selectedIndex = home);
@@ -1326,11 +1334,20 @@ class _ShellLayoutState extends State<ShellLayout> {
   Widget _buildView() {
     // The project overview is gone: a project asked for index 0 (an old
     // leader binding, a stale index) gets Helm instead.
-    if (_selectedIndex == 0 && !context.read<ProjectProvider>().isProgramme) {
+    final pp = context.read<ProjectProvider>();
+    if (_selectedIndex == 0 && !pp.isProgramme && !pp.isPortfolio) {
       _selectedIndex = 16;
+    }
+    // A portfolio only has an overview and settings; any other index (a
+    // stale leader binding, a picker switch mid-section) falls back to its
+    // overview rather than rendering a programme surface over it.
+    if (pp.isPortfolio && _selectedIndex != 0 && _selectedIndex != 9 &&
+        _selectedIndex != 16) {
+      _selectedIndex = 0;
     }
     switch (_selectedIndex) {
       case 0:
+        if (pp.isPortfolio) return const PortfolioView();
         return ProgrammeView(
           onNavigateToCanvas: () => setState(() => _selectedIndex = 1),
           onNavigateToCharter: () => setState(() => _selectedIndex = 14),
@@ -1531,6 +1548,7 @@ class _ShellLayoutState extends State<ShellLayout> {
                     KeelNavRail(
                       selectedIndex: _selectedIndex,
                       isProgramme: context.watch<ProjectProvider>().isProgramme,
+                      isPortfolio: context.watch<ProjectProvider>().isPortfolio,
                       onSearch: _openSearchPalette,
                       onDestinationSelected: (i) {
                         setState(() {
@@ -2302,11 +2320,12 @@ class _TopBarProjectSelector extends StatelessWidget {
                   items: [
                     ...projects.map((p) {
                       final isProg = p.kind == 'programme';
+                      final isPort = p.kind == 'portfolio';
                       return DropdownMenuItem(
                         value: p.id,
                         child: Row(
                           children: [
-                            // Small PROG/PROJ tag so the user always
+                            // Small PORT/PROG/PROJ tag so the user always
                             // knows which kind they're switching to.
                             Container(
                               padding: const EdgeInsets.symmetric(
@@ -2314,19 +2333,23 @@ class _TopBarProjectSelector extends StatelessWidget {
                                 vertical: 1,
                               ),
                               decoration: BoxDecoration(
-                                color: isProg
-                                    ? KColors.amberDim.withValues(alpha: 0.7)
-                                    : KColors.surface,
+                                color: isPort
+                                    ? KColors.violetDim.withValues(alpha: 0.7)
+                                    : isProg
+                                        ? KColors.amberDim.withValues(alpha: 0.7)
+                                        : KColors.surface,
                                 borderRadius: BorderRadius.circular(2),
                                 border: Border.all(
-                                  color: isProg
-                                      ? KColors.amber
-                                      : KColors.border2,
+                                  color: isPort
+                                      ? KColors.violet
+                                      : isProg
+                                          ? KColors.amber
+                                          : KColors.border2,
                                   width: 0.5,
                                 ),
                               ),
                               child: Text(
-                                isProg ? 'PROG' : 'PROJ',
+                                isPort ? 'PORT' : isProg ? 'PROG' : 'PROJ',
                                 style: GoogleFonts.jetBrainsMono(
                                   color: isProg
                                       ? KColors.amber
@@ -2389,6 +2412,26 @@ class _TopBarProjectSelector extends StatelessWidget {
                       ),
                     ),
                     DropdownMenuItem(
+                      value: '__new_portfolio__',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.account_balance_wallet_outlined,
+                            size: 14,
+                            color: KColors.violet,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'New Portfolio',
+                            style: GoogleFonts.jetBrainsMono(
+                              color: KColors.violet,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    DropdownMenuItem(
                       value: '__demo__',
                       child: Row(
                         children: [
@@ -2402,6 +2445,26 @@ class _TopBarProjectSelector extends StatelessWidget {
                             'Load Demo Data',
                             style: GoogleFonts.jetBrainsMono(
                               color: KColors.phosphor,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    DropdownMenuItem(
+                      value: '__demo_portfolio__',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.science_outlined,
+                            size: 14,
+                            color: KColors.violet,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Load Portfolio Demo',
+                            style: GoogleFonts.jetBrainsMono(
+                              color: KColors.violet,
                               fontSize: 12,
                             ),
                           ),
@@ -2422,8 +2485,16 @@ class _TopBarProjectSelector extends StatelessWidget {
                         projectProvider,
                         kind: 'programme',
                       );
+                    } else if (val == '__new_portfolio__') {
+                      _showNewProjectDialog(
+                        context,
+                        projectProvider,
+                        kind: 'portfolio',
+                      );
                     } else if (val == '__demo__') {
                       _loadDemo(context, projectProvider);
+                    } else if (val == '__demo_portfolio__') {
+                      _loadPortfolioDemo(context, projectProvider);
                     } else if (val != null) {
                       projectProvider.selectProjectById(val);
                     }
@@ -2464,6 +2535,21 @@ class _TopBarProjectSelector extends StatelessWidget {
     }
   }
 
+  void _loadPortfolioDemo(
+      BuildContext context, ProjectProvider projectProvider) async {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(const SnackBar(
+        content: Text('Seeding portfolio demo — 3 programmes, 7 projects…')));
+    final created = await projectProvider.loadPortfolioDemo();
+    if (!context.mounted) return;
+    messenger.showSnackBar(SnackBar(
+      content: Text(created
+          ? 'FinCo Enterprise Portfolio loaded: 3 programmes, 7 projects, '
+              'pulses cascaded.'
+          : 'Portfolio demo is already loaded.'),
+    ));
+  }
+
   void _showNewProjectDialog(
     BuildContext context,
     ProjectProvider projectProvider, {
@@ -2475,18 +2561,42 @@ class _TopBarProjectSelector extends StatelessWidget {
     // Existing entries to source people from — both kinds are valid
     // donors, so a brand-new programme can inherit from a project the
     // PM has already built up, and vice versa.
-    final existingProjects = projectProvider.projects;
+    final isPortfolio = kind == 'portfolio';
+    // A portfolio holds no people of its own, so it has nothing to copy.
+    final existingProjects =
+        isPortfolio ? const <Project>[] : projectProvider.projects;
     final isProgramme = kind == 'programme';
+    final kindLabel = isPortfolio
+        ? 'Portfolio'
+        : isProgramme
+            ? 'Programme'
+            : 'Project';
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: Text(isProgramme ? 'New Programme' : 'New Project'),
+          title: Text('New $kindLabel'),
           content: SizedBox(
             width: 360,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                if (isPortfolio) ...[
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'A portfolio is the PMO view across programmes. Link '
+                      'programmes from Settings and each sends a weekly '
+                      'pulse: health by rules, decisions, flow, finance.',
+                      style: TextStyle(
+                        color: KColors.textDim,
+                        fontSize: 12,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 if (isProgramme) ...[
                   Align(
                     alignment: Alignment.centerLeft,
@@ -2507,7 +2617,7 @@ class _TopBarProjectSelector extends StatelessWidget {
                   controller: nameCtrl,
                   autofocus: true,
                   decoration: InputDecoration(
-                    labelText: isProgramme ? 'Programme name' : 'Project name',
+                    labelText: '$kindLabel name',
                   ),
                   onSubmitted: (_) => _create(
                     ctx,
@@ -2541,10 +2651,15 @@ class _TopBarProjectSelector extends StatelessWidget {
                       ),
                       ...existingProjects.map((p) {
                         final isProg = p.kind == 'programme';
+                        final isPort = p.kind == 'portfolio';
                         return DropdownMenuItem<String>(
                           value: p.id,
                           child: Text(
-                            isProg ? '[PROG] ${p.name}' : p.name,
+                            isPort
+                                ? '[PORT] ${p.name}'
+                                : isProg
+                                    ? '[PROG] ${p.name}'
+                                    : p.name,
                             overflow: TextOverflow.ellipsis,
                           ),
                         );

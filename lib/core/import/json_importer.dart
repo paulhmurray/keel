@@ -957,6 +957,28 @@ class JsonImporter {
           );
     }
 
+    // Portfolio pulses — read-only copies received over the cascade.
+    // Missing key on non-portfolio / pre-portfolio exports is fine.
+    for (final r in (data['portfolio_pulses'] as List? ?? [])) {
+      final pm = r as Map<String, dynamic>;
+      final captured = pm['captured_at'] as String?;
+      await db.portfolioPulsesDao.upsert(PortfolioPulsesCompanion(
+        id: Value(pm['id'] as String),
+        portfolioId: Value(projectId),
+        sourceProgrammeId: Value(pm['source_programme_id'] as String? ?? ''),
+        sourceProgrammeName: Value(pm['source_programme_name'] as String?),
+        linkCode: Value(pm['link_code'] as String?),
+        weekOf: Value(pm['week_of'] as String? ?? ''),
+        capturedAt: Value(captured == null
+            ? DateTime.fromMillisecondsSinceEpoch(0)
+            : DateTime.parse(captured)),
+        computedRag: Value(pm['computed_rag'] as String?),
+        reportedRag: Value(pm['reported_rag'] as String?),
+        completeness: Value(pm['completeness'] as int? ?? 0),
+        payload: Value(pm['payload'] as String? ?? '{}'),
+      ));
+    }
+
     // Finance — categories → budgets → lines → audit log (FK order).
     // Raw upserts ONLY: the audit trail travels in the payload itself,
     // so importing must never generate fresh audit entries. Missing key
@@ -1280,6 +1302,11 @@ class JsonImporter {
     // Programme links owned by this entity (re-imported from the blob).
     await (db.delete(db.programmeLinks)
           ..where((t) => t.ownerEntityId.equals(id)))
+        .go();
+
+    // Portfolio pulses held by this entity (re-imported from the blob).
+    await (db.delete(db.portfolioPulses)
+          ..where((t) => t.portfolioId.equals(id)))
         .go();
 
     // Canvas — sequences reference cards, so clear sequences first.

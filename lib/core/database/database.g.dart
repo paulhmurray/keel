@@ -43074,6 +43074,751 @@ class ReceivedAllocationsCompanion extends UpdateCompanion<ReceivedAllocation> {
   }
 }
 
+class $PortfolioPulsesTable extends PortfolioPulses
+    with TableInfo<$PortfolioPulsesTable, PortfolioPulse> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PortfolioPulsesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _portfolioIdMeta = const VerificationMeta(
+    'portfolioId',
+  );
+  @override
+  late final GeneratedColumn<String> portfolioId = GeneratedColumn<String>(
+    'portfolio_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES projects (id)',
+    ),
+  );
+  static const VerificationMeta _sourceProgrammeIdMeta = const VerificationMeta(
+    'sourceProgrammeId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceProgrammeId =
+      GeneratedColumn<String>(
+        'source_programme_id',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _sourceProgrammeNameMeta =
+      const VerificationMeta('sourceProgrammeName');
+  @override
+  late final GeneratedColumn<String> sourceProgrammeName =
+      GeneratedColumn<String>(
+        'source_programme_name',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _linkCodeMeta = const VerificationMeta(
+    'linkCode',
+  );
+  @override
+  late final GeneratedColumn<String> linkCode = GeneratedColumn<String>(
+    'link_code',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _weekOfMeta = const VerificationMeta('weekOf');
+  @override
+  late final GeneratedColumn<String> weekOf = GeneratedColumn<String>(
+    'week_of',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _capturedAtMeta = const VerificationMeta(
+    'capturedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> capturedAt = GeneratedColumn<DateTime>(
+    'captured_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _computedRagMeta = const VerificationMeta(
+    'computedRag',
+  );
+  @override
+  late final GeneratedColumn<String> computedRag = GeneratedColumn<String>(
+    'computed_rag',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _reportedRagMeta = const VerificationMeta(
+    'reportedRag',
+  );
+  @override
+  late final GeneratedColumn<String> reportedRag = GeneratedColumn<String>(
+    'reported_rag',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _completenessMeta = const VerificationMeta(
+    'completeness',
+  );
+  @override
+  late final GeneratedColumn<int> completeness = GeneratedColumn<int>(
+    'completeness',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _payloadMeta = const VerificationMeta(
+    'payload',
+  );
+  @override
+  late final GeneratedColumn<String> payload = GeneratedColumn<String>(
+    'payload',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    portfolioId,
+    sourceProgrammeId,
+    sourceProgrammeName,
+    linkCode,
+    weekOf,
+    capturedAt,
+    computedRag,
+    reportedRag,
+    completeness,
+    payload,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'portfolio_pulses';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PortfolioPulse> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('portfolio_id')) {
+      context.handle(
+        _portfolioIdMeta,
+        portfolioId.isAcceptableOrUnknown(
+          data['portfolio_id']!,
+          _portfolioIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_portfolioIdMeta);
+    }
+    if (data.containsKey('source_programme_id')) {
+      context.handle(
+        _sourceProgrammeIdMeta,
+        sourceProgrammeId.isAcceptableOrUnknown(
+          data['source_programme_id']!,
+          _sourceProgrammeIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceProgrammeIdMeta);
+    }
+    if (data.containsKey('source_programme_name')) {
+      context.handle(
+        _sourceProgrammeNameMeta,
+        sourceProgrammeName.isAcceptableOrUnknown(
+          data['source_programme_name']!,
+          _sourceProgrammeNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('link_code')) {
+      context.handle(
+        _linkCodeMeta,
+        linkCode.isAcceptableOrUnknown(data['link_code']!, _linkCodeMeta),
+      );
+    }
+    if (data.containsKey('week_of')) {
+      context.handle(
+        _weekOfMeta,
+        weekOf.isAcceptableOrUnknown(data['week_of']!, _weekOfMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_weekOfMeta);
+    }
+    if (data.containsKey('captured_at')) {
+      context.handle(
+        _capturedAtMeta,
+        capturedAt.isAcceptableOrUnknown(data['captured_at']!, _capturedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_capturedAtMeta);
+    }
+    if (data.containsKey('computed_rag')) {
+      context.handle(
+        _computedRagMeta,
+        computedRag.isAcceptableOrUnknown(
+          data['computed_rag']!,
+          _computedRagMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reported_rag')) {
+      context.handle(
+        _reportedRagMeta,
+        reportedRag.isAcceptableOrUnknown(
+          data['reported_rag']!,
+          _reportedRagMeta,
+        ),
+      );
+    }
+    if (data.containsKey('completeness')) {
+      context.handle(
+        _completenessMeta,
+        completeness.isAcceptableOrUnknown(
+          data['completeness']!,
+          _completenessMeta,
+        ),
+      );
+    }
+    if (data.containsKey('payload')) {
+      context.handle(
+        _payloadMeta,
+        payload.isAcceptableOrUnknown(data['payload']!, _payloadMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_payloadMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PortfolioPulse map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PortfolioPulse(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      portfolioId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}portfolio_id'],
+      )!,
+      sourceProgrammeId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_programme_id'],
+      )!,
+      sourceProgrammeName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_programme_name'],
+      ),
+      linkCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}link_code'],
+      ),
+      weekOf: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}week_of'],
+      )!,
+      capturedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}captured_at'],
+      )!,
+      computedRag: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}computed_rag'],
+      ),
+      reportedRag: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reported_rag'],
+      ),
+      completeness: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}completeness'],
+      )!,
+      payload: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $PortfolioPulsesTable createAlias(String alias) {
+    return $PortfolioPulsesTable(attachedDatabase, alias);
+  }
+}
+
+class PortfolioPulse extends DataClass implements Insertable<PortfolioPulse> {
+  final String id;
+  final String portfolioId;
+  final String sourceProgrammeId;
+  final String? sourceProgrammeName;
+  final String? linkCode;
+  final String weekOf;
+  final DateTime capturedAt;
+  final String? computedRag;
+  final String? reportedRag;
+  final int completeness;
+  final String payload;
+  final DateTime updatedAt;
+  const PortfolioPulse({
+    required this.id,
+    required this.portfolioId,
+    required this.sourceProgrammeId,
+    this.sourceProgrammeName,
+    this.linkCode,
+    required this.weekOf,
+    required this.capturedAt,
+    this.computedRag,
+    this.reportedRag,
+    required this.completeness,
+    required this.payload,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['portfolio_id'] = Variable<String>(portfolioId);
+    map['source_programme_id'] = Variable<String>(sourceProgrammeId);
+    if (!nullToAbsent || sourceProgrammeName != null) {
+      map['source_programme_name'] = Variable<String>(sourceProgrammeName);
+    }
+    if (!nullToAbsent || linkCode != null) {
+      map['link_code'] = Variable<String>(linkCode);
+    }
+    map['week_of'] = Variable<String>(weekOf);
+    map['captured_at'] = Variable<DateTime>(capturedAt);
+    if (!nullToAbsent || computedRag != null) {
+      map['computed_rag'] = Variable<String>(computedRag);
+    }
+    if (!nullToAbsent || reportedRag != null) {
+      map['reported_rag'] = Variable<String>(reportedRag);
+    }
+    map['completeness'] = Variable<int>(completeness);
+    map['payload'] = Variable<String>(payload);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  PortfolioPulsesCompanion toCompanion(bool nullToAbsent) {
+    return PortfolioPulsesCompanion(
+      id: Value(id),
+      portfolioId: Value(portfolioId),
+      sourceProgrammeId: Value(sourceProgrammeId),
+      sourceProgrammeName: sourceProgrammeName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceProgrammeName),
+      linkCode: linkCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(linkCode),
+      weekOf: Value(weekOf),
+      capturedAt: Value(capturedAt),
+      computedRag: computedRag == null && nullToAbsent
+          ? const Value.absent()
+          : Value(computedRag),
+      reportedRag: reportedRag == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reportedRag),
+      completeness: Value(completeness),
+      payload: Value(payload),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory PortfolioPulse.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PortfolioPulse(
+      id: serializer.fromJson<String>(json['id']),
+      portfolioId: serializer.fromJson<String>(json['portfolioId']),
+      sourceProgrammeId: serializer.fromJson<String>(json['sourceProgrammeId']),
+      sourceProgrammeName: serializer.fromJson<String?>(
+        json['sourceProgrammeName'],
+      ),
+      linkCode: serializer.fromJson<String?>(json['linkCode']),
+      weekOf: serializer.fromJson<String>(json['weekOf']),
+      capturedAt: serializer.fromJson<DateTime>(json['capturedAt']),
+      computedRag: serializer.fromJson<String?>(json['computedRag']),
+      reportedRag: serializer.fromJson<String?>(json['reportedRag']),
+      completeness: serializer.fromJson<int>(json['completeness']),
+      payload: serializer.fromJson<String>(json['payload']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'portfolioId': serializer.toJson<String>(portfolioId),
+      'sourceProgrammeId': serializer.toJson<String>(sourceProgrammeId),
+      'sourceProgrammeName': serializer.toJson<String?>(sourceProgrammeName),
+      'linkCode': serializer.toJson<String?>(linkCode),
+      'weekOf': serializer.toJson<String>(weekOf),
+      'capturedAt': serializer.toJson<DateTime>(capturedAt),
+      'computedRag': serializer.toJson<String?>(computedRag),
+      'reportedRag': serializer.toJson<String?>(reportedRag),
+      'completeness': serializer.toJson<int>(completeness),
+      'payload': serializer.toJson<String>(payload),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  PortfolioPulse copyWith({
+    String? id,
+    String? portfolioId,
+    String? sourceProgrammeId,
+    Value<String?> sourceProgrammeName = const Value.absent(),
+    Value<String?> linkCode = const Value.absent(),
+    String? weekOf,
+    DateTime? capturedAt,
+    Value<String?> computedRag = const Value.absent(),
+    Value<String?> reportedRag = const Value.absent(),
+    int? completeness,
+    String? payload,
+    DateTime? updatedAt,
+  }) => PortfolioPulse(
+    id: id ?? this.id,
+    portfolioId: portfolioId ?? this.portfolioId,
+    sourceProgrammeId: sourceProgrammeId ?? this.sourceProgrammeId,
+    sourceProgrammeName: sourceProgrammeName.present
+        ? sourceProgrammeName.value
+        : this.sourceProgrammeName,
+    linkCode: linkCode.present ? linkCode.value : this.linkCode,
+    weekOf: weekOf ?? this.weekOf,
+    capturedAt: capturedAt ?? this.capturedAt,
+    computedRag: computedRag.present ? computedRag.value : this.computedRag,
+    reportedRag: reportedRag.present ? reportedRag.value : this.reportedRag,
+    completeness: completeness ?? this.completeness,
+    payload: payload ?? this.payload,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  PortfolioPulse copyWithCompanion(PortfolioPulsesCompanion data) {
+    return PortfolioPulse(
+      id: data.id.present ? data.id.value : this.id,
+      portfolioId: data.portfolioId.present
+          ? data.portfolioId.value
+          : this.portfolioId,
+      sourceProgrammeId: data.sourceProgrammeId.present
+          ? data.sourceProgrammeId.value
+          : this.sourceProgrammeId,
+      sourceProgrammeName: data.sourceProgrammeName.present
+          ? data.sourceProgrammeName.value
+          : this.sourceProgrammeName,
+      linkCode: data.linkCode.present ? data.linkCode.value : this.linkCode,
+      weekOf: data.weekOf.present ? data.weekOf.value : this.weekOf,
+      capturedAt: data.capturedAt.present
+          ? data.capturedAt.value
+          : this.capturedAt,
+      computedRag: data.computedRag.present
+          ? data.computedRag.value
+          : this.computedRag,
+      reportedRag: data.reportedRag.present
+          ? data.reportedRag.value
+          : this.reportedRag,
+      completeness: data.completeness.present
+          ? data.completeness.value
+          : this.completeness,
+      payload: data.payload.present ? data.payload.value : this.payload,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PortfolioPulse(')
+          ..write('id: $id, ')
+          ..write('portfolioId: $portfolioId, ')
+          ..write('sourceProgrammeId: $sourceProgrammeId, ')
+          ..write('sourceProgrammeName: $sourceProgrammeName, ')
+          ..write('linkCode: $linkCode, ')
+          ..write('weekOf: $weekOf, ')
+          ..write('capturedAt: $capturedAt, ')
+          ..write('computedRag: $computedRag, ')
+          ..write('reportedRag: $reportedRag, ')
+          ..write('completeness: $completeness, ')
+          ..write('payload: $payload, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    portfolioId,
+    sourceProgrammeId,
+    sourceProgrammeName,
+    linkCode,
+    weekOf,
+    capturedAt,
+    computedRag,
+    reportedRag,
+    completeness,
+    payload,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PortfolioPulse &&
+          other.id == this.id &&
+          other.portfolioId == this.portfolioId &&
+          other.sourceProgrammeId == this.sourceProgrammeId &&
+          other.sourceProgrammeName == this.sourceProgrammeName &&
+          other.linkCode == this.linkCode &&
+          other.weekOf == this.weekOf &&
+          other.capturedAt == this.capturedAt &&
+          other.computedRag == this.computedRag &&
+          other.reportedRag == this.reportedRag &&
+          other.completeness == this.completeness &&
+          other.payload == this.payload &&
+          other.updatedAt == this.updatedAt);
+}
+
+class PortfolioPulsesCompanion extends UpdateCompanion<PortfolioPulse> {
+  final Value<String> id;
+  final Value<String> portfolioId;
+  final Value<String> sourceProgrammeId;
+  final Value<String?> sourceProgrammeName;
+  final Value<String?> linkCode;
+  final Value<String> weekOf;
+  final Value<DateTime> capturedAt;
+  final Value<String?> computedRag;
+  final Value<String?> reportedRag;
+  final Value<int> completeness;
+  final Value<String> payload;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const PortfolioPulsesCompanion({
+    this.id = const Value.absent(),
+    this.portfolioId = const Value.absent(),
+    this.sourceProgrammeId = const Value.absent(),
+    this.sourceProgrammeName = const Value.absent(),
+    this.linkCode = const Value.absent(),
+    this.weekOf = const Value.absent(),
+    this.capturedAt = const Value.absent(),
+    this.computedRag = const Value.absent(),
+    this.reportedRag = const Value.absent(),
+    this.completeness = const Value.absent(),
+    this.payload = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PortfolioPulsesCompanion.insert({
+    required String id,
+    required String portfolioId,
+    required String sourceProgrammeId,
+    this.sourceProgrammeName = const Value.absent(),
+    this.linkCode = const Value.absent(),
+    required String weekOf,
+    required DateTime capturedAt,
+    this.computedRag = const Value.absent(),
+    this.reportedRag = const Value.absent(),
+    this.completeness = const Value.absent(),
+    required String payload,
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       portfolioId = Value(portfolioId),
+       sourceProgrammeId = Value(sourceProgrammeId),
+       weekOf = Value(weekOf),
+       capturedAt = Value(capturedAt),
+       payload = Value(payload);
+  static Insertable<PortfolioPulse> custom({
+    Expression<String>? id,
+    Expression<String>? portfolioId,
+    Expression<String>? sourceProgrammeId,
+    Expression<String>? sourceProgrammeName,
+    Expression<String>? linkCode,
+    Expression<String>? weekOf,
+    Expression<DateTime>? capturedAt,
+    Expression<String>? computedRag,
+    Expression<String>? reportedRag,
+    Expression<int>? completeness,
+    Expression<String>? payload,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (portfolioId != null) 'portfolio_id': portfolioId,
+      if (sourceProgrammeId != null) 'source_programme_id': sourceProgrammeId,
+      if (sourceProgrammeName != null)
+        'source_programme_name': sourceProgrammeName,
+      if (linkCode != null) 'link_code': linkCode,
+      if (weekOf != null) 'week_of': weekOf,
+      if (capturedAt != null) 'captured_at': capturedAt,
+      if (computedRag != null) 'computed_rag': computedRag,
+      if (reportedRag != null) 'reported_rag': reportedRag,
+      if (completeness != null) 'completeness': completeness,
+      if (payload != null) 'payload': payload,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PortfolioPulsesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? portfolioId,
+    Value<String>? sourceProgrammeId,
+    Value<String?>? sourceProgrammeName,
+    Value<String?>? linkCode,
+    Value<String>? weekOf,
+    Value<DateTime>? capturedAt,
+    Value<String?>? computedRag,
+    Value<String?>? reportedRag,
+    Value<int>? completeness,
+    Value<String>? payload,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return PortfolioPulsesCompanion(
+      id: id ?? this.id,
+      portfolioId: portfolioId ?? this.portfolioId,
+      sourceProgrammeId: sourceProgrammeId ?? this.sourceProgrammeId,
+      sourceProgrammeName: sourceProgrammeName ?? this.sourceProgrammeName,
+      linkCode: linkCode ?? this.linkCode,
+      weekOf: weekOf ?? this.weekOf,
+      capturedAt: capturedAt ?? this.capturedAt,
+      computedRag: computedRag ?? this.computedRag,
+      reportedRag: reportedRag ?? this.reportedRag,
+      completeness: completeness ?? this.completeness,
+      payload: payload ?? this.payload,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (portfolioId.present) {
+      map['portfolio_id'] = Variable<String>(portfolioId.value);
+    }
+    if (sourceProgrammeId.present) {
+      map['source_programme_id'] = Variable<String>(sourceProgrammeId.value);
+    }
+    if (sourceProgrammeName.present) {
+      map['source_programme_name'] = Variable<String>(
+        sourceProgrammeName.value,
+      );
+    }
+    if (linkCode.present) {
+      map['link_code'] = Variable<String>(linkCode.value);
+    }
+    if (weekOf.present) {
+      map['week_of'] = Variable<String>(weekOf.value);
+    }
+    if (capturedAt.present) {
+      map['captured_at'] = Variable<DateTime>(capturedAt.value);
+    }
+    if (computedRag.present) {
+      map['computed_rag'] = Variable<String>(computedRag.value);
+    }
+    if (reportedRag.present) {
+      map['reported_rag'] = Variable<String>(reportedRag.value);
+    }
+    if (completeness.present) {
+      map['completeness'] = Variable<int>(completeness.value);
+    }
+    if (payload.present) {
+      map['payload'] = Variable<String>(payload.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PortfolioPulsesCompanion(')
+          ..write('id: $id, ')
+          ..write('portfolioId: $portfolioId, ')
+          ..write('sourceProgrammeId: $sourceProgrammeId, ')
+          ..write('sourceProgrammeName: $sourceProgrammeName, ')
+          ..write('linkCode: $linkCode, ')
+          ..write('weekOf: $weekOf, ')
+          ..write('capturedAt: $capturedAt, ')
+          ..write('computedRag: $computedRag, ')
+          ..write('reportedRag: $reportedRag, ')
+          ..write('completeness: $completeness, ')
+          ..write('payload: $payload, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $DayPlansTable extends DayPlans with TableInfo<$DayPlansTable, DayPlan> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -46711,6 +47456,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $ProgrammeFinanceSettingsTable(this);
   late final $ReceivedAllocationsTable receivedAllocations =
       $ReceivedAllocationsTable(this);
+  late final $PortfolioPulsesTable portfolioPulses = $PortfolioPulsesTable(
+    this,
+  );
   late final $DayPlansTable dayPlans = $DayPlansTable(this);
   late final $DayPlanBlocksTable dayPlanBlocks = $DayPlanBlocksTable(this);
   late final $WeekPlansTable weekPlans = $WeekPlansTable(this);
@@ -46750,6 +47498,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this as AppDatabase,
   );
   late final StatusSnapshotDao statusSnapshotDao = StatusSnapshotDao(
+    this as AppDatabase,
+  );
+  late final PortfolioPulsesDao portfolioPulsesDao = PortfolioPulsesDao(
     this as AppDatabase,
   );
   late final ProjectCharterDao projectCharterDao = ProjectCharterDao(
@@ -46842,6 +47593,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     contingencyMovements,
     programmeFinanceSettings,
     receivedAllocations,
+    portfolioPulses,
     dayPlans,
     dayPlanBlocks,
     weekPlans,
@@ -48031,6 +48783,29 @@ final class $$ProjectsTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _receivedAllocationsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$PortfolioPulsesTable, List<PortfolioPulse>>
+  _portfolioPulsesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.portfolioPulses,
+    aliasName: $_aliasNameGenerator(
+      db.projects.id,
+      db.portfolioPulses.portfolioId,
+    ),
+  );
+
+  $$PortfolioPulsesTableProcessedTableManager get portfolioPulsesRefs {
+    final manager = $$PortfolioPulsesTableTableManager(
+      $_db,
+      $_db.portfolioPulses,
+    ).filter((f) => f.portfolioId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _portfolioPulsesRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -49387,6 +50162,31 @@ class $$ProjectsTableFilterComposer
           }) => $$ReceivedAllocationsTableFilterComposer(
             $db: $db,
             $table: $db.receivedAllocations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> portfolioPulsesRefs(
+    Expression<bool> Function($$PortfolioPulsesTableFilterComposer f) f,
+  ) {
+    final $$PortfolioPulsesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.portfolioPulses,
+      getReferencedColumn: (t) => t.portfolioId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PortfolioPulsesTableFilterComposer(
+            $db: $db,
+            $table: $db.portfolioPulses,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -50811,6 +51611,31 @@ class $$ProjectsTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> portfolioPulsesRefs<T extends Object>(
+    Expression<T> Function($$PortfolioPulsesTableAnnotationComposer a) f,
+  ) {
+    final $$PortfolioPulsesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.portfolioPulses,
+      getReferencedColumn: (t) => t.portfolioId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PortfolioPulsesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.portfolioPulses,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$ProjectsTableTableManager
@@ -50879,6 +51704,7 @@ class $$ProjectsTableTableManager
             bool contingencyMovementsRefs,
             bool programmeFinanceSettingsRefs,
             bool receivedAllocationsRefs,
+            bool portfolioPulsesRefs,
           })
         > {
   $$ProjectsTableTableManager(_$AppDatabase db, $ProjectsTable table)
@@ -51002,6 +51828,7 @@ class $$ProjectsTableTableManager
                 contingencyMovementsRefs = false,
                 programmeFinanceSettingsRefs = false,
                 receivedAllocationsRefs = false,
+                portfolioPulsesRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -51059,6 +51886,7 @@ class $$ProjectsTableTableManager
                     if (programmeFinanceSettingsRefs)
                       db.programmeFinanceSettings,
                     if (receivedAllocationsRefs) db.receivedAllocations,
+                    if (portfolioPulsesRefs) db.portfolioPulses,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -52155,6 +52983,27 @@ class $$ProjectsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (portfolioPulsesRefs)
+                        await $_getPrefetchedData<
+                          Project,
+                          $ProjectsTable,
+                          PortfolioPulse
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProjectsTableReferences
+                              ._portfolioPulsesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).portfolioPulsesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.portfolioId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -52228,6 +53077,7 @@ typedef $$ProjectsTableProcessedTableManager =
         bool contingencyMovementsRefs,
         bool programmeFinanceSettingsRefs,
         bool receivedAllocationsRefs,
+        bool portfolioPulsesRefs,
       })
     >;
 typedef $$ProgrammeLinksTableCreateCompanionBuilder =
@@ -82958,6 +83808,479 @@ typedef $$ReceivedAllocationsTableProcessedTableManager =
       ReceivedAllocation,
       PrefetchHooks Function({bool projectId})
     >;
+typedef $$PortfolioPulsesTableCreateCompanionBuilder =
+    PortfolioPulsesCompanion Function({
+      required String id,
+      required String portfolioId,
+      required String sourceProgrammeId,
+      Value<String?> sourceProgrammeName,
+      Value<String?> linkCode,
+      required String weekOf,
+      required DateTime capturedAt,
+      Value<String?> computedRag,
+      Value<String?> reportedRag,
+      Value<int> completeness,
+      required String payload,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$PortfolioPulsesTableUpdateCompanionBuilder =
+    PortfolioPulsesCompanion Function({
+      Value<String> id,
+      Value<String> portfolioId,
+      Value<String> sourceProgrammeId,
+      Value<String?> sourceProgrammeName,
+      Value<String?> linkCode,
+      Value<String> weekOf,
+      Value<DateTime> capturedAt,
+      Value<String?> computedRag,
+      Value<String?> reportedRag,
+      Value<int> completeness,
+      Value<String> payload,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$PortfolioPulsesTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $PortfolioPulsesTable, PortfolioPulse> {
+  $$PortfolioPulsesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ProjectsTable _portfolioIdTable(_$AppDatabase db) =>
+      db.projects.createAlias(
+        $_aliasNameGenerator(db.portfolioPulses.portfolioId, db.projects.id),
+      );
+
+  $$ProjectsTableProcessedTableManager get portfolioId {
+    final $_column = $_itemColumn<String>('portfolio_id')!;
+
+    final manager = $$ProjectsTableTableManager(
+      $_db,
+      $_db.projects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_portfolioIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$PortfolioPulsesTableFilterComposer
+    extends Composer<_$AppDatabase, $PortfolioPulsesTable> {
+  $$PortfolioPulsesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceProgrammeId => $composableBuilder(
+    column: $table.sourceProgrammeId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceProgrammeName => $composableBuilder(
+    column: $table.sourceProgrammeName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get linkCode => $composableBuilder(
+    column: $table.linkCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get weekOf => $composableBuilder(
+    column: $table.weekOf,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get capturedAt => $composableBuilder(
+    column: $table.capturedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get computedRag => $composableBuilder(
+    column: $table.computedRag,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reportedRag => $composableBuilder(
+    column: $table.reportedRag,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get completeness => $composableBuilder(
+    column: $table.completeness,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ProjectsTableFilterComposer get portfolioId {
+    final $$ProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.portfolioId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PortfolioPulsesTableOrderingComposer
+    extends Composer<_$AppDatabase, $PortfolioPulsesTable> {
+  $$PortfolioPulsesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceProgrammeId => $composableBuilder(
+    column: $table.sourceProgrammeId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceProgrammeName => $composableBuilder(
+    column: $table.sourceProgrammeName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get linkCode => $composableBuilder(
+    column: $table.linkCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get weekOf => $composableBuilder(
+    column: $table.weekOf,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get capturedAt => $composableBuilder(
+    column: $table.capturedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get computedRag => $composableBuilder(
+    column: $table.computedRag,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reportedRag => $composableBuilder(
+    column: $table.reportedRag,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get completeness => $composableBuilder(
+    column: $table.completeness,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ProjectsTableOrderingComposer get portfolioId {
+    final $$ProjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.portfolioId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PortfolioPulsesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PortfolioPulsesTable> {
+  $$PortfolioPulsesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get sourceProgrammeId => $composableBuilder(
+    column: $table.sourceProgrammeId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceProgrammeName => $composableBuilder(
+    column: $table.sourceProgrammeName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get linkCode =>
+      $composableBuilder(column: $table.linkCode, builder: (column) => column);
+
+  GeneratedColumn<String> get weekOf =>
+      $composableBuilder(column: $table.weekOf, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get capturedAt => $composableBuilder(
+    column: $table.capturedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get computedRag => $composableBuilder(
+    column: $table.computedRag,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get reportedRag => $composableBuilder(
+    column: $table.reportedRag,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get completeness => $composableBuilder(
+    column: $table.completeness,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get payload =>
+      $composableBuilder(column: $table.payload, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$ProjectsTableAnnotationComposer get portfolioId {
+    final $$ProjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.portfolioId,
+      referencedTable: $db.projects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.projects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PortfolioPulsesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PortfolioPulsesTable,
+          PortfolioPulse,
+          $$PortfolioPulsesTableFilterComposer,
+          $$PortfolioPulsesTableOrderingComposer,
+          $$PortfolioPulsesTableAnnotationComposer,
+          $$PortfolioPulsesTableCreateCompanionBuilder,
+          $$PortfolioPulsesTableUpdateCompanionBuilder,
+          (PortfolioPulse, $$PortfolioPulsesTableReferences),
+          PortfolioPulse,
+          PrefetchHooks Function({bool portfolioId})
+        > {
+  $$PortfolioPulsesTableTableManager(
+    _$AppDatabase db,
+    $PortfolioPulsesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PortfolioPulsesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PortfolioPulsesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PortfolioPulsesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> portfolioId = const Value.absent(),
+                Value<String> sourceProgrammeId = const Value.absent(),
+                Value<String?> sourceProgrammeName = const Value.absent(),
+                Value<String?> linkCode = const Value.absent(),
+                Value<String> weekOf = const Value.absent(),
+                Value<DateTime> capturedAt = const Value.absent(),
+                Value<String?> computedRag = const Value.absent(),
+                Value<String?> reportedRag = const Value.absent(),
+                Value<int> completeness = const Value.absent(),
+                Value<String> payload = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PortfolioPulsesCompanion(
+                id: id,
+                portfolioId: portfolioId,
+                sourceProgrammeId: sourceProgrammeId,
+                sourceProgrammeName: sourceProgrammeName,
+                linkCode: linkCode,
+                weekOf: weekOf,
+                capturedAt: capturedAt,
+                computedRag: computedRag,
+                reportedRag: reportedRag,
+                completeness: completeness,
+                payload: payload,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String portfolioId,
+                required String sourceProgrammeId,
+                Value<String?> sourceProgrammeName = const Value.absent(),
+                Value<String?> linkCode = const Value.absent(),
+                required String weekOf,
+                required DateTime capturedAt,
+                Value<String?> computedRag = const Value.absent(),
+                Value<String?> reportedRag = const Value.absent(),
+                Value<int> completeness = const Value.absent(),
+                required String payload,
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PortfolioPulsesCompanion.insert(
+                id: id,
+                portfolioId: portfolioId,
+                sourceProgrammeId: sourceProgrammeId,
+                sourceProgrammeName: sourceProgrammeName,
+                linkCode: linkCode,
+                weekOf: weekOf,
+                capturedAt: capturedAt,
+                computedRag: computedRag,
+                reportedRag: reportedRag,
+                completeness: completeness,
+                payload: payload,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$PortfolioPulsesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({portfolioId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (portfolioId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.portfolioId,
+                                referencedTable:
+                                    $$PortfolioPulsesTableReferences
+                                        ._portfolioIdTable(db),
+                                referencedColumn:
+                                    $$PortfolioPulsesTableReferences
+                                        ._portfolioIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$PortfolioPulsesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PortfolioPulsesTable,
+      PortfolioPulse,
+      $$PortfolioPulsesTableFilterComposer,
+      $$PortfolioPulsesTableOrderingComposer,
+      $$PortfolioPulsesTableAnnotationComposer,
+      $$PortfolioPulsesTableCreateCompanionBuilder,
+      $$PortfolioPulsesTableUpdateCompanionBuilder,
+      (PortfolioPulse, $$PortfolioPulsesTableReferences),
+      PortfolioPulse,
+      PrefetchHooks Function({bool portfolioId})
+    >;
 typedef $$DayPlansTableCreateCompanionBuilder =
     DayPlansCompanion Function({
       required String id,
@@ -85518,6 +86841,8 @@ class $AppDatabaseManager {
       );
   $$ReceivedAllocationsTableTableManager get receivedAllocations =>
       $$ReceivedAllocationsTableTableManager(_db, _db.receivedAllocations);
+  $$PortfolioPulsesTableTableManager get portfolioPulses =>
+      $$PortfolioPulsesTableTableManager(_db, _db.portfolioPulses);
   $$DayPlansTableTableManager get dayPlans =>
       $$DayPlansTableTableManager(_db, _db.dayPlans);
   $$DayPlanBlocksTableTableManager get dayPlanBlocks =>
@@ -86006,6 +87331,24 @@ class StatusSnapshotDaoManager {
       $$StatusSnapshotsTableTableManager(
         _db.attachedDatabase,
         _db.statusSnapshots,
+      );
+}
+
+mixin _$PortfolioPulsesDaoMixin on DatabaseAccessor<AppDatabase> {
+  $ProjectsTable get projects => attachedDatabase.projects;
+  $PortfolioPulsesTable get portfolioPulses => attachedDatabase.portfolioPulses;
+  PortfolioPulsesDaoManager get managers => PortfolioPulsesDaoManager(this);
+}
+
+class PortfolioPulsesDaoManager {
+  final _$PortfolioPulsesDaoMixin _db;
+  PortfolioPulsesDaoManager(this._db);
+  $$ProjectsTableTableManager get projects =>
+      $$ProjectsTableTableManager(_db.attachedDatabase, _db.projects);
+  $$PortfolioPulsesTableTableManager get portfolioPulses =>
+      $$PortfolioPulsesTableTableManager(
+        _db.attachedDatabase,
+        _db.portfolioPulses,
       );
 }
 

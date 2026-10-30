@@ -37,6 +37,7 @@ part 'daos/finance_dao.dart';
 part 'daos/day_plan_dao.dart';
 part 'daos/week_plan_dao.dart';
 part 'daos/quarter_plan_dao.dart';
+part 'daos/portfolio_pulses_dao.dart';
 
 // ---------------------------------------------------------------------------
 // Tables
@@ -54,6 +55,8 @@ class Projects extends Table {
   // cascaded items from linked child projects.
   //   'project'   — default for existing rows
   //   'programme' — manages a portfolio of linked projects
+  //   'portfolio' — the PMO tier: links programmes and receives their
+  //                 weekly computed pulse (see core/portfolio/)
   TextColumn get kind =>
       text().withDefault(const Constant('project'))();
   // Set on a project row to indicate which programme it cascades up to.
@@ -1423,6 +1426,33 @@ class ReceivedAllocations extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// PORTFOLIO-side: one computed pulse per linked programme per ISO week,
+/// applied from the `pulse` cascade kind. The payload (JSON, see
+/// core/portfolio/programme_pulse.dart) is the portfolio's minimum data
+/// standard; the denormalised columns exist so the overview can list and
+/// trend without decoding every row. History is kept deliberately — the
+/// weekly series is what makes RAG drift and decision latency visible.
+class PortfolioPulses extends Table {
+  TextColumn get id => text().named('id')(); // pulse:<programme>:<weekMonday>
+  TextColumn get portfolioId => text().references(Projects, #id)();
+  TextColumn get sourceProgrammeId => text()();
+  TextColumn get sourceProgrammeName => text().nullable()();
+  // Routing code of the link the pulse arrived over. Cross-machine the
+  // link row has no partnerLocalId, so this is what ties pulses to a link
+  // when it is revoked.
+  TextColumn get linkCode => text().nullable()();
+  TextColumn get weekOf => text()(); // ISO Monday
+  DateTimeColumn get capturedAt => dateTime()();
+  TextColumn get computedRag => text().nullable()();
+  TextColumn get reportedRag => text().nullable()();
+  IntColumn get completeness => integer().withDefault(const Constant(0))();
+  TextColumn get payload => text()();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 /// Append-only audit trail for every financial mutation. Written by
 /// FinanceDao inside the same transaction as the change itself — no
 /// write path can skip it. field='created'/'deleted' mark row-level
@@ -1776,6 +1806,7 @@ class QuarterGoals extends Table {
     ContingencyMovements,
     ProgrammeFinanceSettings,
     ReceivedAllocations,
+    PortfolioPulses,
     DayPlans,
     DayPlanBlocks,
     WeekPlans,
@@ -1805,6 +1836,7 @@ class QuarterGoals extends Table {
     WorkstreamActivitiesDao,
     ProgrammeGanttDao,
     StatusSnapshotDao,
+    PortfolioPulsesDao,
     ProjectCharterDao,
     ProgrammeOverviewStateDao,
     ActionCommentsDao,
@@ -1826,7 +1858,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(QueryExecutor executor) : super(executor);
 
   @override
-  int get schemaVersion => 67;
+  int get schemaVersion => 68;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -2381,6 +2413,11 @@ class AppDatabase extends _$AppDatabase {
             await ensureColumn(weekPlans, weekPlans.reviewedAt);
             await ensureColumn(weekPlans, weekPlans.reviewNote);
           }
+          if (from < 68) {
+            // Portfolio tier: weekly programme pulses cascaded up to a
+            // portfolio-kind project.
+            await ensureTable(portfolioPulses);
+          }
         },
       );
 
@@ -2494,6 +2531,9 @@ class AppDatabase extends _$AppDatabase {
         projectId: Value(null),
         linkedActionId: Value(null),
       ));
+      await (delete(portfolioPulses)
+            ..where((t) => t.portfolioId.equals(projectId)))
+          .go();
       await (delete(projects)..where((t) => t.id.equals(projectId))).go();
     });
   }

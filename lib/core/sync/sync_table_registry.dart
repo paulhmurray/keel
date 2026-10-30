@@ -74,6 +74,10 @@ const Set<String> syncedTables = {
   'contingency_movements',
   'programme_finance_settings',
   'received_allocations',
+  // Portfolio tier: weekly programme pulses received over the cascade.
+  // Like received_allocations, a read-only copy — but the portfolio owns
+  // the rows, so they ride in ITS blob and reconnect on a new machine.
+  'portfolio_pulses',
   // Helm day plans are GLOBAL (one day spans every project) but still
   // ride in every project's sync blob — there is no per-user channel.
   // Import is guarded per-day by updatedAt (DayPlanDao.applyImportedPlan)
