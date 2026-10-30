@@ -13,23 +13,49 @@
 /// Dates are relative to today so the demo never goes stale.
 library;
 
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 
 import '../cascade/cascade_service.dart';
 import '../cascade/cascade_sync.dart';
 import '../cascade/local_cascade_gateway.dart';
 import '../database/database.dart';
-import '../portfolio/programme_pulse.dart' show isoDate;
+import '../portfolio/programme_pulse.dart';
+import '../portfolio/programme_pulse_builder.dart';
+
+enum PortfolioSeedOutcome { created, backfilled, unchanged }
 
 class PortfolioSeedService {
   static const portfolioId = 'seed-port-001';
 
-  /// Seeds the whole tree. Returns false (and does nothing) when the demo
-  /// portfolio already exists.
-  static Future<bool> seed(AppDatabase db) async {
-    if (await db.projectDao.getProjectById(portfolioId) != null) return false;
+  /// Weeks of pulse history backfilled behind this week's live pulse, so
+  /// trends exist on day one instead of after two months of real use.
+  static const historyWeeks = 8;
+
+  /// Seeds the whole tree. When the demo portfolio already exists, only the
+  /// pulse history is topped up (a demo loaded by an older build gets its
+  /// trends without being deleted and reloaded).
+  static Future<PortfolioSeedOutcome> seed(AppDatabase db) async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
+    final programmes = _programmes();
+
+    if (await db.projectDao.getProjectById(portfolioId) != null) {
+      final added = await _backfillHistory(db, programmes, today);
+      return added ? PortfolioSeedOutcome.backfilled : PortfolioSeedOutcome.unchanged;
+    }
+    // A half-deleted earlier demo (portfolio gone, programmes left) would
+    // collide on ids and, worse, leave its link rows behind
+    // (deleteProjectCascade does not touch programme_links), so a reseed
+    // would double every link. Purge leftovers, links and channels first.
+    await _purgeEntity(db, portfolioId);
+    for (final prog in programmes) {
+      for (final prj in prog.projects) {
+        await _purgeEntity(db, prj.id);
+      }
+      await _purgeEntity(db, prog.id);
+    }
 
     // Plan axis shared by every entity: 24 months from the January of
     // this year, so cascaded bars line up on the programme Gantt.
@@ -51,301 +77,6 @@ class PortfolioSeedService {
           'customer channels and the regulatory uplift.'),
       startDate: Value(isoDate(month0)),
     ));
-
-    final programmes = <_Programme>[
-      _Programme(
-        id: 'seed-prog-cb',
-        name: 'Core Banking Modernisation',
-        reportedRag: 'amber',
-        reportSummary:
-            'Temenos migration tracking to the re-baselined plan. Wave 2 '
-            'data reconciliation is the watch item; vendor capacity is '
-            'the constraint.',
-        projects: [
-          _Project(
-            id: 'seed-prj-cb-mig',
-            name: 'Account Migration Waves',
-            lead: 'Dana Whitfield',
-            wps: [
-              _WP('mig-w1', 'Wave 1 — pilot accounts', 'wp1', 'green'),
-              _WP('mig-w2', 'Wave 2 — retail 1.2M', 'wp2', 'amber'),
-              _WP('mig-rec', 'Reconciliation & cut-over', 'wp3', 'amber'),
-            ],
-            milestones: [
-              _MS('mig-w1', 'Wave 1 cut-over complete', -40, 'complete'),
-              _MS('mig-w2', 'Wave 2 dress rehearsal', 18, 'on_track', type: 'gate'),
-              _MS('mig-w2', 'Wave 2 go-live', 46, 'not_started'),
-              _MS('mig-rec', 'Legacy read-only', 120, 'not_started', type: 'hard_deadline'),
-            ],
-            risks: [
-              _Risk('Reconciliation tooling cannot handle Wave 2 volumes in the '
-                  'overnight window', 'likely', 'major', escalated: true),
-              _Risk('Temenos SI rotates two senior engineers off in Q2',
-                  'possible', 'major'),
-              _Risk('Customer comms land after cut-over notice period',
-                  'unlikely', 'moderate'),
-            ],
-            issues: [
-              _Issue('Wave 1 defect backlog (14 open) delaying Wave 2 entry',
-                  'high', escalated: true),
-            ],
-            dependency: _Dep('Data platform CDC feeds must be live before Wave 2',
-                'Real-time Data Platform', 'inbound'),
-            decisions: [
-              _Dec('Approve Wave 2 scope split (retail then SME)', 'decided',
-                  raisedDays: -30, decidedDays: -12),
-              _Dec('Extend parallel-run from 2 to 4 weeks', 'pending',
-                  dueDays: 10, impact: 'Delays Wave 2 go-live by a fortnight'),
-              _Dec('Accept reconciliation tolerance of 0.01%', 'pending',
-                  dueDays: 25),
-            ],
-            actions: [
-              _Act('Load-test reconciliation tool at 2× Wave 2 volume',
-                  'Marcus Webb', -5),
-              _Act('Confirm SI staffing plan for Q2', 'Dana Whitfield', 12),
-              _Act('Draft customer cut-over notice', 'Priya Sharma', 20),
-            ],
-            people: ['Dana Whitfield', 'Marcus Webb', 'Priya Sharma', 'Tom Adeyemi'],
-            budgetPounds: 9800000,
-            forecastFactorBp: 10300, // +3%: inside tolerance
-          ),
-          _Project(
-            id: 'seed-prj-cb-data',
-            name: 'Real-time Data Platform',
-            lead: 'Sophie Chen',
-            wps: [
-              _WP('dp-cdc', 'Change-data-capture feeds', 'wp1', 'green'),
-              _WP('dp-lake', 'Lakehouse & reporting', 'wp2', 'green'),
-            ],
-            milestones: [
-              _MS('dp-cdc', 'CDC live for current accounts', -20, 'complete'),
-              _MS('dp-cdc', 'CDC live for lending', 14, 'on_track'),
-              _MS('dp-lake', 'Finance reporting on lakehouse', 75, 'not_started'),
-            ],
-            risks: [
-              _Risk('Kafka cluster sizing underestimates lending event volume',
-                  'possible', 'moderate'),
-              _Risk('Lakehouse vendor pricing changes at renewal', 'unlikely', 'minor'),
-            ],
-            issues: const [],
-            dependency: _Dep('Downstream of Account Migration for schema freeze',
-                'Account Migration Waves', 'outbound'),
-            decisions: [
-              _Dec('Standardise on Iceberg table format', 'decided',
-                  raisedDays: -50, decidedDays: -41),
-              _Dec('Retire nightly batch extracts once CDC is live', 'pending',
-                  dueDays: 40),
-            ],
-            actions: [
-              _Act('Publish CDC schema catalogue', 'Sophie Chen', 7),
-              _Act('Agree lending event volumes with Temenos', 'Marcus Webb', 15),
-            ],
-            people: ['Sophie Chen', 'Marcus Webb', 'Tom Adeyemi'],
-            budgetPounds: 4200000,
-            forecastFactorBp: 9900,
-          ),
-          _Project(
-            id: 'seed-prj-cb-decom',
-            name: 'Mainframe Decommission',
-            lead: 'Tom Adeyemi',
-            wps: [
-              _WP('dc-inv', 'Application inventory & retirement', 'wp1', 'green'),
-              _WP('dc-exit', 'Hosting contract exit', 'wp2', 'amber'),
-            ],
-            milestones: [
-              _MS('dc-inv', 'Retirement list approved', -10, 'complete', type: 'gate'),
-              _MS('dc-exit', 'Hosting exit notice served', 60, 'not_started'),
-              _MS('dc-exit', 'Mainframe powered down', 330, 'not_started', type: 'hard_deadline'),
-            ],
-            risks: [
-              _Risk('Two regulatory reports still only run on the mainframe',
-                  'likely', 'moderate'),
-            ],
-            issues: const [],
-            dependency: _Dep('Cannot exit hosting until Wave 2 migration completes',
-                'Account Migration Waves', 'inbound'),
-            decisions: [
-              _Dec('Serve hosting exit notice in Q3 or Q4', 'pending', dueDays: 55),
-            ],
-            actions: [
-              _Act('Re-platform remaining regulatory reports', 'Tom Adeyemi', 30),
-            ],
-            people: ['Tom Adeyemi', 'Marcus Webb'],
-            budgetPounds: 1600000,
-            forecastFactorBp: 10000,
-          ),
-        ],
-      ),
-      _Programme(
-        id: 'seed-prog-ch',
-        name: 'Customer Channels',
-        reportedRag: 'green',
-        reportSummary:
-            'Mobile app adoption ahead of plan; open banking integrations '
-            'progressing. No issues to raise to the Board this period.',
-        projects: [
-          _Project(
-            id: 'seed-prj-ch-mobile',
-            name: 'Mobile App 2.0',
-            lead: 'Priya Sharma',
-            wps: [
-              _WP('mb-core', 'Core app rebuild', 'wp1', 'red'),
-              _WP('mb-ob', 'Open banking integrations', 'wp2', 'amber'),
-              _WP('mb-launch', 'Launch & adoption', 'wp3', 'amber'),
-            ],
-            milestones: [
-              _MS('mb-core', 'Beta to 5k staff', -25, 'at_risk'),
-              _MS('mb-core', 'App store submission', -3, 'at_risk', type: 'gate'),
-              _MS('mb-ob', 'Three aggregators live', 35, 'not_started'),
-              _MS('mb-launch', 'Public launch', 70, 'not_started', type: 'hard_deadline'),
-            ],
-            risks: [
-              _Risk('Biometric login fails accessibility audit', 'likely', 'severe',
-                  escalated: true),
-              _Risk('Apple review rejects background payments flow', 'possible', 'major',
-                  escalated: true),
-              _Risk('Aggregator certification queue is 8 weeks', 'likely', 'moderate'),
-              _Risk('Marketing launch date fixed before build date', 'almost certain',
-                  'major'),
-            ],
-            issues: [
-              _Issue('Beta crash rate 4.1% against 1% exit criterion', 'high',
-                  escalated: true),
-              _Issue('Two squads without a tech lead since March', 'medium'),
-            ],
-            dependency: _Dep('Needs identity platform tokens from Regulatory uplift',
-                'Identity & Access Uplift', 'inbound'),
-            decisions: [
-              _Dec('Go / no-go on app store submission', 'pending', dueDays: -9,
-                  impact: 'Every week of slip moves public launch; marketing spend committed'),
-              _Dec('Descope background payments from launch', 'pending', dueDays: -2,
-                  impact: 'Blocks the Apple review resubmission'),
-              _Dec('Hire interim tech leads via agency', 'pending', dueDays: 5),
-              _Dec('Adopt React Native over Flutter', 'decided',
-                  raisedDays: -140, decidedDays: -75),
-            ],
-            actions: [
-              _Act('Remediate accessibility findings (12)', 'Priya Sharma', -14),
-              _Act('Fix top 5 crash signatures', 'Leo Marsh', -6),
-              _Act('Resubmit to Apple review', 'Leo Marsh', 8),
-              _Act('Brief marketing on launch risk', 'Priya Sharma', -1),
-            ],
-            people: ['Priya Sharma', 'Leo Marsh', 'Marcus Webb', 'Sophie Chen'],
-            budgetPounds: 6400000,
-            forecastFactorBp: 10900, // +9%: breaches the 5% tolerance
-          ),
-          _Project(
-            id: 'seed-prj-ch-contact',
-            name: 'Contact Centre Platform',
-            lead: 'Leo Marsh',
-            wps: [
-              _WP('cc-tel', 'Telephony migration', 'wp1', 'amber'),
-              _WP('cc-crm', 'Agent desktop & CRM', 'wp2', 'red'),
-            ],
-            milestones: [
-              _MS('cc-tel', 'Pilot site live', -12, 'at_risk'),
-              _MS('cc-crm', 'Agent desktop MVP', 28, 'not_started'),
-              _MS('cc-tel', 'All sites migrated', 110, 'not_started'),
-            ],
-            risks: [
-              _Risk('CRM vendor roadmap drops the on-prem connector', 'likely', 'major'),
-              _Risk('Agent union consultation not yet started', 'possible', 'major'),
-            ],
-            issues: [
-              _Issue('Pilot site call quality below SLA', 'high'),
-            ],
-            dependency: _Dep('Shares the identity platform with Mobile App 2.0',
-                'Identity & Access Uplift', 'inbound'),
-            decisions: [
-              _Dec('Pause pilot until call quality fixed', 'pending', dueDays: -4),
-              _Dec('Select CRM integration pattern', 'decided',
-                  raisedDays: -60, decidedDays: -20),
-            ],
-            actions: [
-              _Act('Root-cause pilot call quality', 'Leo Marsh', -3),
-              _Act('Open union consultation', 'Priya Sharma', 14),
-            ],
-            people: ['Leo Marsh', 'Priya Sharma', 'Marcus Webb'],
-            budgetPounds: 3100000,
-            forecastFactorBp: 10400,
-          ),
-        ],
-      ),
-      _Programme(
-        id: 'seed-prog-reg',
-        name: 'Regulatory & Risk Uplift',
-        reportedRag: 'green',
-        reportSummary:
-            'Consumer Duty evidence pack on schedule; identity platform '
-            'delivered tokens to channels two weeks early. ISO 27001 '
-            'surveillance audit passed.',
-        projects: [
-          _Project(
-            id: 'seed-prj-reg-iam',
-            name: 'Identity & Access Uplift',
-            lead: 'Marcus Webb',
-            wps: [
-              _WP('iam-core', 'Identity platform', 'wp1', 'green'),
-              _WP('iam-pam', 'Privileged access', 'wp2', 'green'),
-            ],
-            milestones: [
-              _MS('iam-core', 'Tokens available to channels', -15, 'complete'),
-              _MS('iam-pam', 'PAM live for production', 22, 'on_track'),
-              _MS('iam-core', 'Legacy SSO switched off', 95, 'not_started'),
-            ],
-            risks: [
-              _Risk('Legacy SSO dependants not fully inventoried', 'possible', 'moderate'),
-            ],
-            issues: const [],
-            dependency: _Dep('Mobile App 2.0 and Contact Centre consume our tokens',
-                'Customer Channels', 'outbound'),
-            decisions: [
-              _Dec('Enforce MFA for all privileged roles', 'decided',
-                  raisedDays: -40, decidedDays: -33),
-              _Dec('Set legacy SSO switch-off date', 'pending', dueDays: 30),
-            ],
-            actions: [
-              _Act('Complete SSO dependant inventory', 'Marcus Webb', 9),
-              _Act('PAM runbook sign-off', 'Aisha Rahman', 16),
-            ],
-            people: ['Marcus Webb', 'Aisha Rahman', 'Tom Adeyemi'],
-            budgetPounds: 2700000,
-            forecastFactorBp: 9800,
-          ),
-          _Project(
-            id: 'seed-prj-reg-duty',
-            name: 'Consumer Duty Evidence',
-            lead: 'Aisha Rahman',
-            wps: [
-              _WP('cd-out', 'Outcome monitoring', 'wp1', 'green'),
-              _WP('cd-pack', 'Board evidence pack', 'wp2', 'green'),
-            ],
-            milestones: [
-              _MS('cd-out', 'Outcome metrics baselined', -30, 'complete'),
-              _MS('cd-pack', 'H1 Board pack submitted', 12, 'on_track', type: 'gate'),
-              _MS('cd-pack', 'Annual attestation', 150, 'not_started', type: 'hard_deadline'),
-            ],
-            risks: [
-              _Risk('Vulnerable-customer flag data quality below threshold',
-                  'possible', 'moderate'),
-            ],
-            issues: const [],
-            dependency: _Dep('Outcome data sourced from the Real-time Data Platform',
-                'Real-time Data Platform', 'inbound'),
-            decisions: [
-              _Dec('Adopt FCA outcome taxonomy as-is', 'decided',
-                  raisedDays: -25, decidedDays: -22),
-            ],
-            actions: [
-              _Act('Data quality fix for vulnerability flags', 'Sophie Chen', 11),
-            ],
-            people: ['Aisha Rahman', 'Sophie Chen'],
-            budgetPounds: 900000,
-            forecastFactorBp: 10000,
-          ),
-        ],
-      ),
-    ];
 
     final cascade = CascadeService(db, gateway: LocalCascadeGateway(db));
 
@@ -408,8 +139,364 @@ class PortfolioSeedService {
       await reconcileCascade(db: db, cascade: cascade, projectId: prog.id);
     }
     await reconcileCascade(db: db, cascade: cascade, projectId: portfolioId);
-    return true;
+
+    await _backfillHistory(db, programmes, today);
+    return PortfolioSeedOutcome.created;
   }
+
+  /// Removes every trace of a seed entity: its link rows (both sides, by
+  /// code), the same-machine cascade channel under those codes, any pulses
+  /// it held as a portfolio, and finally the project row and its data.
+  static Future<void> _purgeEntity(AppDatabase db, String id) async {
+    final links = await db.programmeLinksDao.getLinksForEntity(id);
+    final codes = {for (final l in links) l.code};
+    if (codes.isNotEmpty) {
+      await (db.delete(db.cascadeItems)..where((t) => t.code.isIn(codes))).go();
+      await (db.delete(db.programmeLinks)..where((t) => t.code.isIn(codes))).go();
+    }
+    await (db.delete(db.portfolioPulses)..where((t) => t.portfolioId.equals(id))).go();
+    if (await db.projectDao.getProjectById(id) != null) {
+      await db.deleteProjectCascade(id);
+    }
+  }
+
+  /// Backfills history: the same inputs re-read "as of" each past Monday.
+  /// Because every seeded date is relative to today, earlier weeks have
+  /// fewer overdue milestones and past-need-by decisions, so the series
+  /// drift organically towards this week's values. Weeks that already have
+  /// a row are left alone. Returns true when anything was written.
+  static Future<bool> _backfillHistory(
+      AppDatabase db, List<_Programme> programmes, DateTime today) async {
+    final portLinks = await db.programmeLinksDao.getLinksForEntity(portfolioId);
+    var wrote = false;
+    for (final prog in programmes) {
+      if (await db.projectDao.getProjectById(prog.id) == null) continue;
+      final existing = {
+        for (final r in await db.portfolioPulsesDao.getHistory(portfolioId, prog.id))
+          r.weekOf,
+      };
+      ProgrammePulseInputs? inputs;
+      final link = portLinks.where((l) => l.partnerLocalId == prog.id).firstOrNull;
+      for (var k = 1; k <= historyWeeks; k++) {
+        final when = today.subtract(Duration(days: 7 * k));
+        if (existing.contains(weekMondayIso(when))) continue;
+        inputs ??= await buildProgrammePulseInputs(db, prog.id);
+        if (inputs == null) break;
+        final pulse = computeProgrammePulse(inputs, now: when);
+        await db.portfolioPulsesDao.upsert(PortfolioPulsesCompanion(
+          id: Value(pulseItemId(prog.id, when)),
+          portfolioId: const Value(portfolioId),
+          sourceProgrammeId: Value(prog.id),
+          sourceProgrammeName: Value(prog.name),
+          linkCode: Value(link?.code),
+          weekOf: Value(pulse.weekOf),
+          capturedAt: Value(when),
+          computedRag: Value(pulse.health.computedRag),
+          reportedRag: Value(pulse.health.reportedRag),
+          completeness: Value(pulse.completeness.score),
+          payload: Value(jsonEncode(pulse.toJson())),
+          updatedAt: Value(when),
+        ));
+        wrote = true;
+      }
+    }
+    return wrote;
+  }
+
+  static List<_Programme> _programmes() => <_Programme>[
+    _Programme(
+      id: 'seed-prog-cb',
+      name: 'Core Banking Modernisation',
+      reportedRag: 'amber',
+      reportSummary:
+          'Temenos migration tracking to the re-baselined plan. Wave 2 '
+          'data reconciliation is the watch item; vendor capacity is '
+          'the constraint.',
+      projects: [
+        _Project(
+          id: 'seed-prj-cb-mig',
+          name: 'Account Migration Waves',
+          lead: 'Dana Whitfield',
+          wps: [
+            _WP('mig-w1', 'Wave 1 — pilot accounts', 'wp1', 'green'),
+            _WP('mig-w2', 'Wave 2 — retail 1.2M', 'wp2', 'amber'),
+            _WP('mig-rec', 'Reconciliation & cut-over', 'wp3', 'amber'),
+          ],
+          milestones: [
+            _MS('mig-w1', 'Wave 1 cut-over complete', -40, 'complete'),
+            _MS('mig-w2', 'Wave 2 dress rehearsal', 18, 'on_track', type: 'gate'),
+            _MS('mig-w2', 'Wave 2 go-live', 46, 'not_started'),
+            _MS('mig-rec', 'Legacy read-only', 120, 'not_started', type: 'hard_deadline'),
+          ],
+          risks: [
+            _Risk('Reconciliation tooling cannot handle Wave 2 volumes in the '
+                'overnight window', 'likely', 'major', escalated: true),
+            _Risk('Temenos SI rotates two senior engineers off in Q2',
+                'possible', 'major'),
+            _Risk('Customer comms land after cut-over notice period',
+                'unlikely', 'moderate'),
+          ],
+          issues: [
+            _Issue('Wave 1 defect backlog (14 open) delaying Wave 2 entry',
+                'high', escalated: true),
+          ],
+          dependency: _Dep('Data platform CDC feeds must be live before Wave 2',
+              'Real-time Data Platform', 'inbound'),
+          decisions: [
+            _Dec('Approve Wave 2 scope split (retail then SME)', 'decided',
+                raisedDays: -30, decidedDays: -12),
+            _Dec('Extend parallel-run from 2 to 4 weeks', 'pending',
+                dueDays: 10, impact: 'Delays Wave 2 go-live by a fortnight'),
+            _Dec('Accept reconciliation tolerance of 0.01%', 'pending',
+                dueDays: 25),
+          ],
+          actions: [
+            _Act('Load-test reconciliation tool at 2× Wave 2 volume',
+                'Marcus Webb', -5),
+            _Act('Confirm SI staffing plan for Q2', 'Dana Whitfield', 12),
+            _Act('Draft customer cut-over notice', 'Priya Sharma', 20),
+          ],
+          people: ['Dana Whitfield', 'Marcus Webb', 'Priya Sharma', 'Tom Adeyemi'],
+          budgetPounds: 9800000,
+          forecastFactorBp: 10300, // +3%: inside tolerance
+        ),
+        _Project(
+          id: 'seed-prj-cb-data',
+          name: 'Real-time Data Platform',
+          lead: 'Sophie Chen',
+          wps: [
+            _WP('dp-cdc', 'Change-data-capture feeds', 'wp1', 'green'),
+            _WP('dp-lake', 'Lakehouse & reporting', 'wp2', 'green'),
+          ],
+          milestones: [
+            _MS('dp-cdc', 'CDC live for current accounts', -20, 'complete'),
+            _MS('dp-cdc', 'CDC live for lending', 14, 'on_track'),
+            _MS('dp-lake', 'Finance reporting on lakehouse', 75, 'not_started'),
+          ],
+          risks: [
+            _Risk('Kafka cluster sizing underestimates lending event volume',
+                'possible', 'moderate'),
+            _Risk('Lakehouse vendor pricing changes at renewal', 'unlikely', 'minor'),
+          ],
+          issues: const [],
+          dependency: _Dep('Downstream of Account Migration for schema freeze',
+              'Account Migration Waves', 'outbound'),
+          decisions: [
+            _Dec('Standardise on Iceberg table format', 'decided',
+                raisedDays: -50, decidedDays: -41),
+            _Dec('Retire nightly batch extracts once CDC is live', 'pending',
+                dueDays: 40),
+          ],
+          actions: [
+            _Act('Publish CDC schema catalogue', 'Sophie Chen', 7),
+            _Act('Agree lending event volumes with Temenos', 'Marcus Webb', 15),
+          ],
+          people: ['Sophie Chen', 'Marcus Webb', 'Tom Adeyemi'],
+          budgetPounds: 4200000,
+          forecastFactorBp: 9900,
+        ),
+        _Project(
+          id: 'seed-prj-cb-decom',
+          name: 'Mainframe Decommission',
+          lead: 'Tom Adeyemi',
+          wps: [
+            _WP('dc-inv', 'Application inventory & retirement', 'wp1', 'green'),
+            _WP('dc-exit', 'Hosting contract exit', 'wp2', 'amber'),
+          ],
+          milestones: [
+            _MS('dc-inv', 'Retirement list approved', -10, 'complete', type: 'gate'),
+            _MS('dc-exit', 'Hosting exit notice served', 60, 'not_started'),
+            _MS('dc-exit', 'Mainframe powered down', 330, 'not_started', type: 'hard_deadline'),
+          ],
+          risks: [
+            _Risk('Two regulatory reports still only run on the mainframe',
+                'likely', 'moderate'),
+          ],
+          issues: const [],
+          dependency: _Dep('Cannot exit hosting until Wave 2 migration completes',
+              'Account Migration Waves', 'inbound'),
+          decisions: [
+            _Dec('Serve hosting exit notice in Q3 or Q4', 'pending', dueDays: 55),
+          ],
+          actions: [
+            _Act('Re-platform remaining regulatory reports', 'Tom Adeyemi', 30),
+          ],
+          people: ['Tom Adeyemi', 'Marcus Webb'],
+          budgetPounds: 1600000,
+          forecastFactorBp: 10000,
+        ),
+      ],
+    ),
+    _Programme(
+      id: 'seed-prog-ch',
+      name: 'Customer Channels',
+      reportedRag: 'green',
+      reportSummary:
+          'Mobile app adoption ahead of plan; open banking integrations '
+          'progressing. No issues to raise to the Board this period.',
+      projects: [
+        _Project(
+          id: 'seed-prj-ch-mobile',
+          name: 'Mobile App 2.0',
+          lead: 'Priya Sharma',
+          wps: [
+            _WP('mb-core', 'Core app rebuild', 'wp1', 'red'),
+            _WP('mb-ob', 'Open banking integrations', 'wp2', 'amber'),
+            _WP('mb-launch', 'Launch & adoption', 'wp3', 'amber'),
+          ],
+          milestones: [
+            _MS('mb-core', 'Beta to 5k staff', -25, 'at_risk'),
+            _MS('mb-core', 'App store submission', -3, 'at_risk', type: 'gate'),
+            _MS('mb-ob', 'Three aggregators live', 35, 'not_started'),
+            _MS('mb-launch', 'Public launch', 70, 'not_started', type: 'hard_deadline'),
+          ],
+          risks: [
+            _Risk('Biometric login fails accessibility audit', 'likely', 'severe',
+                escalated: true),
+            _Risk('Apple review rejects background payments flow', 'possible', 'major',
+                escalated: true),
+            _Risk('Aggregator certification queue is 8 weeks', 'likely', 'moderate'),
+            _Risk('Marketing launch date fixed before build date', 'almost certain',
+                'major'),
+          ],
+          issues: [
+            _Issue('Beta crash rate 4.1% against 1% exit criterion', 'high',
+                escalated: true),
+            _Issue('Two squads without a tech lead since March', 'medium'),
+          ],
+          dependency: _Dep('Needs identity platform tokens from Regulatory uplift',
+              'Identity & Access Uplift', 'inbound'),
+          decisions: [
+            _Dec('Go / no-go on app store submission', 'pending', dueDays: -9,
+                impact: 'Every week of slip moves public launch; marketing spend committed'),
+            _Dec('Descope background payments from launch', 'pending', dueDays: -2,
+                impact: 'Blocks the Apple review resubmission'),
+            _Dec('Hire interim tech leads via agency', 'pending', dueDays: 5),
+            _Dec('Adopt React Native over Flutter', 'decided',
+                raisedDays: -140, decidedDays: -75),
+          ],
+          actions: [
+            _Act('Remediate accessibility findings (12)', 'Priya Sharma', -14),
+            _Act('Fix top 5 crash signatures', 'Leo Marsh', -6),
+            _Act('Resubmit to Apple review', 'Leo Marsh', 8),
+            _Act('Brief marketing on launch risk', 'Priya Sharma', -1),
+          ],
+          people: ['Priya Sharma', 'Leo Marsh', 'Marcus Webb', 'Sophie Chen'],
+          budgetPounds: 6400000,
+          forecastFactorBp: 10900, // +9%: breaches the 5% tolerance
+        ),
+        _Project(
+          id: 'seed-prj-ch-contact',
+          name: 'Contact Centre Platform',
+          lead: 'Leo Marsh',
+          wps: [
+            _WP('cc-tel', 'Telephony migration', 'wp1', 'amber'),
+            _WP('cc-crm', 'Agent desktop & CRM', 'wp2', 'red'),
+          ],
+          milestones: [
+            _MS('cc-tel', 'Pilot site live', -12, 'at_risk'),
+            _MS('cc-crm', 'Agent desktop MVP', 28, 'not_started'),
+            _MS('cc-tel', 'All sites migrated', 110, 'not_started'),
+          ],
+          risks: [
+            _Risk('CRM vendor roadmap drops the on-prem connector', 'likely', 'major'),
+            _Risk('Agent union consultation not yet started', 'possible', 'major'),
+          ],
+          issues: [
+            _Issue('Pilot site call quality below SLA', 'high'),
+          ],
+          dependency: _Dep('Shares the identity platform with Mobile App 2.0',
+              'Identity & Access Uplift', 'inbound'),
+          decisions: [
+            _Dec('Pause pilot until call quality fixed', 'pending', dueDays: -4),
+            _Dec('Select CRM integration pattern', 'decided',
+                raisedDays: -60, decidedDays: -20),
+          ],
+          actions: [
+            _Act('Root-cause pilot call quality', 'Leo Marsh', -3),
+            _Act('Open union consultation', 'Priya Sharma', 14),
+          ],
+          people: ['Leo Marsh', 'Priya Sharma', 'Marcus Webb'],
+          budgetPounds: 3100000,
+          forecastFactorBp: 10400,
+        ),
+      ],
+    ),
+    _Programme(
+      id: 'seed-prog-reg',
+      name: 'Regulatory & Risk Uplift',
+      reportedRag: 'green',
+      reportSummary:
+          'Consumer Duty evidence pack on schedule; identity platform '
+          'delivered tokens to channels two weeks early. ISO 27001 '
+          'surveillance audit passed.',
+      projects: [
+        _Project(
+          id: 'seed-prj-reg-iam',
+          name: 'Identity & Access Uplift',
+          lead: 'Marcus Webb',
+          wps: [
+            _WP('iam-core', 'Identity platform', 'wp1', 'green'),
+            _WP('iam-pam', 'Privileged access', 'wp2', 'green'),
+          ],
+          milestones: [
+            _MS('iam-core', 'Tokens available to channels', -15, 'complete'),
+            _MS('iam-pam', 'PAM live for production', 22, 'on_track'),
+            _MS('iam-core', 'Legacy SSO switched off', 95, 'not_started'),
+          ],
+          risks: [
+            _Risk('Legacy SSO dependants not fully inventoried', 'possible', 'moderate'),
+          ],
+          issues: const [],
+          dependency: _Dep('Mobile App 2.0 and Contact Centre consume our tokens',
+              'Customer Channels', 'outbound'),
+          decisions: [
+            _Dec('Enforce MFA for all privileged roles', 'decided',
+                raisedDays: -40, decidedDays: -33),
+            _Dec('Set legacy SSO switch-off date', 'pending', dueDays: 30),
+          ],
+          actions: [
+            _Act('Complete SSO dependant inventory', 'Marcus Webb', 9),
+            _Act('PAM runbook sign-off', 'Aisha Rahman', 16),
+          ],
+          people: ['Marcus Webb', 'Aisha Rahman', 'Tom Adeyemi'],
+          budgetPounds: 2700000,
+          forecastFactorBp: 9800,
+        ),
+        _Project(
+          id: 'seed-prj-reg-duty',
+          name: 'Consumer Duty Evidence',
+          lead: 'Aisha Rahman',
+          wps: [
+            _WP('cd-out', 'Outcome monitoring', 'wp1', 'green'),
+            _WP('cd-pack', 'Board evidence pack', 'wp2', 'green'),
+          ],
+          milestones: [
+            _MS('cd-out', 'Outcome metrics baselined', -30, 'complete'),
+            _MS('cd-pack', 'H1 Board pack submitted', 12, 'on_track', type: 'gate'),
+            _MS('cd-pack', 'Annual attestation', 150, 'not_started', type: 'hard_deadline'),
+          ],
+          risks: [
+            _Risk('Vulnerable-customer flag data quality below threshold',
+                'possible', 'moderate'),
+          ],
+          issues: const [],
+          dependency: _Dep('Outcome data sourced from the Real-time Data Platform',
+              'Real-time Data Platform', 'inbound'),
+          decisions: [
+            _Dec('Adopt FCA outcome taxonomy as-is', 'decided',
+                raisedDays: -25, decidedDays: -22),
+          ],
+          actions: [
+            _Act('Data quality fix for vulnerability flags', 'Sophie Chen', 11),
+          ],
+          people: ['Aisha Rahman', 'Sophie Chen'],
+          budgetPounds: 900000,
+          forecastFactorBp: 10000,
+        ),
+      ],
+    ),
+  ];
 
   static Future<void> _seedProject(
     AppDatabase db,

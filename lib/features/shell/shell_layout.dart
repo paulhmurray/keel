@@ -21,6 +21,7 @@ import '../../shared/theme/keel_colors.dart';
 import '../../shared/widgets/date_picker_field.dart';
 import '../../shared/widgets/keybindings_table.dart';
 import '../../shared/widgets/sync_password_dialog.dart';
+import '../../core/seed/portfolio_seed_service.dart';
 import '../portfolio/portfolio_view.dart';
 import '../programme/programme_view.dart';
 import '../canvas/canvas_view.dart';
@@ -2540,13 +2541,17 @@ class _TopBarProjectSelector extends StatelessWidget {
     final messenger = ScaffoldMessenger.of(context);
     messenger.showSnackBar(const SnackBar(
         content: Text('Seeding portfolio demo — 3 programmes, 7 projects…')));
-    final created = await projectProvider.loadPortfolioDemo();
+    final outcome = await projectProvider.loadPortfolioDemo();
     if (!context.mounted) return;
     messenger.showSnackBar(SnackBar(
-      content: Text(created
-          ? 'FinCo Enterprise Portfolio loaded: 3 programmes, 7 projects, '
-              'pulses cascaded.'
-          : 'Portfolio demo is already loaded.'),
+      content: Text(switch (outcome) {
+        PortfolioSeedOutcome.created =>
+          'FinCo Enterprise Portfolio loaded: 3 programmes, 7 projects, '
+              'pulses cascaded with 8 weeks of history.',
+        PortfolioSeedOutcome.backfilled =>
+          'Portfolio demo already loaded; pulse history backfilled.',
+        PortfolioSeedOutcome.unchanged => 'Portfolio demo is already loaded.',
+      }),
     ));
   }
 

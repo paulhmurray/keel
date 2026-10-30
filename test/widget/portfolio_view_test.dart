@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:keel/core/database/database.dart';
 import 'package:keel/core/portfolio/programme_pulse.dart';
 import 'package:keel/features/portfolio/portfolio_view.dart';
+import 'package:keel/features/portfolio/portfolio_widgets.dart';
 import 'package:keel/providers/project_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -122,25 +123,54 @@ Future<void> _teardown(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('one row per programme from its latest pulse, with the '
-      'watermelon marker and totals', (tester) async {
+  testWidgets('one heatmap row per programme from its latest pulse, with the '
+      'watermelon marker, rule cells and totals', (tester) async {
     final db = await _seed();
     addTearDown(db.close);
     tester.view.devicePixelRatio = 1.0;
-    tester.view.physicalSize = const Size(1400, 900);
+    tester.view.physicalSize = const Size(1500, 1400);
     await tester.pumpWidget(_host(db));
     await _settle(tester);
 
-    expect(find.text('Digital Toolkit'), findsOneWidget);
-    expect(find.text('Asset Renewal'), findsOneWidget);
-    expect(find.textContaining('2 programmes reporting'), findsOneWidget);
+    // Names appear in every section; the heatmap is the first.
+    expect(find.text('Digital Toolkit'), findsWidgets);
+    expect(find.text('Asset Renewal'), findsWidgets);
+    expect(find.textContaining('2 programmes reporting over 2 weeks'), findsOneWidget);
+    // Two programmes × (overall + four dimensions) rule cells.
+    expect(find.byType(RagCell), findsNWidgets(10));
     // Watermelon marker only on the programme that reported better than
     // its data.
-    expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
-    expect(find.textContaining('2 past need-by'), findsOneWidget);
-    // Totals block.
-    expect(find.text('Watermelons'), findsOneWidget);
-    expect(find.text('Decisions past need-by'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate((w) =>
+          w is Tooltip && (w.message ?? '').startsWith('Reported green while')),
+      findsOneWidget,
+    );
+    for (final label in [
+      'HEALTH BY RULES',
+      'DECISION SYSTEM',
+      'FLOW AND LOAD',
+      'FINANCE',
+      'TOP RISKS ACROSS THE PORTFOLIO',
+      'DATA COMPLETENESS',
+      'Watermelons',
+      'Decisions past need-by',
+    ]) {
+      // 'FINANCE' is also a heatmap column header, so at-least-one.
+      expect(find.text(label), findsAtLeastNWidgets(1), reason: label);
+    }
+    expect(tester.takeException(), isNull);
+    await _teardown(tester);
+  });
+
+  testWidgets('renders without overflow at a 900px window', (tester) async {
+    final db = await _seed();
+    addTearDown(db.close);
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.physicalSize = const Size(900, 1200);
+    await tester.pumpWidget(_host(db));
+    await _settle(tester);
+    expect(find.text('HEALTH BY RULES'), findsOneWidget);
+    expect(find.byType(RagCell), findsNWidgets(10));
     expect(tester.takeException(), isNull);
     await _teardown(tester);
   });
@@ -153,7 +183,7 @@ void main() {
     await db.projectDao.insertProject(ProjectsCompanion.insert(
         id: 'prog-a', name: 'Digital Toolkit', kind: const Value('programme')));
     tester.view.devicePixelRatio = 1.0;
-    tester.view.physicalSize = const Size(1400, 900);
+    tester.view.physicalSize = const Size(1500, 1400);
     late ProjectProvider pp;
     await tester.pumpWidget(MultiProvider(
       providers: [
@@ -169,7 +199,7 @@ void main() {
     expect(find.byIcon(Icons.open_in_new), findsOneWidget,
         reason: 'only the local programme is openable');
 
-    await tester.tap(find.text('Digital Toolkit'));
+    await tester.tap(find.text('Digital Toolkit').first);
     await _settle(tester);
     expect(pp.currentProjectId, 'prog-a');
     expect(tester.takeException(), isNull);

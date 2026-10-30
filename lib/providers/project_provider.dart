@@ -193,12 +193,13 @@ class ProjectProvider extends ChangeNotifier {
   }
 
   /// Seeds the PMO demo (portfolio → 3 programmes → 7 projects, cascaded)
-  /// and lands on the portfolio. Returns false if it was already loaded.
-  Future<bool> loadPortfolioDemo() async {
-    final created = await PortfolioSeedService.seed(_db);
+  /// and lands on the portfolio. An already-loaded demo only gets its pulse
+  /// history topped up.
+  Future<PortfolioSeedOutcome> loadPortfolioDemo() async {
+    final outcome = await PortfolioSeedService.seed(_db);
     await refreshProjects();
     selectProjectById(PortfolioSeedService.portfolioId);
-    return created;
+    return outcome;
   }
 
   Future<void> refreshProjects() async {
