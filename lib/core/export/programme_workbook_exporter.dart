@@ -61,7 +61,10 @@ CellStyle _style({
     fontSize: fontSize,
     horizontalAlign: halign,
     verticalAlign: valign,
-    textWrapping: wrap ? TextWrapping.WrapText : TextWrapping.Clip,
+    // Never Clip: the excel package writes it as Excel's shrink-to-fit,
+    // which quietly shrank the font in every unwrapped cell. An
+    // unwrapped cell gets no wrapping attribute at all.
+    textWrapping: wrap ? TextWrapping.WrapText : null,
     topBorder: border,
     bottomBorder: border,
     leftBorder: border,
@@ -151,7 +154,7 @@ class ProgrammeWorkbookExporter {
   // name columns, so nothing in the grid can ever be unreadable.
   static const _kMonthColWidth = 4.5;
   static const _kActivityRowHeight = 24.0;
-  static const _kFirstMonthCol = 6;
+  static const _kFirstMonthCol = 7;
 
   static Future<void> _buildTimelineSheet(Excel excel, AppDatabase db,
       String projectId, String projectName, bool isProgramme) async {
@@ -194,19 +197,21 @@ class ProgrammeWorkbookExporter {
         excel[isProgramme ? 'Programme Timeline' : 'Project Timeline'];
 
     // Fixed column widths
-    sheet.setColumnWidth(0, 5);   // # (activity number)
-    sheet.setColumnWidth(1, 7);   // WP code
-    sheet.setColumnWidth(2, 40);  // Activity
-    sheet.setColumnWidth(3, 14);  // Owner
-    sheet.setColumnWidth(4, 9);   // After (dependencies)
-    sheet.setColumnWidth(5, 12);  // Risk(s) driving the variance
+    const activityW = 40.0, ownerW = 14.0;
+    sheet.setColumnWidth(0, 5);          // # (activity number)
+    sheet.setColumnWidth(1, 7);          // WP code
+    sheet.setColumnWidth(2, activityW);  // Activity
+    sheet.setColumnWidth(3, ownerW);     // Owner
+    sheet.setColumnWidth(4, 12);         // Status
+    sheet.setColumnWidth(5, 11);         // Depends on (predecessor #s)
+    sheet.setColumnWidth(6, 12);         // Risk(s) driving the variance
     for (int i = 0; i < months.length; i++) {
       sheet.setColumnWidth(_kFirstMonthCol + i, _kMonthColWidth);
     }
 
-    // Number every activity in render order — the AFTER column and the
-    // Plan Dependencies sheet reference these numbers, which is how the
-    // dependency arrows survive as something a reader can follow.
+    // Number every activity in render order — the DEPENDS ON column and
+    // the Plan Dependencies sheet reference these numbers, which is how
+    // the dependency arrows survive as something a reader can follow.
     final numberByActivityId = <String, int>{};
     var nextNumber = 1;
     for (final wp in wps) {
@@ -256,6 +261,25 @@ class ProgrammeWorkbookExporter {
       }
     }
 
+    // ── Reading guide ─────────────────────────────────────────────────────
+    // Wrapped across the whole width, so a short plan (few month
+    // columns) folds it onto a second line instead of cutting it off.
+    const guide =
+        'DEPENDS ON lists the # of the activities that must finish first '
+        '(the arrows in the Plan; EXT = outside this plan — see the Plan '
+        'Dependencies sheet). ✓ marks completed work. RISK names the '
+        'RAID item driving a date spread.';
+    final guideWidth = 5 + 7 + activityW + ownerW + 12 + 11 + 12 +
+        months.length * _kMonthColWidth;
+    _setCell(sheet, row, 0, guide,
+        style: _style(fgHex: kXlInkDim, italic: true, fontSize: 9, wrap: true));
+    sheet.merge(
+      CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: row),
+      CellIndex.indexByColumnRow(columnIndex: totalCols - 1, rowIndex: row),
+    );
+    sheet.setRowHeight(row, xlRowHeight([(guide, guideWidth)], min: 16));
+    row++;
+
     // ── Column headers ────────────────────────────────────────────────────
     final hdrStyle = _style(
       bgHex: kXlHeaderBg, fgHex: kXlInkDim,
@@ -266,8 +290,9 @@ class ProgrammeWorkbookExporter {
     _setCell(sheet, row, 1, 'WP',       style: hdrStyle);
     _setCell(sheet, row, 2, 'ACTIVITY / STREAM', style: hdrStyle);
     _setCell(sheet, row, 3, 'OWNER',    style: hdrStyle);
-    _setCell(sheet, row, 4, 'AFTER',    style: hdrStyle);
-    _setCell(sheet, row, 5, 'RISK',     style: hdrStyle);
+    _setCell(sheet, row, 4, 'STATUS',   style: hdrStyle);
+    _setCell(sheet, row, 5, 'DEPENDS ON', style: hdrStyle);
+    _setCell(sheet, row, 6, 'RISK',     style: hdrStyle);
     for (int mi = 0; mi < months.length; mi++) {
       _setCell(sheet, row, _kFirstMonthCol + mi, months[mi],
           style: hdrStyle);
@@ -292,15 +317,18 @@ class ProgrammeWorkbookExporter {
           bgHex: wpTint, bold: true, fontSize: 11, allBorders: true);
       _setCell(sheet, row, 0, '',        style: wpStyle);
       _setCell(sheet, row, 1, wpCode,   style: wpStyle);
-      _setCell(sheet, row, 2, wpLabel,  style: wpStyle);
-      _setCell(sheet, row, 3, '',        style: wpStyle);
-      _setCell(sheet, row, 4, '',        style: wpStyle);
-      _setCell(sheet, row, 5, '',        style: wpStyle);
+      _setCell(sheet, row, 2, wpLabel,
+          style: _style(bgHex: wpTint, bold: true, fontSize: 11,
+              allBorders: true, wrap: true));
+      for (var c = 3; c < _kFirstMonthCol; c++) {
+        _setCell(sheet, row, c, '', style: wpStyle);
+      }
       for (int mi = 0; mi < months.length; mi++) {
         _setCell(sheet, row, _kFirstMonthCol + mi, '',
             style: _style(bgHex: wpTint, allBorders: true));
       }
-      sheet.setRowHeight(row, 22);
+      sheet.setRowHeight(row,
+          xlRowHeight([(wpLabel, activityW * 0.9)], min: 22));
       row++;
 
       // Activity rows (tasks indented under their parent activity)
@@ -314,29 +342,42 @@ class ProgrammeWorkbookExporter {
             act.cellLabel != act.name) {
           name = '$name · ${act.cellLabel}';
         }
-        final nameStyle = act.isCritical
-            ? _style(fgHex: kXlRedText, bold: true,
-                fontSize: 10, allBorders: true)
-            : _style(fontSize: 10, allBorders: true);
+        final complete = act.status == 'complete';
+        // Complete work reads as such from the name column too, not
+        // only from the status cell — Keel greys and ticks it; here a
+        // tick and green ink do the same job in print.
+        if (complete) name = '✓ $name';
+        final nameText = act.isCritical ? '$name  ★ critical path' : name;
+        final nameStyle = _style(
+            fgHex: complete
+                ? kXlGreenText
+                : act.isCritical ? kXlRedText : kXlInk,
+            bold: act.isCritical,
+            fontSize: 10, allBorders: true, wrap: true);
         final actStyle = _style(fontSize: 10, allBorders: true);
         final after = afterByActivityId[act.id];
         _setCell(sheet, row, 0, numberByActivityId[act.id] ?? '',
             style: _style(fgHex: kXlInkDim, fontSize: 9,
                 allBorders: true, halign: HorizontalAlign.Center));
         _setCell(sheet, row, 1, wpCode,       style: actStyle);
-        _setCell(sheet, row, 2,
-            act.isCritical ? '$name  ★ critical path' : name,
-            style: nameStyle);
-        _setCell(sheet, row, 3, act.owner ?? '', style: actStyle);
-        _setCell(sheet, row, 4,
-            after == null ? '' : '← ${after.join(',')}',
+        _setCell(sheet, row, 2, nameText, style: nameStyle);
+        final owner = act.owner ?? '';
+        _setCell(sheet, row, 3, owner,
+            style: _style(fontSize: 10, allBorders: true, wrap: true));
+        final (statusFg, statusBg) = _activityStatusTint(act.status);
+        _setCell(sheet, row, 4, _activityStatusLabel(act.status),
+            style: _style(fgHex: statusFg, bgHex: statusBg,
+                fontSize: 9, allBorders: true,
+                halign: HorizontalAlign.Center));
+        _setCell(sheet, row, 5,
+            after == null ? '' : after.map(_predecessorRef).join(', '),
             style: after == null
                 ? actStyle
                 : _style(fgHex: kXlVioletText, bgHex: kXlVioletTint,
                     fontSize: 9, allBorders: true,
                     halign: HorizontalAlign.Center));
         final raidRefs = _varianceRefs(act, raidRefById);
-        _setCell(sheet, row, 5, raidRefs,
+        _setCell(sheet, row, 6, raidRefs,
             style: raidRefs.isEmpty
                 ? actStyle
                 : _style(fgHex: kXlRedText, bgHex: kXlRedTint,
@@ -391,13 +432,39 @@ class ProgrammeWorkbookExporter {
                 style: _style(allBorders: true));
           }
         }
-        sheet.setRowHeight(row, _kActivityRowHeight);
+        sheet.setRowHeight(row,
+            xlRowHeight([(nameText, activityW), (owner, ownerW)],
+                min: _kActivityRowHeight));
         row++;
       }
     }
 
     // Note: excel package does not support freeze panes natively.
   }
+
+  /// '#3' for an activity number, 'EXT' left as it is.
+  static String _predecessorRef(String ref) => ref == 'EXT' ? ref : '#$ref';
+
+  /// The status words the Plan uses, in print form.
+  static String _activityStatusLabel(String status) => switch (status) {
+        'not_started' => 'Not started',
+        'on_track' => 'On track',
+        'at_risk' => 'At risk',
+        'complete' => 'Complete',
+        'overdue' => 'Overdue',
+        'in_progress' => 'In progress',
+        _ => status.replaceAll('_', ' '),
+      };
+
+  /// (text, fill) for a plan status: green for done, red for trouble,
+  /// amber for moving, dim for not started.
+  static (String, String?) _activityStatusTint(String status) =>
+      switch (status) {
+        'complete' => (kXlGreenText, kXlGreenTint),
+        'at_risk' || 'overdue' => (kXlRedText, kXlRedTint),
+        'on_track' || 'in_progress' => (kXlAmberText, kXlAmberTint),
+        _ => (kXlInkDim, null),
+      };
 
   /// Parents first, each followed by its child tasks — the same nesting
   /// the Plan view shows.
@@ -512,15 +579,16 @@ class ProgrammeWorkbookExporter {
     }
 
     final sheet = excel['Milestone Register'];
-    sheet.setColumnWidth(0, 8);   // WP
-    sheet.setColumnWidth(1, 42);  // Milestone
-    sheet.setColumnWidth(2, 11);  // Type
-    sheet.setColumnWidth(3, 10);  // A
-    sheet.setColumnWidth(4, 10);  // B
-    sheet.setColumnWidth(5, 10);  // C
-    sheet.setColumnWidth(6, 18);  // Owner
-    sheet.setColumnWidth(7, 14);  // Risk(s)
-    sheet.setColumnWidth(8, 14);  // Status
+    const nameW = 42.0, ownerW = 18.0;
+    sheet.setColumnWidth(0, 8);       // WP
+    sheet.setColumnWidth(1, nameW);   // Milestone
+    sheet.setColumnWidth(2, 11);      // Type
+    sheet.setColumnWidth(3, 10);      // A
+    sheet.setColumnWidth(4, 10);      // B
+    sheet.setColumnWidth(5, 10);      // C
+    sheet.setColumnWidth(6, ownerW);  // Owner
+    sheet.setColumnWidth(7, 14);      // Risk(s)
+    sheet.setColumnWidth(8, 14);      // Status
 
     int row = 0;
     _setCell(sheet, row, 0,
@@ -585,15 +653,22 @@ class ProgrammeWorkbookExporter {
       _setCell(sheet, row, 5,
           isHard ? month(a.startMonth) : month(a.safeMonth),
           style: centered);
-      _setCell(sheet, row, 6, a.owner ?? '', style: rs);
+      final owner = a.owner ?? '';
+      _setCell(sheet, row, 6, owner,
+          style: _style(fontSize: 10, allBorders: true, wrap: true));
       _setCell(sheet, row, 7, raidRefs.isEmpty ? '—' : raidRefs,
           style: raidRefs.isEmpty
               ? centered
               : _style(fgHex: kXlRedText, bgHex: kXlRedTint, bold: true,
                   fontSize: 9, allBorders: true,
                   halign: HorizontalAlign.Center));
-      _setCell(sheet, row, 8, a.status, style: rs);
-      sheet.setRowHeight(row, 18);
+      final (statusFg, statusBg) = _activityStatusTint(a.status);
+      _setCell(sheet, row, 8, _activityStatusLabel(a.status),
+          style: _style(fgHex: statusFg, bgHex: statusBg,
+              fontSize: 9, allBorders: true,
+              halign: HorizontalAlign.Center));
+      sheet.setRowHeight(row,
+          xlRowHeight([(a.name, nameW), (owner, ownerW)]));
       row++;
     }
   }
@@ -649,12 +724,13 @@ class ProgrammeWorkbookExporter {
         };
 
     final sheet = excel['Plan Dependencies'];
-    sheet.setColumnWidth(0, 36); // From
-    sheet.setColumnWidth(1, 10); // From WP
-    sheet.setColumnWidth(2, 36); // To
-    sheet.setColumnWidth(3, 10); // To WP
-    sheet.setColumnWidth(4, 16); // Type
-    sheet.setColumnWidth(5, 34); // Notes
+    const fromW = 36.0, toW = 36.0, notesW = 34.0;
+    sheet.setColumnWidth(0, fromW);  // From
+    sheet.setColumnWidth(1, 10);     // From WP
+    sheet.setColumnWidth(2, toW);    // To
+    sheet.setColumnWidth(3, 10);     // To WP
+    sheet.setColumnWidth(4, 16);     // Type
+    sheet.setColumnWidth(5, notesW); // Notes
 
     int row = 0;
     _setCell(sheet, row, 0, 'Plan Dependencies',
@@ -668,7 +744,7 @@ class ProgrammeWorkbookExporter {
 
     _setCell(sheet, row, 0,
         'Each row reads: the TO activity depends on the FROM side. '
-        '#numbers match the timeline sheet\'s # and AFTER columns.',
+        '#numbers match the timeline sheet\'s # and DEPENDS ON columns.',
         style: _style(fgHex: kXlInkDim, italic: true, fontSize: 9));
     sheet.merge(
       CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: row),
@@ -703,11 +779,14 @@ class ProgrammeWorkbookExporter {
               : rs);
       _setCell(sheet, row, 1, isExternal ? '—' : wpCodeFor(fromAct),
           style: rs);
-      _setCell(sheet, row, 2, numberedName(toAct), style: rs);
+      final toLabel = numberedName(toAct);
+      final notes = d.notes ?? '';
+      _setCell(sheet, row, 2, toLabel, style: rs);
       _setCell(sheet, row, 3, wpCodeFor(toAct),   style: rs);
       _setCell(sheet, row, 4, typeLabel(d.dependencyType), style: rs);
-      _setCell(sheet, row, 5, d.notes ?? '',      style: rs);
-      sheet.setRowHeight(row, 18);
+      _setCell(sheet, row, 5, notes,      style: rs);
+      sheet.setRowHeight(row,
+          xlRowHeight([(fromLabel, fromW), (toLabel, toW), (notes, notesW)]));
       row++;
     }
   }
@@ -728,8 +807,9 @@ class ProgrammeWorkbookExporter {
     sheet.setColumnWidth(2, 22);  // Name
     sheet.setColumnWidth(3, 14);  // Priority
     sheet.setColumnWidth(4, 22);  // Engagement status
-    sheet.setColumnWidth(5, 36);  // Integration relevance
-    sheet.setColumnWidth(6, 30);  // Gap description
+    const relevanceW = 36.0, gapW = 30.0;
+    sheet.setColumnWidth(5, relevanceW);  // Integration relevance
+    sheet.setColumnWidth(6, gapW);        // Gap description
 
     int row = 0;
 
@@ -826,7 +906,8 @@ class ProgrammeWorkbookExporter {
         _setCell(sheet, row, 4, engLabel,
             style: _style(fgHex: engFg, bgHex: engBg,
                 fontSize: 9, allBorders: true));
-        _setCell(sheet, row, 5, role.integrationRelevance ?? '',
+        final relevance = role.integrationRelevance ?? '';
+        _setCell(sheet, row, 5, relevance,
             style: _style(fgHex: kXlInkDim, fontSize: 9,
                 allBorders: true, wrap: true));
         _setCell(sheet, row, 6, gapText,
@@ -834,7 +915,8 @@ class ProgrammeWorkbookExporter {
                 fgHex: role.gapFlag ? kXlRedText : kXlInkDim,
                 bgHex: role.gapFlag ? kXlRedTint : null,
                 fontSize: 9, allBorders: true, wrap: true));
-        sheet.setRowHeight(row, 18);
+        sheet.setRowHeight(row,
+            xlRowHeight([(relevance, relevanceW), (gapText, gapW)]));
         row++;
       }
     }
@@ -880,10 +962,11 @@ class ProgrammeWorkbookExporter {
                   allBorders: true));
           _setCell(sheet, row, 1, item['title'] ?? '',
               style: _style(bold: true, allBorders: true));
-          _setCell(sheet, row, 2, item['description'] ?? '',
+          final desc = (item['description'] ?? '').toString();
+          _setCell(sheet, row, 2, desc,
               style: _style(fgHex: kXlInkDim, fontSize: 9,
                   allBorders: true, wrap: true));
-          sheet.setRowHeight(row, 18);
+          sheet.setRowHeight(row, xlRowHeight([(desc, 40)]));
           row++;
         }
       } catch (_) {}
@@ -986,15 +1069,26 @@ class ProgrammeWorkbookExporter {
         kind: RaidKind.dependency, status: (d) => d.status).open;
 
     final sheet = excel['RAID Log'];
-    sheet.setColumnWidth(0, 8);   // Ref
-    sheet.setColumnWidth(1, 8);   // Type
-    sheet.setColumnWidth(2, 40);  // Description
-    sheet.setColumnWidth(3, 12);  // Likelihood / Priority
-    sheet.setColumnWidth(4, 12);  // Impact / Status
-    sheet.setColumnWidth(5, 34);  // Mitigation / Resolution
-    sheet.setColumnWidth(6, 16);  // Owner
-    sheet.setColumnWidth(7, 12);  // Status
-    sheet.setColumnWidth(8, 14);  // Raised date
+    // Wide text columns: a reader scrolls down through a RAID log, not
+    // across, and a wider column keeps a long statement to a few lines.
+    const descW = 56.0, noteW = 48.0, ownerW = 16.0;
+    sheet.setColumnWidth(0, 8);       // Ref
+    sheet.setColumnWidth(1, 8);       // Type
+    sheet.setColumnWidth(2, descW);   // Description
+    sheet.setColumnWidth(3, 12);      // Likelihood / Priority
+    sheet.setColumnWidth(4, 12);      // Impact / Status
+    sheet.setColumnWidth(5, noteW);   // Mitigation / Resolution
+    sheet.setColumnWidth(6, ownerW);  // Owner
+    sheet.setColumnWidth(7, 12);      // Status
+    sheet.setColumnWidth(8, 14);      // Raised date
+
+    // Long text wraps and the row grows to hold it, so nothing hides
+    // behind the next row and nothing shrinks.
+    final wrapped = _style(fontSize: 10, allBorders: true, wrap: true);
+    final wrappedDim =
+        _style(fgHex: kXlInkDim, fontSize: 10, allBorders: true, wrap: true);
+    double rowHeight(String desc, String note, String owner) => xlRowHeight(
+        [(desc, descW), (note, noteW), (owner, ownerW)]);
 
     int row = 0;
 
@@ -1035,20 +1129,20 @@ class ProgrammeWorkbookExporter {
       final rs = _style(fontSize: 10, allBorders: true);
       _setCell(sheet, row, 0, r.ref ?? '',         style: rs);
       _setCell(sheet, row, 1, 'Risk',              style: rs);
-      _setCell(sheet, row, 2, r.description,
-          style: _style(fontSize: 10, allBorders: true, wrap: true));
+      _setCell(sheet, row, 2, r.description, style: wrapped);
       _setCell(sheet, row, 3, likelihoodLabel(r.likelihood),
           style: _style(bgHex: ragBg, fgHex: ragFg,
               fontSize: 10, allBorders: true));
       _setCell(sheet, row, 4, consequenceLabel(r.impact),
           style: _style(bgHex: ragBg, fgHex: ragFg,
               fontSize: 10, allBorders: true));
-      _setCell(sheet, row, 5, r.mitigation ?? '',  style: rs);
-      _setCell(sheet, row, 6, r.owner ?? '',       style: rs);
+      _setCell(sheet, row, 5, r.mitigation ?? '',  style: wrapped);
+      _setCell(sheet, row, 6, r.owner ?? '',       style: wrapped);
       _setCell(sheet, row, 7, r.status,            style: rs);
       _setCell(sheet, row, 8,
           r.createdAt.toIso8601String().substring(0, 10), style: rs);
-      sheet.setRowHeight(row, 18);
+      sheet.setRowHeight(row,
+          rowHeight(r.description, r.mitigation ?? '', r.owner ?? ''));
       row++;
     }
 
@@ -1058,16 +1152,15 @@ class ProgrammeWorkbookExporter {
       final rs = _style(fontSize: 10, allBorders: true);
       _setCell(sheet, row, 0, a.ref ?? '',       style: rs);
       _setCell(sheet, row, 1, 'Assumption',      style: rs);
-      _setCell(sheet, row, 2, a.description,
-          style: _style(fontSize: 10, allBorders: true, wrap: true));
+      _setCell(sheet, row, 2, a.description, style: wrapped);
       _setCell(sheet, row, 3, '',                style: rs);
       _setCell(sheet, row, 4, '',                style: rs);
       _setCell(sheet, row, 5, '',                style: rs);
-      _setCell(sheet, row, 6, a.owner ?? '',     style: rs);
+      _setCell(sheet, row, 6, a.owner ?? '',     style: wrapped);
       _setCell(sheet, row, 7, a.status,          style: rs);
       _setCell(sheet, row, 8,
           a.createdAt.toIso8601String().substring(0, 10), style: rs);
-      sheet.setRowHeight(row, 18);
+      sheet.setRowHeight(row, rowHeight(a.description, '', a.owner ?? ''));
       row++;
     }
 
@@ -1083,18 +1176,18 @@ class ProgrammeWorkbookExporter {
       final rs = _style(fontSize: 10, allBorders: true);
       _setCell(sheet, row, 0, i.ref ?? '',      style: rs);
       _setCell(sheet, row, 1, 'Issue',          style: rs);
-      _setCell(sheet, row, 2, i.description,
-          style: _style(fontSize: 10, allBorders: true, wrap: true));
+      _setCell(sheet, row, 2, i.description, style: wrapped);
       _setCell(sheet, row, 3, i.priority,
           style: _style(bgHex: priorityBg, fgHex: priorityFg,
               fontSize: 10, allBorders: true));
       _setCell(sheet, row, 4, '',               style: rs);
-      _setCell(sheet, row, 5, i.resolution ?? '', style: rs);
-      _setCell(sheet, row, 6, i.owner ?? '',    style: rs);
+      _setCell(sheet, row, 5, i.resolution ?? '', style: wrapped);
+      _setCell(sheet, row, 6, i.owner ?? '',    style: wrapped);
       _setCell(sheet, row, 7, i.status,         style: rs);
       _setCell(sheet, row, 8,
           i.createdAt.toIso8601String().substring(0, 10), style: rs);
-      sheet.setRowHeight(row, 18);
+      sheet.setRowHeight(row,
+          rowHeight(i.description, i.resolution ?? '', i.owner ?? ''));
       row++;
     }
 
@@ -1104,16 +1197,15 @@ class ProgrammeWorkbookExporter {
       final rs = _style(fontSize: 10, allBorders: true);
       _setCell(sheet, row, 0, d.ref ?? '',       style: rs);
       _setCell(sheet, row, 1, 'Dependency',      style: rs);
-      _setCell(sheet, row, 2, d.description,
-          style: _style(fontSize: 10, allBorders: true, wrap: true));
+      _setCell(sheet, row, 2, d.description, style: wrapped);
       _setCell(sheet, row, 3, d.dependencyType,  style: rs);
       _setCell(sheet, row, 4, '',                style: rs);
       _setCell(sheet, row, 5, '',                style: rs);
-      _setCell(sheet, row, 6, d.owner ?? '',     style: rs);
+      _setCell(sheet, row, 6, d.owner ?? '',     style: wrapped);
       _setCell(sheet, row, 7, d.status,          style: rs);
       _setCell(sheet, row, 8,
           d.createdAt.toIso8601String().substring(0, 10), style: rs);
-      sheet.setRowHeight(row, 18);
+      sheet.setRowHeight(row, rowHeight(d.description, '', d.owner ?? ''));
       row++;
     }
 
@@ -1129,16 +1221,14 @@ class ProgrammeWorkbookExporter {
         final rs = _style(fgHex: kXlInkDim, fontSize: 10, allBorders: true);
         _setCell(sheet, row, 0, c.ref,         style: rs);
         _setCell(sheet, row, 1, c.kind,        style: rs);
-        _setCell(sheet, row, 2, c.description,
-            style: _style(fgHex: kXlInkDim, fontSize: 10,
-                allBorders: true, wrap: true));
+        _setCell(sheet, row, 2, c.description, style: wrappedDim);
         _setCell(sheet, row, 3, '',            style: rs);
         _setCell(sheet, row, 4, '',            style: rs);
-        _setCell(sheet, row, 5, c.note,        style: rs);
+        _setCell(sheet, row, 5, c.note,        style: wrappedDim);
         _setCell(sheet, row, 6, '',            style: rs);
         _setCell(sheet, row, 7, c.status,      style: rs);
         _setCell(sheet, row, 8, c.closedOn,    style: rs);
-        sheet.setRowHeight(row, 18);
+        sheet.setRowHeight(row, rowHeight(c.description, c.note, ''));
         row++;
       }
     }
@@ -1197,9 +1287,10 @@ class ProgrammeWorkbookExporter {
         'medium' => (kXlAmberText, kXlAmberTint),
         _ => (kXlGreenText, kXlGreenTint),
       };
+      final wrappedCols = {3, 9, 16};
       for (final (i, v) in cells.indexed) {
         final rating = i == 6 || i == 7;
-        final wrap = i == 3 || i == 9 || i == 16;
+        final wrap = wrappedCols.contains(i);
         _setCell(sheet, row, i, v,
             style: rating
                 ? _style(bgHex: ragBg, fgHex: ragFg, fontSize: 10,
@@ -1211,7 +1302,10 @@ class ProgrammeWorkbookExporter {
                     allBorders: true,
                     wrap: wrap));
       }
-      sheet.setRowHeight(row, 18);
+      sheet.setRowHeight(row, xlRowHeight([
+        for (final i in wrappedCols)
+          if (i < cells.length) (cells[i], widths[i].toDouble()),
+      ]));
       row++;
     }
 

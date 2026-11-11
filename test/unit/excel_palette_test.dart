@@ -42,4 +42,32 @@ void main() {
       // combination the old exporter rendered as white-on-amber.
     });
   });
+
+  group('row layout', () {
+    test('short text is one line; long text wraps by column width', () {
+      // 40 units at 1.15 characters per unit is 46 characters a line.
+      expect(xlWrappedLines('Ship it', 40), 1);
+      expect(xlWrappedLines('', 40), 1);
+      expect(xlWrappedLines('x' * 46, 40), 1);
+      expect(xlWrappedLines('x' * 47, 40), 2);
+      expect(xlWrappedLines('x' * 120, 40), 3);
+    });
+
+    test('explicit line breaks each start a new line', () {
+      expect(xlWrappedLines('one\ntwo\nthree', 40), 3);
+      expect(xlWrappedLines('${'x' * 50}\nshort', 40), 3);
+    });
+
+    test('row height follows the tallest wrapped cell, never under the floor', () {
+      expect(xlRowHeight([('short', 40)]), 18);
+      expect(xlRowHeight([('short', 40)], min: 24), 24);
+      final three = xlRowHeight([('x' * 120, 40), ('y' * 10, 16)]);
+      expect(three, 3 * kXlLineHeight + kXlRowPadding);
+      expect(xlRowHeight(const []), 18);
+    });
+
+    test('a wall of text stops at the Excel ceiling', () {
+      expect(xlRowHeight([('x' * 100000, 40)]), kXlMaxRowHeight);
+    });
+  });
 }

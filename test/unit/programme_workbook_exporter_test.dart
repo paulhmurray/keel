@@ -3,9 +3,11 @@ import 'dart:convert';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:excel/excel.dart';
+import 'package:archive/archive.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:keel/core/database/database.dart';
 import 'package:keel/core/export/json_exporter.dart';
+import 'package:keel/core/export/excel_palette.dart';
 import 'package:keel/core/export/programme_workbook_exporter.dart';
 import 'package:keel/core/import/json_importer.dart';
 
@@ -173,7 +175,7 @@ void main() {
     expect(checked, greaterThan(50));
   });
 
-  test('dependencies surface in the timeline grid via # and AFTER '
+  test('dependencies surface in the timeline grid via # and DEPENDS ON '
       'columns', () async {
     final bytes = await ProgrammeWorkbookExporter.buildBytes(
       db: db,
@@ -188,9 +190,68 @@ void main() {
         .toList();
     // a1 depends on the external 'Vendor API'; a2 (milestone) depends
     // on a1, which is activity #1 in WBS render order.
-    expect(text, contains('← EXT'));
-    expect(text, contains('← 1'));
-    expect(text, contains('AFTER'));
+    expect(text, contains('EXT'));
+    expect(text, contains('#1'));
+    expect(text, contains('DEPENDS ON'));
+    expect(text, isNot(contains('AFTER')));
+    expect(text.join('\n'), contains('DEPENDS ON lists the # of the activities'));
+  });
+
+  test('status reads off the timeline: a complete activity is ticked and '
+      'labelled', () async {
+    await db.programmeGanttDao.upsertActivity(const TimelineActivitiesCompanion(
+      id: Value('a-done'),
+      workPackageId: Value('wp-a'),
+      projectId: Value(projectId),
+      name: Value('Already shipped'),
+      activityType: Value('activity'),
+      status: Value('complete'),
+      startMonth: Value(0),
+      endMonth: Value(0),
+    ));
+    final bytes = await ProgrammeWorkbookExporter.buildBytes(
+        db: db, projectId: projectId, projectName: 'X');
+    final sheet = Excel.decodeBytes(bytes).tables['Programme Timeline']!;
+    final text = sheet.rows
+        .expand((r) => r)
+        .map((c) => c?.value?.toString() ?? '')
+        .toList();
+    expect(text, contains('STATUS'));
+    expect(text, contains('✓ Already shipped'));
+    expect(text, contains('Complete'));
+    expect(text, contains('Not started'));
+  });
+
+  test('no cell shrinks its text to fit, and long text gets a taller row',
+      () async {
+    final long = List.filled(12, 'the vendor build slips past the date').join(' ');
+    await db.raidDao.upsertRisk(RisksCompanion(
+      id: const Value('r-long'),
+      projectId: const Value(projectId),
+      ref: const Value('R77'),
+      description: Value(long),
+      status: const Value('open'),
+    ));
+    final bytes = await ProgrammeWorkbookExporter.buildBytes(
+        db: db, projectId: projectId, projectName: 'X');
+
+    // Styles: the excel package writes TextWrapping.Clip as shrinkToFit,
+    // which is how the export used to shrink fonts. It must never appear.
+    final archive = ZipDecoder().decodeBytes(bytes);
+    String fileText(String name) =>
+        utf8.decode(archive.findFile(name)!.content as List<int>);
+    expect(fileText('xl/styles.xml'), isNot(contains('shrinkToFit="1"')));
+    expect(fileText('xl/styles.xml'), contains('wrapText="1"'));
+
+    // Rows: the long risk's row carries the height the layout rule gives
+    // it (description column is 56 wide), well above the one-line 18.
+    final expected = xlRowHeight([(long, 56)]);
+    expect(expected, greaterThan(18));
+    final sheetXml = archive.files
+        .where((f) => f.name.startsWith('xl/worksheets/sheet'))
+        .map((f) => utf8.decode(f.content as List<int>))
+        .join('\n');
+    expect(sheetXml, contains('ht="${expected.toStringAsFixed(2)}"'));
   });
 
   test('plan dependencies ride in their own sheet, external deps labelled',
@@ -314,9 +375,9 @@ void main() {
       projectId: Value(projectId),
       ref: Value('R2'),
       description: Value('Closed risk body'),
-      status: Value('accepted'),
+      status: Value('closed'),
       closedAt: Value('2026-09-01'),
-      closureNote: Value('Accepted after review'),
+      closureNote: Value('Mitigated; retired after review'),
     ));
 
     String raidText(List<int> bytes) => Excel.decodeBytes(bytes)
@@ -340,7 +401,7 @@ void main() {
     expect(withClosed, contains('Open risk body'));
     expect(withClosed, contains('CLOSED'));
     expect(withClosed, contains('Closed risk body'));
-    expect(withClosed, contains('Accepted after review'));
+    expect(withClosed, contains('Mitigated; retired after review'));
     expect(withClosed, contains('2026-09-01'));
     // Closed rows come after the register bands.
     expect(withClosed.indexOf('Closed risk body'),

@@ -54,3 +54,53 @@ String xlContrastText(String argbHex) {
   final yiq = (r * 299 + g * 587 + b * 114) / 1000;
   return yiq >= 150 ? kXlInk : kXlWhite;
 }
+
+// ── Row layout ─────────────────────────────────────────────────────────
+//
+// Excel never autofits a row the file gives an explicit height, and a
+// row with no height is left at the default by Excel and by the Teams
+// and browser previews the workbook is opened in. So every row that
+// carries wrapped text gets a height worked out here from the text and
+// the column it sits in. Over-estimating slightly is harmless (a little
+// air under the text); under-estimating hides the text behind the next
+// row, which is the bug this exists to prevent.
+
+/// Points per line of 10pt text, plus the cell's vertical padding.
+const double kXlLineHeight = 13.5;
+const double kXlRowPadding = 4.0;
+
+/// Excel's hard ceiling for a row height, in points.
+const double kXlMaxRowHeight = 409.0;
+
+/// Characters of 10pt body text that fit per Excel column-width unit.
+/// A unit is one digit of the default 11pt font; 10pt prose averages
+/// narrower, so a touch more than one fits. Measured against a real
+/// register: 1.15 leaves a little air under long rows without ever
+/// clipping them. Err low, never high.
+const double kXlCharsPerWidthUnit = 1.15;
+
+/// Lines [text] takes when wrapped in a column [widthUnits] wide:
+/// explicit line breaks count, and each paragraph wraps by length.
+int xlWrappedLines(String text, double widthUnits) {
+  final perLine = (widthUnits * kXlCharsPerWidthUnit).floor().clamp(1, 1 << 20);
+  var lines = 0;
+  for (final para in text.split('\n')) {
+    final len = para.trimRight().length;
+    lines += len == 0 ? 1 : (len / perLine).ceil();
+  }
+  return lines < 1 ? 1 : lines;
+}
+
+/// The height for a row whose wrapped cells are [cells] (text, column
+/// width in Excel units), never under [min]. Unwrapped cells are not
+/// passed: they stay one line whatever they hold.
+double xlRowHeight(Iterable<(String, double)> cells, {double min = 18}) {
+  var lines = 1;
+  for (final (text, width) in cells) {
+    final n = xlWrappedLines(text, width);
+    if (n > lines) lines = n;
+  }
+  final h = lines * kXlLineHeight + kXlRowPadding;
+  final clamped = h > kXlMaxRowHeight ? kXlMaxRowHeight : h;
+  return clamped < min ? min : clamped;
+}
