@@ -1,7 +1,7 @@
 /// The weekly planning ritual's arithmetic: which days a rock is
 /// allocated to, how much focus a day can take once its meetings are
-/// in, what last week's objectives actually got, what the morning
-/// ritual should pre-place, and when the day view should nudge. Pure
+/// in, what last week's objectives actually got, where a rock lands
+/// when it is placed, and when the day view should nudge. Pure
 /// Dart so the rules are unit-tested once and shared by the ritual
 /// dialog, the week readout and the day view.
 ///
@@ -195,6 +195,66 @@ List<PrefillBlock> prefillBlocks({
     cursor = end;
   }
   return out;
+}
+
+// ─── The day's rocks ─────────────────────────────────────────────────────
+
+/// One rock the week allocated to a day, as the Today column shows it:
+/// its length in slots, how many are done, and whether any block on the
+/// day's effective schedule carries it yet. Rocks start the day OFF the
+/// grid — the week decides what, the morning decides when — so [onGrid]
+/// is what separates a rock still waiting from one that has its hour.
+class DayRock {
+  final WeekPlanObjective objective;
+  final int slots;
+  final int done;
+  final bool onGrid;
+  const DayRock({
+    required this.objective,
+    required this.slots,
+    required this.done,
+    required this.onGrid,
+  });
+
+  int get lengthMinutes => slots * kPlanSlotMinutes;
+}
+
+/// The rocks allocated to [weekday], in objective order, with progress
+/// and placement read from the day's [blocks]. Done objectives still
+/// list (their squares are full), so the panel keeps the day's record.
+List<DayRock> dayRocks({
+  required List<WeekPlanObjective> objectives,
+  required int weekday,
+  required String planId,
+  required List<DayPlanBlock> blocks,
+  required List<int> revisionStarts,
+}) {
+  final schedule = effectiveSchedule(blocks, revisionStarts);
+  return [
+    for (final o in objectives)
+      if ((parseDayAllocations(o.dayAllocationsJson)[weekday] ?? 0) > 0)
+        DayRock(
+          objective: o,
+          slots: parseDayAllocations(o.dayAllocationsJson)[weekday]!,
+          done: objectiveDoneBlocks(o.id, blocks, {planId: revisionStarts}),
+          onGrid: schedule.any((b) => b.objectiveId == o.id),
+        ),
+  ];
+}
+
+/// Where a block dropped at [startMinute] should end: its own length,
+/// cut at [dayEnd] so a long rock dropped near the bottom never runs off
+/// the day, and never shorter than one grid slot.
+int droppedBlockEnd({
+  required int startMinute,
+  required int lengthMinutes,
+  required int dayEnd,
+  required int slotMinutes,
+}) {
+  final wanted = startMinute + lengthMinutes;
+  final floor = startMinute + slotMinutes;
+  if (wanted <= floor) return floor;
+  return wanted > dayEnd ? (dayEnd > floor ? dayEnd : floor) : wanted;
 }
 
 // ─── Nudges ──────────────────────────────────────────────────────────────

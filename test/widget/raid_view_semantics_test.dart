@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:keel/core/database/database.dart';
 import 'package:keel/features/decisions/decisions_view.dart';
 import 'package:keel/features/helm/helm_view.dart';
+import 'package:keel/features/helm/helm_lens_chip.dart';
 import 'package:keel/features/raid/raid_view.dart';
 import 'package:keel/providers/project_provider.dart';
 import 'package:keel/providers/settings_provider.dart';
@@ -104,7 +105,21 @@ Future<void> _seed(AppDatabase db) async {
   ));
 }
 
-Future<void> _pump(WidgetTester tester, AppDatabase db, Widget view) async {
+/// A settings provider pinned to one [AppSettings], so a test can set a
+/// Helm lens without touching the settings file on disk.
+class _PinnedSettings extends SettingsProvider {
+  final AppSettings pinned;
+  _PinnedSettings(this.pinned);
+  @override
+  AppSettings get settings => pinned;
+}
+
+Future<void> _pump(
+  WidgetTester tester,
+  AppDatabase db,
+  Widget view, {
+  AppSettings? settings,
+}) async {
   tester.view.devicePixelRatio = 1.0;
   tester.view.physicalSize = const Size(1600, 900);
   await tester.pumpWidget(
@@ -114,7 +129,9 @@ Future<void> _pump(WidgetTester tester, AppDatabase db, Widget view) async {
         ChangeNotifierProvider<ProjectProvider>(
             create: (_) => ProjectProvider(db)),
         ChangeNotifierProvider<SettingsProvider>(
-            create: (_) => SettingsProvider()),
+            create: (_) => settings == null
+                ? SettingsProvider()
+                : _PinnedSettings(settings)),
       ],
       child: MaterialApp(home: Scaffold(body: view)),
     ),
@@ -225,16 +242,65 @@ void main() {
 
     final handle = tester.ensureSemantics();
     await _pump(tester, db, const HelmView());
-    expect(find.text('TODAY'), findsOneWidget);
-    // The project layer sits at the top of the rail on a project.
+    // The rail title, and the project layer's own "Today" day header —
+    // the layer subscribes to the horizon late and must still see it.
+    expect(find.text('TODAY'), findsNWidgets(2));
+    // The project layer sits at the top of the AHEAD rail on a project.
+    // Each item shows twice: once in the TODAY column's horizon and once
+    // in the project layer.
     expect(find.textContaining('THIS PROJECT'), findsOneWidget);
-    expect(find.text('AC7 Send the brief'), findsOneWidget);
-    expect(find.text('R7 Vendor slips'), findsOneWidget);
-    expect(find.text('BEHIND'), findsOneWidget);
-    expect(find.text('AC8 Chase the contract'), findsOneWidget);
+    expect(find.text('AC7 Send the brief'), findsNWidgets(2));
+    expect(find.text('R7 Vendor slips'), findsNWidgets(2));
+    expect(find.text('BEHIND'), findsNWidgets(2));
+    expect(find.text('AC8 Chase the contract'), findsNWidgets(2));
     expect(find.textContaining('Risk review'), findsWidgets);
     _noException(tester);
     handle.dispose();
+    await _teardown(tester);
+  });
+
+  testWidgets('the Helm lens keeps other projects out of the planning columns',
+      (tester) async {
+    final now = DateTime.now();
+    String iso(DateTime d) => '${d.year.toString().padLeft(4, '0')}-'
+        '${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    await db.projectDao
+        .insertProject(ProjectsCompanion.insert(id: 'p-sample', name: 'Sample Programme'));
+    await db.actionsDao.insertAction(ProjectActionsCompanion.insert(
+      id: 'a-mine', projectId: _pid, description: 'Send the brief',
+      ref: const Value('AC7'), dueDate: Value(iso(now)),
+    ));
+    await db.actionsDao.insertAction(ProjectActionsCompanion.insert(
+      id: 'a-sample', projectId: 'p-sample', description: 'Sample chore',
+      ref: const Value('AC9'), dueDate: Value(iso(now)),
+    ));
+    await db.raidDao.upsertRisk(RisksCompanion(
+      id: const Value('r-sample'), projectId: const Value('p-sample'),
+      ref: const Value('R9'), title: const Value('Sample risk'),
+      description: const Value('d'), nextReviewAt: Value(iso(now)),
+    ));
+
+    // Everything shows without a lens.
+    await _pump(tester, db, const HelmView());
+    expect(find.text('AC9 Sample chore'), findsWidgets);
+    expect(find.text('R9 Sample risk'), findsWidgets);
+    expect(find.text('All projects'), findsOneWidget);
+    await _teardown(tester);
+
+    // Looked at through the lens, the sample project's items are gone and
+    // the chip names the one project left.
+    await _pump(tester, db, const HelmView(),
+        settings: const AppSettings(helmLensProjectIds: [_pid], helmLensOn: true));
+    expect(find.text('AC7 Send the brief'), findsWidgets);
+    expect(find.text('AC9 Sample chore'), findsNothing);
+    expect(find.text('R9 Sample risk'), findsNothing);
+    expect(
+      find.descendant(of: find.byType(HelmLensChip), matching: find.text('Semantics')),
+      findsOneWidget,
+      reason: 'the chip names the one project left',
+    );
+    expect(find.text('All projects'), findsNothing);
+    _noException(tester);
     await _teardown(tester);
   });
 

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../core/helm/helm_lens.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -76,6 +77,15 @@ class AppSettings {
   // of deep work). The week ritual's day capacity is this less the
   // meetings already on the day.
   final int helmFocusSlotsPerDay;
+  // Helm lens — which projects feed the planning columns and the week
+  // ritual. LOCAL to this machine (lives with the other Helm display
+  // settings, never synced): a demo install carries sample programmes the
+  // user wants kept but not planned around. Empty/off = every project.
+  final List<String> helmLensProjectIds;
+  final bool helmLensOn;
+
+  HelmLens get helmLens =>
+      HelmLens(projectIds: helmLensProjectIds.toSet(), on: helmLensOn);
 
   // Onboarding
   final bool hasSeenThreeViewTour;
@@ -117,6 +127,8 @@ class AppSettings {
     this.helmDayStartMinute = 7 * 60,
     this.helmDayEndMinute = 20 * 60,
     this.helmFocusSlotsPerDay = 8,
+    this.helmLensProjectIds = const [],
+    this.helmLensOn = false,
     this.hasSeenThreeViewTour = false,
     this.hasSeenCharterMigrationNotice = false,
     this.analyticsEnabled = false,
@@ -169,6 +181,8 @@ class AppSettings {
     int? helmDayStartMinute,
     int? helmDayEndMinute,
     int? helmFocusSlotsPerDay,
+    List<String>? helmLensProjectIds,
+    bool? helmLensOn,
     bool? hasSeenThreeViewTour,
     bool? hasSeenCharterMigrationNotice,
     bool? analyticsEnabled,
@@ -204,6 +218,8 @@ class AppSettings {
       helmDayStartMinute: helmDayStartMinute ?? this.helmDayStartMinute,
       helmDayEndMinute: helmDayEndMinute ?? this.helmDayEndMinute,
       helmFocusSlotsPerDay: helmFocusSlotsPerDay ?? this.helmFocusSlotsPerDay,
+      helmLensProjectIds: helmLensProjectIds ?? this.helmLensProjectIds,
+      helmLensOn: helmLensOn ?? this.helmLensOn,
       hasSeenThreeViewTour: hasSeenThreeViewTour ?? this.hasSeenThreeViewTour,
       hasSeenCharterMigrationNotice:
           hasSeenCharterMigrationNotice ?? this.hasSeenCharterMigrationNotice,
@@ -243,6 +259,8 @@ class AppSettings {
     'helmDayStartMinute': helmDayStartMinute,
     'helmDayEndMinute': helmDayEndMinute,
     'helmFocusSlotsPerDay': helmFocusSlotsPerDay,
+    'helmLensProjectIds': helmLensProjectIds,
+    'helmLensOn': helmLensOn,
     'hasSeenThreeViewTour': hasSeenThreeViewTour,
     'hasSeenCharterMigrationNotice': hasSeenCharterMigrationNotice,
     'analyticsEnabled': analyticsEnabled,
@@ -286,6 +304,9 @@ class AppSettings {
       helmDayStartMinute: json['helmDayStartMinute'] as int? ?? 7 * 60,
       helmDayEndMinute: json['helmDayEndMinute'] as int? ?? 20 * 60,
       helmFocusSlotsPerDay: json['helmFocusSlotsPerDay'] as int? ?? 8,
+      helmLensProjectIds:
+          (json['helmLensProjectIds'] as List?)?.cast<String>() ?? const [],
+      helmLensOn: json['helmLensOn'] as bool? ?? false,
       hasSeenThreeViewTour: json['hasSeenThreeViewTour'] as bool? ?? false,
       hasSeenCharterMigrationNotice:
           json['hasSeenCharterMigrationNotice'] as bool? ?? false,
@@ -424,6 +445,14 @@ class SettingsProvider extends ChangeNotifier {
 
   Future<void> setThemeId(String id) async {
     await save(_settings.copyWith(themeId: id));
+  }
+
+  /// Which projects Helm looks through. Local, never synced.
+  Future<void> setHelmLens(HelmLens lens) async {
+    await save(_settings.copyWith(
+      helmLensProjectIds: lens.projectIds.toList()..sort(),
+      helmLensOn: lens.on,
+    ));
   }
 
   Future<void> setHelmFocusSlotsPerDay(int slots) async {

@@ -2,8 +2,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:keel/core/database/database.dart';
 import 'package:keel/core/helm/week_ritual.dart';
 
-/// Allocation arithmetic, day capacity, mission drafting, morning
-/// prefill placement and the two nudges — all in 30-minute slots.
+/// Allocation arithmetic, day capacity, mission drafting, rock placement
+/// (Place / Place all), the day's rock list and the two nudges — all in
+/// 30-minute slots.
 WeekPlanObjective _obj(String id, String label,
         {String alloc = '{}', int? target, bool done = false,
         String? projectId, String? actionId}) =>
@@ -124,6 +125,70 @@ void main() {
               objectives: [_obj('a', 'x', alloc: '{"1":2}')],
               weekday: 0, dayStart: 540, dayEnd: 1020),
           isEmpty);
+    });
+  });
+
+  group('day rocks', () {
+    test('lists the rocks allocated to the day with progress and placement', () {
+      final objs = [
+        _obj('a', 'Status pack', alloc: '{"0":1}'),
+        _obj('b', 'Build adapter', alloc: '{"0":3}'),
+        _obj('c', 'Not today', alloc: '{"1":2}'),
+        _obj('d', 'Finished', alloc: '{"0":2}', done: true),
+      ];
+      final blocks = [
+        _block(540, 630, objectiveId: 'b', done: true), // 3 slots, placed
+        _block(660, 720, objectiveId: 'd'),
+      ];
+      final rocks = dayRocks(
+        objectives: objs, weekday: 0, planId: 'd', blocks: blocks,
+        revisionStarts: const [],
+      );
+      expect(rocks.map((r) => r.objective.id), ['a', 'b', 'd']);
+      final a = rocks[0], b = rocks[1], d = rocks[2];
+      expect((a.slots, a.done, a.onGrid), (1, 0, false));
+      expect(a.lengthMinutes, 30);
+      expect((b.slots, b.done, b.onGrid), (3, 3, true));
+      expect(b.lengthMinutes, 90);
+      expect((d.slots, d.done, d.onGrid), (2, 0, true));
+    });
+
+    test('a block superseded by a revision does not count as placed', () {
+      final blocks = [
+        _block(600, 660, objectiveId: 'a'), // rev 0, after the rev-1 start
+      ];
+      final rocks = dayRocks(
+        objectives: [_obj('a', 'Rock', alloc: '{"0":2}')],
+        weekday: 0, planId: 'd', blocks: blocks, revisionStarts: const [570],
+      );
+      expect(rocks.single.onGrid, isFalse,
+          reason: 'revision 1 took over at 09:30; the old block is history');
+    });
+
+    test('nothing allocated to the day means no rocks', () {
+      expect(
+          dayRocks(
+            objectives: [_obj('a', 'x', alloc: '{"1":2}')],
+            weekday: 0, planId: 'd', blocks: const [], revisionStarts: const [],
+          ),
+          isEmpty);
+    });
+  });
+
+  group('dropped block end', () {
+    int end(int start, int len, {int dayEnd = 1200}) => droppedBlockEnd(
+        startMinute: start, lengthMinutes: len, dayEnd: dayEnd, slotMinutes: 30);
+
+    test('a rock keeps its full length when it fits', () {
+      expect(end(600, 90), 690);
+    });
+    test('is cut at the end of the day', () {
+      expect(end(1140, 90), 1200);
+    });
+    test('never shorter than one slot, even at the last slot', () {
+      expect(end(1170, 90), 1200);
+      expect(end(1200, 90), 1230, reason: 'floor wins when the day is already over');
+      expect(end(600, 0), 630);
     });
   });
 

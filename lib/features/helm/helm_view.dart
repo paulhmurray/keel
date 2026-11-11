@@ -9,7 +9,10 @@ import '../../core/database/database.dart';
 import '../../core/helm/day_plan_logic.dart';
 import '../../shared/utils/date_utils.dart' as du;
 import '../../core/helm/combine_latest.dart';
+import '../../core/helm/helm_lens.dart';
 import '../../core/helm/planning_horizon.dart';
+import 'helm_lens_chip.dart';
+import '../raid/risk_review_session_dialog.dart';
 import '../../core/helm/project_headline.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/project_provider.dart';
@@ -87,12 +90,16 @@ class _RailDrag {
   final String? projectId;
   final String? linkedActionId;
   final String? objectiveId;
+  /// How long a block the drop makes. Null means one grid slot; a rock
+  /// from the week plan carries its allocated length.
+  final int? lengthMinutes;
   const _RailDrag({
     required this.label,
     required this.kind,
     this.projectId,
     this.linkedActionId,
     this.objectiveId,
+    this.lengthMinutes,
   });
 }
 
@@ -201,36 +208,14 @@ class _HelmViewState extends State<HelmView> {
     return _weekObjectivesStream!;
   }
 
-  /// Starts a day: creates its plan and, when the week has rocks on
-  /// this weekday, pre-places them as draft focus blocks in revision 0.
-  /// An existing plan is never touched.
+  /// Starts a day: creates its plan, and nothing else. The rocks the
+  /// week allocated to this day wait in the Today column until they are
+  /// dragged onto the grid or placed — the week decides what, the
+  /// morning decides when. An existing plan is never touched.
   Future<void> _chartDay(AppDatabase db, String dateIso) async {
     final existing = await db.dayPlanDao.getPlanForDate(dateIso);
     if (existing != null) return;
-    final plan = await db.dayPlanDao.getOrCreatePlanForDate(dateIso);
-    final week = await db.weekPlanDao.getPlanForWeek(_isoDate(mondayOf(_date)));
-    if (week == null || !mounted) return;
-    final objectives = await db.weekPlanDao.getObjectivesForPlan(week.id);
-    if (!mounted) return;
-    final prefs = context.read<SettingsProvider>().settings;
-    final drafts = prefillBlocks(
-      objectives: objectives,
-      weekday: _date.weekday - 1,
-      dayStart: prefs.helmDayStartMinute,
-      dayEnd: prefs.helmDayEndMinute,
-    );
-    for (final b in drafts) {
-      await db.dayPlanDao.insertBlock(
-        planId: plan.id,
-        revision: 0,
-        startMinute: b.startMinute,
-        endMinute: b.endMinute,
-        label: b.label,
-        projectId: b.projectId,
-        linkedActionId: b.linkedActionId,
-        objectiveId: b.objectiveId,
-      );
-    }
+    await db.dayPlanDao.getOrCreatePlanForDate(dateIso);
   }
 
   /// The Monday and Friday nudges for the current week. Quiet on other
@@ -530,6 +515,21 @@ class _HelmViewState extends State<HelmView> {
                                       _RailStrip(
                                         label: 'TODAY',
                                         icon: Icons.today_outlined,
+                                        // Rocks still off the grid live in
+                                        // this column; say so while it is
+                                        // folded.
+                                        badge: plan == null
+                                            ? 0
+                                            : dayRocks(
+                                                objectives: objectives,
+                                                weekday: _date.weekday - 1,
+                                                planId: plan.id,
+                                                blocks: blocks,
+                                                revisionStarts:
+                                                    parseRevisionStarts(
+                                                      plan.revisionStartsJson,
+                                                    ),
+                                              ).where((r) => !r.onGrid).length,
                                         onTap: () =>
                                             setState(() => _leftOpen = true),
                                       ),
@@ -726,6 +726,8 @@ class _HelmHeader extends StatelessWidget {
                     HelmScale.quarter => 'This quarter',
                   }, style: TextStyle(color: KColors.amber, fontSize: 12)),
                 ),
+              const SizedBox(width: 10),
+              const HelmLensChip(),
               const Spacer(),
               if (onFocus != null)
                 Tooltip(
@@ -799,8 +801,10 @@ class _EmptyDay extends StatelessWidget {
             width: 380,
             child: Text(
               'Block the day in 30-minute slots — meetings, focus work on '
-              'actions, admin. When the day changes course, revise the '
-              'remainder in a new column and keep the original as the record.',
+              'actions, admin. Any rocks your week put on this day wait in '
+              'the Today column; drag each onto its hour. When the day '
+              'changes course, revise the remainder in a new column and '
+              'keep the original as the record.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: KColors.textDim,
@@ -1138,7 +1142,12 @@ class _RevisionColumn extends StatelessWidget {
         planId: plan.id,
         revision: revision,
         startMinute: minute,
-        endMinute: minute + kHelmSlotMinutes,
+        endMinute: droppedBlockEnd(
+          startMinute: minute,
+          lengthMinutes: payload.lengthMinutes ?? kHelmSlotMinutes,
+          dayEnd: dayEnd,
+          slotMinutes: kHelmSlotMinutes,
+        ),
         label: payload.label,
         kind: payload.kind,
         projectId: payload.projectId,
@@ -1510,24 +1519,26 @@ class _BlockDialogState extends State<_BlockDialog> {
 // ---------------------------------------------------------------------------
 
 /// Folds the six register streams into one [PlanningHorizon] stream.
-/// Broadcast, because more than one widget reads it (the rail, the
-/// board, and the "this project" layer).
+/// Shared with replay, because more than one widget reads it (the rail's
+/// sections and the "this project" layer) and some of them subscribe
+/// late — the project layer only builds once the current project is
+/// known, and must still see the horizon already computed.
 Stream<PlanningHorizon> horizonStream(
   DateTime date,
   List<Stream<Object>> sources,
-) => combineLatest<Object>(sources)
-    .map(
-      (lists) => buildPlanningHorizon(
-        today: date,
-        actions: (lists[0] as List).cast<HelmActionItem>(),
-        decisions: (lists[1] as List).cast<HelmDecisionItem>(),
-        dependencies: (lists[2] as List).cast<HelmDependencyItem>(),
-        risks: (lists[3] as List).cast<HelmRiskItem>(),
-        issues: (lists[4] as List).cast<HelmIssueItem>(),
-        activities: (lists[5] as List).cast<HelmActivityItem>(),
-      ),
-    )
-    .asBroadcastStream();
+) => shareReplay(
+  combineLatest<Object>(sources).map(
+    (lists) => buildPlanningHorizon(
+      today: date,
+      actions: (lists[0] as List).cast<HelmActionItem>(),
+      decisions: (lists[1] as List).cast<HelmDecisionItem>(),
+      dependencies: (lists[2] as List).cast<HelmDependencyItem>(),
+      risks: (lists[3] as List).cast<HelmRiskItem>(),
+      issues: (lists[4] as List).cast<HelmIssueItem>(),
+      activities: (lists[5] as List).cast<HelmActivityItem>(),
+    ),
+  ),
+);
 
 /// Opens the register item behind a horizon row through the shell's
 /// callbacks. Plan activities have no dialog here (they live in Plan).
@@ -1539,11 +1550,14 @@ Future<void> openPlanningItem(
   void Function(Issue)? onOpenIssue,
   void Function(ProgramDependency)? onOpenDependency,
   void Function(Decision)? onOpenDecision,
+  void Function(String projectId)? onOpenReviewSession,
 }) async {
   switch (it.kind) {
     case PlanningKind.action:
       final a = await db.actionsDao.getActionById(it.id);
       if (a != null) onOpenAction?.call(a);
+    case PlanningKind.riskReviewSession:
+      onOpenReviewSession?.call(it.projectId);
     case PlanningKind.decision:
       final d = await db.decisionsDao.getDecisionById(it.id);
       if (d != null) onOpenDecision?.call(d);
@@ -1591,8 +1605,11 @@ Widget planningItemCard(
 }
 
 /// What the week put on this day, at the top of the Today column: one
-/// row per rock with its slot squares and progress, and a Place button
-/// for a rock with no block on the grid yet.
+/// row per rock with its slot squares and progress. A rock not yet on
+/// the grid is a draggable — drop it on the hour you want and it makes a
+/// block of its full allocated length — or Place puts it in the first
+/// free gap. "Place all" does that for every waiting rock at once, which
+/// is what starting the day used to do unasked.
 class _PlannedForDay extends StatelessWidget {
   final AppDatabase db;
   final DayPlan plan;
@@ -1614,27 +1631,18 @@ class _PlannedForDay extends StatelessWidget {
     required this.isToday,
   });
 
-  /// What the week put on this day: one row per rock with its slot
-  /// squares and progress, and a Place button for a rock that has no
-  /// block on the grid yet (the day was charted before the week, or the
-  /// draft block was deleted).
   @override
   Widget build(BuildContext context) {
     final starts = parseRevisionStarts(plan.revisionStartsJson);
-    final rocks = [
-      for (final o in objectives)
-        if ((parseDayAllocations(o.dayAllocationsJson)[weekday] ?? 0) > 0)
-          (
-            o: o,
-            slots: parseDayAllocations(o.dayAllocationsJson)[weekday]!,
-            done: objectiveDoneBlocks(o.id, blocks, {plan.id: starts}),
-            onGrid: effectiveSchedule(
-              blocks,
-              starts,
-            ).any((b) => b.objectiveId == o.id),
-          ),
-    ];
+    final rocks = dayRocks(
+      objectives: objectives,
+      weekday: weekday,
+      planId: plan.id,
+      blocks: blocks,
+      revisionStarts: starts,
+    );
     if (rocks.isEmpty) return const SizedBox.shrink();
+    final waiting = [for (final r in rocks) if (!r.onGrid) r];
     return Container(
       margin: const EdgeInsets.fromLTRB(10, 10, 10, 4),
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
@@ -1650,61 +1658,73 @@ class _PlannedForDay extends StatelessWidget {
             children: [
               Icon(Icons.view_week_outlined, size: 12, color: KColors.amber),
               const SizedBox(width: 6),
-              Text(
-                isToday ? 'PLANNED FOR TODAY' : 'PLANNED FOR THIS DAY',
-                style: TextStyle(
-                  color: KColors.textDim,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.6,
+              Expanded(
+                child: Text(
+                  isToday ? 'PLANNED FOR TODAY' : 'PLANNED FOR THIS DAY',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: KColors.textDim,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.6,
+                  ),
                 ),
               ),
-              const Spacer(),
-              Text(
-                '${rocks.fold<int>(0, (n, r) => n + r.done)}/'
-                '${rocks.fold<int>(0, (n, r) => n + r.slots)} blocks',
-                style: GoogleFonts.jetBrainsMono(
-                  color: KColors.textMuted,
-                  fontSize: 10,
+              const SizedBox(width: 6),
+              if (waiting.isNotEmpty)
+                Tooltip(
+                  message:
+                      'Put every waiting rock on the grid, biggest first, '
+                      'in the first free gaps',
+                  child: InkWell(
+                    onTap: () => _place(
+                      [for (final r in waiting) r.objective],
+                      starts,
+                    ),
+                    borderRadius: BorderRadius.circular(3),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 2,
+                      ),
+                      child: Text(
+                        'Place all',
+                        style: TextStyle(
+                          color: KColors.amber,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+              else
+                Text(
+                  '${rocks.fold<int>(0, (n, r) => n + r.done)}/'
+                  '${rocks.fold<int>(0, (n, r) => n + r.slots)} blocks',
+                  style: GoogleFonts.jetBrainsMono(
+                    color: KColors.textMuted,
+                    fontSize: 10,
+                  ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 6),
           for (final r in rocks)
             Padding(
               padding: const EdgeInsets.only(bottom: 4),
-              child: RockProgressRow(
-                label: r.o.label,
-                slots: r.slots,
-                done: r.done,
-                trailing: r.onGrid
-                    ? null
-                    : Tooltip(
-                        message:
-                            'Not on the grid yet — place '
-                            '${r.slots * kPlanSlotMinutes} minutes in the first free gap',
-                        child: SizedBox(
-                          height: 22,
-                          child: OutlinedButton(
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                              ),
-                              side: BorderSide(color: KColors.border2),
-                              visualDensity: VisualDensity.compact,
-                            ),
-                            onPressed: () => _placeRock(r.o, r.slots, starts),
-                            child: Text(
-                              'Place',
-                              style: TextStyle(
-                                color: KColors.amber,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+              child: r.onGrid ? _placedRow(r) : _waitingRow(r, starts),
+            ),
+          if (waiting.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                waiting.length == 1
+                    ? 'Drag it onto the hour you want, or Place.'
+                    : '${waiting.length} waiting — drag each onto the hour '
+                          'you want, or Place.',
+                style: TextStyle(color: KColors.textMuted, fontSize: 10),
               ),
             ),
         ],
@@ -1712,16 +1732,102 @@ class _PlannedForDay extends StatelessWidget {
     );
   }
 
-  Future<void> _placeRock(
-    WeekPlanObjective o,
-    int slots,
+  Widget _placedRow(DayRock r) =>
+      RockProgressRow(label: r.objective.label, slots: r.slots, done: r.done);
+
+  /// A rock with no block yet: its row is the drag handle, with Place as
+  /// the one-click alternative.
+  Widget _waitingRow(DayRock r, List<int> starts) {
+    final row = Row(
+      children: [
+        Expanded(
+          child: RockProgressRow(
+            label: r.objective.label,
+            slots: r.slots,
+            done: r.done,
+          ),
+        ),
+        Text(
+          '${r.lengthMinutes} min',
+          style: GoogleFonts.jetBrainsMono(
+            color: KColors.textMuted,
+            fontSize: 10,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Tooltip(
+          message:
+              'Not on the grid yet — place ${r.lengthMinutes} minutes in '
+              'the first free gap',
+          child: SizedBox(
+            height: 22,
+            child: OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                side: BorderSide(color: KColors.border2),
+                visualDensity: VisualDensity.compact,
+              ),
+              onPressed: () => _place([r.objective], starts),
+              child: Text(
+                'Place',
+                style: TextStyle(color: KColors.amber, fontSize: 11),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 4),
+        Icon(Icons.drag_indicator, size: 14, color: KColors.textMuted),
+      ],
+    );
+    return Draggable<Object>(
+      data: _RailDrag(
+        label: r.objective.label,
+        kind: 'focus',
+        projectId: r.objective.projectId,
+        linkedActionId: r.objective.linkedActionId,
+        objectiveId: r.objective.id,
+        lengthMinutes: r.lengthMinutes,
+      ),
+      feedback: Material(
+        color: Colors.transparent,
+        child: Container(
+          width: 260,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: KColors.surface2,
+            border: Border.all(color: KColors.amber),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Text(
+            '${r.objective.label} · ${r.lengthMinutes} min',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: KColors.text, fontSize: 12),
+          ),
+        ),
+      ),
+      childWhenDragging: Opacity(opacity: 0.4, child: row),
+      child: MouseRegion(cursor: SystemMouseCursors.grab, child: row),
+    );
+  }
+
+  /// Places [rocks] into the first free gaps of the current revision,
+  /// biggest first, never before the revision's own start — a rock
+  /// placed mid-afternoon must not land in a morning that is already
+  /// history.
+  Future<void> _place(
+    List<WeekPlanObjective> rocks,
     List<int> starts,
   ) async {
     final schedule = effectiveSchedule(blocks, starts);
+    final revision = plan.currentRevision;
+    final floor = revision == 0 || starts.length < revision
+        ? dayStart
+        : starts[revision - 1];
     final draft = prefillBlocks(
-      objectives: [o],
+      objectives: rocks,
       weekday: weekday,
-      dayStart: dayStart,
+      dayStart: floor,
       dayEnd: dayEnd,
       existing: [
         for (final b in schedule)
@@ -1731,7 +1837,7 @@ class _PlannedForDay extends StatelessWidget {
     for (final b in draft) {
       await db.dayPlanDao.insertBlock(
         planId: plan.id,
-        revision: plan.currentRevision,
+        revision: revision,
         startMinute: b.startMinute,
         endMinute: b.endMinute,
         label: b.label,
@@ -1748,16 +1854,23 @@ class _RailStrip extends StatelessWidget {
   final String label;
   final IconData icon;
   final VoidCallback onTap;
+  /// Items waiting behind the fold (rocks not yet on the grid); zero hides it.
+  final int badge;
+
   const _RailStrip({
     required this.label,
     required this.icon,
     required this.onTap,
+    this.badge = 0,
   });
 
   @override
   Widget build(BuildContext context) {
     return Tooltip(
-      message: 'Show $label',
+      message: badge > 0
+          ? 'Show $label — $badge rock${badge == 1 ? '' : 's'} waiting '
+                'to be placed on the grid'
+          : 'Show $label',
       child: InkWell(
         onTap: onTap,
         child: Container(
@@ -1767,6 +1880,27 @@ class _RailStrip extends StatelessWidget {
           child: Column(
             children: [
               Icon(icon, size: 14, color: KColors.textDim),
+              if (badge > 0) ...[
+                const SizedBox(height: 6),
+                Container(
+                  width: 16,
+                  height: 16,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: KColors.amberDim,
+                    border: Border.all(color: KColors.amber),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '$badge',
+                    style: TextStyle(
+                      color: KColors.amber,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 10),
               RotatedBox(
                 quarterTurns: 3,
@@ -1853,6 +1987,9 @@ class _PlanningRailState extends State<_PlanningRail> {
   late Stream<List<HelmActivityItem>> _datedActivities;
   // Everything with a date across every project, bucketed for planning.
   late Stream<PlanningHorizon> _horizon;
+  // The lens the streams were built through; null until the first
+  // dependency pass. Streams are rebuilt only when it changes.
+  HelmLens? _lens;
   Stream<DayPlan?>? _carryPlanStream;
   String? _carryDateIso;
   Stream<List<DayPlanBlock>>? _carryBlocksStream;
@@ -1867,9 +2004,21 @@ class _PlanningRailState extends State<_PlanningRail> {
   AppDatabase get db => widget.db;
 
   @override
-  void initState() {
-    super.initState();
-    _initStreams();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Settings and the project list both notify often; only a changed
+    // lens re-anchors the streams (which blinks the sections once).
+    final lens = context
+        .watch<SettingsProvider>()
+        .settings
+        .helmLens
+        .restrictedTo(
+          context.watch<ProjectProvider>().projects.map((p) => p.id),
+        );
+    if (lens != _lens) {
+      _lens = lens;
+      _initStreams();
+    }
   }
 
   @override
@@ -1891,14 +2040,43 @@ class _PlanningRailState extends State<_PlanningRail> {
 
   void _initStreams() {
     final dao = db.dayPlanDao;
-    _unownedRisks = dao.watchUnownedOpenRisksAllProjects();
-    _pendingDecisions = dao.watchPendingDecisionsAllProjects();
-    _allActions = dao.watchOpenActionsAllProjects();
-    _allRisks = dao.watchOpenRisksAllProjects();
-    _allIssues = dao.watchOpenIssuesAllProjects();
-    _allAssumptions = dao.watchOpenAssumptionsAllProjects();
-    _allDependencies = dao.watchOpenDependenciesAllProjects();
-    _datedActivities = dao.watchDatedActivitiesAllProjects();
+    // Risks parked until a review after this week are not offered as
+    // things to take on: they come back when the day being planned
+    // reaches their review week.
+    List<HelmRiskItem> unparked(List<HelmRiskItem> items) => items
+        .where((i) => !parkedUntilReview(i.risk.nextReviewAt, widget.date))
+        .toList();
+    // Every register is read for all projects, then looked at through
+    // the lens (a local choice of projects — see HelmLens).
+    final lens = _lens ?? HelmLens.all;
+    List<T> Function(List<T>) through<T>(String Function(T) projectIdOf) =>
+        (items) => lens.apply(items, projectIdOf);
+    _unownedRisks = dao
+        .watchUnownedOpenRisksAllProjects()
+        .map(through<HelmRiskItem>((i) => i.risk.projectId))
+        .map(unparked);
+    _pendingDecisions = dao
+        .watchPendingDecisionsAllProjects()
+        .map(through<HelmDecisionItem>((i) => i.decision.projectId));
+    _allActions = dao
+        .watchOpenActionsAllProjects()
+        .map(through<HelmActionItem>((i) => i.action.projectId));
+    _allRisks = dao
+        .watchOpenRisksAllProjects()
+        .map(through<HelmRiskItem>((i) => i.risk.projectId))
+        .map(unparked);
+    _allIssues = dao
+        .watchOpenIssuesAllProjects()
+        .map(through<HelmIssueItem>((i) => i.issue.projectId));
+    _allAssumptions = dao
+        .watchOpenAssumptionsAllProjects()
+        .map(through<HelmAssumptionItem>((i) => i.assumption.projectId));
+    _allDependencies = dao
+        .watchOpenDependenciesAllProjects()
+        .map(through<HelmDependencyItem>((i) => i.dependency.projectId));
+    _datedActivities = dao
+        .watchDatedActivitiesAllProjects()
+        .map(through<HelmActivityItem>((i) => i.activity.projectId));
     _horizon = horizonStream(widget.date, [
       _allActions,
       _pendingDecisions,
@@ -2226,6 +2404,9 @@ class _PlanningRailState extends State<_PlanningRail> {
       case PlanningKind.riskReview:
         final r = await db.raidDao.getRiskById(it.id);
         if (r != null) widget.onOpenRisk?.call(r);
+      case PlanningKind.riskReviewSession:
+        // The rolled-up row IS the work: sit the review here and now.
+        if (mounted) await showRiskReviewSession(context, db, it.projectId);
       case PlanningKind.issue:
         final i = await db.raidDao.getIssueById(it.id);
         if (i != null) widget.onOpenIssue?.call(i);

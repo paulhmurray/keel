@@ -39,3 +39,43 @@ Stream<List<T>> combineLatest<T>(List<Stream<T>> sources) {
   );
   return controller.stream;
 }
+
+/// Shares one subscription to [source] between any number of listeners and
+/// hands each NEW listener the latest value straight away. A plain
+/// `asBroadcastStream()` does not replay, so a widget that subscribes after
+/// the first emission (the rail's project layer, built once the current
+/// project is known) would sit empty until the next change. Resets when
+/// the last listener leaves, so the next one re-subscribes afresh.
+Stream<T> shareReplay<T>(Stream<T> source) {
+  T? last;
+  var hasLast = false;
+  StreamSubscription<T>? sub;
+  final listeners = <MultiStreamController<T>>{};
+  return Stream<T>.multi((controller) {
+    listeners.add(controller);
+    if (hasLast) controller.add(last as T);
+    sub ??= source.listen(
+      (v) {
+        last = v;
+        hasLast = true;
+        for (final c in listeners.toList()) {
+          c.add(v);
+        }
+      },
+      onError: (Object e, StackTrace st) {
+        for (final c in listeners.toList()) {
+          c.addError(e, st);
+        }
+      },
+    );
+    controller.onCancel = () {
+      listeners.remove(controller);
+      if (listeners.isEmpty) {
+        // Fire-and-forget, as in combineLatest.
+        sub?.cancel();
+        sub = null;
+        hasLast = false;
+      }
+    };
+  });
+}

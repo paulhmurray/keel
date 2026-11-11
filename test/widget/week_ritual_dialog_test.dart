@@ -187,7 +187,7 @@ void main() {
     expect(last.reviewedAt, isNull);
   });
 
-  testWidgets('the morning prefill places allocated rocks as draft blocks', (
+  testWidgets('Place puts an allocated rock in the first free gap of the day', (
     tester,
   ) async {
     final week = await db.weekPlanDao.getOrCreatePlanForWeek('2026-10-12');

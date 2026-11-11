@@ -213,14 +213,24 @@ class _WeekRitualDialogState extends State<WeekRitualDialog> {
     // under a widget test's fake clock.
     try {
       final dao = db.dayPlanDao;
+      // Looked at through the same lens as the planning rail.
+      final lens = settings.helmLens.restrictedTo(
+        (await db.projectDao.getAllProjects()).map((p) => p.id),
+      );
       _horizon = buildPlanningHorizon(
         today: _monday,
-        actions: await dao.getOpenActionsAllProjects(),
-        decisions: await dao.getPendingDecisionsAllProjects(),
-        dependencies: await dao.getOpenDependenciesAllProjects(),
-        risks: await dao.getOpenRisksAllProjects(),
-        issues: await dao.getOpenIssuesAllProjects(),
-        activities: await dao.getDatedActivitiesAllProjects(),
+        actions: lens.apply(
+            await dao.getOpenActionsAllProjects(), (i) => i.action.projectId),
+        decisions: lens.apply(await dao.getPendingDecisionsAllProjects(),
+            (i) => i.decision.projectId),
+        dependencies: lens.apply(await dao.getOpenDependenciesAllProjects(),
+            (i) => i.dependency.projectId),
+        risks: lens.apply(
+            await dao.getOpenRisksAllProjects(), (i) => i.risk.projectId),
+        issues: lens.apply(
+            await dao.getOpenIssuesAllProjects(), (i) => i.issue.projectId),
+        activities: lens.apply(await dao.getDatedActivitiesAllProjects(),
+            (i) => i.activity.projectId),
       );
     } catch (_) {
       _horizon = null;
