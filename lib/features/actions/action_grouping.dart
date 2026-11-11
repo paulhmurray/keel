@@ -148,19 +148,24 @@ List<ProjectAction> eligibleParentCandidates({
 bool canBeParent(ProjectAction a, Map<String, ProjectAction> byId) =>
     actionDepth(a, byId) < kMaxActionDepth;
 
-/// True if [a] is a closed action whose last-update is older than
-/// [hideAfterDays] (relative to [now]).
+/// Local midnight on the Monday of the week containing [t].
+DateTime weekStartOf(DateTime t) {
+  final day = DateTime(t.year, t.month, t.day);
+  return day.subtract(Duration(days: day.weekday - DateTime.monday));
+}
+
+/// True if [a] is a closed action the default view should hide.
+///
+/// Closed actions stay on the board and list for the rest of the week
+/// they were closed in, then drop off on Sunday night so Monday opens
+/// clean. "Closed in" is read from [updatedAt], which closing stamps;
+/// a later edit to a closed action keeps it another week.
 ///
 /// Centralised so the actions view and any other surface use the same rule.
-bool isOldClosed(
-  ProjectAction a, {
-  DateTime? now,
-  int hideAfterDays = 14,
-}) {
+bool isOldClosed(ProjectAction a, {DateTime? now}) {
   if (a.status != 'closed') return false;
-  final cutoff =
-      (now ?? DateTime.now()).subtract(Duration(days: hideAfterDays));
-  return a.updatedAt.isBefore(cutoff);
+  final thisWeek = weekStartOf((now ?? DateTime.now()).toLocal());
+  return a.updatedAt.toLocal().isBefore(thisWeek);
 }
 
 /// Splits a flat action list into top-level actions plus a children map keyed
@@ -182,21 +187,24 @@ bool isOldClosed(
   return (roots: roots, childrenByParent: children);
 }
 
-/// Ids of top-level actions whose whole group is finished: the root is
-/// closed and so is every descendant. Retired groups drop off the board
-/// and list immediately (no 14-day wait) — the "show old closed" toggle
-/// brings them back.
-Set<String> retiredRootIds(List<ProjectAction> actions) {
+/// Ids of top-level actions whose whole group is finished and has had
+/// its week on the board: the root is closed and so is every descendant,
+/// all of them before the current week began (see [isOldClosed]). Retired
+/// groups drop off the board and list as a whole — the "show closed"
+/// toggle brings them back.
+Set<String> retiredRootIds(List<ProjectAction> actions, {DateTime? now}) {
   final part = partitionByParent(actions);
   final byId = {for (final a in actions) a.id: a};
   final out = <String>{};
   for (final root in part.roots) {
-    if (root.status != 'closed') continue;
+    if (!isOldClosed(root, now: now)) continue;
     final descendants = actionDescendantIds(root.id, part.childrenByParent);
-    // Plain closed actions age out over 14 days like always; only real
-    // groups (designated or with children) retire the moment they close.
+    // Only real groups (designated or with children) retire as a unit;
+    // a plain closed action is hidden on its own by isOldClosed.
     if (descendants.isEmpty && !root.isParent) continue;
-    if (descendants.every((id) => byId[id]?.status == 'closed')) {
+    if (descendants.every(
+      (id) => byId[id] != null && isOldClosed(byId[id]!, now: now),
+    )) {
       out.add(root.id);
     }
   }

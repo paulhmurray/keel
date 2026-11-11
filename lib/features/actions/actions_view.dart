@@ -39,8 +39,6 @@ class _ActionsViewState extends State<ActionsView> {
   Map<String, String> _planTagMap = {}; // activityId → "[WP] Activity name"
   final Set<String> _collapsedParents = {};
 
-  static const int _closedHideAfterDays = 14;
-
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -76,19 +74,20 @@ class _ActionsViewState extends State<ActionsView> {
     );
   }
 
-  bool _isOldClosed(ProjectAction a) =>
-      isOldClosed(a, hideAfterDays: _closedHideAfterDays);
-
-  /// Everything shown when "show old closed" is off:
-  ///   - retired groups (closed parent, all descendants closed) drop
-  ///     immediately, board and list alike
-  ///   - individually old-closed actions age out after two weeks — except
-  ///     a parent that still has visible descendants, which must stay so
-  ///     its group keeps its swimlane/heading.
+  /// Everything shown when "show closed" is off. Closed actions keep
+  /// their place for the rest of the week they were closed in and drop
+  /// off on Sunday night (see [isOldClosed]):
+  ///   - retired groups (closed parent, all descendants closed, all of
+  ///     them last week or earlier) drop as a whole, board and list alike
+  ///   - closed actions from earlier weeks hide — except a parent that
+  ///     still has visible descendants, which must stay so its group
+  ///     keeps its swimlane/heading.
   List<ProjectAction> _visibleActions(List<ProjectAction> all) {
     final byId = {for (final a in all) a.id: a};
     final part = partitionByParent(all);
-    final retired = retiredRootIds(all);
+    final now = DateTime.now();
+    final retired = retiredRootIds(all, now: now);
+    bool isOld(ProjectAction a) => isOldClosed(a, now: now);
 
     String topRootOf(ProjectAction a) {
       var cursor = a;
@@ -103,11 +102,11 @@ class _ActionsViewState extends State<ActionsView> {
 
     return all.where((a) {
       if (retired.contains(topRootOf(a))) return false;
-      if (!_isOldClosed(a)) return true;
+      if (!isOld(a)) return true;
       return actionDescendantIds(
         a.id,
         part.childrenByParent,
-      ).any((id) => byId[id] != null && !_isOldClosed(byId[id]!));
+      ).any((id) => byId[id] != null && !isOld(byId[id]!));
     }).toList();
   }
 
@@ -440,10 +439,12 @@ class _ClosedToggle extends StatelessWidget {
     final activeColor = showOld ? KColors.amber : KColors.textDim;
     return Tooltip(
       message: showOld
-          ? 'Click to hide closed groups and closed actions older than 2 weeks'
+          ? 'Click to hide actions closed before this week'
           : hiddenCount == 0
-          ? 'No old closed actions to show'
-          : 'Click to show $hiddenCount hidden closed action${hiddenCount == 1 ? '' : 's'} (closed groups and actions older than 2 weeks)',
+          ? 'Nothing closed before this week. Actions closed this week '
+                'stay until Sunday night'
+          : 'Click to show $hiddenCount action${hiddenCount == 1 ? '' : 's'} '
+                'closed before this week',
       waitDuration: const Duration(milliseconds: 350),
       child: InkWell(
         onTap: onTap,
@@ -470,7 +471,7 @@ class _ClosedToggle extends StatelessWidget {
               ),
               const SizedBox(width: 5),
               Text(
-                showOld ? 'Showing old closed' : 'Hiding old closed',
+                showOld ? 'Showing closed' : 'Hiding closed',
                 style: TextStyle(
                   color: activeColor,
                   fontSize: 11,

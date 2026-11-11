@@ -241,11 +241,12 @@ class _ActionsKanbanState extends State<ActionsKanban> {
         title: const Text('Close group'),
         content: Text(
           openCount == 0
-              ? 'Close this group? It will leave the board (find it again '
-                    'via "show old closed").'
+              ? 'Close this group? It stays in Done until Sunday night, '
+                    'then leaves the board (find it again via "show closed").'
               : 'Close this group and its $openCount open '
-                    'action${openCount == 1 ? '' : 's'}? The group will leave '
-                    'the board (find it again via "show old closed").',
+                    'action${openCount == 1 ? '' : 's'}? The group stays in '
+                    'Done until Sunday night, then leaves the board (find it '
+                    'again via "show closed").',
         ),
         actions: [
           TextButton(

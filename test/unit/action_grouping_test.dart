@@ -209,8 +209,19 @@ void main() {
     });
   });
 
+  group('weekStartOf', () {
+    test('any day maps to the Monday of its week at local midnight', () {
+      // 13 May 2026 is a Wednesday; 11 May is the Monday.
+      expect(weekStartOf(DateTime(2026, 5, 13, 17, 45)), DateTime(2026, 5, 11));
+      expect(weekStartOf(DateTime(2026, 5, 11, 0, 0, 1)), DateTime(2026, 5, 11));
+      // Sunday still belongs to the week that began the previous Monday.
+      expect(weekStartOf(DateTime(2026, 5, 17, 23, 59)), DateTime(2026, 5, 11));
+    });
+  });
+
   group('isOldClosed', () {
-    final now = DateTime(2026, 5, 13);
+    // Wednesday 13 May 2026, mid-afternoon.
+    final now = DateTime(2026, 5, 13, 15);
 
     test('open actions are never old-closed regardless of age', () {
       expect(
@@ -221,68 +232,56 @@ void main() {
           isFalse);
     });
 
-    test('closed action edited yesterday is NOT old-closed', () {
-      expect(
-          isOldClosed(
-            _a(
-              id: 'a',
-              status: 'closed',
-              updatedAt: now.subtract(const Duration(days: 1)),
-            ),
-            now: now,
-          ),
-          isFalse);
+    test('closed this week stays, however early in the week', () {
+      for (final closedAt in [
+        now,
+        DateTime(2026, 5, 13, 9),
+        DateTime(2026, 5, 11), // Monday midnight, first instant of the week
+      ]) {
+        expect(
+          isOldClosed(_a(id: 'a', status: 'closed', updatedAt: closedAt),
+              now: now),
+          isFalse,
+          reason: 'closed $closedAt should still show on $now',
+        );
+      }
     });
 
-    test('closed action edited exactly 14 days ago is NOT old-closed', () {
-      expect(
-          isOldClosed(
-            _a(
-              id: 'a',
-              status: 'closed',
-              updatedAt: now.subtract(const Duration(days: 14)),
-            ),
-            now: now,
-          ),
-          isFalse);
+    test('closed in an earlier week is hidden', () {
+      for (final closedAt in [
+        DateTime(2026, 5, 10, 23, 59, 59), // Sunday night, one second short
+        DateTime(2026, 5, 8), // the previous Friday
+        DateTime(2026, 1, 1),
+      ]) {
+        expect(
+          isOldClosed(_a(id: 'a', status: 'closed', updatedAt: closedAt),
+              now: now),
+          isTrue,
+          reason: 'closed $closedAt should be hidden on $now',
+        );
+      }
     });
 
-    test('closed action edited 15 days ago IS old-closed', () {
-      expect(
-          isOldClosed(
-            _a(
-              id: 'a',
-              status: 'closed',
-              updatedAt: now.subtract(const Duration(days: 15)),
-            ),
-            now: now,
-          ),
-          isTrue);
+    test('a closed action drops off at Sunday midnight, not before', () {
+      final closedMonday = _a(
+        id: 'a',
+        status: 'closed',
+        updatedAt: DateTime(2026, 5, 11, 10),
+      );
+      expect(isOldClosed(closedMonday, now: DateTime(2026, 5, 17, 23, 59, 59)),
+          isFalse, reason: 'still Sunday');
+      expect(isOldClosed(closedMonday, now: DateTime(2026, 5, 18)), isTrue,
+          reason: 'Monday morning starts clean');
     });
 
-    test('honours custom hideAfterDays threshold', () {
-      expect(
-          isOldClosed(
-            _a(
-              id: 'a',
-              status: 'closed',
-              updatedAt: now.subtract(const Duration(days: 5)),
-            ),
-            now: now,
-            hideAfterDays: 3,
-          ),
-          isTrue);
-      expect(
-          isOldClosed(
-            _a(
-              id: 'a',
-              status: 'closed',
-              updatedAt: now.subtract(const Duration(days: 1)),
-            ),
-            now: now,
-            hideAfterDays: 3,
-          ),
-          isFalse);
+    test('closing on Sunday night gives it only until midnight', () {
+      final closedSunday = _a(
+        id: 'a',
+        status: 'closed',
+        updatedAt: DateTime(2026, 5, 17, 22),
+      );
+      expect(isOldClosed(closedSunday, now: DateTime(2026, 5, 17, 23)), isFalse);
+      expect(isOldClosed(closedSunday, now: DateTime(2026, 5, 18, 8)), isTrue);
     });
   });
 
@@ -344,9 +343,32 @@ void main() {
       expect(retiredRootIds(all), isEmpty);
     });
 
-    test('a plain closed action is NOT retired — it ages out instead', () {
+    test('a plain closed action is NOT retired — it hides on its own', () {
       final all = [_a(id: 'solo', status: 'closed')];
       expect(retiredRootIds(all), isEmpty);
+    });
+
+    test('a group closed this week keeps its place until Sunday night', () {
+      final closedAt = DateTime(2026, 5, 12); // Tuesday
+      final all = [
+        _a(id: 'root', status: 'closed', isParent: true, updatedAt: closedAt),
+        _a(id: 'c1', parentId: 'root', status: 'closed', updatedAt: closedAt),
+      ];
+      expect(retiredRootIds(all, now: DateTime(2026, 5, 17, 23)), isEmpty);
+      expect(retiredRootIds(all, now: DateTime(2026, 5, 18)), {'root'});
+    });
+
+    test('a child closed this week holds the whole group on the board', () {
+      final all = [
+        _a(id: 'root', status: 'closed', isParent: true,
+            updatedAt: DateTime(2026, 5, 1)),
+        _a(id: 'c1', parentId: 'root', status: 'closed',
+            updatedAt: DateTime(2026, 5, 1)),
+        _a(id: 'c2', parentId: 'root', status: 'closed',
+            updatedAt: DateTime(2026, 5, 13)),
+      ];
+      expect(retiredRootIds(all, now: DateTime(2026, 5, 14)), isEmpty);
+      expect(retiredRootIds(all, now: DateTime(2026, 5, 18)), {'root'});
     });
 
     test('a closed designated parent with no children retires', () {
