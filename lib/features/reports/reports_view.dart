@@ -11,6 +11,7 @@ import '../../core/export/html_exporter.dart';
 import '../../core/export/pdf_exporter.dart';
 import '../../core/export/handover_exporter.dart';
 import '../../core/export/programme_workbook_exporter.dart';
+import '../../core/export/ms_project_exporter.dart';
 import '../../core/llm/llm_client_factory.dart';
 import '../../providers/project_provider.dart';
 import '../../providers/settings_provider.dart';
@@ -1445,6 +1446,36 @@ class _ProgrammeWorkbookTabState extends State<_ProgrammeWorkbookTab> {
   bool _exporting = false;
   bool _includeClosed = false;
   String? _error;
+  bool _exportingMsp = false;
+  String? _mspError;
+  String? _mspResult;
+  List<String> _mspWarnings = const [];
+
+  Future<void> _exportMsProject() async {
+    setState(() {
+      _exportingMsp = true;
+      _mspError = null;
+      _mspResult = null;
+      _mspWarnings = const [];
+    });
+    try {
+      final (message, warnings) = await MsProjectExporter.export(
+        db: widget.db,
+        projectId: widget.projectId,
+        projectName: widget.projectName,
+      );
+      if (mounted) {
+        setState(() {
+          _mspResult = message;
+          _mspWarnings = warnings;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _mspError = e.toString());
+    } finally {
+      if (mounted) setState(() => _exportingMsp = false);
+    }
+  }
 
   Future<void> _export() async {
     final isProgramme = context.read<ProjectProvider>().isProgramme;
@@ -1517,20 +1548,83 @@ class _ProgrammeWorkbookTabState extends State<_ProgrammeWorkbookTab> {
           ),
           if (_error != null) ...[
             const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: KColors.redDim,
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: KColors.red),
-              ),
-              child: Text(
-                _error!,
-                style: TextStyle(color: KColors.red, fontSize: 12),
-              ),
+            _ExportError(_error!),
+          ],
+          const SizedBox(height: 32),
+          Divider(color: KColors.border2, height: 1),
+          const SizedBox(height: 24),
+          Text(
+            'Microsoft Project',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Exports the Plan as a Microsoft Project XML file. In desktop '
+            'Project use File ▸ Open and pick the file — no import wizard.\n'
+            '  • Work packages become summary tasks; activities and tasks '
+            'sit underneath\n'
+            '  • Milestones, gates and hard deadlines become milestones\n'
+            '  • Dependency arrows become predecessor links\n'
+            '  • Owners become resources; Keel status and scenario months '
+            'land in the Text1 and Text2 columns',
+            style: TextStyle(color: KColors.textDim, fontSize: 13),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: _exportingMsp ? null : _exportMsProject,
+            icon: _exportingMsp
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.view_timeline_outlined, size: 18),
+            label: Text(
+              _exportingMsp
+                  ? 'Exporting…'
+                  : 'Export for Microsoft Project (.xml)',
+            ),
+          ),
+          if (_mspResult != null) ...[
+            const SizedBox(height: 12),
+            Text(
+              _mspResult!,
+              style: TextStyle(color: KColors.textDim, fontSize: 12),
             ),
           ],
+          for (final w in _mspWarnings) ...[
+            const SizedBox(height: 8),
+            Text(
+              '⚠  $w',
+              style: TextStyle(color: KColors.amber, fontSize: 12),
+            ),
+          ],
+          if (_mspError != null) ...[
+            const SizedBox(height: 16),
+            _ExportError(_mspError!),
+          ],
         ],
+      ),
+    );
+  }
+}
+
+class _ExportError extends StatelessWidget {
+  final String message;
+  const _ExportError(this.message);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: KColors.redDim,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: KColors.red),
+      ),
+      child: Text(
+        message,
+        style: TextStyle(color: KColors.red, fontSize: 12),
       ),
     );
   }
