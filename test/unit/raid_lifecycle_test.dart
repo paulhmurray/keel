@@ -7,12 +7,13 @@ void main() {
   final now = DateTime(2026, 9, 22);
 
   group('isTerminalStatus', () {
-    test('per-register terminal sets', () {
+    test('closed is the one end state in every RAID register', () {
       expect(isTerminalStatus(RaidKind.risk, 'closed'), isTrue);
-      expect(isTerminalStatus(RaidKind.risk, 'accepted'), isTrue);
+      expect(isTerminalStatus(RaidKind.risk, 'accepted'), isFalse);
       expect(isTerminalStatus(RaidKind.risk, 'in progress'), isFalse);
-      expect(isTerminalStatus(RaidKind.assumption, 'validated'), isTrue);
-      expect(isTerminalStatus(RaidKind.assumption, 'invalidated'), isTrue);
+      expect(isTerminalStatus(RaidKind.assumption, 'closed'), isTrue);
+      expect(isTerminalStatus(RaidKind.assumption, 'validated'), isFalse);
+      expect(isTerminalStatus(RaidKind.assumption, 'invalidated'), isFalse);
       expect(isTerminalStatus(RaidKind.assumption, 'open'), isFalse);
       expect(isTerminalStatus(RaidKind.issue, 'closed'), isTrue);
       expect(isTerminalStatus(RaidKind.dependency, 'closed'), isTrue);
@@ -23,9 +24,25 @@ void main() {
       expect(isTerminalStatus(RaidKind.decision, 'pending'), isFalse);
     });
 
-    test('"resolved" is a nudge to close, not an end state', () {
+    test('settled states are on the books, not finished', () {
       expect(isTerminalStatus(RaidKind.issue, 'resolved'), isFalse);
       expect(isTerminalStatus(RaidKind.dependency, 'resolved'), isFalse);
+      expect(isSettledStatus(RaidKind.risk, 'accepted'), isTrue);
+      expect(isSettledStatus(RaidKind.risk, 'Accepted'), isTrue);
+      expect(isSettledStatus(RaidKind.assumption, 'validated'), isTrue);
+      expect(isSettledStatus(RaidKind.assumption, 'invalidated'), isTrue);
+      expect(isSettledStatus(RaidKind.issue, 'resolved'), isTrue);
+      expect(isSettledStatus(RaidKind.dependency, 'resolved'), isTrue);
+      expect(isSettledStatus(RaidKind.risk, 'closed'), isFalse);
+      expect(isSettledStatus(RaidKind.decision, 'deferred'), isFalse);
+    });
+
+    test('active means neither closed nor settled', () {
+      expect(isActiveStatus(RaidKind.risk, 'open'), isTrue);
+      expect(isActiveStatus(RaidKind.risk, 'in progress'), isTrue);
+      expect(isActiveStatus(RaidKind.risk, 'accepted'), isFalse);
+      expect(isActiveStatus(RaidKind.risk, 'closed'), isFalse);
+      expect(isActiveStatus(RaidKind.issue, 'resolved'), isFalse);
     });
 
     test('case-insensitive', () {
@@ -61,45 +78,124 @@ void main() {
           isFalse);
     });
 
-    test('closed within two weeks stays visible', () {
+    test('a closed RAID item hides at once, however fresh', () {
       expect(
           isAgedOut(
               kind: RaidKind.risk,
               status: 'closed',
+              closedAt: '2026-09-22',
+              updatedAt: now,
+              now: now),
+          isTrue);
+      expect(
+          isAgedOut(
+              kind: RaidKind.issue,
+              status: 'closed',
+              closedAt: null,
+              updatedAt: now,
+              now: now),
+          isTrue);
+    });
+
+    test('settled items never hide', () {
+      for (final (kind, status) in [
+        (RaidKind.risk, 'accepted'),
+        (RaidKind.assumption, 'validated'),
+        (RaidKind.issue, 'resolved'),
+        (RaidKind.dependency, 'resolved'),
+      ]) {
+        expect(
+            isAgedOut(
+                kind: kind,
+                status: status,
+                closedAt: null,
+                updatedAt: DateTime(2025, 1, 1),
+                now: now),
+            isFalse,
+            reason: '$status ${kind.name}');
+      }
+    });
+
+    test('a made decision keeps its two-week grace', () {
+      expect(hideAfterDaysFor(RaidKind.decision), 14);
+      expect(hideAfterDaysFor(RaidKind.risk), 0);
+      expect(
+          isAgedOut(
+              kind: RaidKind.decision,
+              status: 'approved',
               closedAt: '2026-09-10',
               updatedAt: DateTime(2026, 9, 10),
               now: now),
           isFalse);
-    });
-
-    test('closed more than two weeks ago ages out', () {
       expect(
           isAgedOut(
-              kind: RaidKind.risk,
-              status: 'closed',
+              kind: RaidKind.decision,
+              status: 'approved',
               closedAt: '2026-09-01',
               updatedAt: DateTime(2026, 9, 21), // touched since — irrelevant
               now: now),
           isTrue);
-    });
-
-    test('pre-v61 rows fall back to last update', () {
+      // Pre-v61 rows fall back to last update.
       expect(
           isAgedOut(
-              kind: RaidKind.issue,
-              status: 'closed',
+              kind: RaidKind.decision,
+              status: 'decided',
               closedAt: null,
               updatedAt: DateTime(2026, 8, 1),
               now: now),
           isTrue);
+    });
+  });
+
+  group('settledNudge', () {
+    test('quiet until three weeks settled', () {
       expect(
-          isAgedOut(
+          settledNudge(
               kind: RaidKind.issue,
-              status: 'closed',
-              closedAt: null,
-              updatedAt: DateTime(2026, 9, 15),
+              status: 'resolved',
+              updatedAt: DateTime(2026, 9, 10),
               now: now),
-          isFalse);
+          isNull);
+      expect(
+          settledNudge(
+              kind: RaidKind.issue,
+              status: 'open',
+              updatedAt: DateTime(2025, 1, 1),
+              now: now),
+          isNull,
+          reason: 'open items are not settled');
+      expect(
+          settledNudge(
+              kind: RaidKind.risk,
+              status: 'closed',
+              updatedAt: DateTime(2025, 1, 1),
+              now: now),
+          isNull,
+          reason: 'closed items are finished');
+    });
+
+    test('names the state, the age and the ask per register', () {
+      expect(
+          settledNudge(
+              kind: RaidKind.risk,
+              status: 'accepted',
+              updatedAt: DateTime(2026, 8, 18),
+              now: now),
+          'Accepted 5w ago — still carrying it? Close it or review it');
+      expect(
+          settledNudge(
+              kind: RaidKind.issue,
+              status: 'resolved',
+              updatedAt: DateTime(2026, 9, 1),
+              now: now),
+          'Resolved 3w ago — confirm and close it, or reopen');
+      expect(
+          settledNudge(
+              kind: RaidKind.assumption,
+              status: 'invalidated',
+              updatedAt: DateTime(2026, 7, 1),
+              now: now),
+          startsWith('Invalidated 11w ago — close it, or raise'));
     });
   });
 
@@ -118,10 +214,27 @@ void main() {
       expect(
           nextClosedAt(
               kind: RaidKind.risk,
-              newStatus: 'accepted',
+              newStatus: 'closed',
               existing: '2026-09-01',
               today: now),
           '2026-09-01');
+    });
+
+    test('settling is not closing: accepted and validated are not stamped', () {
+      expect(
+          nextClosedAt(
+              kind: RaidKind.risk,
+              newStatus: 'accepted',
+              existing: null,
+              today: now),
+          isNull);
+      expect(
+          nextClosedAt(
+              kind: RaidKind.assumption,
+              newStatus: 'validated',
+              existing: null,
+              today: now),
+          isNull);
     });
 
     test('clears on reopen so the clock resets next time', () {
@@ -152,9 +265,21 @@ void main() {
       (id: 'old', status: 'closed', closedAt: '2026-08-01', updatedAt: DateTime(2026, 8, 1)),
     ];
 
-    test('hides only aged-out closed items by default', () {
+    test('hides every closed item by default, fresh or old', () {
       final part = partitionAgedOut(items,
           kind: RaidKind.dependency,
+          status: (x) => x.status,
+          closedAt: (x) => x.closedAt,
+          updatedAt: (x) => x.updatedAt,
+          showClosed: false,
+          now: now);
+      expect(part.visible.map((x) => x.id), ['open']);
+      expect(part.hidden.map((x) => x.id), ['fresh', 'old']);
+    });
+
+    test('decisions keep fresh ones and hide old ones', () {
+      final part = partitionAgedOut(items,
+          kind: RaidKind.decision,
           status: (x) => x.status,
           closedAt: (x) => x.closedAt,
           updatedAt: (x) => x.updatedAt,
@@ -201,8 +326,8 @@ void main() {
           [risk('r1', 'open'), risk('r2', 'closed'), risk('r3', 'accepted')],
           kind: RaidKind.risk,
           status: (r) => r.status);
-      expect(s.open.map((r) => r.id), ['r1']);
-      expect(s.closed.map((r) => r.id), ['r2', 'r3']);
+      expect(s.open.map((r) => r.id), ['r1', 'r3'], reason: 'accepted is still open');
+      expect(s.closed.map((r) => r.id), ['r2']);
     });
 
     test('closed rows carry closed-on, note fallback, newest first', () {
@@ -210,7 +335,8 @@ void main() {
         risks: [
           risk('r1', 'open'),
           risk('r2', 'closed', closedAt: '2026-08-01', note: 'Mitigated'),
-          risk('r3', 'accepted'), // no closedAt → updatedAt 2026-06-01
+          risk('r3', 'accepted'), // settled, not closed: not exported here
+          risk('r4', 'closed'), // no closedAt → updatedAt 2026-06-01
         ],
         assumptions: const [],
         issues: [
@@ -232,13 +358,13 @@ void main() {
         ],
         dependencies: const [],
       );
-      expect(rows.map((r) => r.ref), ['I1', 'R2', 'R3']);
+      expect(rows.map((r) => r.ref), ['I1', 'R2', 'R4']);
       expect(rows[0].description, 'Env down');
       expect(rows[0].note, 'Rebuilt');
       expect(rows[1].closedOn, '2026-08-01');
       expect(rows[1].note, 'Mitigated');
       expect(rows[2].closedOn, '2026-06-01');
-      expect(rows[2].status, 'accepted');
+      expect(rows[2].status, 'closed');
     });
   });
 }

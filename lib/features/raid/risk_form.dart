@@ -378,7 +378,7 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
         DetailField('Treatment plan', r.mitigation),
         if (terminal)
           DetailField(
-            r.status == 'accepted' ? 'Accepted on' : 'Closed on',
+            'Closed on',
             du.formatDate(
               r.closedAt ?? r.updatedAt.toIso8601String().substring(0, 10),
             ),
@@ -770,7 +770,8 @@ class _RiskFormDialogState extends State<RiskFormDialog> {
             style: TextStyle(color: KColors.textMuted, fontSize: 10),
           ),
         ],
-        if (isTerminalStatus(RaidKind.risk, _status)) ...[
+        if (isTerminalStatus(RaidKind.risk, _status) ||
+            isSettledStatus(RaidKind.risk, _status)) ...[
           const SizedBox(height: 12),
           TextFormField(
             controller: _closureNoteCtrl,

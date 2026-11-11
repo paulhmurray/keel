@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:keel/core/database/database.dart';
 import 'package:keel/core/helm/planning_horizon.dart';
@@ -224,6 +225,138 @@ void main() {
       acts: [_act('m', start: '2026-09-24', type: 'gate', status: 'complete')],
     );
     expect(h.isEmpty, isTrue);
+  });
+
+  test('an accepted risk is still reviewed, and a closed one is not', () {
+    final h = _build(risks: [
+      _risk('r-acc', due: '2026-09-24', status: 'accepted', review: '2026-09-24'),
+      _risk('r-closed', status: 'closed', review: '2026-09-24'),
+    ]);
+    expect(h.today.map((i) => '${i.id}/${i.kind.name}'), ['r-acc/riskReview']);
+  });
+
+  group('risks parked until a later review', () {
+    PlanningItem? review(PlanningHorizon h) => [
+          ...h.overdue,
+          ...h.today,
+          for (final d in h.restOfWeek) ...d.items,
+          ...h.nextWeek,
+        ].where((i) => i.kind == PlanningKind.riskReview).firstOrNull;
+
+    test('a review next week is not offered at all', () {
+      final h = _build(risks: [_risk('r1', review: '2026-09-28')]);
+      expect(review(h), isNull);
+      expect(h.nextWeek, isEmpty);
+    });
+
+    test('a review later this week is offered on its day', () {
+      final h = _build(risks: [_risk('r1', review: '2026-09-25')]);
+      expect(h.restOfWeek.single.iso, '2026-09-25');
+      expect(review(h)!.id, 'r1');
+    });
+
+    test('a review on Sunday still counts as this week', () {
+      final h = _build(risks: [_risk('r1', review: '2026-09-27')]);
+      expect(h.restOfWeek.single.iso, '2026-09-27');
+    });
+
+    test('an overdue review is behind', () {
+      final h = _build(risks: [_risk('r1', review: '2026-09-23')]);
+      expect(h.overdue.single.kind, PlanningKind.riskReview);
+    });
+
+    test('a dated treatment is a commitment even when the review is parked',
+        () {
+      final h = _build(
+          risks: [_risk('r1', due: '2026-09-29', review: '2026-10-15')]);
+      expect(h.nextWeek.single.kind, PlanningKind.riskTreatment);
+      expect(review(h), isNull);
+    });
+
+    test('predicate boundaries', () {
+      expect(parkedUntilReview(null, _today), isFalse);
+      expect(parkedUntilReview('', _today), isFalse);
+      expect(parkedUntilReview('2026-09-27', _today), isFalse); // Sunday
+      expect(parkedUntilReview('2026-09-28', _today), isTrue); // next Monday
+      expect(parkedUntilReview('2026-09-01', _today), isFalse); // overdue
+      // Anchored on the week, not on today: from Sunday, Monday is parked.
+      expect(parkedUntilReview('2026-09-28', DateTime(2026, 9, 27)), isTrue);
+      // With a time component in the stored value.
+      expect(parkedUntilReview('2026-10-05T09:00:00', _today), isTrue);
+    });
+  });
+
+  group('overdue risk reviews roll up into a review session per project', () {
+    ({Risk risk, String projectName}) other(String id, String review) => (
+          risk: _risk(id, review: review).risk.copyWith(projectId: 'p2'),
+          projectName: 'OTHER',
+        );
+
+    test('two or more overdue reviews become one row, dated as the oldest', () {
+      final h = _build(risks: [
+        _risk('r1', review: '2026-09-10'),
+        _risk('r2', review: '2026-09-01'),
+        _risk('r3', review: '2026-09-20'),
+        other('x1', '2026-09-15'),
+      ]);
+      final sessions =
+          h.overdue.where((i) => i.kind == PlanningKind.riskReviewSession).toList();
+      expect(sessions, hasLength(1));
+      final s = sessions.single;
+      expect(s.projectId, 'p1');
+      expect(s.projectName, 'TAC');
+      expect(s.count, 3);
+      expect(s.label, '3 risk reviews overdue');
+      expect(s.dateKind, 'Review session');
+      expect(s.dueIso, '2026-09-01');
+      expect(s.id, 'review:p1');
+      // p2's single overdue review stays a row of its own.
+      final singles =
+          h.overdue.where((i) => i.kind == PlanningKind.riskReview).toList();
+      expect(singles.map((i) => i.id), ['x1']);
+      expect(h.overdue.first.id, 'review:p1', reason: 'sorted by its oldest date');
+    });
+
+    test('reviews due this week are not rolled up; treatments never are', () {
+      final h = _build(risks: [
+        _risk('r1', review: '2026-09-10', due: '2026-09-11'),
+        _risk('r2', review: '2026-09-12', due: '2026-09-12'),
+        _risk('r3', review: '2026-09-25'),
+      ]);
+      expect(h.overdue.where((i) => i.kind == PlanningKind.riskReviewSession),
+          hasLength(1));
+      expect(h.overdue.where((i) => i.kind == PlanningKind.riskTreatment),
+          hasLength(2));
+      expect(h.overdue.where((i) => i.kind == PlanningKind.riskReview), isEmpty);
+      expect(h.restOfWeek.single.items.single.kind, PlanningKind.riskReview);
+    });
+
+    test('a cascaded copy contributes no review row and does not inflate the count',
+        () {
+      final copy = (
+        risk: _risk('c1', review: '2026-09-01', due: '2026-09-02')
+            .risk
+            .copyWith(sourceProjectId: const Value('src')),
+        projectName: 'TAC',
+      );
+      final h = _build(risks: [
+        copy,
+        _risk('r1', review: '2026-09-10'),
+        _risk('r2', review: '2026-09-11'),
+      ]);
+      final s = h.overdue.singleWhere((i) => i.kind == PlanningKind.riskReviewSession);
+      expect(s.count, 2);
+      expect(s.dueIso, '2026-09-10');
+      expect(h.overdue.where((i) => i.kind == PlanningKind.riskReview), isEmpty);
+      // Its treatment date is still a dated commitment and still shows.
+      expect(h.overdue.where((i) => i.kind == PlanningKind.riskTreatment).single.id,
+          'c1');
+    });
+
+    test('the roll-up helper leaves a list without overdue reviews alone', () {
+      final a = _build(actions: [_action('a1', '2026-09-01')]).overdue;
+      expect(identical(rollUpOverdueReviews(a), a), isTrue);
+    });
   });
 
   test('day labels', () {

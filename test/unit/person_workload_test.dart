@@ -117,7 +117,7 @@ void main() {
     expect(w[WorkloadKind.risk].first.detail, 'Mitigation: Weekly checkpoint');
     expect(w[WorkloadKind.risk].last.role, WorkloadRole.assignee);
     expect(w[WorkloadKind.risk].last.isClosed, isTrue,
-        reason: 'accepted is terminal for a risk');
+        reason: 'an accepted risk is settled: nothing on the plate');
 
     expect(w[WorkloadKind.action].map((i) => i.id), ['a2']);
     expect(w[WorkloadKind.dependency].single.qualifier,

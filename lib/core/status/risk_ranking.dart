@@ -36,7 +36,7 @@ List<Risk> rankRisks(Iterable<Risk> all, {DateTime? today}) {
   }
 
   final live = all
-      .where((r) => !isTerminalStatus(RaidKind.risk, r.status))
+      .where((r) => isActiveStatus(RaidKind.risk, r.status))
       .toList();
   live.sort((a, b) {
     final s = riskScore(b.likelihood, b.impact) -

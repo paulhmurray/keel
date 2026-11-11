@@ -1,11 +1,15 @@
 /// Closure rules for the RAID registers and Decisions.
 ///
-/// Closed items are never deleted — they are the audit trail — so the
-/// registers *age them out* instead: an item in a terminal state drops
-/// from the default view two weeks after it got there and comes back
-/// with the "show closed" toggle. Everything here is pure Dart so the
-/// rules are unit-tested once and shared by the tabs, the forms, the
-/// plan-arrow sync and the exports.
+/// Closed items are never deleted — they are the audit trail. In the
+/// four RAID registers "closed" is the one final state: the default
+/// view hides closed items at once and the "show closed" toggle brings
+/// them back. Settled-but-open states (an accepted risk, a resolved
+/// issue, a validated assumption) stay on the books and stay
+/// reviewable; one left settled for a few weeks earns a nudge to close
+/// it or reopen it. Decisions keep their own rule: a made decision is
+/// the record, so it ages out of the log two weeks after it was made.
+/// Everything here is pure Dart so the rules are unit-tested once and
+/// shared by the tabs, the forms, the plan-arrow sync and the exports.
 library;
 
 import '../database/database.dart';
@@ -20,23 +24,76 @@ const Set<String> kDecisionMadeStatuses = {
 
 /// Statuses that end an item's life in its register.
 ///
-/// Deliberately NOT terminal: issue/dependency `resolved` (the register
-/// flags "resolved-but-not-closed" as stale — it's the nudge to confirm
-/// and close), risk `in progress`, decision `deferred` (parked, not
-/// made).
+/// For the RAID registers that is "closed" alone. Accepted, resolved,
+/// validated and invalidated are settled, not finished: see
+/// [kSettledStatuses].
 const Map<RaidKind, Set<String>> kTerminalStatuses = {
-  RaidKind.risk: {'closed', 'accepted'},
-  RaidKind.assumption: {'validated', 'invalidated', 'closed'},
+  RaidKind.risk: {'closed'},
+  RaidKind.assumption: {'closed'},
   RaidKind.issue: {'closed'},
   RaidKind.dependency: {'closed'},
   RaidKind.decision: kDecisionMadeStatuses,
 };
 
-/// Closed items stay in the default view this long after closing.
+/// Statuses that mean the item is dealt with but still on the books: a
+/// risk we have chosen to carry, an issue whose fix is in but not yet
+/// confirmed, an assumption that has been tested. They stay visible and
+/// stay reviewable, and after [kSettledNudgeDays] the register asks
+/// whether it is time to close.
+const Map<RaidKind, Set<String>> kSettledStatuses = {
+  RaidKind.risk: {'accepted'},
+  RaidKind.assumption: {'validated', 'invalidated'},
+  RaidKind.issue: {'resolved'},
+  RaidKind.dependency: {'resolved'},
+  RaidKind.decision: {},
+};
+
+/// How long an item may sit settled before the register nudges.
+const int kSettledNudgeDays = 21;
+
+/// Made decisions stay in the default view this long after being made.
 const int kClosedHideAfterDays = 14;
 
 bool isTerminalStatus(RaidKind kind, String status) =>
     kTerminalStatuses[kind]!.contains(status.toLowerCase());
+
+bool isSettledStatus(RaidKind kind, String status) =>
+    kSettledStatuses[kind]!.contains(status.toLowerCase());
+
+/// True for an item that is neither closed nor settled: still being
+/// worked. Plan gaps and the status page's risk ranking use this, since
+/// an accepted risk is a decision already made, not a gap.
+bool isActiveStatus(RaidKind kind, String status) =>
+    !isTerminalStatus(kind, status) && !isSettledStatus(kind, status);
+
+/// Days a terminal item stays in the default view: none for the RAID
+/// registers, two weeks for decisions.
+int hideAfterDaysFor(RaidKind kind) =>
+    kind == RaidKind.decision ? kClosedHideAfterDays : 0;
+
+/// The nudge for an item left settled too long, or null. [updatedAt]
+/// is the last touch: settling is a status change, so it is the best
+/// stand-in for when the item was settled.
+String? settledNudge({
+  required RaidKind kind,
+  required String status,
+  required DateTime updatedAt,
+  DateTime? now,
+  int afterDays = kSettledNudgeDays,
+}) {
+  if (!isSettledStatus(kind, status)) return null;
+  final days = (now ?? DateTime.now()).difference(updatedAt).inDays;
+  if (days < afterDays) return null;
+  final weeks = days ~/ 7;
+  final since = weeks >= 1 ? '${weeks}w' : '${days}d';
+  final verb = status.toLowerCase();
+  final ask = switch (kind) {
+    RaidKind.risk => 'still carrying it? Close it or review it',
+    RaidKind.assumption => 'close it, or raise what it changed',
+    _ => 'confirm and close it, or reopen',
+  };
+  return '${verb[0].toUpperCase()}${verb.substring(1)} $since ago — $ask';
+}
 
 /// The date an item's closure clock runs from: the recorded closed-on
 /// date, else the last update (rows closed before closed-on existed,
@@ -49,19 +106,22 @@ DateTime closureClockStart({
   return parsed ?? updatedAt;
 }
 
-/// True when the item is closed and has been for longer than
-/// [hideAfterDays] — i.e. the default view should hide it.
+/// True when the default view should hide the item: closed, and closed
+/// for longer than the register's grace ([hideAfterDaysFor]: none for
+/// RAID, so a closed item hides at once; two weeks for decisions).
 bool isAgedOut({
   required RaidKind kind,
   required String status,
   required String? closedAt,
   required DateTime updatedAt,
   DateTime? now,
-  int hideAfterDays = kClosedHideAfterDays,
+  int? hideAfterDays,
 }) {
   if (!isTerminalStatus(kind, status)) return false;
+  final days = hideAfterDays ?? hideAfterDaysFor(kind);
+  if (days <= 0) return true;
   final start = closureClockStart(closedAt: closedAt, updatedAt: updatedAt);
-  final cutoff = (now ?? DateTime.now()).subtract(Duration(days: hideAfterDays));
+  final cutoff = (now ?? DateTime.now()).subtract(Duration(days: days));
   return start.isBefore(cutoff);
 }
 

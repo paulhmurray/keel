@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../theme/keel_colors.dart';
 
-/// "Hiding closed / Showing closed" pill for a register header. Mirrors
-/// the Actions view's old-closed toggle so the behaviour reads the same
-/// everywhere: closed items age out of the default view after two
-/// weeks and this brings them back.
+/// "Hiding closed / Showing closed" pill for a register header. Closed
+/// items leave the default view (at once in the RAID registers, two
+/// weeks after the call in Decisions) and this brings them back.
 class ClosedToggle extends StatelessWidget {
   final bool showClosed;
   final int hiddenCount;
@@ -23,11 +22,10 @@ class ClosedToggle extends StatelessWidget {
     final activeColor = showClosed ? KColors.amber : KColors.textDim;
     return Tooltip(
       message: showClosed
-          ? 'Click to hide items closed more than 2 weeks ago'
+          ? 'Click to hide closed items'
           : hiddenCount == 0
-          ? 'No aged-out closed items to show'
-          : 'Click to show $hiddenCount closed item${hiddenCount == 1 ? '' : 's'} '
-                'hidden because they closed more than 2 weeks ago',
+          ? 'No closed items to show'
+          : 'Click to show $hiddenCount closed item${hiddenCount == 1 ? '' : 's'}',
       waitDuration: const Duration(milliseconds: 350),
       child: InkWell(
         onTap: onTap,

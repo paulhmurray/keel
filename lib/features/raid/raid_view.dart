@@ -29,6 +29,8 @@ import 'issue_form.dart';
 import 'dependency_form.dart';
 import 'dependency_slack_chip.dart';
 import 'raid_tidy_dialog.dart';
+import 'raid_duplicates_view.dart';
+import 'risk_review_session_dialog.dart';
 import '../../providers/settings_provider.dart';
 
 // ── Escalation helpers (Phase C.2) ─────────────────────────────────────────
@@ -49,6 +51,18 @@ CascadeService _cascadeFor(BuildContext context, AppDatabase db) =>
 
 /// Cascaded rows are read-only on the programme side — sourceProjectId
 /// non-null means this row arrived from a linked project.
+/// The settled-too-long nudge for a native row; copies from linked
+/// projects are read-only here, so they get none.
+String? _nudgeFor(
+  RaidKind kind,
+  String status,
+  DateTime updatedAt,
+  String? sourceProjectId,
+) =>
+    _isCascaded(sourceProjectId)
+        ? null
+        : settledNudge(kind: kind, status: status, updatedAt: updatedAt);
+
 bool _isCascaded(String? sourceProjectId) => sourceProjectId != null;
 
 /// Small badge rendered next to the source badge when a row is
@@ -423,6 +437,13 @@ class _RaidViewState extends State<RaidView>
                 ),
               ),
               const Spacer(),
+              // No model needed: a sitting through the risks due a look.
+              OutlinedButton.icon(
+                onPressed: () => showRiskReviewSession(context, db, projectId),
+                icon: const Icon(Icons.fact_check_outlined, size: 14),
+                label: const Text('Review risks…'),
+              ),
+              const SizedBox(width: 8),
               // Needs an LLM to draft; hidden without a key like the
               // per-field AI buttons.
               if (context.watch<SettingsProvider>().hasApiKey) ...[
@@ -434,6 +455,12 @@ class _RaidViewState extends State<RaidView>
                   ),
                   icon: const Icon(Icons.auto_fix_high, size: 14),
                   label: const Text('Tidy register…'),
+                ),
+                const SizedBox(width: 8),
+                OutlinedButton.icon(
+                  onPressed: () => showRaidDuplicates(context, db, projectId),
+                  icon: const Icon(Icons.call_merge, size: 14),
+                  label: const Text('Find duplicates…'),
                 ),
                 const SizedBox(width: 10),
               ],
@@ -882,7 +909,7 @@ class _RiskRow extends StatelessWidget {
                           owner: risk.owner,
                           enabled:
                               !_isCascaded(risk.sourceProjectId) &&
-                              !isTerminalStatus(RaidKind.risk, risk.status),
+                              isActiveStatus(RaidKind.risk, risk.status),
                         ),
                         if (risk.steerco) const _SteercoBadge(),
                         if (reviewOverdue(risk.nextReviewAt, DateTime.now()))
@@ -892,6 +919,12 @@ class _RiskRow extends StatelessWidget {
                               color: KColors.amber,
                               fontSize: 10,
                             ),
+                          ),
+                        if (_nudgeFor(RaidKind.risk, risk.status, risk.updatedAt, risk.sourceProjectId)
+                            case final nudge?)
+                          Text(
+                            nudge,
+                            style: TextStyle(color: KColors.amber, fontSize: 10),
                           ),
                       ],
                     ),
@@ -1233,11 +1266,17 @@ class _AssumptionRow extends StatelessWidget {
                       validatedBy: assumption.validatedBy,
                       enabled:
                           !_isCascaded(assumption.sourceProjectId) &&
-                          !isTerminalStatus(
+                          isActiveStatus(
                             RaidKind.assumption,
                             assumption.status,
                           ),
                     ),
+                    if (_nudgeFor(RaidKind.assumption, assumption.status, assumption.updatedAt, assumption.sourceProjectId)
+                        case final nudge?)
+                      Text(
+                        nudge,
+                        style: TextStyle(color: KColors.amber, fontSize: 10),
+                      ),
                   ],
                 ),
               ),
@@ -1633,8 +1672,14 @@ class _IssueRow extends StatelessWidget {
                       impactStatement: issue.impactStatement,
                       enabled:
                           !_isCascaded(issue.sourceProjectId) &&
-                          !isTerminalStatus(RaidKind.issue, issue.status),
+                          isActiveStatus(RaidKind.issue, issue.status),
                     ),
+                    if (_nudgeFor(RaidKind.issue, issue.status, issue.updatedAt, issue.sourceProjectId)
+                        case final nudge?)
+                      Text(
+                        nudge,
+                        style: TextStyle(color: KColors.amber, fontSize: 10),
+                      ),
                   ],
                 ),
               ),
@@ -2046,8 +2091,14 @@ class _DependencyRow extends StatelessWidget {
                       impactStatement: dep.impactStatement,
                       enabled:
                           !_isCascaded(dep.sourceProjectId) &&
-                          !isTerminalStatus(RaidKind.dependency, dep.status),
+                          isActiveStatus(RaidKind.dependency, dep.status),
                     ),
+                    if (_nudgeFor(RaidKind.dependency, dep.status, dep.updatedAt, dep.sourceProjectId)
+                        case final nudge?)
+                      Text(
+                        nudge,
+                        style: TextStyle(color: KColors.amber, fontSize: 10),
+                      ),
                     if ((dep.counterparty != null &&
                             dep.counterparty!.isNotEmpty) ||
                         activityName != null ||

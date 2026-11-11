@@ -217,7 +217,7 @@ class PersonWorkload {
         status: r.status,
         role: role,
         dueDate: r.dueDate,
-        isClosed: isTerminalStatus(RaidKind.risk, r.status),
+        isClosed: !isActiveStatus(RaidKind.risk, r.status),
         detail: _labelled([('Latest', r.statusNote), ('Mitigation', r.mitigation)]),
         qualifier: '${_cap(r.likelihood)} / ${_cap(r.impact)}',
       ));
@@ -233,7 +233,7 @@ class PersonWorkload {
         status: i.status,
         role: WorkloadRole.owner,
         dueDate: i.dueDate,
-        isClosed: isTerminalStatus(RaidKind.issue, i.status),
+        isClosed: !isActiveStatus(RaidKind.issue, i.status),
         detail: _labelled([('Impact', i.impactStatement), ('Resolution', i.resolution)]),
         qualifier: '${_cap(i.priority)} priority',
       ));
@@ -248,7 +248,7 @@ class PersonWorkload {
         title: a.description,
         status: a.status,
         role: WorkloadRole.owner,
-        isClosed: isTerminalStatus(RaidKind.assumption, a.status),
+        isClosed: !isActiveStatus(RaidKind.assumption, a.status),
       ));
     }
 
@@ -262,7 +262,7 @@ class PersonWorkload {
         status: d.status,
         role: WorkloadRole.owner,
         dueDate: d.dueDate,
-        isClosed: isTerminalStatus(RaidKind.dependency, d.status),
+        isClosed: !isActiveStatus(RaidKind.dependency, d.status),
         detail: _labelled([('Why', d.rationale), ('Impact', d.impactStatement)]),
         qualifier: [
           _cap(d.dependencyType),

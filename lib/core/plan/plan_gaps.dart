@@ -203,7 +203,8 @@ List<PlanGap> collectPlanGaps({
   };
   for (final r in risks) {
     if (r.sourceProjectId != null || linkedRisks.contains(r.id)) continue;
-    if (isTerminalStatus(RaidKind.risk, r.status)) continue;
+    // An accepted risk is a decision already made, not a gap.
+    if (!isActiveStatus(RaidKind.risk, r.status)) continue;
     final high = riskBand(r.likelihood, r.impact) == 'high';
     if (r.dueDate == null && !high) continue;
     out.add(PlanGap(

@@ -628,7 +628,7 @@ void main() {
         projectId: Value(_pid),
         ref: Value('R9'),
         description: Value('Data centre move slips'),
-        status: Value('accepted'),
+        status: Value('closed'),
         closedAt: Value('2026-09-05'),
         closureNote: Value('Move completed early; risk retired.'),
       ));
@@ -636,13 +636,41 @@ void main() {
       await _open(tester, db,
           RiskFormDialog(projectId: _pid, db: db, risk: r, startInViewMode: true),
           size: _wide);
-      expect(find.text('ACCEPTED ON'), findsOneWidget);
-      expect(find.text('WHY ACCEPTED'), findsOneWidget);
+      expect(find.text('CLOSED ON'), findsOneWidget);
+      expect(find.text('WHY CLOSED'), findsOneWidget);
       expect(find.textContaining('risk retired'), findsOneWidget);
       _expectNoException(tester);
       await _close(tester);
 
-      // Edit mode offers the closure note field only while terminal.
+      // Edit mode offers the closure note field while closed.
+      await _open(tester, db, RiskFormDialog(projectId: _pid, db: db, risk: r),
+          size: _wide);
+      expect(find.widgetWithText(TextFormField, 'Why closed'), findsOneWidget);
+      _expectNoException(tester);
+      await _close(tester);
+    });
+
+    testWidgets('an accepted risk is settled, not closed: a why, no closed-on',
+        (tester) async {
+      await db.raidDao.upsertRisk(const RisksCompanion(
+        id: Value('r-acc'),
+        projectId: Value(_pid),
+        ref: Value('R8'),
+        description: Value('Legacy printer fleet fails'),
+        status: Value('accepted'),
+        closureNote: Value('Cheaper to replace on failure than to treat.'),
+      ));
+      final r = (await db.raidDao.getRiskById('r-acc'))!;
+      await _open(tester, db,
+          RiskFormDialog(projectId: _pid, db: db, risk: r, startInViewMode: true),
+          size: _wide);
+      expect(find.text('CLOSED ON'), findsNothing);
+      expect(find.text('ACCEPTED ON'), findsNothing);
+      expect(find.text('WHY ACCEPTED'), findsOneWidget);
+      expect(find.textContaining('replace on failure'), findsOneWidget);
+      _expectNoException(tester);
+      await _close(tester);
+
       await _open(tester, db, RiskFormDialog(projectId: _pid, db: db, risk: r),
           size: _wide);
       expect(find.widgetWithText(TextFormField, 'Why accepted'), findsOneWidget);
