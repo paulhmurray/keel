@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 // Conditional dart:io import — only used on non-web platforms.
 import '_settings_io.dart' if (dart.library.html) '_settings_web.dart';
 import '../core/llm/ollama_client.dart';
+import '../core/secrets/secret_store.dart';
 
 // Supported LLM providers
 enum LLMProvider { claudeApi, openAi, grok, githubModels, azureOpenAi, ollama }
@@ -339,7 +340,15 @@ class SettingsProvider extends ChangeNotifier {
   bool get isLoaded => _loaded;
   bool get hasApiKey => _settings.hasApiKey;
 
-  SettingsProvider() {
+  /// API keys live in the OS keyring, not keel_settings.json (native
+  /// only; web keeps everything in shared_preferences as before).
+  final SettingsSecretVault _vault;
+
+  // Saves run one at a time so keyring writes never interleave.
+  Future<void> _saveChain = Future.value();
+
+  SettingsProvider({SecretStore secrets = const KeyringSecretStore()})
+    : _vault = SettingsSecretVault(secrets) {
     _load();
   }
 
@@ -354,8 +363,17 @@ class SettingsProvider extends ChangeNotifier {
           _settings = AppSettings.fromJson(json);
         }
       } else {
-        // Native: use file I/O
-        _settings = await loadSettingsFromFile();
+        // Native: file I/O, with API keys pulled from the keyring. A key
+        // still in the file (older Keel) moves to the keyring and the
+        // file is rewritten without it.
+        // No file yet still reads the keyring (a deleted settings file
+        // must not hide stored keys).
+        final fileJson = await loadSettingsJsonFromFile();
+        final (json, resave) = await _vault.hydrate(fileJson ?? {});
+        _settings = AppSettings.fromJson(json);
+        if (resave) {
+          await saveSettingsToFile(await _vault.persist(json));
+        }
       }
     } catch (e) {
       // Use defaults on error
@@ -386,19 +404,26 @@ class SettingsProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> save(AppSettings newSettings) async {
+  Future<void> save(AppSettings newSettings) {
     _settings = newSettings;
     notifyListeners();
-    try {
-      if (kIsWeb) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(_kSettingsKey, jsonEncode(newSettings.toJson()));
-      } else {
-        await saveSettingsToFile(newSettings.toJson());
+    return _saveChain = _saveChain.then((_) async {
+      try {
+        if (kIsWeb) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(
+            _kSettingsKey,
+            jsonEncode(newSettings.toJson()),
+          );
+        } else {
+          await saveSettingsToFile(
+            await _vault.persist(newSettings.toJson()),
+          );
+        }
+      } catch (e) {
+        debugPrint('Failed to save settings: $e');
       }
-    } catch (e) {
-      debugPrint('Failed to save settings: $e');
-    }
+    });
   }
 
   Future<void> updateApiKey(String key) async {

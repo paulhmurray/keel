@@ -108,17 +108,13 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
   /// Where Keel's private Ollama lives. The Linux archive is laid out as
   /// bin/ollama + lib/ollama/* (llama-server and the GGML/CUDA runners) and
   /// the binary refuses to run without the lib directory beside it, so the
-  /// whole archive is extracted here, not just the executable.
-  String get _localInstallRoot {
-    final home =
-        Platform.environment['HOME'] ??
-        Platform.environment['USERPROFILE'] ??
-        '';
-    if (Platform.isWindows) {
-      return '${Platform.environment['LOCALAPPDATA']}\\Keel';
-    }
-    return '$home/.local/share/keel';
-  }
+  /// whole archive is extracted here, not just the executable. Outside the
+  /// app install, which every update replaces — see
+  /// [OllamaClient.keelOllamaRoot].
+  String get _localInstallRoot => OllamaClient.keelOllamaRoot(
+    Platform.environment,
+    isWindows: Platform.isWindows,
+  );
 
   String get _localBinDir =>
       Platform.isWindows ? '$_localInstallRoot\\bin' : '$_localInstallRoot/bin';
@@ -163,6 +159,9 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
 
   Future<void> _detect() async {
     setState(() => _step = _WizardStep.detecting);
+    // Move an in-app install from an older Keel out of the updater's way
+    // and stop a server left running from deleted files.
+    await OllamaClient.prepareLocalInstall();
     await _probeHardware();
 
     // 1. Check system PATH

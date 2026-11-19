@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'core/database/database.dart';
+import 'core/llm/ollama_client.dart';
 import 'core/inbox/watcher_service.dart';
 import 'core/update/self_updater.dart';
 import 'providers/analytics_provider.dart';
@@ -40,7 +41,11 @@ class _KeelAppState extends State<KeelApp> {
       final root = Platform.isMacOS
           ? (macBundlePath(exe) ?? installRootFor(exe))
           : installRootFor(exe);
-      sweepOldInstalls(Directory(root));
+      // Rescue a private Ollama an older Keel kept inside the install
+      // (the update parked it with the old app) before the sweep.
+      OllamaClient.prepareLocalInstall().whenComplete(
+        () => sweepOldInstalls(Directory(root)),
+      );
     }
   }
 

@@ -220,17 +220,157 @@ class OllamaClient implements LLMClient {
     },
   };
 
+  /// Root of Keel's private Ollama (the wizard extracts `bin/ollama` +
+  /// `lib/ollama/*` here): `~/.local/share/keel-ollama` on Linux/macOS,
+  /// `%LOCALAPPDATA%\Keel` on Windows.
+  ///
+  /// Deliberately a SIBLING of the app install (`~/.local/share/keel`),
+  /// never inside it: the self-updater swaps that whole directory out, so
+  /// an Ollama living there vanished on every update and the server left
+  /// running from the deleted files failed every chat with
+  /// "llama-server binary not found".
+  static String keelOllamaRoot(
+    Map<String, String> env, {
+    required bool isWindows,
+  }) {
+    if (isWindows) return '${env['LOCALAPPDATA'] ?? ''}\\Keel';
+    final home = env['HOME'] ?? env['USERPROFILE'] ?? '';
+    return '$home/.local/share/keel-ollama';
+  }
+
+  /// Where earlier Keels put the private Ollama on Linux: inside the app
+  /// install. Migrated away from by [prepareLocalInstall].
+  static String legacyKeelOllamaRoot(Map<String, String> env) {
+    final home = env['HOME'] ?? env['USERPROFILE'] ?? '';
+    return '$home/.local/share/keel';
+  }
+
   /// Where the setup wizard puts Keel's private Ollama when there is no
-  /// system install: `~/.local/share/keel/bin/ollama` on Linux/macOS,
-  /// `%LOCALAPPDATA%\Keel\bin\ollama.exe` on Windows. Pure so the path
-  /// rule is unit-tested; [resolveOllamaExe] checks the file exists.
+  /// system install. Pure so the path rule is unit-tested;
+  /// [resolveOllamaExe] checks the file exists.
   static String keelLocalOllamaExe(
     Map<String, String> env, {
     required bool isWindows,
   }) {
-    if (isWindows) return '${env['LOCALAPPDATA'] ?? ''}\\Keel\\bin\\ollama.exe';
-    final home = env['HOME'] ?? env['USERPROFILE'] ?? '';
-    return '$home/.local/share/keel/bin/ollama';
+    final root = keelOllamaRoot(env, isWindows: isWindows);
+    return isWindows ? '$root\\bin\\ollama.exe' : '$root/bin/ollama';
+  }
+
+  /// Pids of Ollama servers running from the legacy in-app location
+  /// [legacyRoot] — or from a copy of it an in-app update parked beside it
+  /// (`.keel-old-<ms>`, swept on the next launch) — given each process's
+  /// `/proc/<pid>/exe` link target. The kernel appends " (deleted)" once
+  /// the file is gone, and those are exactly the servers that answer
+  /// /api/tags but fail every model load. Pure.
+  static List<int> staleOllamaPids(
+    Map<int, String> exeByPid,
+    String legacyRoot,
+  ) {
+    final parent = legacyRoot.substring(0, legacyRoot.lastIndexOf('/'));
+    final pattern = RegExp(
+      '^(?:${RegExp.escape(legacyRoot)}|${RegExp.escape(parent)}/\\.keel-old-[^/]+)'
+      r'/bin/ollama(?: \(deleted\))?$',
+    );
+    return [
+      for (final e in exeByPid.entries)
+        if (pattern.hasMatch(e.value)) e.key,
+    ];
+  }
+
+  /// Copies of the app install an in-app update parked beside
+  /// [legacyRoot], newest first. An update from a Keel that kept Ollama
+  /// inside the install carries Ollama into the parked copy, so this is
+  /// where it is rescued from before the launch sweep deletes it.
+  static Future<List<String>> parkedInstalls(String legacyRoot) async {
+    final parent = Directory(
+      legacyRoot.substring(0, legacyRoot.lastIndexOf('/')),
+    );
+    final found = <(int, String)>[];
+    try {
+      await for (final e in parent.list(followLinks: false)) {
+        final name = e.uri.pathSegments.lastWhere((s) => s.isNotEmpty);
+        final m = RegExp(r'^\.keel-old-(\d+)$').firstMatch(name);
+        if (e is Directory && m != null) {
+          found.add((int.parse(m.group(1)!), e.path.replaceAll(RegExp(r'/$'), '')));
+        }
+      }
+    } catch (_) {}
+    found.sort((a, b) => b.$1.compareTo(a.$1));
+    return [for (final f in found) f.$2];
+  }
+
+  /// Moves a private Ollama from [legacyRoot] (`bin/ollama` +
+  /// `lib/ollama`) to [newRoot], unless [newRoot] already has one.
+  /// Returns true when something moved. A failed move (e.g. another
+  /// filesystem) leaves the legacy copy where it is — [resolveOllamaExe]
+  /// still finds it there — so this never strands the user.
+  static Future<bool> migrateLegacyInstall({
+    required String legacyRoot,
+    required String newRoot,
+  }) async {
+    final legacyExe = File('$legacyRoot/bin/ollama');
+    if (!await legacyExe.exists()) return false;
+    if (await File('$newRoot/bin/ollama').exists()) return false;
+    try {
+      await Directory('$newRoot/bin').create(recursive: true);
+      await Directory('$newRoot/lib').create(recursive: true);
+      await legacyExe.rename('$newRoot/bin/ollama');
+      final legacyLib = Directory('$legacyRoot/lib/ollama');
+      if (await legacyLib.exists()) {
+        await legacyLib.rename('$newRoot/lib/ollama');
+      }
+      return true;
+    } catch (_) {
+      // Half-moved? Put the binary back so the legacy copy stays whole.
+      try {
+        final moved = File('$newRoot/bin/ollama');
+        if (await moved.exists() && !await legacyExe.exists()) {
+          await moved.rename(legacyExe.path);
+        }
+      } catch (_) {}
+      return false;
+    }
+  }
+
+  static bool _prepared = false;
+
+  /// Linux, once per launch: stops any server still running from the
+  /// legacy in-app location (or a parked copy of it), then moves the
+  /// legacy Ollama — from the install, or from the copy an update just
+  /// parked — to [keelOllamaRoot], so [ensureRunning] starts a working
+  /// one. Must run BEFORE [sweepOldInstalls]. Best effort.
+  static Future<void> prepareLocalInstall() async {
+    if (_prepared || !Platform.isLinux) return;
+    _prepared = true;
+    final env = Platform.environment;
+    final legacyRoot = legacyKeelOllamaRoot(env);
+    try {
+      final exeByPid = <int, String>{};
+      await for (final e in Directory('/proc').list(followLinks: false)) {
+        final pid = int.tryParse(e.uri.pathSegments.lastWhere(
+          (s) => s.isNotEmpty,
+          orElse: () => '',
+        ));
+        if (pid == null) continue;
+        try {
+          exeByPid[pid] = await Link('/proc/$pid/exe').target();
+        } catch (_) {} // other users' processes, or already exited
+      }
+      final stale = staleOllamaPids(exeByPid, legacyRoot);
+      for (final pid in stale) {
+        Process.killPid(pid);
+      }
+      if (stale.isNotEmpty) {
+        // Let the port free up before anyone starts a fresh server.
+        await Future<void>.delayed(const Duration(milliseconds: 800));
+      }
+    } catch (_) {}
+    final newRoot = keelOllamaRoot(env, isWindows: false);
+    for (final from in [legacyRoot, ...await parkedInstalls(legacyRoot)]) {
+      if (await migrateLegacyInstall(legacyRoot: from, newRoot: newRoot)) {
+        break;
+      }
+    }
   }
 
   /// Where the official macOS Ollama leaves its command-line binary.
@@ -269,6 +409,11 @@ class OllamaClient implements LLMClient {
       isWindows: Platform.isWindows,
     );
     if (await File(local).exists()) return local;
+    if (!Platform.isWindows) {
+      // Not yet migrated (or the move failed) — still usable in place.
+      final legacy = '${legacyKeelOllamaRoot(Platform.environment)}/bin/ollama';
+      if (await File(legacy).exists()) return legacy;
+    }
     return 'ollama';
   }
 
@@ -279,6 +424,7 @@ class OllamaClient implements LLMClient {
     String baseUrl, {
     int timeoutSeconds = 15,
   }) async {
+    await prepareLocalInstall();
     if (await isRunning(baseUrl)) return true;
 
     try {
