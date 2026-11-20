@@ -64,6 +64,13 @@ class JsonImporter {
     // Clear all synced tables for this project before importing.
     // This ensures deletions made on the source device are reflected here —
     // upsert-only would leave deleted records in place.
+    // The Microsoft Project UID map lives on the plan header, which the
+    // clear below deletes. A blob from a machine that has never exported,
+    // or from a build that predates the field, must not wipe it, or the
+    // next export renumbers every task — so remember it across the clear.
+    final keptMsProjectState =
+        (await db.programmeGanttDao.getHeader(projectId))?.msProjectState;
+
     await _clearSyncedTables(db, projectId);
 
     // Preserve programme/project classification across machines. Kind is
@@ -775,6 +782,12 @@ class JsonImporter {
           outOfScope: Value(headerData['out_of_scope'] as String?),
           monthLabels: Value(headerData['month_labels'] as String?),
           month0Date: Value(headerData['month0_date'] as String?),
+          // Absent in blobs from builds before v69: keep what is here
+          // rather than wiping the stable Project UIDs.
+          // A machine that has never exported (or runs a build without
+          // the field) sends none: keep ours.
+          msProjectState: Value(
+              headerData['ms_project_state'] as String? ?? keptMsProjectState),
         ));
       }
       final scopeData = timelineData['scope'] as Map<String, dynamic>?;

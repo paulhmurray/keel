@@ -12,6 +12,7 @@ import '../../../core/plan/variance_links.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../shared/theme/keel_colors.dart';
 import '../../../shared/widgets/date_picker_field.dart';
+import '../../../core/plan/plan_note_markers.dart';
 
 /// "Re-plan slipped work": every not-started activity whose start has
 /// passed is slid forward to today, the consequences pushed through the
@@ -603,7 +604,7 @@ class _ReplanDialogState extends State<ReplanDialog> {
     final a = _advice[c.id];
     final aiView = a == null || a.rationale.isEmpty
         ? null
-        : 'AI view (${a.confidence} confidence): ${a.rationale}'
+        : '$kAiViewNotePrefix${a.confidence} confidence): ${a.rationale}'
               '${a.watch.isEmpty ? '' : ' Watch: ${a.watch.join('; ')}.'}';
     return ReplanWrite(
       id: c.id,

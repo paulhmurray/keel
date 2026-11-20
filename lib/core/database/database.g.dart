@@ -28371,6 +28371,17 @@ class $ProgrammeHeadersTable extends ProgrammeHeaders
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _msProjectStateMeta = const VerificationMeta(
+    'msProjectState',
+  );
+  @override
+  late final GeneratedColumn<String> msProjectState = GeneratedColumn<String>(
+    'ms_project_state',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -28407,6 +28418,7 @@ class $ProgrammeHeadersTable extends ProgrammeHeaders
     outOfScope,
     monthLabels,
     month0Date,
+    msProjectState,
     createdAt,
     updatedAt,
   ];
@@ -28495,6 +28507,15 @@ class $ProgrammeHeadersTable extends ProgrammeHeaders
         month0Date.isAcceptableOrUnknown(data['month0_date']!, _month0DateMeta),
       );
     }
+    if (data.containsKey('ms_project_state')) {
+      context.handle(
+        _msProjectStateMeta,
+        msProjectState.isAcceptableOrUnknown(
+          data['ms_project_state']!,
+          _msProjectStateMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -28556,6 +28577,10 @@ class $ProgrammeHeadersTable extends ProgrammeHeaders
         DriftSqlType.string,
         data['${effectivePrefix}month0_date'],
       ),
+      msProjectState: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ms_project_state'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -28584,6 +28609,7 @@ class ProgrammeHeader extends DataClass implements Insertable<ProgrammeHeader> {
   final String? outOfScope;
   final String? monthLabels;
   final String? month0Date;
+  final String? msProjectState;
   final DateTime createdAt;
   final DateTime updatedAt;
   const ProgrammeHeader({
@@ -28597,6 +28623,7 @@ class ProgrammeHeader extends DataClass implements Insertable<ProgrammeHeader> {
     this.outOfScope,
     this.monthLabels,
     this.month0Date,
+    this.msProjectState,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -28628,6 +28655,9 @@ class ProgrammeHeader extends DataClass implements Insertable<ProgrammeHeader> {
     }
     if (!nullToAbsent || month0Date != null) {
       map['month0_date'] = Variable<String>(month0Date);
+    }
+    if (!nullToAbsent || msProjectState != null) {
+      map['ms_project_state'] = Variable<String>(msProjectState);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -28662,6 +28692,9 @@ class ProgrammeHeader extends DataClass implements Insertable<ProgrammeHeader> {
       month0Date: month0Date == null && nullToAbsent
           ? const Value.absent()
           : Value(month0Date),
+      msProjectState: msProjectState == null && nullToAbsent
+          ? const Value.absent()
+          : Value(msProjectState),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -28683,6 +28716,7 @@ class ProgrammeHeader extends DataClass implements Insertable<ProgrammeHeader> {
       outOfScope: serializer.fromJson<String?>(json['outOfScope']),
       monthLabels: serializer.fromJson<String?>(json['monthLabels']),
       month0Date: serializer.fromJson<String?>(json['month0Date']),
+      msProjectState: serializer.fromJson<String?>(json['msProjectState']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -28701,6 +28735,7 @@ class ProgrammeHeader extends DataClass implements Insertable<ProgrammeHeader> {
       'outOfScope': serializer.toJson<String?>(outOfScope),
       'monthLabels': serializer.toJson<String?>(monthLabels),
       'month0Date': serializer.toJson<String?>(month0Date),
+      'msProjectState': serializer.toJson<String?>(msProjectState),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -28717,6 +28752,7 @@ class ProgrammeHeader extends DataClass implements Insertable<ProgrammeHeader> {
     Value<String?> outOfScope = const Value.absent(),
     Value<String?> monthLabels = const Value.absent(),
     Value<String?> month0Date = const Value.absent(),
+    Value<String?> msProjectState = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => ProgrammeHeader(
@@ -28732,6 +28768,9 @@ class ProgrammeHeader extends DataClass implements Insertable<ProgrammeHeader> {
     outOfScope: outOfScope.present ? outOfScope.value : this.outOfScope,
     monthLabels: monthLabels.present ? monthLabels.value : this.monthLabels,
     month0Date: month0Date.present ? month0Date.value : this.month0Date,
+    msProjectState: msProjectState.present
+        ? msProjectState.value
+        : this.msProjectState,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -28757,6 +28796,9 @@ class ProgrammeHeader extends DataClass implements Insertable<ProgrammeHeader> {
       month0Date: data.month0Date.present
           ? data.month0Date.value
           : this.month0Date,
+      msProjectState: data.msProjectState.present
+          ? data.msProjectState.value
+          : this.msProjectState,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -28775,6 +28817,7 @@ class ProgrammeHeader extends DataClass implements Insertable<ProgrammeHeader> {
           ..write('outOfScope: $outOfScope, ')
           ..write('monthLabels: $monthLabels, ')
           ..write('month0Date: $month0Date, ')
+          ..write('msProjectState: $msProjectState, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -28793,6 +28836,7 @@ class ProgrammeHeader extends DataClass implements Insertable<ProgrammeHeader> {
     outOfScope,
     monthLabels,
     month0Date,
+    msProjectState,
     createdAt,
     updatedAt,
   );
@@ -28810,6 +28854,7 @@ class ProgrammeHeader extends DataClass implements Insertable<ProgrammeHeader> {
           other.outOfScope == this.outOfScope &&
           other.monthLabels == this.monthLabels &&
           other.month0Date == this.month0Date &&
+          other.msProjectState == this.msProjectState &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -28825,6 +28870,7 @@ class ProgrammeHeadersCompanion extends UpdateCompanion<ProgrammeHeader> {
   final Value<String?> outOfScope;
   final Value<String?> monthLabels;
   final Value<String?> month0Date;
+  final Value<String?> msProjectState;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -28839,6 +28885,7 @@ class ProgrammeHeadersCompanion extends UpdateCompanion<ProgrammeHeader> {
     this.outOfScope = const Value.absent(),
     this.monthLabels = const Value.absent(),
     this.month0Date = const Value.absent(),
+    this.msProjectState = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -28854,6 +28901,7 @@ class ProgrammeHeadersCompanion extends UpdateCompanion<ProgrammeHeader> {
     this.outOfScope = const Value.absent(),
     this.monthLabels = const Value.absent(),
     this.month0Date = const Value.absent(),
+    this.msProjectState = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -28870,6 +28918,7 @@ class ProgrammeHeadersCompanion extends UpdateCompanion<ProgrammeHeader> {
     Expression<String>? outOfScope,
     Expression<String>? monthLabels,
     Expression<String>? month0Date,
+    Expression<String>? msProjectState,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -28885,6 +28934,7 @@ class ProgrammeHeadersCompanion extends UpdateCompanion<ProgrammeHeader> {
       if (outOfScope != null) 'out_of_scope': outOfScope,
       if (monthLabels != null) 'month_labels': monthLabels,
       if (month0Date != null) 'month0_date': month0Date,
+      if (msProjectState != null) 'ms_project_state': msProjectState,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -28902,6 +28952,7 @@ class ProgrammeHeadersCompanion extends UpdateCompanion<ProgrammeHeader> {
     Value<String?>? outOfScope,
     Value<String?>? monthLabels,
     Value<String?>? month0Date,
+    Value<String?>? msProjectState,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -28917,6 +28968,7 @@ class ProgrammeHeadersCompanion extends UpdateCompanion<ProgrammeHeader> {
       outOfScope: outOfScope ?? this.outOfScope,
       monthLabels: monthLabels ?? this.monthLabels,
       month0Date: month0Date ?? this.month0Date,
+      msProjectState: msProjectState ?? this.msProjectState,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -28956,6 +29008,9 @@ class ProgrammeHeadersCompanion extends UpdateCompanion<ProgrammeHeader> {
     if (month0Date.present) {
       map['month0_date'] = Variable<String>(month0Date.value);
     }
+    if (msProjectState.present) {
+      map['ms_project_state'] = Variable<String>(msProjectState.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -28981,6 +29036,7 @@ class ProgrammeHeadersCompanion extends UpdateCompanion<ProgrammeHeader> {
           ..write('outOfScope: $outOfScope, ')
           ..write('monthLabels: $monthLabels, ')
           ..write('month0Date: $month0Date, ')
+          ..write('msProjectState: $msProjectState, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -72335,6 +72391,7 @@ typedef $$ProgrammeHeadersTableCreateCompanionBuilder =
       Value<String?> outOfScope,
       Value<String?> monthLabels,
       Value<String?> month0Date,
+      Value<String?> msProjectState,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -72351,6 +72408,7 @@ typedef $$ProgrammeHeadersTableUpdateCompanionBuilder =
       Value<String?> outOfScope,
       Value<String?> monthLabels,
       Value<String?> month0Date,
+      Value<String?> msProjectState,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -72412,6 +72470,11 @@ class $$ProgrammeHeadersTableFilterComposer
 
   ColumnFilters<String> get month0Date => $composableBuilder(
     column: $table.month0Date,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get msProjectState => $composableBuilder(
+    column: $table.msProjectState,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -72485,6 +72548,11 @@ class $$ProgrammeHeadersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get msProjectState => $composableBuilder(
+    column: $table.msProjectState,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -72545,6 +72613,11 @@ class $$ProgrammeHeadersTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get msProjectState => $composableBuilder(
+    column: $table.msProjectState,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -72599,6 +72672,7 @@ class $$ProgrammeHeadersTableTableManager
                 Value<String?> outOfScope = const Value.absent(),
                 Value<String?> monthLabels = const Value.absent(),
                 Value<String?> month0Date = const Value.absent(),
+                Value<String?> msProjectState = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -72613,6 +72687,7 @@ class $$ProgrammeHeadersTableTableManager
                 outOfScope: outOfScope,
                 monthLabels: monthLabels,
                 month0Date: month0Date,
+                msProjectState: msProjectState,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -72629,6 +72704,7 @@ class $$ProgrammeHeadersTableTableManager
                 Value<String?> outOfScope = const Value.absent(),
                 Value<String?> monthLabels = const Value.absent(),
                 Value<String?> month0Date = const Value.absent(),
+                Value<String?> msProjectState = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -72643,6 +72719,7 @@ class $$ProgrammeHeadersTableTableManager
                 outOfScope: outOfScope,
                 monthLabels: monthLabels,
                 month0Date: month0Date,
+                msProjectState: msProjectState,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,

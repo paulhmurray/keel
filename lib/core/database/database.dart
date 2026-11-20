@@ -1046,6 +1046,10 @@ class ProgrammeHeaders extends Table {
   TextColumn get outOfScope => text().nullable()();
   TextColumn get monthLabels => text().nullable()(); // JSON array of strings
   TextColumn get month0Date => text().nullable()(); // ISO date YYYY-MM-DD
+  // Microsoft Project export bookkeeping (JSON, see MsProjectState): the
+  // Project UID handed to each Keel row — stable across exports, never
+  // reused — and a snapshot of the last export for "changes since".
+  TextColumn get msProjectState => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
@@ -1858,7 +1862,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(QueryExecutor executor) : super(executor);
 
   @override
-  int get schemaVersion => 68;
+  int get schemaVersion => 69;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -2417,6 +2421,10 @@ class AppDatabase extends _$AppDatabase {
             // Portfolio tier: weekly programme pulses cascaded up to a
             // portfolio-kind project.
             await ensureTable(portfolioPulses);
+          }
+          if (from < 69) {
+            // Stable Microsoft Project UIDs + last-export snapshot.
+            await ensureColumn(programmeHeaders, programmeHeaders.msProjectState);
           }
         },
       );

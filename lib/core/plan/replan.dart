@@ -32,6 +32,7 @@ library;
 import '../database/database.dart';
 import 'date_precision.dart'
     show monthIndexOf, monthSpanForDates;
+import 'plan_note_markers.dart';
 
 /// One row's proposed move.
 class ReplanChange {
@@ -597,5 +598,5 @@ String replanNote(ReplanChange c, DateTime month0,
       startDate: c.toStartDate, endDate: c.toEndDate, month0: month0);
   final why = c.reasons.isEmpty ? '' : ' ${c.reasons.join(' ')}';
   final ai = (aiView ?? '').trim().isEmpty ? '' : ' ${aiView!.trim()}';
-  return 'Re-planned $d: was $was, now $now.$why$ai';
+  return '$kReplanNotePrefix$d: was $was, now $now.$why$ai';
 }

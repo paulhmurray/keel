@@ -594,6 +594,7 @@ class JsonExporter {
                 'out_of_scope': programmeHeader.outOfScope,
                 'month_labels': programmeHeader.monthLabels,
                 'month0_date': programmeHeader.month0Date,
+                'ms_project_state': programmeHeader.msProjectState,
                 'created_at': programmeHeader.createdAt.toIso8601String(),
                 'updated_at': programmeHeader.updatedAt.toIso8601String(),
               },

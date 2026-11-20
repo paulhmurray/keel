@@ -1,3 +1,4 @@
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
@@ -12,6 +13,7 @@ import '../../core/export/pdf_exporter.dart';
 import '../../core/export/handover_exporter.dart';
 import '../../core/export/programme_workbook_exporter.dart';
 import '../../core/export/ms_project_exporter.dart';
+import '../../core/export/ms_project_state.dart';
 import '../../core/llm/llm_client_factory.dart';
 import '../../providers/project_provider.dart';
 import '../../providers/settings_provider.dart';
@@ -1450,6 +1452,14 @@ class _ProgrammeWorkbookTabState extends State<_ProgrammeWorkbookTab> {
   String? _mspError;
   String? _mspResult;
   List<String> _mspWarnings = const [];
+  List<String> _mspRefused = const [];
+  MsChangeSummary? _mspChanges;
+  bool _mspPinDates = false;
+  bool _mspPublicNotes = true;
+  bool _verifying = false;
+  String? _verifyFile;
+  List<String>? _verifyDiffs;
+  String? _verifyError;
 
   Future<void> _exportMsProject() async {
     setState(() {
@@ -1457,23 +1467,62 @@ class _ProgrammeWorkbookTabState extends State<_ProgrammeWorkbookTab> {
       _mspError = null;
       _mspResult = null;
       _mspWarnings = const [];
+      _mspRefused = const [];
+      _mspChanges = null;
     });
     try {
-      final (message, warnings) = await MsProjectExporter.export(
+      final r = await MsProjectExporter.export(
         db: widget.db,
         projectId: widget.projectId,
         projectName: widget.projectName,
+        options: MsProjectOptions(
+          pinDates: _mspPinDates,
+          notes: _mspPublicNotes ? MsNotesMode.publicOnly : MsNotesMode.all,
+        ),
       );
       if (mounted) {
         setState(() {
-          _mspResult = message;
-          _mspWarnings = warnings;
+          _mspResult = r.message;
+          _mspWarnings = r.warnings;
+          _mspChanges = r.changes;
         });
       }
+    } on MsProjectExportRefused catch (e) {
+      if (mounted) setState(() => _mspRefused = e.errors);
     } catch (e) {
       if (mounted) setState(() => _mspError = e.toString());
     } finally {
       if (mounted) setState(() => _exportingMsp = false);
+    }
+  }
+
+  /// Round-trip check: the person saves the plan from Project as XML and
+  /// Keel lists every task that differs from the plan.
+  Future<void> _verifyMsProject() async {
+    const xmlType = XTypeGroup(label: 'Project XML', extensions: ['xml']);
+    final file = await openFile(acceptedTypeGroups: [xmlType]);
+    if (file == null) return;
+    setState(() {
+      _verifying = true;
+      _verifyError = null;
+      _verifyDiffs = null;
+      _verifyFile = file.name;
+    });
+    try {
+      final diffs = await MsProjectExporter.verify(
+        db: widget.db,
+        projectId: widget.projectId,
+        projectName: widget.projectName,
+        projectXml: await file.readAsString(),
+      );
+      if (mounted) setState(() => _verifyDiffs = diffs);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _verifyError = 'Could not read ${file.name} as a '
+            'Microsoft Project XML file: $e');
+      }
+    } finally {
+      if (mounted) setState(() => _verifying = false);
     }
   }
 
@@ -1565,9 +1614,27 @@ class _ProgrammeWorkbookTabState extends State<_ProgrammeWorkbookTab> {
             'sit underneath\n'
             '  • Milestones, gates and hard deadlines become milestones\n'
             '  • Dependency arrows become predecessor links\n'
-            '  • Owners become resources; Keel status and scenario months '
-            'land in the Text1 and Text2 columns',
+            '  • Owners become resources; Text1–Text5 carry Keel status, '
+            'scenario, owner, Keel ID and remarks\n'
+            '  • Keel\'s baseline goes in as Baseline 0; each task keeps its '
+            'UID from one export to the next\n'
+            '  • Keel checks the file before saving it and lists links it '
+            'had to leave out',
             style: TextStyle(color: KColors.textDim, fontSize: 13),
+          ),
+          const SizedBox(height: 12),
+          _OptionCheckbox(
+            value: _mspPinDates,
+            label: 'Pin dates — manually scheduled, so Project cannot move '
+                'anything',
+            onChanged: (v) => setState(() => _mspPinDates = v),
+          ),
+          const SizedBox(height: 4),
+          _OptionCheckbox(
+            value: _mspPublicNotes,
+            label: 'Public notes only — leave out re-plan history and AI '
+                'commentary',
+            onChanged: (v) => setState(() => _mspPublicNotes = v),
           ),
           const SizedBox(height: 16),
           ElevatedButton.icon(
@@ -1603,7 +1670,113 @@ class _ProgrammeWorkbookTabState extends State<_ProgrammeWorkbookTab> {
             const SizedBox(height: 16),
             _ExportError(_mspError!),
           ],
+          if (_mspRefused.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _ExportError(
+              'Not saved: the file failed Keel\'s own check.\n'
+              '${_mspRefused.map((e) => '  • $e').join('\n')}',
+            ),
+          ],
+          if (_mspChanges != null) ...[
+            const SizedBox(height: 16),
+            Text('Changes since the last export',
+                style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 6),
+            SelectableText(
+              _mspChanges!.toText(),
+              style: TextStyle(color: KColors.text, fontSize: 12),
+            ),
+          ],
+          const SizedBox(height: 24),
+          Text(
+            'Before you upload the .mpp: in Project, File ▸ Save As ▸ XML, '
+            'then check that file here. Keel lists every task whose dates, '
+            '% complete, outline level, owner or links differ from the plan.',
+            style: TextStyle(color: KColors.textDim, fontSize: 13),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: _verifying ? null : _verifyMsProject,
+            icon: _verifying
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.fact_check_outlined, size: 18),
+            label: Text(
+              _verifying ? 'Checking…' : 'Verify Microsoft Project file…',
+            ),
+          ),
+          if (_verifyError != null) ...[
+            const SizedBox(height: 12),
+            _ExportError(_verifyError!),
+          ],
+          if (_verifyDiffs != null) ...[
+            const SizedBox(height: 12),
+            if (_verifyDiffs!.isEmpty)
+              Text(
+                '✓  $_verifyFile matches the plan — safe to upload.',
+                style: TextStyle(color: KColors.phosphor, fontSize: 13),
+              )
+            else ...[
+              Text(
+                '$_verifyFile differs from the plan on '
+                '${_verifyDiffs!.length} task'
+                '${_verifyDiffs!.length == 1 ? '' : 's'}:',
+                style: TextStyle(color: KColors.amber, fontSize: 13),
+              ),
+              const SizedBox(height: 6),
+              SelectableText(
+                _verifyDiffs!.map((d) => '• $d').join('\n'),
+                style: TextStyle(color: KColors.text, fontSize: 12),
+              ),
+            ],
+          ],
         ],
+      ),
+    );
+  }
+}
+
+class _OptionCheckbox extends StatelessWidget {
+  final bool value;
+  final String label;
+  final ValueChanged<bool> onChanged;
+
+  const _OptionCheckbox({
+    required this.value,
+    required this.label,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () => onChanged(!value),
+      borderRadius: BorderRadius.circular(3),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 18,
+              height: 18,
+              child: Checkbox(
+                value: value,
+                onChanged: (v) => onChanged(v ?? false),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(color: KColors.text, fontSize: 13),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

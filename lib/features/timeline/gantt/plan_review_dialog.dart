@@ -8,6 +8,7 @@ import '../../../core/llm/context_builder.dart';
 import '../../../core/llm/llm_client.dart';
 import '../../../core/llm/llm_client_factory.dart';
 import '../../../core/plan/plan_review.dart';
+import '../../../core/plan/plan_note_markers.dart';
 import '../../../core/plan/replan.dart' show replanMonthLabel;
 import '../../../providers/settings_provider.dart';
 import '../../../shared/theme/keel_colors.dart';
@@ -177,7 +178,7 @@ class _PlanReviewDialogState extends State<PlanReviewDialog> {
           fromActivityId: Value(from),
           toActivityId: Value(to),
           dependencyType: const Value('finish_to_start'),
-          notes: const Value('Added on plan review'),
+          notes: const Value(kPlanReviewNotePrefix),
         ),
       );
       _deps = [
@@ -188,7 +189,7 @@ class _PlanReviewDialogState extends State<PlanReviewDialog> {
           fromActivityId: from,
           toActivityId: to,
           dependencyType: 'finish_to_start',
-          notes: 'Added on plan review',
+          notes: kPlanReviewNotePrefix,
           createdAt: now,
         ),
       ];
@@ -236,7 +237,7 @@ class _PlanReviewDialogState extends State<PlanReviewDialog> {
           endMonth: Value(month),
           sortOrder: Value(order),
           notes: Value(
-            'Added on plan review ${now.toIso8601String().substring(0, 10)}: ${s.message}',
+            '$kPlanReviewNotePrefix ${now.toIso8601String().substring(0, 10)}: ${s.message}',
           ),
           updatedAt: Value(now),
         ),
