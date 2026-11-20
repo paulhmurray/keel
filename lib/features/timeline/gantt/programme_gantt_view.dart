@@ -23,8 +23,7 @@ import '../../../shared/utils/date_utils.dart' as du;
 import '../../../shared/widgets/date_picker_field.dart';
 import '../../../shared/widgets/person_picker_field.dart';
 import '../../actions/action_form.dart';
-import '../../raid/risk_form.dart';
-import '../../raid/assumption_form.dart';
+import 'raid_picker_dialog.dart';
 import 'milestone_tracker_view.dart';
 import 'plan_gaps_dialog.dart';
 import 'plan_review_dialog.dart';
@@ -4323,10 +4322,11 @@ class _ActivityFormDialogState extends State<_ActivityFormDialog> {
   Future<void> _pickVarianceRaid() async {
     final picked = await showDialog<({String type, String id})>(
       context: context,
-      builder: (_) => _RaidPickerDialog(
+      builder: (_) => RaidPickerDialog(
         db: widget.db,
         projectId: widget.projectId,
         excludeIds: {for (final l in _varianceLinks) l.id},
+        itemName: _nameCtrl.text,
       ),
     );
     if (picked == null) return;
@@ -6795,200 +6795,3 @@ class _ViewToggle extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// RAID picker — link a plan item's schedule variance to the RAID item
-// that drives it. Lists all four registers; risks and assumptions (the
-// usual variance drivers) can be created inline without losing the form.
-// ---------------------------------------------------------------------------
-
-class _RaidPickerDialog extends StatefulWidget {
-  final AppDatabase db;
-  final String projectId;
-  // Already-linked items — hidden so the same item can't link twice.
-  final Set<String> excludeIds;
-
-  const _RaidPickerDialog({
-    required this.db,
-    required this.projectId,
-    this.excludeIds = const {},
-  });
-
-  @override
-  State<_RaidPickerDialog> createState() => _RaidPickerDialogState();
-}
-
-class _RaidPickerDialogState extends State<_RaidPickerDialog> {
-  List<({String type, String id, String ref, String description})> _items = [];
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    final dao = widget.db.raidDao;
-    final risks = await dao.getRisksForProject(widget.projectId);
-    final assumptions = await dao.getAssumptionsForProject(widget.projectId);
-    final issues = await dao.getIssuesForProject(widget.projectId);
-    final deps = await dao.getDependenciesForProject(widget.projectId);
-    if (!mounted) return;
-    setState(() {
-      _items = [
-        for (final r in risks.where((r) => r.status != 'closed'))
-          (
-            type: 'risk',
-            id: r.id,
-            ref: r.ref ?? 'Risk',
-            description: r.description,
-          ),
-        for (final a in assumptions.where((a) => a.status != 'closed'))
-          (
-            type: 'assumption',
-            id: a.id,
-            ref: a.ref ?? 'Assumption',
-            description: a.description,
-          ),
-        for (final i in issues.where((i) => i.status != 'closed'))
-          (
-            type: 'issue',
-            id: i.id,
-            ref: i.ref ?? 'Issue',
-            description: i.title ?? i.description,
-          ),
-        for (final d in deps.where((d) => d.status != 'closed'))
-          (
-            type: 'dependency',
-            id: d.id,
-            ref: d.ref ?? 'Dep',
-            description: d.description,
-          ),
-      ].where((i) => !widget.excludeIds.contains(i.id)).toList();
-      _loading = false;
-    });
-  }
-
-  Future<void> _newRisk() async {
-    await showDialog(
-      context: context,
-      builder: (_) =>
-          RiskFormDialog(projectId: widget.projectId, db: widget.db),
-    );
-    await _load(); // the new risk appears in the list — tap to link it
-  }
-
-  Future<void> _newAssumption() async {
-    await showDialog(
-      context: context,
-      builder: (_) =>
-          AssumptionFormDialog(projectId: widget.projectId, db: widget.db),
-    );
-    await _load();
-  }
-
-  Color _typeColor(String type) => switch (type) {
-    'risk' => KColors.amber,
-    'assumption' => KColors.blue,
-    'issue' => KColors.red,
-    _ => const Color(0xFF8B5CF6),
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: KColors.surface,
-      title: Text(
-        'Link a RAID item',
-        style: TextStyle(color: KColors.text, fontSize: 14),
-      ),
-      content: SizedBox(
-        width: 480,
-        height: 420,
-        child: _loading
-            ? const Center(child: CircularProgressIndicator(strokeWidth: 1.5))
-            : _items.isEmpty
-            ? Center(
-                child: Text(
-                  'No open RAID items yet — create one below.',
-                  style: TextStyle(color: KColors.textDim, fontSize: 12),
-                ),
-              )
-            : ListView(
-                children: [
-                  for (final item in _items)
-                    InkWell(
-                      onTap: () => Navigator.of(
-                        context,
-                      ).pop((type: item.type, id: item.id)),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(color: KColors.border, width: 1),
-                          ),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 8,
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: _typeColor(
-                                  item.type,
-                                ).withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(3),
-                              ),
-                              child: Text(
-                                item.ref,
-                                style: TextStyle(
-                                  color: _typeColor(item.type),
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                item.description,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: KColors.text,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-      ),
-      actions: [
-        TextButton.icon(
-          onPressed: _newRisk,
-          icon: const Icon(Icons.add, size: 13),
-          label: const Text('New risk', style: TextStyle(fontSize: 12)),
-        ),
-        TextButton.icon(
-          onPressed: _newAssumption,
-          icon: const Icon(Icons.add, size: 13),
-          label: const Text('New assumption', style: TextStyle(fontSize: 12)),
-        ),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-      ],
-    );
-  }
-}
