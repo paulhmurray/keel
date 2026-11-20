@@ -66,6 +66,8 @@ class JournalOverlayState extends State<JournalOverlay> {
   // In docked mode the widget outlives save cycles, so parse state must
   // also be tracked locally, not just on the (stale) existingEntry.
   bool _parsedThisSession = false;
+  // Docked: saved this session without parsing (offer Parse, not Re-parse).
+  bool _savedUnparsed = false;
 
   bool get _hasChanges =>
       _bodyCtrl.text.trim() != _originalBody.trim() ||
@@ -76,7 +78,12 @@ class JournalOverlayState extends State<JournalOverlay> {
   bool get hasUnsavedChanges => _hasChanges && _bodyCtrl.text.trim().isNotEmpty;
 
   bool get _alreadyParsed =>
-      _parsedThisSession || (widget.existingEntry?.parsed ?? false);
+      !_savedUnparsed &&
+      (_parsedThisSession || (widget.existingEntry?.parsed ?? false));
+
+  /// A saved entry with text still to parse.
+  bool get _canParse =>
+      !_alreadyParsed && (_savedEntryId != null || _savedUnparsed);
 
   @override
   void initState() {
@@ -131,6 +138,7 @@ class JournalOverlayState extends State<JournalOverlay> {
       _savedEntryId = e?.id;
       _seriesId = e?.seriesId ?? widget.initialSeriesId;
       _parsedThisSession = false;
+      _savedUnparsed = false;
       _deltas = [];
       _phase = _OverlayPhase.editor;
     });
@@ -233,6 +241,45 @@ class JournalOverlayState extends State<JournalOverlay> {
     } catch (_) {
       return isoDate;
     }
+  }
+
+  /// Records the entry without parsing it: the text is saved and the
+  /// entry is left "Not parsed", to be parsed later (open it and press
+  /// Cmd/Ctrl+Enter, or Parse in the header). Already-parsed text keeps
+  /// its baseline, so that later parse only looks at what's new.
+  Future<void> _saveOnly() async {
+    final body = _bodyCtrl.text.trim();
+    if (body.isEmpty) {
+      if (!widget.docked) _close();
+      return;
+    }
+    final entryId = _savedEntryId ?? const Uuid().v4();
+    _savedEntryId = entryId;
+    final now = DateTime.now();
+    final title = _titleCtrl.text.trim().isEmpty
+        ? null
+        : _titleCtrl.text.trim();
+    final dbEntry = await widget.db.journalDao.getEntryById(entryId);
+    final contentChanged = body != (dbEntry?.body.trim() ?? '');
+    await widget.db.journalDao.upsertEntry(
+      JournalEntriesCompanion(
+        id: Value(entryId),
+        projectId: Value(widget.projectId),
+        title: Value(title),
+        body: Value(body),
+        entryDate: Value(_entryDate),
+        // New text means there's something left to parse; a title-only
+        // edit to a parsed entry leaves it parsed.
+        parsed: Value(contentChanged ? false : (dbEntry?.parsed ?? false)),
+        confirmedAt: Value(dbEntry?.confirmedAt),
+        lastParsedBody: Value(dbEntry?.lastParsedBody),
+        meetingContext: Value(dbEntry?.meetingContext),
+        seriesId: Value(_seriesId),
+        createdAt: Value(dbEntry?.createdAt ?? now),
+        updatedAt: Value(now),
+      ),
+    );
+    _finishCycle(parsed: !contentChanged && (dbEntry?.parsed ?? false));
   }
 
   Future<void> _saveAndParse() async {
@@ -432,7 +479,7 @@ class JournalOverlayState extends State<JournalOverlay> {
   /// Ends a save/parse cycle. Modal: closes the overlay. Docked: stays on
   /// the running note — resets to the editor with the saved text as the
   /// new baseline, ready for the next addition.
-  void _finishCycle() {
+  void _finishCycle({bool parsed = true}) {
     if (!widget.docked) {
       _close();
       return;
@@ -442,7 +489,8 @@ class JournalOverlayState extends State<JournalOverlay> {
       _deltas = [];
       _originalBody = _bodyCtrl.text;
       _originalTitle = _titleCtrl.text;
-      _parsedThisSession = true;
+      _parsedThisSession = parsed;
+      _savedUnparsed = !parsed;
     });
   }
 
@@ -463,12 +511,19 @@ class JournalOverlayState extends State<JournalOverlay> {
               },
               child: const Text('Discard'),
             ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                _saveOnly();
+              },
+              child: const Text('Save, don\'t parse'),
+            ),
             ElevatedButton(
               onPressed: () {
                 Navigator.of(ctx).pop();
                 _saveAndParse();
               },
-              child: const Text('Save'),
+              child: const Text('Save & parse'),
             ),
           ],
         ),
@@ -588,10 +643,10 @@ class JournalOverlayState extends State<JournalOverlay> {
               },
             ),
             const SizedBox(width: 8),
-            if (_alreadyParsed)
+            if (_alreadyParsed || _canParse)
               InkWell(
                 onTap: () {
-                  setState(() => _forceReparse = true);
+                  if (_alreadyParsed) setState(() => _forceReparse = true);
                   _saveAndParse();
                 },
                 borderRadius: BorderRadius.circular(3),
@@ -605,7 +660,7 @@ class JournalOverlayState extends State<JournalOverlay> {
                     borderRadius: BorderRadius.circular(3),
                   ),
                   child: Text(
-                    'Re-parse',
+                    _alreadyParsed ? 'Re-parse' : 'Parse',
                     style: TextStyle(color: KColors.textDim, fontSize: 10),
                   ),
                 ),
@@ -613,7 +668,7 @@ class JournalOverlayState extends State<JournalOverlay> {
             const SizedBox(width: 8),
             if (!widget.docked)
               Text(
-                'Cmd+Enter to save · Esc to close',
+                'Cmd+Enter save & parse · Cmd+S save only · Esc close',
                 style: TextStyle(color: KColors.textMuted, fontSize: 10),
               ),
           ],
@@ -644,6 +699,7 @@ class JournalOverlayState extends State<JournalOverlay> {
             persons: _persons,
             glossaryEntries: _glossaryEntries,
             onSave: _saveAndParse,
+            onSaveOnly: _saveOnly,
             onCreatePerson: _createPerson,
             onCreateGlossaryEntry: _createGlossaryEntry,
           ),

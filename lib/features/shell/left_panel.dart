@@ -857,7 +857,7 @@ class _RecentJournalSection extends StatelessWidget {
             final cleaned = title.replaceAll(RegExp(r'^#+\s*'), '').trim();
             return _PulseItem(
               label: cleaned.isEmpty ? 'Journal entry' : cleaned,
-              barColor: e.confirmedAt != null
+              barColor: e.parsed && e.confirmedAt != null
                   ? KColors.phosphor
                   : KColors.amber,
               trailing: Text(

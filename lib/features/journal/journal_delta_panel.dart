@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import '../../core/journal/journal_parser.dart';
 import '../../shared/theme/keel_colors.dart';
@@ -24,6 +25,12 @@ class _JournalDeltaPanelState extends State<JournalDeltaPanel> {
   int _activeIndex = 0;
   bool _editingActive = false;
   late FocusNode _focusNode;
+  final _scroll = ScrollController();
+  // One stable key per delta (not one key moved between items, which
+  // would carry an open edit form's state to the wrong item).
+  final Map<DetectedDelta, GlobalKey> _itemKeys = {};
+  GlobalKey _keyFor(DetectedDelta d) =>
+      _itemKeys.putIfAbsent(d, () => GlobalKey());
 
   @override
   void initState() {
@@ -37,17 +44,51 @@ class _JournalDeltaPanelState extends State<JournalDeltaPanel> {
   @override
   void dispose() {
     _focusNode.dispose();
+    _scroll.dispose();
     super.dispose();
+  }
+
+  /// After the active item changes, scrolls just enough to show it: the
+  /// next change below the fold slides up into view as the bottom one is
+  /// actioned, and stepping back up reveals items above. An item taller
+  /// than the pane shows from its top.
+  void _revealActive() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scroll.hasClients) return;
+      final pending = _pending;
+      if (pending.isEmpty) return;
+      final active = pending[_activeIndex.clamp(0, pending.length - 1)];
+      final box = _itemKeys[active]?.currentContext?.findRenderObject();
+      if (box == null || !box.attached) return;
+      final target = revealOffset(
+        current: _scroll.position.pixels,
+        alignTop: RenderAbstractViewport.of(
+          box,
+        ).getOffsetToReveal(box, 0).offset,
+        alignBottom: RenderAbstractViewport.of(
+          box,
+        ).getOffsetToReveal(box, 1).offset,
+      );
+      if (target == null) return;
+      final pos = _scroll.position;
+      _scroll.animateTo(
+        target.clamp(pos.minScrollExtent, pos.maxScrollExtent),
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+      );
+    });
   }
 
   List<DetectedDelta> get _pending =>
       widget.deltas.where((d) => !d.confirmed && !d.ignored).toList();
 
-  /// Returns keyboard focus to the panel after editing ends.
+  /// Returns keyboard focus to the panel after editing ends, and keeps
+  /// the (possibly new) active item on screen.
   void _reclaimFocus() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _focusNode.requestFocus();
     });
+    _revealActive();
   }
 
   void _confirmActive() {
@@ -153,6 +194,7 @@ class _JournalDeltaPanelState extends State<JournalDeltaPanel> {
     if (event.logicalKey == LogicalKeyboardKey.keyE) {
       if (_pending.isNotEmpty) {
         setState(() => _editingActive = true);
+        _revealActive(); // the edit form makes the item taller
         return KeyEventResult.handled;
       }
     }
@@ -252,23 +294,33 @@ class _JournalDeltaPanelState extends State<JournalDeltaPanel> {
               )
             else
               Expanded(
-                child: ListView(
+                // Not a lazy ListView: every item must be laid out so the
+                // active one can be scrolled to, however far below.
+                child: SingleChildScrollView(
+                  controller: _scroll,
                   padding: const EdgeInsets.all(12),
-                  children: allDeltas.asMap().entries.map((e) {
-                    final pending = _pending;
-                    final pendingIdx = pending.indexOf(e.value);
-                    final isActive = pendingIdx == _activeIndex;
-                    return JournalDeltaItemWidget(
-                      delta: e.value,
-                      isActive: isActive,
-                      isEditing: isActive && _editingActive,
-                      onConfirm: _confirmActive,
-                      onIgnore: _ignoreActive,
-                      onEdit: () => setState(() => _editingActive = true),
-                      onCancelEdit: _cancelEdit,
-                      onReopen: () => _reopen(e.value),
-                    );
-                  }).toList(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: allDeltas.asMap().entries.map((e) {
+                      final pending = _pending;
+                      final pendingIdx = pending.indexOf(e.value);
+                      final isActive = pendingIdx == _activeIndex;
+                      return JournalDeltaItemWidget(
+                        key: _keyFor(e.value),
+                        delta: e.value,
+                        isActive: isActive,
+                        isEditing: isActive && _editingActive,
+                        onConfirm: _confirmActive,
+                        onIgnore: _ignoreActive,
+                        onEdit: () {
+                          setState(() => _editingActive = true);
+                          _revealActive();
+                        },
+                        onCancelEdit: _cancelEdit,
+                        onReopen: () => _reopen(e.value),
+                      );
+                    }).toList(),
+                  ),
                 ),
               ),
 
@@ -383,4 +435,22 @@ class _KeyHintRow extends StatelessWidget {
     }
     return Row(children: widgets);
   }
+}
+
+/// Where to scroll so an item is fully visible, or null if it already is.
+/// [alignTop] / [alignBottom] are the offsets that put the item's top at
+/// the viewport top / its bottom at the viewport bottom. Pure.
+@visibleForTesting
+double? revealOffset({
+  required double current,
+  required double alignTop,
+  required double alignBottom,
+}) {
+  if (current > alignTop) return alignTop; // above the fold: show its top
+  if (current < alignBottom) {
+    // Below: bring its bottom up — unless it's taller than the pane, in
+    // which case show its top.
+    return alignBottom < alignTop ? alignBottom : alignTop;
+  }
+  return null;
 }

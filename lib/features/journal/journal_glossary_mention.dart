@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/database/database.dart';
 import '../../shared/theme/keel_colors.dart';
+import 'menu_scroll_list.dart';
 
 List<GlossaryEntry> filteredGlossaryEntries(
   List<GlossaryEntry> entries,
@@ -84,9 +85,8 @@ class JournalGlossaryMention extends StatelessWidget {
           ),
           Divider(color: KColors.border, height: 1),
           Flexible(
-            child: ListView(
-              shrinkWrap: true,
-              padding: EdgeInsets.zero,
+            child: MenuScrollList(
+              selectedIndex: sel,
               children: [
                 ...items.asMap().entries.map((e) {
                   final i = e.key;

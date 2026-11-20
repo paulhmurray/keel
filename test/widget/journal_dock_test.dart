@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -119,5 +120,68 @@ void main() {
     expect(key.currentState!.hasUnsavedChanges, isFalse);
     await tester.enterText(find.byType(TextField).last, 'edited body');
     expect(key.currentState!.hasUnsavedChanges, isTrue);
+  });
+
+  group('save without parsing', () {
+    Future<void> ctrl(WidgetTester tester, LogicalKeyboardKey key) async {
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyEvent(key);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('Ctrl+S records the entry unparsed; Parse later picks it up',
+        (tester) async {
+      await pumpDock(tester, onClose: () {});
+      await tester.enterText(find.byType(TextField).last,
+          'Action: Sam to send the vendor contract by Friday.');
+      await ctrl(tester, LogicalKeyboardKey.keyS);
+
+      // Saved, not parsed, no review shown.
+      var entry =
+          (await db.journalDao.getEntriesForProject(_projectId)).single;
+      expect(entry.parsed, isFalse);
+      expect(entry.lastParsedBody, isNull);
+      expect(find.text('Cmd+Enter: Confirm All'), findsNothing);
+      expect(find.text('Parse'), findsOneWidget);
+      expect(find.text('Re-parse'), findsNothing);
+
+      // Parse it now from the header.
+      await tester.tap(find.text('Parse'));
+      await tester.pumpAndSettle();
+      if (find.text('Cmd+Enter: Confirm All').evaluate().isNotEmpty) {
+        await ctrl(tester, LogicalKeyboardKey.enter);
+      }
+      entry = (await db.journalDao.getEntriesForProject(_projectId)).single;
+      expect(entry.parsed, isTrue);
+      expect(find.text('Re-parse'), findsOneWidget);
+    });
+
+    testWidgets(
+        'new text saved without parsing on a parsed entry marks it '
+        'unparsed but keeps the old baseline for an incremental parse',
+        (tester) async {
+      await db.journalDao.upsertEntry(JournalEntriesCompanion.insert(
+        id: 'e1',
+        projectId: _projectId,
+        body: 'first note',
+        entryDate: '2026-11-19',
+        parsed: const Value(true),
+        lastParsedBody: const Value('first note'),
+        confirmedAt: Value(DateTime(2026, 11, 19)),
+      ));
+      final saved = await db.journalDao.getEntryById('e1');
+      await pumpDock(tester, onClose: () {}, entry: saved);
+
+      await tester.enterText(
+          find.byType(TextField).last, 'first note\nsecond thought');
+      await ctrl(tester, LogicalKeyboardKey.keyS);
+
+      final entry = (await db.journalDao.getEntryById('e1'))!;
+      expect(entry.body, 'first note\nsecond thought');
+      expect(entry.parsed, isFalse);
+      expect(entry.lastParsedBody, 'first note');
+      expect(find.text('Parse'), findsOneWidget);
+    });
   });
 }

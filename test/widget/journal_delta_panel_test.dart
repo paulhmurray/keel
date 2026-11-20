@@ -136,4 +136,83 @@ void main() {
     expect(find.text('Attach design doc to JIRA-123'), findsOneWidget);
     expect(find.text('Link doc to ticket'), findsNothing);
   });
+
+  group('auto-scroll', () {
+    Future<ScrollPosition> pumpShort(
+        WidgetTester tester, List<DetectedDelta> deltas) async {
+      tester.view.physicalSize = const Size(800, 420);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await _pumpPanel(tester, deltas);
+      return tester
+          .state<ScrollableState>(find.byType(Scrollable).first)
+          .position;
+    }
+
+    bool fullyVisible(WidgetTester tester, String title) {
+      final item = tester.getRect(find.text(title));
+      final pane =
+          tester.getRect(find.byType(SingleChildScrollView).first);
+      return item.top >= pane.top - 0.5 && item.bottom <= pane.bottom + 0.5;
+    }
+
+    testWidgets(
+        'actioning items with Y/N keeps the next pending change in view',
+        (tester) async {
+      final deltas = [
+        for (var i = 0; i < 10; i++) _delta('d$i', title: 'Change $i'),
+      ];
+      final pos = await pumpShort(tester, deltas);
+      expect(pos.maxScrollExtent, greaterThan(0),
+          reason: 'needs more changes than fit');
+
+      for (var i = 0; i < 9; i++) {
+        await tester.sendKeyEvent(
+            i.isEven ? LogicalKeyboardKey.keyY : LogicalKeyboardKey.keyN);
+        await tester.pumpAndSettle();
+        expect(fullyVisible(tester, 'Change ${i + 1}'), isTrue,
+            reason: 'after actioning Change $i');
+      }
+      expect(pos.pixels, greaterThan(0));
+    });
+
+    testWidgets('Tab and Shift+Tab scroll to the item they land on',
+        (tester) async {
+      final deltas = [
+        for (var i = 0; i < 10; i++) _delta('d$i', title: 'Change $i'),
+      ];
+      final pos = await pumpShort(tester, deltas);
+      for (var i = 0; i < 9; i++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.pumpAndSettle();
+      }
+      expect(fullyVisible(tester, 'Change 9'), isTrue);
+      final bottom = pos.pixels;
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      for (var i = 0; i < 9; i++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.pumpAndSettle();
+      }
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      expect(fullyVisible(tester, 'Change 0'), isTrue);
+      expect(pos.pixels, lessThan(bottom));
+    });
+  });
+
+  group('revealOffset', () {
+    test('already visible: no scroll', () {
+      expect(revealOffset(current: 100, alignTop: 150, alignBottom: 50),
+          isNull);
+    });
+    test('below the fold: bring its bottom up', () {
+      expect(revealOffset(current: 0, alignTop: 400, alignBottom: 120), 120);
+    });
+    test('above: show its top', () {
+      expect(revealOffset(current: 500, alignTop: 300, alignBottom: 0), 300);
+    });
+    test('taller than the pane: show its top, not its bottom', () {
+      expect(revealOffset(current: 0, alignTop: 400, alignBottom: 600), 400);
+    });
+  });
 }

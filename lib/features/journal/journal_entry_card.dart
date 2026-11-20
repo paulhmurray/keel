@@ -21,6 +21,10 @@ class JournalEntryCard extends StatelessWidget {
     this.seriesName,
   });
 
+  /// Parsed and reviewed, with no text added since. An entry saved
+  /// without parsing (or with new unparsed text) reads "Not parsed".
+  bool get _isParsed => entry.parsed && entry.confirmedAt != null;
+
   @override
   Widget build(BuildContext context) {
     final title = entry.title?.isNotEmpty == true
@@ -44,9 +48,7 @@ class JournalEntryCard extends StatelessWidget {
               Container(
                 width: 2,
                 height: 56,
-                color: entry.confirmedAt != null
-                    ? KColors.phosphor
-                    : KColors.amber,
+                color: _isParsed ? KColors.phosphor : KColors.amber,
                 margin: const EdgeInsets.only(right: 12),
               ),
               Expanded(
@@ -172,7 +174,7 @@ class JournalEntryCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        if (entry.confirmedAt != null) ...[
+                        if (_isParsed) ...[
                           Icon(
                             Icons.check_circle_outline,
                             size: 10,
@@ -199,7 +201,7 @@ class JournalEntryCard extends StatelessWidget {
                           const SizedBox(width: 3),
                           Flexible(
                             child: Text(
-                              'Draft',
+                              'Not parsed',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(

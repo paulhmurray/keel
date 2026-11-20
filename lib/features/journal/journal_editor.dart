@@ -52,6 +52,9 @@ class JournalEditor extends StatefulWidget {
   final String entryDate;
   final List<Person> persons;
   final VoidCallback onSave;
+
+  /// Saves without parsing (Cmd/Ctrl+S). Null hides the option.
+  final VoidCallback? onSaveOnly;
   final bool saving;
   final bool vimMode;
   final String vimEscapeSequence;
@@ -67,6 +70,7 @@ class JournalEditor extends StatefulWidget {
     required this.entryDate,
     required this.persons,
     required this.onSave,
+    this.onSaveOnly,
     this.saving = false,
     this.vimMode = false,
     this.vimEscapeSequence = '',
@@ -702,6 +706,14 @@ class _JournalEditorState extends State<JournalEditor> {
       return KeyEventResult.handled;
     }
 
+    // Ctrl+S → save without parsing
+    if (isMetaOrCtrl &&
+        event.logicalKey == LogicalKeyboardKey.keyS &&
+        widget.onSaveOnly != null) {
+      widget.onSaveOnly!();
+      return KeyEventResult.handled;
+    }
+
     // Ctrl+r → redo (vim normal mode only)
     if (widget.vimMode &&
         _vimKind == _VimKind.normal &&
@@ -1112,11 +1124,14 @@ class _JournalEditorState extends State<JournalEditor> {
                   Positioned(
                     top: 40,
                     left: 0,
-                    child: JournalSlashMenu(
-                      query: _slashQuery,
-                      selectedIndex: _slashSelectedIndex,
-                      onSelect: _insertSlashTemplate,
-                      onDismiss: () => setState(() => _showSlashMenu = false),
+                    bottom: 8,
+                    child: _menuFit(
+                      JournalSlashMenu(
+                        query: _slashQuery,
+                        selectedIndex: _slashSelectedIndex,
+                        onSelect: _insertSlashTemplate,
+                        onDismiss: () => setState(() => _showSlashMenu = false),
+                      ),
                     ),
                   ),
 
@@ -1124,14 +1139,17 @@ class _JournalEditorState extends State<JournalEditor> {
                   Positioned(
                     top: 40,
                     left: 0,
-                    child: JournalPersonMention(
-                      persons: widget.persons,
-                      query: _mentionQuery,
-                      selectedIndex: _mentionSelectedIndex,
-                      onSelect: _insertMention,
-                      onAddNew: widget.onCreatePerson != null
-                          ? _handleAddPerson
-                          : null,
+                    bottom: 8,
+                    child: _menuFit(
+                      JournalPersonMention(
+                        persons: widget.persons,
+                        query: _mentionQuery,
+                        selectedIndex: _mentionSelectedIndex,
+                        onSelect: _insertMention,
+                        onAddNew: widget.onCreatePerson != null
+                            ? _handleAddPerson
+                            : null,
+                      ),
                     ),
                   ),
 
@@ -1139,14 +1157,17 @@ class _JournalEditorState extends State<JournalEditor> {
                   Positioned(
                     top: 40,
                     left: 0,
-                    child: JournalGlossaryMention(
-                      entries: widget.glossaryEntries,
-                      query: _glossaryQuery,
-                      selectedIndex: _glossarySelectedIndex,
-                      onSelect: _insertGlossaryLink,
-                      onAddNew: widget.onCreateGlossaryEntry != null
-                          ? _handleAddGlossaryEntry
-                          : null,
+                    bottom: 8,
+                    child: _menuFit(
+                      JournalGlossaryMention(
+                        entries: widget.glossaryEntries,
+                        query: _glossaryQuery,
+                        selectedIndex: _glossarySelectedIndex,
+                        onSelect: _insertGlossaryLink,
+                        onAddNew: widget.onCreateGlossaryEntry != null
+                            ? _handleAddGlossaryEntry
+                            : null,
+                      ),
                     ),
                   ),
               ],
@@ -1168,6 +1189,8 @@ class _JournalEditorState extends State<JournalEditor> {
                           runSpacing: 4,
                           children: [
                             _buildHint('⌘↵', 'Save & parse'),
+                            if (widget.onSaveOnly != null)
+                              _buildHint('⌘S', 'Save only'),
                             _buildHint('/', 'Commands'),
                             _buildHint('@', 'Person'),
                             _buildHint('#', 'Glossary'),
@@ -1200,6 +1223,14 @@ class _JournalEditorState extends State<JournalEditor> {
       ),
     );
   }
+
+  /// Pop-up menus sit in a Positioned bounded by the editor's bottom
+  /// edge; aligning top-left lets each menu keep its own max height but
+  /// shrink (and scroll) when the editor is shorter, instead of running
+  /// off the bottom where its last rows can't be seen or reached. Taps
+  /// outside the menu still reach the text field.
+  Widget _menuFit(Widget menu) =>
+      Align(alignment: Alignment.topLeft, child: menu);
 
   Widget _buildHint(String keyLabel, String label) {
     return Row(

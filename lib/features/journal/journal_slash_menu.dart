@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../shared/theme/keel_colors.dart';
+import 'menu_scroll_list.dart';
 
 class SlashCommand {
   final String command;
@@ -153,19 +154,23 @@ class JournalSlashMenu extends StatelessWidget {
                     letterSpacing: 0.08,
                   ),
                 ),
-                const Spacer(),
-                Text(
-                  '↑↓ navigate  ↵ select  Esc dismiss',
-                  style: TextStyle(color: KColors.textMuted, fontSize: 9),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '↑↓ navigate  ↵ select  Esc dismiss',
+                    textAlign: TextAlign.right,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: KColors.textMuted, fontSize: 9),
+                  ),
                 ),
               ],
             ),
           ),
           Divider(color: KColors.border, height: 1),
           Flexible(
-            child: ListView(
-              shrinkWrap: true,
-              padding: EdgeInsets.zero,
+            child: MenuScrollList(
+              selectedIndex: sel,
               children: items.asMap().entries.map((e) {
                 final i = e.key;
                 final cmd = e.value;
