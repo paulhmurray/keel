@@ -185,7 +185,10 @@ List<PlanFinding> checkPlan({
 
 // ─── AI review ───────────────────────────────────────────────────────────
 
-enum SuggestionKind { reorder, missing, point }
+/// reorder: add an arrow. missing / point: add a row. retype: an
+/// existing row already plays the milestone or gate the model asked
+/// for — mark it as one instead of adding a twin (afterId = that row).
+enum SuggestionKind { reorder, missing, point, retype }
 
 /// One thing the model would change, validated against real ids.
 class PlanSuggestion {
@@ -217,7 +220,8 @@ class PlanSuggestion {
     this.type = 'activity',
   });
 
-  bool get createsRow => kind != SuggestionKind.reorder;
+  bool get createsRow =>
+      kind == SuggestionKind.missing || kind == SuggestionKind.point;
 }
 
 class PlanReviewPrompt {
@@ -236,6 +240,9 @@ const String _kPersona =
     'and what it depends on. Judge three things: whether the order of '
     'the work is sensible for this kind of delivery; which commonly '
     'needed steps are absent; where a milestone or gate is missing. '
+    'Never suggest a row the plan already has under the same or a '
+    'similar name — if that row should be a milestone or gate, suggest '
+    'it as a point with the existing name. '
     'Be specific and sparing — at most $kPlanReviewMaxSuggestions suggestions, the ones that '
     'matter. Use only the ids listed; never invent ids. Answer ONLY with '
     'a single JSON object and nothing else.';
@@ -306,12 +313,20 @@ PlanReviewPrompt planReviewPrompt({
 
 /// Parses and validates the model's suggestions. Unknown ids drop the
 /// suggestion; a reorder that already has an arrow is dropped too.
+///
+/// A new row is never offered twice: not when the plan already holds a
+/// row of the same or a near-identical name ([existing], tasks
+/// included), and not twice in one reply. A milestone or gate asked for
+/// where that row exists as a plain activity in the same package
+/// becomes a [SuggestionKind.retype] of that row instead.
 List<PlanSuggestion> parsePlanSuggestions(
   String raw, {
   required Set<String> activityIds,
   required Set<String> workPackageIds,
   required List<TimelineDependency> dependencies,
+  List<TimelineActivity> existing = const [],
 }) {
+  final offered = <String>[]; // names of rows this reply already adds
   final obj = firstJsonObject(raw);
   final list = obj?['suggestions'];
   if (list is! List) return const [];
@@ -341,6 +356,29 @@ List<PlanSuggestion> parsePlanSuggestions(
         final type = kind == 'point'
             ? ('${e['type'] ?? 'milestone'}' == 'gate' ? 'gate' : 'milestone')
             : 'activity';
+        if (offered.any((n) => similarRowNames(n, name))) continue;
+        final twin = findSimilarRow(name, existing, workPackageId: wp);
+        if (twin != null) {
+          // Already there. Only worth a card when the model wants an end
+          // point and the twin isn't one yet.
+          if (kind == 'point' &&
+              twin.workPackageId == wp &&
+              twin.parentActivityId == null &&
+              !_kPoints.contains(twin.activityType)) {
+            offered.add(name);
+            out.add(PlanSuggestion(
+              kind: SuggestionKind.retype,
+              message: message,
+              afterId: twin.id,
+              workPackageId: wp,
+              name: twin.name,
+              type: type,
+            ));
+            if (out.length == kPlanReviewMaxSuggestions) break;
+          }
+          continue;
+        }
+        offered.add(name);
         out.add(PlanSuggestion(
           kind: kind == 'point' ? SuggestionKind.point : SuggestionKind.missing,
           message: message,
@@ -366,4 +404,56 @@ int? suggestedMonth(PlanSuggestion s, Map<String, TimelineActivity> byId) {
   final before = s.beforeId != null ? byId[s.beforeId!] : null;
   if (before?.startMonth != null) return before!.startMonth;
   return null;
+}
+
+// ─── Duplicate rows ──────────────────────────────────────────────────────
+
+const _kNameStopWords = {
+  'a', 'an', 'and', 'the', 'of', 'for', 'to', 'in', 'on', 'by', 'with',
+  'is', 'are', 'be', '&',
+};
+
+/// Words of a row name, for duplicate checks: lower-cased, punctuation
+/// and filler words dropped, simple plurals and past tenses folded
+/// ("Integrations completed" ~ "integration complete").
+Set<String> rowNameWords(String name) => {
+      for (final w in name.toLowerCase().split(RegExp(r'[^a-z0-9]+')))
+        if (w.isNotEmpty && !_kNameStopWords.contains(w)) _fold(w),
+    };
+
+String _fold(String w) {
+  if (w.length > 4 && w.endsWith('ed')) return w.substring(0, w.length - 1);
+  if (w.length > 3 && w.endsWith('s') && !w.endsWith('ss')) {
+    return w.substring(0, w.length - 1);
+  }
+  return w;
+}
+
+/// Same row by name? Identical word sets always are; otherwise at least
+/// three-quarters overlap across names of three or more words.
+bool similarRowNames(String a, String b) {
+  final x = rowNameWords(a), y = rowNameWords(b);
+  if (x.isEmpty || y.isEmpty) return false;
+  if (x.length == y.length && x.containsAll(y)) return true;
+  final union = x.union(y).length;
+  if (union < 3) return false;
+  return x.intersection(y).length / union >= 0.75;
+}
+
+/// The existing row [name] duplicates, preferring one in [workPackageId]
+/// and, among those, a milestone or gate. Null when there is none.
+TimelineActivity? findSimilarRow(
+  String name,
+  Iterable<TimelineActivity> rows, {
+  String? workPackageId,
+}) {
+  final hits = rows
+      .where((a) => a.sourceProjectId == null && similarRowNames(a.name, name))
+      .toList();
+  if (hits.isEmpty) return null;
+  int rank(TimelineActivity a) =>
+      (a.workPackageId == workPackageId ? 0 : 2) +
+      (_kPoints.contains(a.activityType) ? 0 : 1);
+  hits.sort((a, b) => rank(a).compareTo(rank(b)));
+  return hits.first;
 }

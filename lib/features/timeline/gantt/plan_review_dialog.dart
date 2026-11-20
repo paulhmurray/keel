@@ -8,10 +8,10 @@ import '../../../core/llm/context_builder.dart';
 import '../../../core/llm/llm_client.dart';
 import '../../../core/llm/llm_client_factory.dart';
 import '../../../core/plan/plan_review.dart';
-import '../../../core/plan/plan_note_markers.dart';
 import '../../../core/plan/replan.dart' show replanMonthLabel;
 import '../../../providers/settings_provider.dart';
 import '../../../shared/theme/keel_colors.dart';
+import '../../../core/plan/plan_note_markers.dart';
 
 /// "Review my plan": the graph checks as a list, then, with AI, one
 /// card per suggestion. Accepting a reorder adds the arrow (Re-plan then
@@ -119,6 +119,7 @@ class _PlanReviewDialogState extends State<PlanReviewDialog> {
         activityIds: ids,
         workPackageIds: _wps.map((w) => w.id).toSet(),
         dependencies: _deps,
+        existing: _acts,
       );
       if (!mounted) return;
       setState(() {
@@ -195,7 +196,27 @@ class _PlanReviewDialogState extends State<PlanReviewDialog> {
       ];
     }
 
-    if (s.kind == SuggestionKind.reorder) {
+    if (s.kind == SuggestionKind.retype) {
+      // The row exists as a plain activity; make it the end point it was
+      // meant to be. A milestone is one point in time: its finish.
+      final row = _byId[s.afterId!];
+      if (row != null) {
+        final end = row.endMonth ?? row.startMonth;
+        final endDate = row.endDate ?? row.startDate;
+        await dao.patchActivity(
+          row.id,
+          TimelineActivitiesCompanion(
+            activityType: Value(s.type),
+            startMonth: Value(end),
+            endMonth: Value(end),
+            startDate: Value(endDate),
+            endDate: Value(endDate),
+            updatedAt: Value(now),
+          ),
+        );
+        _acts = await dao.getActivitiesForProject(pid);
+      }
+    } else if (s.kind == SuggestionKind.reorder) {
       // An arrow already pointing the other way is the usual reason the
       // order was flagged; keeping both would make a cycle.
       final reversed = _deps
@@ -329,6 +350,8 @@ class _PlanReviewDialogState extends State<PlanReviewDialog> {
                   ? 'Add the arrow'
                   : _current.kind == SuggestionKind.point
                   ? 'Add the ${_current.type}'
+                  : _current.kind == SuggestionKind.retype
+                  ? 'Make it a ${_current.type}'
                   : 'Add the activity',
             ),
           ),
@@ -461,6 +484,7 @@ class _PlanReviewDialogState extends State<PlanReviewDialog> {
       SuggestionKind.reorder => ('ORDER', KColors.amber),
       SuggestionKind.missing => ('MISSING STEP', KColors.blue),
       SuggestionKind.point => ('MILESTONE', KColors.phosphor),
+      SuggestionKind.retype => ('MILESTONE', KColors.phosphor),
     };
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -517,6 +541,18 @@ class _PlanReviewDialogState extends State<PlanReviewDialog> {
                   '${_deps.any((d) => d.fromActivityId == s.beforeId && d.toActivityId == s.afterId) ? ', replacing the arrow that currently points the other way' : ''}. '
                   'Dates do not change now; Re-plan will push '
                   '${before?.name ?? 'it'} if the arrow is violated.',
+                  style: TextStyle(
+                    color: KColors.textDim,
+                    fontSize: 12,
+                    height: 1.4,
+                  ),
+                )
+              else if (s.kind == SuggestionKind.retype)
+                Text(
+                  '"${s.name}" is already in ${wp?.name ?? 'the work package'} '
+                  'as an activity. Marks it as a ${s.type} at its finish'
+                  '${after?.endMonth != null && _month0 != null ? ' (${replanMonthLabel(after!.endMonth!, _month0!)})' : ''}'
+                  ' instead of adding a second row.',
                   style: TextStyle(
                     color: KColors.textDim,
                     fontSize: 12,

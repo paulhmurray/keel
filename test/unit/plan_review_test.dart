@@ -171,4 +171,82 @@ void main() {
           isNull);
     });
   });
+
+  group('duplicate rows', () {
+    test('names match despite case, punctuation, filler and tense', () {
+      expect(similarRowNames('People and capability enablement complete',
+          'People and Capability Enablement Complete'), isTrue);
+      expect(similarRowNames('Integration use-case discovery complete',
+          'Integration Use-Case Discovery Complete'), isTrue);
+      expect(similarRowNames('Integrations completed', 'Integration complete'),
+          isTrue);
+      expect(similarRowNames('BAU transition and operations readiness confirmed',
+          'BAU transition & operations readiness confirmed'), isTrue);
+    });
+
+    test('different work stays different', () {
+      expect(similarRowNames('Phase 1 complete', 'Phase 2 complete'), isFalse);
+      expect(similarRowNames('Release 1 go-live', 'Release 2 go-live'), isFalse);
+      expect(similarRowNames('SIT complete', 'UAT complete'), isFalse);
+      expect(similarRowNames('Security review',
+          'Security review and approval confirmed'), isFalse);
+      expect(similarRowNames('', 'Anything'), isFalse);
+    });
+
+    test('findSimilarRow prefers the same package, then an end point', () {
+      final rows = [
+        _act('o', 'Design complete', start: 1, wp: 'wp2', type: 'milestone'),
+        _act('a', 'Design complete', start: 1),
+        _act('m', 'Design Complete', start: 2, type: 'milestone'),
+        _act('x', 'Design complete', start: 1, source: 'other'),
+      ];
+      expect(findSimilarRow('design completed', rows, workPackageId: 'wp1')!.id,
+          'm');
+      expect(findSimilarRow('design completed', rows, workPackageId: 'wp2')!.id,
+          'o');
+      expect(findSimilarRow('Build complete', rows), isNull);
+    });
+
+    final existing = [
+      _act('a', 'Design', start: 1, end: 2),
+      _act('done', 'Build complete', start: 4, end: 5),
+      _act('t', 'Data migration dry run', start: 3, parent: 'a'),
+      _act('gl', 'Go-live', start: 6, wp: 'wp2', type: 'milestone'),
+    ];
+    List<PlanSuggestion> parse(String body) => parsePlanSuggestions(
+          '{"suggestions": [$body]}',
+          activityIds: existing.map((a) => a.id).toSet(),
+          workPackageIds: {'wp1', 'wp2'},
+          dependencies: const [],
+          existing: existing,
+        );
+
+    test('a row the plan already has is not offered again, tasks included',
+        () {
+      expect(parse('{"kind": "missing", "work_package_id": "wp1", '
+          '"name": "Data migration dry-run", "message": "m"}'), isEmpty);
+      expect(parse('{"kind": "point", "work_package_id": "wp1", '
+          '"name": "Go live", "type": "gate", "message": "m"}'), isEmpty,
+          reason: 'already a milestone in another package');
+    });
+
+    test('one reply never offers the same new row twice', () {
+      final s = parse('''
+        {"kind": "point", "work_package_id": "wp1", "name": "Go/no-go decision", "type": "gate", "message": "m"},
+        {"kind": "point", "work_package_id": "wp1", "name": "Go / no-go decision", "type": "gate", "message": "again"},
+        {"kind": "missing", "work_package_id": "wp1", "name": "go no go decisions", "message": "and again"}
+      ''');
+      expect(s.single.name, 'Go/no-go decision');
+    });
+
+    test('an activity standing in for a milestone becomes a retype card', () {
+      final s = parse('{"kind": "point", "work_package_id": "wp1", '
+          '"name": "Build Completed", "type": "milestone", "message": "End."}');
+      expect(s.single.kind, SuggestionKind.retype);
+      expect(s.single.afterId, 'done');
+      expect(s.single.name, 'Build complete');
+      expect(s.single.type, 'milestone');
+      expect(s.single.createsRow, isFalse);
+    });
+  });
 }

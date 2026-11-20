@@ -128,15 +128,53 @@ void main() {
     expect(gate.startMonth, 6);
     expect(deps.any((d) => d.fromActivityId == 'test' && d.toActivityId == gate.id), isTrue);
   });
+
+  testWidgets('never adds a row the plan already has; an activity standing '
+      'in for a milestone is marked as one instead', (tester) async {
+    // The WBS already ends in "Build complete", but as a plain activity
+    // spanning Nov–Dec — so "no milestone" fires and the model asks for
+    // one (twice, in different words), plus a step that already exists.
+    await db.programmeGanttDao.upsertActivity(const TimelineActivitiesCompanion(
+      id: Value('done'), workPackageId: Value('wp'), projectId: Value('p1'),
+      name: Value('Build complete'), startMonth: Value(5), endMonth: Value(6),
+      sortOrder: Value(9),
+    ));
+    await open(tester, client: _FakeClient('''
+      {"suggestions": [
+        {"kind": "point", "work_package_id": "wp", "name": "Build Completed", "type": "milestone", "after_id": "test", "message": "Mark the end of the build."},
+        {"kind": "point", "work_package_id": "wp", "name": "Build complete", "type": "milestone", "message": "Same again."},
+        {"kind": "missing", "work_package_id": "wp", "name": "Tests", "message": "Already there."}
+      ]}
+      '''));
+    await tester.tap(find.text('Ask AI to review the whole plan'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('1 of 1'), findsOneWidget, reason: 'duplicates dropped');
+    expect(find.textContaining('is already in Build as an activity'),
+        findsOneWidget);
+    await tester.tap(find.text('Make it a milestone'));
+    await tester.pumpAndSettle();
+    expect(find.text('1 of 1 applied.'), findsOneWidget);
+
+    final acts = await db.programmeGanttDao.getActivitiesForProject('p1');
+    expect(acts.length, 3, reason: 'no new rows');
+    final done = acts.firstWhere((a) => a.id == 'done');
+    expect(done.activityType, 'milestone');
+    expect((done.startMonth, done.endMonth), (6, 6), reason: 'at its finish');
+  });
 }
 
 class _FakeClient implements LLMClient {
+  final String? reply;
+  _FakeClient([this.reply]);
+
   @override
   Future<String> complete({
     required String systemPrompt,
     required String userMessage,
     int maxTokens = 1000,
   }) async =>
+      reply ??
       '''
       {"suggestions": [
         {"kind": "reorder", "first_id": "build", "then_id": "test", "message": "Testing follows building."},
