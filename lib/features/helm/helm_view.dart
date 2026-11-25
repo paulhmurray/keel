@@ -90,6 +90,7 @@ class _RailDrag {
   final String? projectId;
   final String? linkedActionId;
   final String? objectiveId;
+
   /// How long a block the drop makes. Null means one grid slot; a rock
   /// from the week plan carries its allocated length.
   final int? lengthMinutes;
@@ -634,12 +635,23 @@ class _HelmHeader extends StatelessWidget {
         border: Border(bottom: BorderSide(color: KColors.border)),
       ),
       // The centre pane can get narrow with both side panels open —
-      // shed the legend first, then the weekday, rather than overflow.
+      // shed the legend first, then the weekday, then the wordmark and the
+      // lens label, then shrink Today and the arrows, rather than overflow.
       child: LayoutBuilder(
         builder: (context, constraints) {
           final showLegend =
-              constraints.maxWidth >= 1040 && scale == HelmScale.day;
+              constraints.maxWidth >= 1240 && scale == HelmScale.day;
           final compactDate = constraints.maxWidth < 760;
+          final narrow = constraints.maxWidth < 880;
+          final tight = constraints.maxWidth < 540;
+          final arrowDensity = tight
+              ? VisualDensity.compact
+              : VisualDensity.standard;
+          final todayLabel = switch (scale) {
+            HelmScale.day => 'Today',
+            HelmScale.week => 'This week',
+            HelmScale.quarter => 'This quarter',
+          };
           final monday = mondayOf(date);
           final label = switch (scale) {
             HelmScale.quarter => quarterLabel(
@@ -656,16 +668,18 @@ class _HelmHeader extends StatelessWidget {
           };
           return Row(
             children: [
-              Text(
-                'HELM',
-                style: GoogleFonts.syne(
-                  color: KColors.amber,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.2,
+              if (!narrow) ...[
+                Text(
+                  'HELM',
+                  style: GoogleFonts.syne(
+                    color: KColors.amber,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.2,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
+                const SizedBox(width: 12),
+              ],
               for (final (s, chipLabel) in const [
                 (HelmScale.day, 'Day'),
                 (HelmScale.week, 'Week'),
@@ -678,8 +692,9 @@ class _HelmHeader extends StatelessWidget {
                 ),
                 const SizedBox(width: 4),
               ],
-              const SizedBox(width: 12),
+              SizedBox(width: tight ? 4 : 12),
               IconButton(
+                visualDensity: arrowDensity,
                 icon: Icon(
                   Icons.chevron_left,
                   size: 18,
@@ -705,6 +720,7 @@ class _HelmHeader extends StatelessWidget {
                 ),
               ),
               IconButton(
+                visualDensity: arrowDensity,
                 icon: Icon(
                   Icons.chevron_right,
                   size: 18,
@@ -718,16 +734,26 @@ class _HelmHeader extends StatelessWidget {
                 },
               ),
               if (!isCurrent)
-                TextButton(
-                  onPressed: onToday,
-                  child: Text(switch (scale) {
-                    HelmScale.day => 'Today',
-                    HelmScale.week => 'This week',
-                    HelmScale.quarter => 'This quarter',
-                  }, style: TextStyle(color: KColors.amber, fontSize: 12)),
-                ),
-              const SizedBox(width: 10),
-              const HelmLensChip(),
+                tight
+                    ? IconButton(
+                        visualDensity: VisualDensity.compact,
+                        icon: Icon(Icons.today, size: 16, color: KColors.amber),
+                        tooltip: todayLabel,
+                        onPressed: onToday,
+                      )
+                    : TextButton(
+                        onPressed: onToday,
+                        child: Text(
+                          todayLabel,
+                          style: TextStyle(color: KColors.amber, fontSize: 12),
+                        ),
+                      ),
+              SizedBox(width: tight ? 4 : 10),
+              // Icon-only keeps its size; the labelled chip ellipsizes.
+              if (narrow)
+                const HelmLensChip(compact: true)
+              else
+                const Flexible(child: HelmLensChip()),
               const Spacer(),
               if (onFocus != null)
                 Tooltip(
@@ -1642,7 +1668,10 @@ class _PlannedForDay extends StatelessWidget {
       revisionStarts: starts,
     );
     if (rocks.isEmpty) return const SizedBox.shrink();
-    final waiting = [for (final r in rocks) if (!r.onGrid) r];
+    final waiting = [
+      for (final r in rocks)
+        if (!r.onGrid) r,
+    ];
     return Container(
       margin: const EdgeInsets.fromLTRB(10, 10, 10, 4),
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
@@ -1678,10 +1707,8 @@ class _PlannedForDay extends StatelessWidget {
                       'Put every waiting rock on the grid, biggest first, '
                       'in the first free gaps',
                   child: InkWell(
-                    onTap: () => _place(
-                      [for (final r in waiting) r.objective],
-                      starts,
-                    ),
+                    onTap: () =>
+                        _place([for (final r in waiting) r.objective], starts),
                     borderRadius: BorderRadius.circular(3),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
@@ -1815,10 +1842,7 @@ class _PlannedForDay extends StatelessWidget {
   /// biggest first, never before the revision's own start — a rock
   /// placed mid-afternoon must not land in a morning that is already
   /// history.
-  Future<void> _place(
-    List<WeekPlanObjective> rocks,
-    List<int> starts,
-  ) async {
+  Future<void> _place(List<WeekPlanObjective> rocks, List<int> starts) async {
     final schedule = effectiveSchedule(blocks, starts);
     final revision = plan.currentRevision;
     final floor = revision == 0 || starts.length < revision
@@ -1854,6 +1878,7 @@ class _RailStrip extends StatelessWidget {
   final String label;
   final IconData icon;
   final VoidCallback onTap;
+
   /// Items waiting behind the fold (rocks not yet on the grid); zero hides it.
   final int badge;
 
@@ -2055,28 +2080,28 @@ class _PlanningRailState extends State<_PlanningRail> {
         .watchUnownedOpenRisksAllProjects()
         .map(through<HelmRiskItem>((i) => i.risk.projectId))
         .map(unparked);
-    _pendingDecisions = dao
-        .watchPendingDecisionsAllProjects()
-        .map(through<HelmDecisionItem>((i) => i.decision.projectId));
-    _allActions = dao
-        .watchOpenActionsAllProjects()
-        .map(through<HelmActionItem>((i) => i.action.projectId));
+    _pendingDecisions = dao.watchPendingDecisionsAllProjects().map(
+      through<HelmDecisionItem>((i) => i.decision.projectId),
+    );
+    _allActions = dao.watchOpenActionsAllProjects().map(
+      through<HelmActionItem>((i) => i.action.projectId),
+    );
     _allRisks = dao
         .watchOpenRisksAllProjects()
         .map(through<HelmRiskItem>((i) => i.risk.projectId))
         .map(unparked);
-    _allIssues = dao
-        .watchOpenIssuesAllProjects()
-        .map(through<HelmIssueItem>((i) => i.issue.projectId));
-    _allAssumptions = dao
-        .watchOpenAssumptionsAllProjects()
-        .map(through<HelmAssumptionItem>((i) => i.assumption.projectId));
-    _allDependencies = dao
-        .watchOpenDependenciesAllProjects()
-        .map(through<HelmDependencyItem>((i) => i.dependency.projectId));
-    _datedActivities = dao
-        .watchDatedActivitiesAllProjects()
-        .map(through<HelmActivityItem>((i) => i.activity.projectId));
+    _allIssues = dao.watchOpenIssuesAllProjects().map(
+      through<HelmIssueItem>((i) => i.issue.projectId),
+    );
+    _allAssumptions = dao.watchOpenAssumptionsAllProjects().map(
+      through<HelmAssumptionItem>((i) => i.assumption.projectId),
+    );
+    _allDependencies = dao.watchOpenDependenciesAllProjects().map(
+      through<HelmDependencyItem>((i) => i.dependency.projectId),
+    );
+    _datedActivities = dao.watchDatedActivitiesAllProjects().map(
+      through<HelmActivityItem>((i) => i.activity.projectId),
+    );
     _horizon = horizonStream(widget.date, [
       _allActions,
       _pendingDecisions,

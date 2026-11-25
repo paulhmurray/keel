@@ -11,14 +11,19 @@ import '../../shared/theme/keel_colors.dart';
 /// projects", one project by name, or "3 projects". Click to choose.
 /// Amber when a lens is set so a narrowed Helm is never mistaken for an
 /// empty one. The choice is local to this machine (see [HelmLens]).
+/// [compact] drops the label for a narrow header — the tooltip still
+/// names the lens, and the chip stays amber when narrowed.
 class HelmLensChip extends StatelessWidget {
-  const HelmLensChip({super.key});
+  final bool compact;
+  const HelmLensChip({super.key, this.compact = false});
 
   @override
   Widget build(BuildContext context) {
     final projects = context.watch<ProjectProvider>().projects;
     final settings = context.watch<SettingsProvider>();
-    final lens = settings.settings.helmLens.restrictedTo(projects.map((p) => p.id));
+    final lens = settings.settings.helmLens.restrictedTo(
+      projects.map((p) => p.id),
+    );
     final label = helmLensLabel(lens, {for (final p in projects) p.id: p.name});
     final narrowed = lens.active;
     final colour = narrowed ? KColors.amber : KColors.textDim;
@@ -43,27 +48,37 @@ class HelmLensChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 9),
           decoration: BoxDecoration(
             color: narrowed ? KColors.amberDim : KColors.surface2,
-            border: Border.all(color: narrowed ? KColors.amber : KColors.border2),
+            border: Border.all(
+              color: narrowed ? KColors.amber : KColors.border2,
+            ),
             borderRadius: BorderRadius.circular(3),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(Icons.filter_alt_outlined, size: 12, color: colour),
-              const SizedBox(width: 5),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 180),
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: colour,
-                    fontSize: 11,
-                    fontWeight: narrowed ? FontWeight.w600 : FontWeight.w400,
+              if (!compact) ...[
+                const SizedBox(width: 5),
+                // Flexible: in a tight header the label ellipsizes rather
+                // than pushing the row past its edge.
+                Flexible(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 180),
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: colour,
+                        fontSize: 11,
+                        fontWeight: narrowed
+                            ? FontWeight.w600
+                            : FontWeight.w400,
+                      ),
+                    ),
                   ),
                 ),
-              ),
+              ],
               const SizedBox(width: 3),
               Icon(Icons.arrow_drop_down, size: 14, color: colour),
             ],
@@ -91,21 +106,28 @@ class _HelmLensDialogState extends State<HelmLensDialog> {
 
   static const _kindOrder = ['portfolio', 'programme', 'project'];
   static String _kindLabel(String kind) => switch (kind) {
-        'portfolio' => 'Portfolio',
-        'programme' => 'Programme',
-        _ => 'Project',
-      };
+    'portfolio' => 'Portfolio',
+    'programme' => 'Programme',
+    _ => 'Project',
+  };
 
   @override
   Widget build(BuildContext context) {
-    final sorted = [...widget.projects]..sort((a, b) {
-        final k = _kindOrder.indexOf(a.kind).compareTo(_kindOrder.indexOf(b.kind));
-        return k != 0 ? k : a.name.toLowerCase().compareTo(b.name.toLowerCase());
+    final sorted = [...widget.projects]
+      ..sort((a, b) {
+        final k = _kindOrder
+            .indexOf(a.kind)
+            .compareTo(_kindOrder.indexOf(b.kind));
+        return k != 0
+            ? k
+            : a.name.toLowerCase().compareTo(b.name.toLowerCase());
       });
     return AlertDialog(
       backgroundColor: KColors.surface,
-      title: Text('What Helm plans around',
-          style: TextStyle(color: KColors.text, fontSize: 15)),
+      title: Text(
+        'What Helm plans around',
+        style: TextStyle(color: KColors.text, fontSize: 15),
+      ),
       content: SizedBox(
         width: 420,
         child: Column(
@@ -123,8 +145,10 @@ class _HelmLensDialogState extends State<HelmLensDialog> {
               dense: true,
               contentPadding: EdgeInsets.zero,
               activeThumbColor: KColors.amber,
-              title: Text('All projects',
-                  style: TextStyle(color: KColors.text, fontSize: 13)),
+              title: Text(
+                'All projects',
+                style: TextStyle(color: KColors.text, fontSize: 13),
+              ),
               value: _all,
               onChanged: (v) => setState(() => _all = v),
             ),
@@ -149,7 +173,10 @@ class _HelmLensDialogState extends State<HelmLensDialog> {
                       ),
                       secondary: Text(
                         _kindLabel(p.kind),
-                        style: TextStyle(color: KColors.textMuted, fontSize: 11),
+                        style: TextStyle(
+                          color: KColors.textMuted,
+                          fontSize: 11,
+                        ),
                       ),
                       value: _picked.contains(p.id),
                       onChanged: (v) => setState(() {
@@ -179,9 +206,9 @@ class _HelmLensDialogState extends State<HelmLensDialog> {
           child: const Text('Cancel'),
         ),
         FilledButton(
-          onPressed: () => Navigator.of(context).pop(
-            HelmLens(projectIds: _picked, on: !_all && _picked.isNotEmpty),
-          ),
+          onPressed: () => Navigator.of(
+            context,
+          ).pop(HelmLens(projectIds: _picked, on: !_all && _picked.isNotEmpty)),
           child: const Text('Done'),
         ),
       ],
