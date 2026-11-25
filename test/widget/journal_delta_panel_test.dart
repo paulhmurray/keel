@@ -17,6 +17,7 @@ Future<void> _pumpPanel(
   WidgetTester tester,
   List<DetectedDelta> deltas, {
   VoidCallback? onConfirmAll,
+  String? notice,
 }) async {
   await tester.pumpWidget(MaterialApp(
     home: Scaffold(
@@ -24,6 +25,7 @@ Future<void> _pumpPanel(
         deltas: deltas,
         onConfirmAll: onConfirmAll ?? () {},
         onDismiss: () {},
+        notice: notice,
       ),
     ),
   ));
@@ -31,6 +33,16 @@ Future<void> _pumpPanel(
 }
 
 void main() {
+  testWidgets('an AI-fallback notice is shown, and absent by default',
+      (tester) async {
+    await _pumpPanel(tester, [_delta('d1')]);
+    expect(find.byIcon(Icons.info_outline), findsNothing);
+
+    await _pumpPanel(tester, [_delta('d1')],
+        notice: 'AI parse failed: no models');
+    expect(find.text('AI parse failed: no models'), findsOneWidget);
+  });
+
   testWidgets(
       'typing letters (incl. y/n/e) into an edit field does not confirm '
       'or ignore the item', (tester) async {

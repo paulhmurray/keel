@@ -93,6 +93,8 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
 
   // Model download
   final List<String> _pullLog = [];
+  // Models in ~/.ollama that the running (system) server can't see.
+  List<String> _strandedModels = const [];
   double _pullProgress = 0; // 0–1
   String _pullStatus = '';
   bool _pullFailed = false;
@@ -256,6 +258,11 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
     _ollamaRunning = await OllamaClient.isRunning(_baseUrl);
     if (_ollamaRunning) {
       _installedModels = await OllamaClient.getAvailableModels(_baseUrl);
+      // A running server with nothing installed, while the user's own
+      // store has models: a system service has taken the port.
+      _strandedModels = _installedModels.isEmpty
+          ? OllamaClient.modelsInStore(OllamaClient.userModelStore())
+          : const [];
     }
     if (mounted) setState(() => _step = _WizardStep.selectModel);
   }
@@ -888,6 +895,25 @@ class _OllamaWizardDialogState extends State<OllamaWizardDialog> {
               ],
             ),
           ),
+          if (_strandedModels.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: KColors.amberDim,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                'Already downloaded: ${_strandedModels.join(', ')} in '
+                '~/.ollama/models. The Ollama running now (a system service) '
+                'keeps its models in its own folder and can\'t see '
+                '${_strandedModels.length == 1 ? 'that copy' : 'those'}, so '
+                'download the model again below. Afterwards you can delete '
+                '~/.ollama/models to get the space back.',
+                style: TextStyle(color: KColors.amber, fontSize: 11),
+              ),
+            ),
+          ],
           const SizedBox(height: 20),
           Text(
             'Choose a model to download',

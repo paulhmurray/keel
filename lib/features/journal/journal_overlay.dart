@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
 import 'package:drift/drift.dart' show Value;
 import '../../core/database/database.dart';
+import '../../core/journal/journal_enrich.dart';
 import '../../core/journal/journal_incremental.dart';
+import '../../core/journal/journal_owner_resolver.dart';
 import '../../core/journal/journal_parser.dart';
 import '../../core/journal/journal_linker.dart';
 import '../../core/llm/llm_client.dart';
@@ -53,6 +55,8 @@ class JournalOverlayState extends State<JournalOverlay> {
   late TextEditingController _bodyCtrl;
   late FocusNode _bodyFocus;
   List<DetectedDelta> _deltas = [];
+  // Why the AI parse fell back to the keyword rules, for the review pane.
+  String? _parseNotice;
   List<Person> _persons = [];
   List<GlossaryEntry> _glossaryEntries = [];
   String? _savedEntryId;
@@ -326,9 +330,17 @@ class JournalOverlayState extends State<JournalOverlay> {
 
     // Incremental parse: a running note only re-parses text not covered
     // by the last parse. "Re-parse" forces the full body through again.
-    final textToParse = _forceReparse
+    // An entry whose last review was never confirmed (closed mid-review
+    // after a Re-parse) has nothing "new", yet Parse must still show it.
+    final incremental = unparsedText(
+      lastParsedBody: dbEntry?.lastParsedBody,
+      body: body,
+    );
+    final textToParse =
+        _forceReparse ||
+            (incremental.isEmpty && dbEntry != null && !dbEntry.parsed)
         ? body
-        : unparsedText(lastParsedBody: dbEntry?.lastParsedBody, body: body);
+        : incremental;
 
     // Nothing new to parse (e.g. whitespace-only edits to parsed text):
     // save the edits, keep the parsed state, and close without review.
@@ -378,7 +390,23 @@ class JournalOverlayState extends State<JournalOverlay> {
     }
 
     final parser = JournalParser(llmClient: llmClient);
-    final deltas = await parser.parse(textToParse);
+    final deltas = await parser.parse(
+      textToParse,
+      noteDate: DateTime.tryParse(_entryDate),
+    );
+    final aiFailure = parser.aiFallbackReason;
+
+    // Complete what the note implies: owners → People, loose due dates →
+    // real dates. Whatever can't be completed is flagged on the card.
+    await _loadPersons();
+    enrichDeltas(
+      deltas,
+      people: [for (final p in _persons) PersonRef(p.name, p.organisation)],
+      myName: widget.settings.myName,
+      hint: title ?? '',
+      entryDate: DateTime.tryParse(_entryDate) ?? DateTime.now(),
+      fyAnchorMonth: widget.settings.quarterAnchorMonth,
+    );
 
     // Filter out items already extracted from this entry in a previous parse
     final filteredDeltas = await _filterAlreadyExtracted(entryId, deltas);
@@ -386,6 +414,10 @@ class JournalOverlayState extends State<JournalOverlay> {
     if (mounted) {
       setState(() {
         _deltas = filteredDeltas;
+        _parseNotice = aiFailure == null
+            ? null
+            : 'AI parse failed, so the prose was read with basic keyword '
+                  'rules (labelled lines are unaffected): $aiFailure';
         _forceReparse = false;
         _phase = _OverlayPhase.reviewing;
       });
@@ -729,6 +761,12 @@ class JournalOverlayState extends State<JournalOverlay> {
             deltas: _deltas,
             onConfirmAll: _confirmAll,
             onDismiss: _commitAndClose,
+            notice: _parseNotice,
+            persons: _persons,
+            myName: widget.settings.myName,
+            db: widget.db,
+            projectId: widget.projectId,
+            onPersonCreated: _loadPersons,
           );
         }
         return Row(
@@ -800,6 +838,12 @@ class JournalOverlayState extends State<JournalOverlay> {
                 deltas: _deltas,
                 onConfirmAll: _confirmAll,
                 onDismiss: _commitAndClose,
+                notice: _parseNotice,
+                persons: _persons,
+                myName: widget.settings.myName,
+                db: widget.db,
+                projectId: widget.projectId,
+                onPersonCreated: _loadPersons,
               ),
             ),
           ],

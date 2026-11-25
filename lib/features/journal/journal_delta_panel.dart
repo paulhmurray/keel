@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import '../../core/database/database.dart';
 import '../../core/journal/journal_parser.dart';
 import '../../shared/theme/keel_colors.dart';
 import 'journal_delta_item.dart';
@@ -10,11 +11,29 @@ class JournalDeltaPanel extends StatefulWidget {
   final VoidCallback onConfirmAll;
   final VoidCallback onDismiss;
 
+  /// Shown under the header — e.g. why the AI parse fell back to the
+  /// basic keyword rules, so a weak result never looks like the AI's.
+  final String? notice;
+
+  /// Passed through to each card: People for owner resolution and the
+  /// picker (see [JournalDeltaItemWidget]).
+  final List<Person> persons;
+  final String myName;
+  final AppDatabase? db;
+  final String? projectId;
+  final VoidCallback? onPersonCreated;
+
   const JournalDeltaPanel({
     super.key,
     required this.deltas,
     required this.onConfirmAll,
     required this.onDismiss,
+    this.notice,
+    this.persons = const [],
+    this.myName = '',
+    this.db,
+    this.projectId,
+    this.onPersonCreated,
   });
 
   @override
@@ -264,6 +283,31 @@ class _JournalDeltaPanelState extends State<JournalDeltaPanel> {
               ),
             ),
 
+            if (widget.notice != null)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  border: Border(bottom: BorderSide(color: KColors.border)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.info_outline, size: 12, color: KColors.amber),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        widget.notice!,
+                        style: TextStyle(color: KColors.textDim, fontSize: 10),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
             if (allDeltas.isEmpty)
               Expanded(
                 child: Center(
@@ -318,6 +362,11 @@ class _JournalDeltaPanelState extends State<JournalDeltaPanel> {
                         },
                         onCancelEdit: _cancelEdit,
                         onReopen: () => _reopen(e.value),
+                        persons: widget.persons,
+                        myName: widget.myName,
+                        db: widget.db,
+                        projectId: widget.projectId,
+                        onPersonCreated: widget.onPersonCreated,
                       );
                     }).toList(),
                   ),

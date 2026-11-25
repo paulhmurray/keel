@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../core/database/database.dart';
+import '../../core/journal/journal_enrich.dart';
+import '../../core/journal/journal_owner_resolver.dart';
 import '../../core/journal/journal_parser.dart';
+import '../../shared/widgets/person_picker_field.dart';
 import '../../shared/theme/keel_colors.dart';
 
 class _EditField {
@@ -20,6 +24,14 @@ class JournalDeltaItemWidget extends StatefulWidget {
   final VoidCallback onCancelEdit;
   final VoidCallback onReopen;
 
+  /// The project's People — owner fields resolve against them and, with
+  /// [db] and [projectId], edit through the People picker.
+  final List<Person> persons;
+  final String myName;
+  final AppDatabase? db;
+  final String? projectId;
+  final VoidCallback? onPersonCreated;
+
   const JournalDeltaItemWidget({
     super.key,
     required this.delta,
@@ -30,6 +42,11 @@ class JournalDeltaItemWidget extends StatefulWidget {
     required this.onEdit,
     required this.onCancelEdit,
     required this.onReopen,
+    this.persons = const [],
+    this.myName = '',
+    this.db,
+    this.projectId,
+    this.onPersonCreated,
   });
 
   @override
@@ -104,6 +121,7 @@ class _JournalDeltaItemWidgetState extends State<JournalDeltaItemWidget> {
         ];
       case DeltaType.risk:
         return [
+          _EditField('owner', 'Owner', ef['owner'] ?? ''),
           _EditField('likelihood', 'Likelihood', ef['likelihood'] ?? ''),
           _EditField('impact', 'Impact', ef['impact'] ?? ''),
         ];
@@ -151,7 +169,12 @@ class _JournalDeltaItemWidgetState extends State<JournalDeltaItemWidget> {
     }
     for (final f in _fields) {
       final v = f.ctrl.text.trim();
-      widget.delta.editFields[f.key] = v.isEmpty ? null : v;
+      final ef = widget.delta.editFields;
+      // A hand-set due date replaces the phrase it was converted from.
+      if (f.key == 'dueDate' && v != (ef['dueDate'] ?? '')) {
+        ef.remove(kDueAsWritten);
+      }
+      ef[f.key] = v.isEmpty ? null : v;
     }
     widget.onConfirm();
   }
@@ -308,7 +331,7 @@ class _JournalDeltaItemWidgetState extends State<JournalDeltaItemWidget> {
               ),
               for (final f in _fields) ...[
                 const SizedBox(height: 6),
-                _EditTextField(label: f.label, controller: f.ctrl),
+                _fieldEditor(f),
               ],
               const SizedBox(height: 10),
               Row(
@@ -342,6 +365,7 @@ class _JournalDeltaItemWidgetState extends State<JournalDeltaItemWidget> {
               if (!isIgnored) ...[
                 const SizedBox(height: 6),
                 ..._buildFieldRows(),
+                if (!isConfirmed) ..._buildWarnings(),
               ],
               // Action buttons
               if (!isConfirmed && !isIgnored && isActive) ...[
@@ -419,12 +443,18 @@ class _JournalDeltaItemWidgetState extends State<JournalDeltaItemWidget> {
     switch (widget.delta.type) {
       case DeltaType.action:
         addRow('Owner', f['owner']);
-        addRow('Due', f['dueDate']);
+        addRow(
+          'Due',
+          f[kDueAsWritten] == null
+              ? f['dueDate']
+              : '${f['dueDate']}  (${f[kDueAsWritten]})',
+        );
         break;
       case DeltaType.decision:
         addRow('Decision-maker', f['decisionMaker']);
         break;
       case DeltaType.risk:
+        addRow('Owner', f['owner']);
         addRow('Likelihood', f['likelihood']);
         addRow('Impact', f['impact']);
         break;
@@ -442,6 +472,53 @@ class _JournalDeltaItemWidgetState extends State<JournalDeltaItemWidget> {
         break;
     }
     return rows;
+  }
+
+  List<PersonRef> get _people => [
+    for (final p in widget.persons) PersonRef(p.name, p.organisation),
+  ];
+
+  /// Owners not matched to a person, due dates that aren't dates — shown
+  /// before confirming so the created item is complete.
+  List<Widget> _buildWarnings() => [
+    for (final w in deltaWarnings(
+      widget.delta,
+      people: _people,
+      myName: widget.myName,
+    ))
+      Padding(
+        padding: const EdgeInsets.only(top: 3),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.warning_amber_rounded, size: 11, color: KColors.amber),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Text(
+                w,
+                style: TextStyle(color: KColors.amber, fontSize: 10),
+              ),
+            ),
+          ],
+        ),
+      ),
+  ];
+
+  /// Person fields edit through the People picker when the panel has a
+  /// database to add new people to; anything else is a plain text field.
+  Widget _fieldEditor(_EditField f) {
+    final isPerson = f.key == 'owner' || f.key == 'decisionMaker';
+    if (isPerson && widget.db != null && widget.projectId != null) {
+      return PersonPickerField(
+        controller: f.ctrl,
+        label: f.label,
+        persons: widget.persons,
+        db: widget.db!,
+        projectId: widget.projectId!,
+        onPersonCreated: widget.onPersonCreated ?? () {},
+      );
+    }
+    return _EditTextField(label: f.label, controller: f.ctrl);
   }
 }
 

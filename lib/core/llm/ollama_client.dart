@@ -56,11 +56,66 @@ class OllamaClient implements LLMClient {
     final picked = pickInstalledModel(model, installed);
     if (picked == null) {
       throw Exception(
-        'No models found on the Ollama server at $baseUrl. Open Settings → '
-        'AI assistant → Set up Ollama to download one.',
+        noModelsMessage(baseUrl, modelsInStore(userModelStore())),
       );
     }
     return picked;
+  }
+
+  /// Where a per-user `ollama serve` keeps its models: `~/.ollama/models`
+  /// (or `%USERPROFILE%\.ollama\models`).
+  static String userModelStore([Map<String, String>? env]) {
+    final e = env ?? Platform.environment;
+    final home = e['HOME'] ?? e['USERPROFILE'] ?? '';
+    return '$home${Platform.pathSeparator}.ollama'
+        '${Platform.pathSeparator}models';
+  }
+
+  /// Models downloaded into the Ollama store at [dir] ("qwen3:14b"), read
+  /// from its manifests. Empty when there is no store.
+  ///
+  /// Explains an empty server: a model pulled while a per-user
+  /// `ollama serve` was running lands here, and is invisible to an Ollama
+  /// system service, which keeps its own store (on Linux,
+  /// /var/lib/ollama). That happens when the distro package's service
+  /// starts taking the port at boot.
+  static List<String> modelsInStore(String dir) {
+    final root = Directory('$dir${Platform.pathSeparator}manifests');
+    final out = <String>[];
+    try {
+      if (!root.existsSync()) return out;
+      for (final f in root.listSync(recursive: true).whereType<File>()) {
+        final parts = f.path
+            .substring(root.path.length + 1)
+            .split(Platform.pathSeparator);
+        // <registry>/<namespace>/<name>/<tag>
+        if (parts.length != 4) continue;
+        final name = parts[1] == 'library'
+            ? parts[2]
+            : '${parts[1]}/${parts[2]}';
+        out.add('$name:${parts[3]}');
+      }
+    } catch (_) {
+      // Unreadable store — nothing to report.
+    }
+    out.sort();
+    return out;
+  }
+
+  /// The error when the server at [baseUrl] has no models. With models in
+  /// the user's own store ([stranded]) it says why they aren't being seen.
+  static String noModelsMessage(String baseUrl, List<String> stranded) {
+    if (stranded.isEmpty) {
+      return 'No models found on the Ollama server at $baseUrl. Open '
+          'Settings → AI assistant → Set up Ollama to download one.';
+    }
+    final names = stranded.join(', ');
+    return 'The Ollama server at $baseUrl has no models. $names '
+        '${stranded.length == 1 ? 'is' : 'are'} in ~/.ollama/models, but the '
+        'Ollama running now (usually a system service) keeps its models '
+        'elsewhere and can\'t see ${stranded.length == 1 ? 'it' : 'them'}. '
+        'Open Settings → AI assistant → Set up Ollama to download it into '
+        'the running server.';
   }
 
   @override
@@ -291,7 +346,10 @@ class OllamaClient implements LLMClient {
         final name = e.uri.pathSegments.lastWhere((s) => s.isNotEmpty);
         final m = RegExp(r'^\.keel-old-(\d+)$').firstMatch(name);
         if (e is Directory && m != null) {
-          found.add((int.parse(m.group(1)!), e.path.replaceAll(RegExp(r'/$'), '')));
+          found.add((
+            int.parse(m.group(1)!),
+            e.path.replaceAll(RegExp(r'/$'), ''),
+          ));
         }
       }
     } catch (_) {}
@@ -347,10 +405,9 @@ class OllamaClient implements LLMClient {
     try {
       final exeByPid = <int, String>{};
       await for (final e in Directory('/proc').list(followLinks: false)) {
-        final pid = int.tryParse(e.uri.pathSegments.lastWhere(
-          (s) => s.isNotEmpty,
-          orElse: () => '',
-        ));
+        final pid = int.tryParse(
+          e.uri.pathSegments.lastWhere((s) => s.isNotEmpty, orElse: () => ''),
+        );
         if (pid == null) continue;
         try {
           exeByPid[pid] = await Link('/proc/$pid/exe').target();

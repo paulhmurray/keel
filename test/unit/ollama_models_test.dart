@@ -9,24 +9,30 @@ void main() {
       '~/.local/share/keel-ollama on Linux and macOS, %LOCALAPPDATA%\\Keel '
       'on Windows', () {
     expect(
-      OllamaClient.keelLocalOllamaExe({'HOME': '/home/paulm'},
-          isWindows: false),
+      OllamaClient.keelLocalOllamaExe({
+        'HOME': '/home/paulm',
+      }, isWindows: false),
       '/home/paulm/.local/share/keel-ollama/bin/ollama',
     );
     expect(
-      OllamaClient.keelLocalOllamaExe(
-          {'LOCALAPPDATA': r'C:\Users\p\AppData\Local'}, isWindows: true),
+      OllamaClient.keelLocalOllamaExe({
+        'LOCALAPPDATA': r'C:\Users\p\AppData\Local',
+      }, isWindows: true),
       r'C:\Users\p\AppData\Local\Keel\bin\ollama.exe',
     );
     // No HOME at all still yields a well-formed relative path, never a throw.
-    expect(OllamaClient.keelLocalOllamaExe({}, isWindows: false),
-        '/.local/share/keel-ollama/bin/ollama');
+    expect(
+      OllamaClient.keelLocalOllamaExe({}, isWindows: false),
+      '/.local/share/keel-ollama/bin/ollama',
+    );
     // The updater swaps ~/.local/share/keel wholesale; the private Ollama
     // must not be under it.
     final env = {'HOME': '/home/paulm'};
     expect(
-      OllamaClient.keelOllamaRoot(env, isWindows: false)
-          .startsWith('${OllamaClient.legacyKeelOllamaRoot(env)}/'),
+      OllamaClient.keelOllamaRoot(
+        env,
+        isWindows: false,
+      ).startsWith('${OllamaClient.legacyKeelOllamaRoot(env)}/'),
       isFalse,
     );
   });
@@ -43,7 +49,8 @@ void main() {
         14: '/home/p/.local/share/keel-ollama/bin/ollama', // new home
         // An update parked the old install; then the sweep deleted it.
         15: '/home/p/.local/share/.keel-old-1763300000000/bin/ollama',
-        16: '/home/p/.local/share/.keel-old-1763300000000/bin/ollama '
+        16:
+            '/home/p/.local/share/.keel-old-1763300000000/bin/ollama '
             '(deleted)',
         17: '/home/p/.local/share/.keel-old-1/bin/ollama-other',
       }, legacy);
@@ -51,7 +58,9 @@ void main() {
     });
 
     late Directory tmp;
-    setUp(() async => tmp = await Directory.systemTemp.createTemp('ollama_mig'));
+    setUp(
+      () async => tmp = await Directory.systemTemp.createTemp('ollama_mig'),
+    );
     tearDown(() async => tmp.delete(recursive: true));
 
     Future<void> seedLegacy(String root) async {
@@ -61,13 +70,14 @@ void main() {
       await File('$root/lib/libapp.so').create(recursive: true);
     }
 
-    test('moves bin/ollama and lib/ollama out, leaves the app alone',
-        () async {
+    test('moves bin/ollama and lib/ollama out, leaves the app alone', () async {
       final legacy = '${tmp.path}/keel', fresh = '${tmp.path}/keel-ollama';
       await seedLegacy(legacy);
       expect(
         await OllamaClient.migrateLegacyInstall(
-            legacyRoot: legacy, newRoot: fresh),
+          legacyRoot: legacy,
+          newRoot: fresh,
+        ),
         isTrue,
       );
       expect(File('$fresh/bin/ollama').existsSync(), isTrue);
@@ -77,23 +87,29 @@ void main() {
       expect(File('$legacy/lib/libapp.so').existsSync(), isTrue);
     });
 
-    test('no legacy copy, or one already in the new home: nothing moves',
-        () async {
-      final legacy = '${tmp.path}/keel', fresh = '${tmp.path}/keel-ollama';
-      expect(
-        await OllamaClient.migrateLegacyInstall(
-            legacyRoot: legacy, newRoot: fresh),
-        isFalse,
-      );
-      await seedLegacy(legacy);
-      await File('$fresh/bin/ollama').create(recursive: true);
-      expect(
-        await OllamaClient.migrateLegacyInstall(
-            legacyRoot: legacy, newRoot: fresh),
-        isFalse,
-      );
-      expect(File('$legacy/bin/ollama').existsSync(), isTrue);
-    });
+    test(
+      'no legacy copy, or one already in the new home: nothing moves',
+      () async {
+        final legacy = '${tmp.path}/keel', fresh = '${tmp.path}/keel-ollama';
+        expect(
+          await OllamaClient.migrateLegacyInstall(
+            legacyRoot: legacy,
+            newRoot: fresh,
+          ),
+          isFalse,
+        );
+        await seedLegacy(legacy);
+        await File('$fresh/bin/ollama').create(recursive: true);
+        expect(
+          await OllamaClient.migrateLegacyInstall(
+            legacyRoot: legacy,
+            newRoot: fresh,
+          ),
+          isFalse,
+        );
+        expect(File('$legacy/bin/ollama').existsSync(), isTrue);
+      },
+    );
 
     test('an update from an older Keel parks Ollama with the old app; '
         'it is found there, newest first', () async {
@@ -103,10 +119,15 @@ void main() {
       await seedLegacy('${tmp.path}/.keel-old-200');
       await Directory('${tmp.path}/.keel-staging-300').create();
       final parked = await OllamaClient.parkedInstalls(legacy);
-      expect(parked, ['${tmp.path}/.keel-old-200', '${tmp.path}/.keel-old-100']);
+      expect(parked, [
+        '${tmp.path}/.keel-old-200',
+        '${tmp.path}/.keel-old-100',
+      ]);
       expect(
         await OllamaClient.migrateLegacyInstall(
-            legacyRoot: parked.first, newRoot: fresh),
+          legacyRoot: parked.first,
+          newRoot: fresh,
+        ),
         isTrue,
       );
       expect(File('$fresh/lib/ollama/llama-server').existsSync(), isTrue);
@@ -145,21 +166,32 @@ void main() {
     expect(ollamaModelThinks('qwen3:14b'), isTrue);
     expect(ollamaModelThinks('deepseek-r1:14b'), isTrue);
     expect(ollamaModelThinks('gemma3:12b'), isFalse);
-    expect(stripThinking('<think>\nhmm\n</think>\nIf the vendor slips…'),
-        'If the vendor slips…');
+    expect(
+      stripThinking('<think>\nhmm\n</think>\nIf the vendor slips…'),
+      'If the vendor slips…',
+    );
     expect(stripThinking('plain'), 'plain');
   });
 
   test('chat body raises the context window and keeps the model warm', () {
     final body = OllamaClient.buildChatBody(
-        model: 'qwen3:14b', systemPrompt: 'S', userMessage: 'U', stream: false, maxTokens: 400);
+      model: 'qwen3:14b',
+      systemPrompt: 'S',
+      userMessage: 'U',
+      stream: false,
+      maxTokens: 400,
+    );
     expect(body['think'], isFalse);
     expect(body['keep_alive'], '30m');
     final opts = body['options'] as Map;
     expect(opts['num_ctx'], 16384);
     expect(opts['num_predict'], 400);
     final gemma = OllamaClient.buildChatBody(
-        model: 'gemma3:12b', systemPrompt: 'S', userMessage: 'U', stream: true);
+      model: 'gemma3:12b',
+      systemPrompt: 'S',
+      userMessage: 'U',
+      stream: true,
+    );
     expect(gemma.containsKey('think'), isFalse);
     expect((gemma['options'] as Map).containsKey('num_predict'), isFalse);
   });
@@ -167,20 +199,30 @@ void main() {
   _labelTests();
 }
 
-
 // ── Model resolution against what is actually installed ─────────────────
 void _resolutionTests() {
   test('a stale configured model resolves to what is installed', () {
-    expect(OllamaClient.pickInstalledModel('llama3.2:3b', ['qwen3:14b']), 'qwen3:14b');
-    expect(OllamaClient.pickInstalledModel('qwen3:14b', ['qwen3:14b', 'gemma3:12b']), 'qwen3:14b');
+    expect(
+      OllamaClient.pickInstalledModel('llama3.2:3b', ['qwen3:14b']),
+      'qwen3:14b',
+    );
+    expect(
+      OllamaClient.pickInstalledModel('qwen3:14b', ['qwen3:14b', 'gemma3:12b']),
+      'qwen3:14b',
+    );
     // Same family wins over first-installed.
-    expect(OllamaClient.pickInstalledModel('qwen3:8b', ['gemma3:12b', 'qwen3:14b']), 'qwen3:14b');
+    expect(
+      OllamaClient.pickInstalledModel('qwen3:8b', ['gemma3:12b', 'qwen3:14b']),
+      'qwen3:14b',
+    );
     // ":latest" spelling differences are the same model.
-    expect(OllamaClient.pickInstalledModel('phi4', ['phi4:latest']), 'phi4:latest');
+    expect(
+      OllamaClient.pickInstalledModel('phi4', ['phi4:latest']),
+      'phi4:latest',
+    );
     expect(OllamaClient.pickInstalledModel('anything', const []), isNull);
   });
 }
-
 
 void _labelTests() {
   test('model label names the installed tag the way a person would', () {
@@ -188,5 +230,50 @@ void _labelTests() {
     expect(ollamaModelLabel('phi4:latest'), 'phi4');
     expect(ollamaModelLabel('phi4'), 'phi4');
     expect(ollamaModelLabel(''), 'Ollama');
+  });
+
+  group('models stranded in the per-user store', () {
+    late Directory tmp;
+    setUp(() => tmp = Directory.systemTemp.createTempSync('ollama_store'));
+    tearDown(() => tmp.deleteSync(recursive: true));
+
+    void manifest(String path) {
+      final f = File('${tmp.path}/manifests/$path');
+      f.parent.createSync(recursive: true);
+      f.writeAsStringSync('{}');
+    }
+
+    test('reads model names from the manifests', () {
+      manifest('registry.ollama.ai/library/qwen3/14b');
+      manifest('registry.ollama.ai/library/phi4/latest');
+      manifest('registry.ollama.ai/someone/custom/q4');
+      expect(OllamaClient.modelsInStore(tmp.path), [
+        'phi4:latest',
+        'qwen3:14b',
+        'someone/custom:q4',
+      ]);
+    });
+
+    test('no store, no models', () {
+      expect(OllamaClient.modelsInStore('${tmp.path}/missing'), isEmpty);
+    });
+
+    test('the empty-server error says why when models are stranded', () {
+      const url = 'http://localhost:11434';
+      expect(
+        OllamaClient.noModelsMessage(url, []),
+        contains('Set up Ollama to download one'),
+      );
+      final m = OllamaClient.noModelsMessage(url, ['qwen3:14b']);
+      expect(m, contains('qwen3:14b is in ~/.ollama/models'));
+      expect(m, contains('system service'));
+    });
+
+    test('user store is under the home folder', () {
+      expect(
+        OllamaClient.userModelStore({'HOME': '/home/u'}),
+        '/home/u${Platform.pathSeparator}.ollama${Platform.pathSeparator}models',
+      );
+    });
   });
 }
